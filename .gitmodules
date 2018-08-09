@@ -1,0 +1,3 @@
+[submodule "src/protocol/protobuf"]
+	path = src/protocol/protobuf
+	url = https://github.com/Azure/azure-functions-language-worker-protobuf.git

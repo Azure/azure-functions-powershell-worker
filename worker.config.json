@@ -1,0 +1,8 @@
+{
+    "Description":{
+        "Language":"powershell",
+        "Extension":".ps1",
+        "DefaultExecutablePath":"C:\\Users\\dongbow\\AppData\\Local\\Microsoft\\dotnet\\dotnet.exe",
+        "DefaultWorkerPath":"psworker.dll"
+    }
+}
