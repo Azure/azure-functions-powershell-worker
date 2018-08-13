@@ -1,0 +1,11 @@
+{
+    "logger": {
+        "categoryFilter": {
+            "defaultLevel": "Trace",
+            "categoryLevels": {
+                "Worker": "Trace"
+            }
+        },
+        "fileLoggingMode": "always"
+    }
+}

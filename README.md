@@ -1,14 +1,19 @@
+# PSWorkerPrototype
+Prototype for Azure Functions PowerShell Language Worker
 
-# Contributing
+## Steps
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.microsoft.com.
+1. Modify `DefaultExecutablePath` in `worker.config.json` (to something like this `"C:\\Program Files\\dotnet\\dotnet.exe"`)
+2. `cd path/to/PSWorkerPrototype`
+3. `dotnet publish`
+4. Run:
 
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+```powershell
+# Windows if you installed the Azure Functions Core Tools via npm
+Remove-Item -Recurse -Force ~\AppData\Roaming\npm\node_modules\azure-functions-core-tools\bin\workers\powershell
+Copy-Item src\Azure.Functions.PowerShell.Worker\bin\Debug\netcoreapp2.1\publish ~\AppData\Roaming\npm\node_modules\azure-functions-core-tools\bin\workers\powershell -Recurse -Force
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+# macOS if you installed the Azure Functions Core Tools via brew
+Remove-Item -Recurse -Force /usr/local/Cellar/azure-functions-core-tools/2.0.1-beta.33/workers/powershell
+Copy-Item src/Azure.Functions.PowerShell.Worker/bin/Debug/netcoreapp2.1/publish /usr/local/Cellar/azure-functions-core-tools/2.0.1-beta.33/workers/powershell -Recurse -Force
+```

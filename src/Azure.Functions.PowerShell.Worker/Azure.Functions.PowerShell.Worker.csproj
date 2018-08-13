@@ -3,21 +3,24 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <RootNamespace>Microsoft.Azure.PowerShell.Worker</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc" Version="1.13.1" />
-    <PackageReference Include="Google.Protobuf" Version="3.6.0" />
-    <PackageReference Include="CommandLineParser" Version="2.2.1" />
-    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.0-beta5" />
+    <ProjectReference Include="..\Azure.Functions.PowerShell.Worker.Messaging\Azure.Functions.PowerShell.Worker.Messaging.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="6.1.0-preview.4" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\worker.config.json">
+    <None Include="worker.config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
 
 </Project>
