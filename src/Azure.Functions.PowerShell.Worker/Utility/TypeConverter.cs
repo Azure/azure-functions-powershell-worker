@@ -5,12 +5,14 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using System.Net.Http;
 using static Microsoft.Azure.WebJobs.Script.Grpc.Messages.TypedData;
 using System;
+using Newtonsoft.Json;
+using System.Collections;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     public class TypeConverter
     {
-        public static object FromTypedData (TypedData data)
+        public static object ToObject (TypedData data)
         {
             switch (data.DataCase)
             {
@@ -36,103 +38,43 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
         }
 
-        public static TypedData ToTypedData (string bindingName, BindingInfo binding, object psobject)
+        public static TypedData ToTypedData(object value)
         {
-            switch (binding.Type)
+            TypedData typedData = new TypedData();
+
+            if (value == null)
             {
-                case "json":
-
-                    if(!LanguagePrimitives.TryConvertTo<string>(
-                        psobject,
-                        out string jsonVal))
-                    {
-                        throw new PSInvalidCastException();
-                    }
-                    return new TypedData()
-                    {
-                        Json = jsonVal
-                    };
-                
-                case "bytes":
-
-                    if(!LanguagePrimitives.TryConvertTo<ByteString>(
-                        psobject,
-                        out ByteString bytesVal))
-                    {
-                        throw new PSInvalidCastException();
-                    }
-                    return new TypedData()
-                    {
-                        Bytes = bytesVal
-                    };
-
-                case "double":
-
-                    if(!LanguagePrimitives.TryConvertTo<double>(
-                        psobject,
-                        out double doubleVal))
-                    {
-                        throw new PSInvalidCastException();
-                    }
-                    return new TypedData()
-                    {
-                        Double = doubleVal
-                    };
-
-                case "http":
-
-                    if(!LanguagePrimitives.TryConvertTo<HttpResponseContext>(
-                        psobject, 
-                        out HttpResponseContext httpVal))
-                    {
-                        throw new PSInvalidCastException();
-                    }
-                    return new TypedData()
-                    {
-                        Http = ToRpcHttp(httpVal)
-                    };
-                
-                case "int":
-
-                    if(!LanguagePrimitives.TryConvertTo<int>(
-                        psobject,
-                        out int intVal))
-                    {
-                        throw new PSInvalidCastException();
-                    }
-                    return new TypedData()
-                    {
-                        Int = intVal
-                    };
-
-                case "stream":
-
-                    if(!LanguagePrimitives.TryConvertTo<ByteString>(
-                        psobject,
-                        out ByteString streamVal))
-                    {
-                        throw new PSInvalidCastException();
-                    }
-                    return new TypedData()
-                    {
-                        Stream = streamVal
-                    };
-
-                case "string":
-
-                    if(!LanguagePrimitives.TryConvertTo<string>(
-                        psobject,
-                        out string stringVal))
-                    {
-                        throw new PSInvalidCastException();
-                    }
-                    return new TypedData()
-                    {
-                        String = stringVal
-                    };
-                default:
-                    throw new PSInvalidCastException("could not parse type");
+                return typedData;
             }
+
+            if (LanguagePrimitives.TryConvertTo<byte[]>(
+                        value, out byte[] arr))
+            {
+                typedData.Bytes = ByteString.CopyFrom(arr);
+            }
+            else if(LanguagePrimitives.TryConvertTo<HttpResponseContext>(
+                        value, out HttpResponseContext http))
+            {
+                typedData.Http = ToRpcHttp(http);
+            }
+            else if (LanguagePrimitives.TryConvertTo<Hashtable>(
+                        value, out Hashtable hashtable))
+            {
+                    typedData.Json = JsonConvert.SerializeObject(hashtable);
+            }
+            else if (LanguagePrimitives.TryConvertTo<string>(
+                        value, out string str))
+            {
+                try
+                {
+                    typedData.Json = JsonConvert.SerializeObject(str);
+                }
+                catch
+                {
+                    typedData.String = str;
+                }
+            }
+            return typedData;
         }
 
         public static HttpRequestContext ToHttpContext (RpcHttp rpcHttp)
@@ -149,12 +91,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
             if (rpcHttp.Body != null)
             {
-                httpRequestContext.Body = FromTypedData(rpcHttp.Body);
+                httpRequestContext.Body = ToObject(rpcHttp.Body);
             }
 
             if (rpcHttp.RawBody != null)
             {
-                httpRequestContext.Body = FromTypedData(rpcHttp.RawBody);
+                httpRequestContext.Body = ToObject(rpcHttp.RawBody);
             }
 
             return httpRequestContext;

@@ -135,8 +135,6 @@ Set-Variable -Name '$return' -Value $return -Scope global
                 {
                     Name = binding.Key,
                     Data = TypeConverter.ToTypedData(
-                        binding.Key,
-                        binding.Value,
                         result[binding.Key])
                 };
 
