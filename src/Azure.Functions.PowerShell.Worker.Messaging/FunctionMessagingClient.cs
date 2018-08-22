@@ -10,6 +10,7 @@ namespace Azure.Functions.PowerShell.Worker.Messaging
     {
         public bool isDisposed = false;
         private AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
+        private SemaphoreSlim _writeStreamHandle = new SemaphoreSlim(1, 1);
 
         public FunctionMessagingClient(string host, int port)
         {
@@ -20,8 +21,15 @@ namespace Azure.Functions.PowerShell.Worker.Messaging
         public async Task WriteAsync(StreamingMessage message)
         {
             if(isDisposed) return;
-
-            await _call.RequestStream.WriteAsync(message);
+            await _writeStreamHandle.WaitAsync();
+            try
+            {
+                await _call.RequestStream.WriteAsync(message);
+            }
+            finally
+            {
+                _writeStreamHandle.Release();
+            }
         }
 
         public async Task<bool> MoveNext()

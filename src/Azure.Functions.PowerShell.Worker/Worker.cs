@@ -9,6 +9,11 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Azure.Functions.PowerShell.Worker.Messaging;
 using Microsoft.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
+using System.Collections;
+using Microsoft.Azure.Functions.PowerShellWorker.Requests;
+using Microsoft.Extensions.Logging;
+using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
+using Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
@@ -16,7 +21,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     {
         private static FunctionMessagingClient s_client;
         private static System.Management.Automation.PowerShell s_ps;
+        private static Runspace s_runspace;
         private static FunctionLoader s_FunctionLoader = new FunctionLoader();
+        private static RpcLogger s_Logger;
         public async static Task Main(string[] args)
         {
             if (args.Length != 10)
@@ -27,12 +34,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             StartupArguments startupArguments = StartupArguments.Parse(args);
 
             s_client = new FunctionMessagingClient(startupArguments.Host, startupArguments.Port);
+            s_Logger = new RpcLogger(s_client);
             InitPowerShell();
 
             var streamingMessage = new StreamingMessage() {
                 RequestId = startupArguments.RequestId,
                 StartStream = new StartStream() { WorkerId = startupArguments.WorkerId }
             };
+
             await s_client.WriteAsync(streamingMessage);
 
             await ProcessEvent();
@@ -40,7 +49,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         private static void InitPowerShell()
         {
-            s_ps = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault2());
+            // var events = new StreamEvents(s_Logger);
+            var host = new Host(s_Logger);
+
+            s_runspace = RunspaceFactory.CreateRunspace(host);
+            s_runspace.Open();
+            s_ps = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault());
+            s_ps.Runspace = s_runspace;
+
+            // Setup Stream event listeners
+            // s_ps.Streams.Debug.DataAdded += events.DebugDataAdded;
+            // s_ps.Streams.Error.DataAdded += events.ErrorDataAdded;
+            // s_ps.Streams.Information.DataAdded += events.InformationDataAdded;
+            // s_ps.Streams.Progress.DataAdded += events.ProgressDataAdded;
+            // s_ps.Streams.Verbose.DataAdded += events.VerboseDataAdded;
+            // s_ps.Streams.Warning.DataAdded += events.WarningDataAdded;
+
             s_ps.AddScript("$PSHOME");
             //s_ps.AddCommand("Set-ExecutionPolicy").AddParameter("ExecutionPolicy", ExecutionPolicy.Unrestricted).AddParameter("Scope", ExecutionPolicyScope.Process);
             var result = s_ps.Invoke<string>();
@@ -56,128 +80,40 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 while (await s_client.MoveNext())
                 {
                     var message = s_client.GetCurrentMessage();
+                    StreamingMessage response;
                     switch (message.ContentCase)
                     {
                         case StreamingMessage.ContentOneofCase.WorkerInitRequest:
-                            await HandleWorkerInitRequest(message.RequestId, message.WorkerInitRequest);
+                            response = HandleWorkerInitRequest.Invoke(
+                                s_ps,
+                                s_FunctionLoader,
+                                message,
+                                s_Logger);
                             break;
 
                         case StreamingMessage.ContentOneofCase.FunctionLoadRequest:
-                            await HandleFunctionLoadRequest(message.RequestId, message.FunctionLoadRequest);
+                            response = HandleFunctionLoadRequest.Invoke(
+                                s_ps,
+                                s_FunctionLoader,
+                                message,
+                                s_Logger);
                             break;
 
                         case StreamingMessage.ContentOneofCase.InvocationRequest:
-                            await HandleInvocationRequest(message.RequestId, message.InvocationRequest);
+                            response = HandleInvocationRequest.Invoke(
+                                s_ps,
+                                s_FunctionLoader,
+                                message,
+                                s_Logger);
                             break;
 
                         default:
                             throw new InvalidOperationException($"Not supportted message type: {message.ContentCase}");
                     }
+
+                    await s_client.WriteAsync(response);
                 }
             }
-        }
-
-        private static async Task HandleWorkerInitRequest(string requestId, WorkerInitRequest initRequest)
-        {
-            var response = new StreamingMessage()
-            {
-                RequestId = requestId,
-                WorkerInitResponse = new WorkerInitResponse()
-                {
-                    Result = new StatusResult()
-                    {
-                        Status = StatusResult.Types.Status.Success
-                    }
-                }
-            };
-            await s_client.WriteAsync(response);
-        }
-
-        private static async Task HandleFunctionLoadRequest(string requestId, FunctionLoadRequest loadRequest)
-        {
-            s_FunctionLoader.Load(loadRequest.FunctionId, loadRequest.Metadata);
-            var response = new StreamingMessage()
-            {
-                RequestId = requestId,
-                FunctionLoadResponse = new FunctionLoadResponse()
-                {
-                    FunctionId = loadRequest.FunctionId,
-                    Result = new StatusResult()
-                    {
-                        Status = StatusResult.Types.Status.Success
-                    }
-                }
-            };
-            await s_client.WriteAsync(response);
-        }
-
-        private static async Task HandleInvocationRequest(string requestId, InvocationRequest request)
-        {
-            var status = new StatusResult() { Status = StatusResult.Types.Status.Success };
-            var response = new StreamingMessage()
-            {
-                RequestId = requestId,
-                InvocationResponse = new InvocationResponse()
-                {
-                    InvocationId = request.InvocationId,
-                    Result = status
-                }
-            };
-
-            var info = s_FunctionLoader.GetInfo(request.FunctionId);
-            // (Context context, List<TypedData> inputs) = Context.CreateContextAndInputs(info, request);
-            (string scriptPath, string entryPoint) = s_FunctionLoader.GetFunc(request.FunctionId);
-            
-            if(entryPoint != "")
-            {
-                s_ps.AddCommand(entryPoint);
-            }
-            else
-            {
-                s_ps.AddCommand(scriptPath);
-            }
-
-            foreach (ParameterBinding binding in request.InputData)
-            {
-                s_ps.AddParameter(binding.Name, TypeConverter.FromTypedData(binding.Data));
-            }
-
-            // s_ps.AddParameter("context", context);
-            // foreach (TypedData input in inputs)
-            // {
-            //     s_ps.AddArgument(input);
-            // }
-            PSObject result = null;
-            try
-            {
-                result = s_ps.Invoke()[0];
-            }
-            finally
-            {
-                s_ps.Commands.Clear();
-            }
-
-            foreach (var binding in info.OutputBindings)
-            {
-                ParameterBinding paramBinding = new ParameterBinding()
-                {
-                    Name = binding.Key,
-                    Data = TypeConverter.ToTypedData(
-                        binding.Key,
-                        binding.Value,
-                        result)
-                };
-
-                // Not exactly sure which one to use for what scenario, so just set both.
-                response.InvocationResponse.OutputData.Add(paramBinding);
-
-                if(binding.Key == "$return")
-                {
-                    response.InvocationResponse.ReturnValue = paramBinding.Data;
-                }
-            }
-
-            await s_client.WriteAsync(response);
         }
     }
 }

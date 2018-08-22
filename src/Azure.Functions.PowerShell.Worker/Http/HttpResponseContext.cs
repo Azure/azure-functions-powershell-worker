@@ -1,20 +1,20 @@
-﻿using Google.Protobuf.Collections;
+using Google.Protobuf.Collections;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
-    public class ContextHttpResponse
+    public class HttpResponseContext
     {
 #region properties
         public string StatusCode {get; set;} = "200";
         public MapField<string, string> Headers {get; set;} = new MapField<string,string>();
         public TypedData Body {get; set;} = new TypedData { String = "" };
-        public bool EnableContentNegotiation {get; set;}
+        public bool EnableContentNegotiation {get; set;} = false;
 #endregion
 #region Helper functions for user to use to set data
-        public ContextHttpResponse Header(string field, string value) =>
+        public HttpResponseContext Header(string field, string value) =>
             SetHeader(field, value);
-        public ContextHttpResponse SetHeader(string field, string value)
+        public HttpResponseContext SetHeader(string field, string value)
         {
             Headers.Add(field, value);
             return this;
@@ -23,30 +23,30 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         public string GetHeader(string field) =>
             Headers[field];
 
-        public ContextHttpResponse RemoveHeader(string field)
+        public HttpResponseContext RemoveHeader(string field)
         {
             Headers.Remove(field);
             return this;
         }
 
-        public ContextHttpResponse Status(int statusCode) =>
+        public HttpResponseContext Status(int statusCode) =>
             SetStatus(statusCode);
-        public ContextHttpResponse Status(string statusCode) =>
+        public HttpResponseContext Status(string statusCode) =>
             SetStatus(statusCode);
-        public ContextHttpResponse SetStatus(int statusCode) =>
+        public HttpResponseContext SetStatus(int statusCode) =>
             SetStatus(statusCode);
-        public ContextHttpResponse SetStatus(string statusCode)
+        public HttpResponseContext SetStatus(string statusCode)
         {
             StatusCode = statusCode;
             return this;
         }
 
-        public ContextHttpResponse Type(string type) =>
+        public HttpResponseContext Type(string type) =>
             SetHeader("content-type", type);
-        public ContextHttpResponse SetContentType(string type) =>
+        public HttpResponseContext SetContentType(string type) =>
             SetHeader("content-type", type);
 
-        public ContextHttpResponse Send(int val)
+        public HttpResponseContext Send(int val)
         {
             Body = new TypedData
             {
@@ -54,7 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             };
             return this;
         }
-        public ContextHttpResponse Send(double val)
+        public HttpResponseContext Send(double val)
         {
             Body = new TypedData
             {
@@ -62,7 +62,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             };
             return this;
         }
-        public ContextHttpResponse Send(string val)
+        public HttpResponseContext Send(string val)
         {
             Body = new TypedData
             {
@@ -70,7 +70,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             };
             return this;
         }
-        public ContextHttpResponse Json(string val) {
+        public HttpResponseContext Json(string val) {
             Body = new TypedData
             {
                 Json = val

@@ -1,7 +1,6 @@
-param($req)
-
-$req.StatusCode = "201"
-$req.Body.String = "hi"
-return [PSCustomObject]@{
-    res = $req
+function FunctionName {
+    $global:res = $req.GetHttpResponseContext()
+    "hello verbose"
+    $res.Json('{"Hello":"World"}')
+    $res.SetHeader("foo", "bar")
 }
