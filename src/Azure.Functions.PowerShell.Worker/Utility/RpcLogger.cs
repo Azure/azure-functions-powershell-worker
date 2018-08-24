@@ -1,8 +1,13 @@
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using System;
+
 using Azure.Functions.PowerShell.Worker.Messaging;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Microsoft.Extensions.Logging;
-using static Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
@@ -53,24 +58,24 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
         }
 
-        public static Level ConvertLogLevel(LogLevel logLevel)
+        public static RpcLog.Types.Level ConvertLogLevel(LogLevel logLevel)
         {
             switch (logLevel)
             {
                 case LogLevel.Critical:
-                    return Level.Critical;
+                    return RpcLog.Types.Level.Critical;
                 case LogLevel.Debug:
-                    return Level.Debug;
+                    return RpcLog.Types.Level.Debug;
                 case LogLevel.Error:
-                    return Level.Error;
+                    return RpcLog.Types.Level.Error;
                 case LogLevel.Information:
-                    return Level.Information;
+                    return RpcLog.Types.Level.Information;
                 case LogLevel.Trace:
-                    return Level.Trace;
+                    return RpcLog.Types.Level.Trace;
                 case LogLevel.Warning:
-                    return Level.Warning;
+                    return RpcLog.Types.Level.Warning;
                 default:
-                    return Level.None;
+                    return RpcLog.Types.Level.None;
             }
         }
     }

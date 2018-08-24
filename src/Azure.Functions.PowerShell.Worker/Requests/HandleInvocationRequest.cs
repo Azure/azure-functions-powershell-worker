@@ -1,16 +1,19 @@
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
 
-using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
-using Microsoft.Extensions.Logging;
+using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
-namespace  Microsoft.Azure.Functions.PowerShellWorker.Requests
+namespace Microsoft.Azure.Functions.PowerShellWorker.Requests
 {
     using System.Management.Automation;
-    using System.Text;
 
     public class HandleInvocationRequest
     {

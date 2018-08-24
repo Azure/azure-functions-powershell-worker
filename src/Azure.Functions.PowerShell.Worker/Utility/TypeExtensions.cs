@@ -1,13 +1,15 @@
-using System.Management.Automation;
-using Google.Protobuf;
-using Microsoft.Azure.Functions.PowerShellWorker;
-using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
-using System.Net.Http;
-using static Microsoft.Azure.WebJobs.Script.Grpc.Messages.TypedData;
+//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
 using System;
-using Newtonsoft.Json;
 using System.Collections;
-using System.Collections.Generic;
+using System.Management.Automation;
+
+using Google.Protobuf;
+using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+using Newtonsoft.Json;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
@@ -22,21 +24,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
             switch (data.DataCase)
             {
-                case DataOneofCase.Json:
+                case TypedData.DataOneofCase.Json:
                     return JsonConvert.DeserializeObject<Hashtable>(data.Json);
-                case DataOneofCase.Bytes:
+                case TypedData.DataOneofCase.Bytes:
                     return data.Bytes;
-                case DataOneofCase.Double:
+                case TypedData.DataOneofCase.Double:
                     return data.Double;
-                case DataOneofCase.Http:
+                case TypedData.DataOneofCase.Http:
                     return data.Http.ToHttpContext();
-                case DataOneofCase.Int:
+                case TypedData.DataOneofCase.Int:
                     return data.Int;
-                case DataOneofCase.Stream:
+                case TypedData.DataOneofCase.Stream:
                     return data.Stream;
-                case DataOneofCase.String:
+                case TypedData.DataOneofCase.String:
                     return data.String;
-                case DataOneofCase.None:
+                case TypedData.DataOneofCase.None:
                     return null;
                 default:
                     return new InvalidOperationException("Data Case was not set.");
