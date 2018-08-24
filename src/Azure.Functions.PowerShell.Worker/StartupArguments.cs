@@ -27,12 +27,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 }
             }
 
-            Console.WriteLine($"host: {arguments.Host}");
-            Console.WriteLine($"port: {arguments.Port}");
-            Console.WriteLine($"workerId: {arguments.WorkerId}");
-            Console.WriteLine($"requestId: {arguments.RequestId}");
-            Console.WriteLine($"grpcMaxMessageLength: {arguments.GrpcMaxMessageLength}");
-
             return arguments;
         }
     }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
+using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Extensions.Logging;
 
 namespace  Microsoft.Azure.Functions.PowerShellWorker.Requests
@@ -20,8 +21,22 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker.Requests
             RpcLogger logger)
         {
             InvocationRequest invocationRequest = request.InvocationRequest;
+
+            // Set the RequestId and InvocationId for logging purposes
             logger.SetContext(request.RequestId, invocationRequest.InvocationId);
 
+            // Load information about the function
+            var functionInfo = functionLoader.GetInfo(invocationRequest.FunctionId);
+            (string scriptPath, string entryPoint) = functionLoader.GetFunc(invocationRequest.FunctionId);
+
+            // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
+            Hashtable triggerMetadata = new Hashtable();
+            foreach (var dataItem in invocationRequest.TriggerMetadata)
+            {
+                triggerMetadata.Add(dataItem.Key, dataItem.Value.ToObject());
+            }
+
+            // Assume success unless something bad happens
             var status = new StatusResult() { Status = StatusResult.Types.Status.Success };
             var response = new StreamingMessage()
             {
@@ -33,113 +48,34 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker.Requests
                 }
             };
 
-            var info = functionLoader.GetInfo(invocationRequest.FunctionId);
-
-            // Add $Context variable, which contains trigger metadata, to the Global scope
-            Hashtable triggerMetadata = new Hashtable();
-            foreach (var dataItem in invocationRequest.TriggerMetadata)
-            {
-                triggerMetadata.Add(dataItem.Key, TypeConverter.FromTypedData(dataItem.Value));
-            }
-
-            if (triggerMetadata.Count > 0)
-            {
-                powershell.AddCommand("Set-Variable").AddParameters( new Hashtable {
-                    { "Name", "Context"},
-                    { "Scope", "Global"},
-                    { "Value", triggerMetadata}
-                });
-                powershell.Invoke();
-            }
-
-            foreach (ParameterBinding binding in invocationRequest.InputData)
-            {
-                powershell.AddCommand("Set-Variable").AddParameters( new Hashtable {
-                    { "Name", binding.Name},
-                    { "Scope", "Global"},
-                    { "Value",  TypeConverter.FromTypedData(binding.Data)}
-                });
-                powershell.Invoke();
-            }
-
-            // foreach (KeyValuePair<string, BindingInfo> binding in info.OutputBindings)
-            // {
-            //     powershell.AddCommand("Set-Variable").AddParameters( new Hashtable {
-            //         { "Name", binding.Key},
-            //         { "Scope", "Global"},
-            //         { "Value", null}
-            //     });
-            //     powershell.Invoke();
-            // }
-
-            (string scriptPath, string entryPoint) = functionLoader.GetFunc(invocationRequest.FunctionId);
-            
-            if(entryPoint != "")
-            {
-                powershell.AddScript($@". {scriptPath}");
-                powershell.Invoke();
-                powershell.AddCommand(entryPoint);
-            }
-            else
-            {
-                powershell.AddCommand(scriptPath);
-            }
-
-            powershell.AddScript(@"
-param([Parameter(ValueFromPipeline=$true)]$return)
-
-$return | Out-Default
-
-Set-Variable -Name '$return' -Value $return -Scope global
-");
-
-            StringBuilder script = new StringBuilder();
-            script.AppendLine("@{");
-            foreach (KeyValuePair<string, BindingInfo> binding in info.OutputBindings)
-            {
-                script.Append("'");
-                script.Append(binding.Key);
-
-                // since $return has a dollar sign, we have to treat it differently
-                if (binding.Key == "$return")
-                {
-                    script.Append("' = ");
-                }
-                else
-                {
-                    script.Append("' = $");
-                }
-                script.AppendLine(binding.Key);
-            }
-            script.AppendLine("}");
-
+            // Invoke powershell logic and return hashtable of out binding data
             Hashtable result = null;
             try
             {
-                powershell.Invoke();
-                powershell.AddScript(script.ToString());
-                result = powershell.Invoke<Hashtable>()[0];
+                result = powershell
+                    .SetGlobalVariables(triggerMetadata, invocationRequest.InputData)
+                    .InvokeFunctionAndSetGlobalReturn(scriptPath, entryPoint)
+                    .ReturnBindingHashtable(functionInfo.OutputBindings);
             }
             catch (Exception e)
             {
                 status.Status = StatusResult.Types.Status.Failure;
-                status.Exception = TypeConverter.ToRpcException(e);
-                powershell.Commands.Clear();
+                status.Exception = e.ToRpcException();
                 return response;
             }
-            powershell.Commands.Clear();
 
-            foreach (KeyValuePair<string, BindingInfo> binding in info.OutputBindings)
+            // Set out binding data and return response to be sent back to host
+            foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutputBindings)
             {
                 ParameterBinding paramBinding = new ParameterBinding()
                 {
                     Name = binding.Key,
-                    Data = TypeConverter.ToTypedData(
-                        result[binding.Key])
+                    Data = result[binding.Key].ToTypedData()
                 };
 
                 response.InvocationResponse.OutputData.Add(paramBinding);
 
+                // if one of the bindings is $return we need to also set the ReturnValue
                 if(binding.Key == "$return")
                 {
                     response.InvocationResponse.ReturnValue = paramBinding.Data;

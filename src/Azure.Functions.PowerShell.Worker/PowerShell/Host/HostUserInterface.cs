@@ -15,6 +15,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
     /// </summary>
     internal class HostUserInterface : PSHostUserInterface
     {
+        /// <summary>
+        /// The private reference of the logger.
+        /// </summary>
         private RpcLogger _logger;
 
         /// <summary>
@@ -40,7 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <param name="message">The text of the prompt.</param>
         /// <param name="descriptions">A collection of FieldDescription objects that 
         /// describe each field of the prompt.</param>
-        /// <returns>Throws a NotImplementedException exception.</returns>
+        /// <returns>Throws a NotImplementedException exception because we don't need a prompt.</returns>
         public override Dictionary<string, PSObject> Prompt(string caption, string message, System.Collections.ObjectModel.Collection<FieldDescription> descriptions)
         {
             throw new NotImplementedException("The method or operation is not implemented.");
@@ -55,7 +58,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// each choice.</param>
         /// <param name="defaultChoice">The index of the label in the Choices parameter 
         /// collection. To indicate no default choice, set to -1.</param>
-        /// <returns>Throws a NotImplementedException exception.</returns>
+        /// <returns>Throws a NotImplementedException exception because we don't need a prompt.</returns>
         public override int PromptForChoice(string caption, string message, System.Collections.ObjectModel.Collection<ChoiceDescription> choices, int defaultChoice)
         {
             throw new NotImplementedException("The method or operation is not implemented.");
@@ -69,7 +72,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <param name="message">The text of the message.</param>
         /// <param name="userName">The user name whose credential is to be prompted for.</param>
         /// <param name="targetName">The name of the target for which the credential is collected.</param>
-        /// <returns>Throws a NotImplementedException exception.</returns>
+        /// <returns>Throws a NotImplementedException exception because we don't need a prompt.</returns>
         public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName)
         {
             throw new NotImplementedException("The method or operation is not implemented.");
@@ -88,7 +91,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// identifies the type of credentials that can be returned.</param>
         /// <param name="options">A PSCredentialUIOptions constant that identifies the UI 
         /// behavior when it gathers the credentials.</param>
-        /// <returns>Throws a NotImplementedException exception.</returns>
+        /// <returns>Throws a NotImplementedException exception because we don't need a prompt.</returns>
         public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName, PSCredentialTypes allowedCredentialTypes, PSCredentialUIOptions options)
         {
             throw new NotImplementedException("The method or operation is not implemented.");
@@ -98,7 +101,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// Reads characters that are entered by the user until a newline 
         /// (carriage return) is encountered.
         /// </summary>
-        /// <returns>The characters that are entered by the user.</returns>
+        /// <returns>Throws a NotImplemented exception because we are in a non-interactive experience.</returns>
         public override string ReadLine()
         {
             throw new NotImplementedException("The method or operation is not implemented.");
@@ -108,7 +111,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// Reads characters entered by the user until a newline (carriage return) 
         /// is encountered and returns the characters as a secure string.
         /// </summary>
-        /// <returns>Throws a NotImplemented exception.</returns>
+        /// <returns>Throws a NotImplemented exception because we are in a non-interactive experience.</returns>
         public override System.Security.SecureString ReadLineAsSecureString()
         {
             throw new NotImplementedException("The method or operation is not implemented.");
@@ -161,7 +164,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// </summary>
         public override void WriteLine()
         {
-            //do nothing
+            //do nothing because we don't need to log empty lines
         }
 
         /// <summary>
@@ -203,7 +206,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <param name="message">The verbose message that is displayed.</param>
         public override void WriteVerboseLine(string message)
         {
-            //Console.WriteLine(String.Format(CultureInfo.CurrentCulture, "VERBOSE: {0}", message));
             _logger.LogTrace(String.Format(CultureInfo.CurrentCulture, "VERBOSE: {0}", message));
         }
 
@@ -213,7 +215,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <param name="message">The warning message that is displayed.</param>
         public override void WriteWarningLine(string message)
         {
-            //Console.WriteLine(String.Format(CultureInfo.CurrentCulture, "WARNING: {0}", message));
             _logger.LogWarning(String.Format(CultureInfo.CurrentCulture, "WARNING: {0}", message));
         }
     }

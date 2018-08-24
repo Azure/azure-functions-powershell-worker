@@ -14,7 +14,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker.Requests
             StreamingMessage request,
             RpcLogger logger)
         {
-            var response = new StreamingMessage()
+            return new StreamingMessage()
             {
                 RequestId = request.RequestId,
                 WorkerInitResponse = new WorkerInitResponse()
@@ -25,7 +25,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker.Requests
                     }
                 }
             };
-            return response;
         }
     }
 }

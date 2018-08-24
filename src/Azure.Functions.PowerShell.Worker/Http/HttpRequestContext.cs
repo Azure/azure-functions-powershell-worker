@@ -13,10 +13,5 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         public MapField<string, string> Params {get; set;}
         public object Body {get; set;}
         public object RawBody {get; set;}
-
-        public HttpResponseContext GetHttpResponseContext()
-        {
-            return new HttpResponseContext();
-        }
     }
 }

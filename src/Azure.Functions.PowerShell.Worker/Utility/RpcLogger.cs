@@ -42,7 +42,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     RequestId = _requestId,
                     RpcLog = new RpcLog()
                     {
-                        Exception = exception == null ? null : TypeConverter.ToRpcException(exception),
+                        Exception = exception == null ? null : exception.ToRpcException(),
                         InvocationId = _invocationId,
                         Level = ConvertLogLevel(logLevel),
                         Message = formatter(state, exception)

@@ -21,6 +21,9 @@ namespace Azure.Functions.PowerShell.Worker.Messaging
         public async Task WriteAsync(StreamingMessage message)
         {
             if(isDisposed) return;
+
+            // Wait for the handle to be released because we can't have
+            // more than one message being sent at the same time
             await _writeStreamHandle.WaitAsync();
             try
             {

@@ -10,8 +10,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
     /// applications. Not all members are implemented. Those that aren't throw a
     /// NotImplementedException.
     /// </summary>
-    internal class Host : PSHost
+    internal class AzureFunctionsHost : PSHost
     {
+        /// <summary>
+        /// The private reference of the logger.
+        /// </summary>
         private RpcLogger _logger;
 
         /// <summary>
@@ -80,15 +83,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// </summary>
         public override Version Version => new Version(1, 0, 0, 0);
 
-        public Host(RpcLogger logger)
+        public AzureFunctionsHost(RpcLogger logger)
         {
             _logger = logger;
-
             HostUI = new HostUserInterface(logger);
         }
 
         /// <summary>
-        /// Not implemented by this example class. The call fails with an exception.
+        /// Not implemented by this class. The call fails with an exception.
         /// </summary>
         public override void EnterNestedPrompt()
         {
@@ -96,7 +98,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         }
 
         /// <summary>
-        /// Not implemented by this example class. The call fails with an exception.
+        /// Not implemented by this class. The call fails with an exception.
         /// </summary>
         public override void ExitNestedPrompt()
         {
@@ -106,7 +108,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <summary>
         /// This API is called before an external application process is started. Typically
         /// it's used to save state that the child process may alter so the parent can
-        /// restore that state when the child exits. In this sample, we don't need this so
+        /// restore that state when the child exits. In this, we don't need this so
         /// the method simple returns.
         /// </summary>
         public override void NotifyBeginApplication()
@@ -116,8 +118,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
 
         /// <summary>
         /// This API is called after an external application process finishes. Typically
-        /// it's used to restore state that the child process may have altered. In this
-        /// sample, we don't need this so the method simple returns.
+        /// it's used to restore state that the child process may have altered. In this,
+        /// we don't need this so the method simple returns.
         /// </summary>
         public override void NotifyEndApplication()
         {

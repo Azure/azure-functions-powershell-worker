@@ -7,24 +7,29 @@ using static Microsoft.Azure.WebJobs.Script.Grpc.Messages.TypedData;
 using System;
 using Newtonsoft.Json;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
-    public class TypeConverter
+    public static class TypeExtensions
     {
-        public static object ToObject (TypedData data)
+        public static object ToObject (this TypedData data)
         {
+            if (data == null)
+            {
+                return null;
+            }
+
             switch (data.DataCase)
             {
                 case DataOneofCase.Json:
-                    // consider doing ConvertFrom-Json
-                    return data.Json;
+                    return JsonConvert.DeserializeObject<Hashtable>(data.Json);
                 case DataOneofCase.Bytes:
                     return data.Bytes;
                 case DataOneofCase.Double:
                     return data.Double;
                 case DataOneofCase.Http:
-                    return ToHttpContext(data.Http);
+                    return data.Http.ToHttpContext();
                 case DataOneofCase.Int:
                     return data.Int;
                 case DataOneofCase.Stream:
@@ -38,7 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
         }
 
-        public static TypedData ToTypedData(object value)
+        public static TypedData ToTypedData(this object value)
         {
             TypedData typedData = new TypedData();
 
@@ -55,7 +60,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             else if(LanguagePrimitives.TryConvertTo<HttpResponseContext>(
                         value, out HttpResponseContext http))
             {
-                typedData.Http = ToRpcHttp(http);
+                typedData.Http = http.ToRpcHttp();
             }
             else if (LanguagePrimitives.TryConvertTo<Hashtable>(
                         value, out Hashtable hashtable))
@@ -65,6 +70,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             else if (LanguagePrimitives.TryConvertTo<string>(
                         value, out string str))
             {
+                // Attempt to parse the string into json. If it fails,
+                // fallback to storing as a string
                 try
                 {
                     typedData.Json = JsonConvert.SerializeObject(str);
@@ -77,7 +84,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             return typedData;
         }
 
-        public static HttpRequestContext ToHttpContext (RpcHttp rpcHttp)
+        public static HttpRequestContext ToHttpContext (this RpcHttp rpcHttp)
         {
             var httpRequestContext =  new HttpRequestContext
             {
@@ -91,35 +98,40 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
             if (rpcHttp.Body != null)
             {
-                httpRequestContext.Body = ToObject(rpcHttp.Body);
+                httpRequestContext.Body = rpcHttp.Body.ToObject();
             }
 
             if (rpcHttp.RawBody != null)
             {
-                httpRequestContext.Body = ToObject(rpcHttp.RawBody);
+                httpRequestContext.Body = rpcHttp.RawBody.ToObject();
             }
 
             return httpRequestContext;
         }
 
-        public static RpcHttp ToRpcHttp (HttpResponseContext httpResponseContext)
+        public static RpcHttp ToRpcHttp (this HttpResponseContext httpResponseContext)
         {
             var rpcHttp = new RpcHttp
             {
-                StatusCode = httpResponseContext.StatusCode?? "200"
+                StatusCode = httpResponseContext.StatusCode
             };
 
             if (httpResponseContext.Body != null)
             {
-                rpcHttp.Body = httpResponseContext.Body;
+                rpcHttp.Body = httpResponseContext.Body.ToTypedData();
             }
 
-            rpcHttp.Headers.Add(httpResponseContext.Headers);
+            // Add all the headers. ContentType is separated for convenience
+            foreach (DictionaryEntry item in httpResponseContext.Headers)
+            {
+                rpcHttp.Headers.Add(item.Key.ToString(), item.Value.ToString());
+            }
+            rpcHttp.Headers.Add("content-type", httpResponseContext.ContentType);
 
             return rpcHttp;
         }
 
-        public static RpcException ToRpcException (Exception exception)
+        public static RpcException ToRpcException (this Exception exception)
         {
             return new RpcException
             {

@@ -9,7 +9,6 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Azure.Functions.PowerShell.Worker.Messaging;
 using Microsoft.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
-using System.Collections;
 using Microsoft.Azure.Functions.PowerShellWorker.Requests;
 using Microsoft.Extensions.Logging;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
@@ -33,10 +32,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
             StartupArguments startupArguments = StartupArguments.Parse(args);
 
+            // Initialize Rpc client, logger, and PowerShell
             s_client = new FunctionMessagingClient(startupArguments.Host, startupArguments.Port);
             s_Logger = new RpcLogger(s_client);
             InitPowerShell();
 
+            // Send StartStream message
             var streamingMessage = new StreamingMessage() {
                 RequestId = startupArguments.RequestId,
                 StartStream = new StartStream() { WorkerId = startupArguments.WorkerId }
@@ -49,28 +50,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         private static void InitPowerShell()
         {
-            // var events = new StreamEvents(s_Logger);
-            var host = new Host(s_Logger);
+            var host = new AzureFunctionsHost(s_Logger);
 
             s_runspace = RunspaceFactory.CreateRunspace(host);
             s_runspace.Open();
             s_ps = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault());
             s_ps.Runspace = s_runspace;
 
-            // Setup Stream event listeners
-            // s_ps.Streams.Debug.DataAdded += events.DebugDataAdded;
-            // s_ps.Streams.Error.DataAdded += events.ErrorDataAdded;
-            // s_ps.Streams.Information.DataAdded += events.InformationDataAdded;
-            // s_ps.Streams.Progress.DataAdded += events.ProgressDataAdded;
-            // s_ps.Streams.Verbose.DataAdded += events.VerboseDataAdded;
-            // s_ps.Streams.Warning.DataAdded += events.WarningDataAdded;
-
             s_ps.AddScript("$PSHOME");
             //s_ps.AddCommand("Set-ExecutionPolicy").AddParameter("ExecutionPolicy", ExecutionPolicy.Unrestricted).AddParameter("Scope", ExecutionPolicyScope.Process);
-            var result = s_ps.Invoke<string>();
-            s_ps.Commands.Clear();
+            s_ps.Invoke<string>();
 
-            Console.WriteLine(result[0]);
+            // Add HttpResponseContext namespace so users can reference
+            // HttpResponseContext without needing to specify the full namespace
+            s_ps.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").Invoke();
+            s_ps.Commands.Clear();
         }
 
         private static async Task ProcessEvent()

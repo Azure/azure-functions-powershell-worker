@@ -24,12 +24,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             {
                 Bindings.Add(binding.Key, binding.Value);
 
+                // Only add Out and InOut bindings to the OutputBindings
                 if (binding.Value.Direction != BindingInfo.Types.Direction.In)
                 {
                     if(binding.Value.Type == "http")
-                    {
-                        HttpOutputName = binding.Key;
-                    }if(binding.Value.Type == "http")
                     {
                         HttpOutputName = binding.Key;
                     }
