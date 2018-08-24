@@ -15,6 +15,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     public static class TypeExtensions
     {
+        public static HttpRequestContext ToHttpContext (this RpcHttp rpcHttp)
+        {
+            var httpRequestContext =  new HttpRequestContext
+            {
+                Method = rpcHttp.Method,
+                Url = rpcHttp.Url,
+                OriginalUrl = rpcHttp.Url,
+                Headers = rpcHttp.Headers,
+                Params = rpcHttp.Params,
+                Query = rpcHttp.Query
+            };
+
+            if (rpcHttp.Body != null)
+            {
+                httpRequestContext.Body = rpcHttp.Body.ToObject();
+            }
+
+            if (rpcHttp.RawBody != null)
+            {
+                httpRequestContext.Body = rpcHttp.RawBody.ToObject();
+            }
+
+            return httpRequestContext;
+        }
+
         public static object ToObject (this TypedData data)
         {
             if (data == null)
@@ -43,6 +68,38 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 default:
                     return new InvalidOperationException("Data Case was not set.");
             }
+        }
+
+        public static RpcException ToRpcException (this Exception exception)
+        {
+            return new RpcException
+            {
+                Message = exception?.Message,
+                Source = exception?.Source ?? "",
+                StackTrace = exception?.StackTrace ?? ""
+            };
+        }
+
+        public static RpcHttp ToRpcHttp (this HttpResponseContext httpResponseContext)
+        {
+            var rpcHttp = new RpcHttp
+            {
+                StatusCode = httpResponseContext.StatusCode
+            };
+
+            if (httpResponseContext.Body != null)
+            {
+                rpcHttp.Body = httpResponseContext.Body.ToTypedData();
+            }
+
+            // Add all the headers. ContentType is separated for convenience
+            foreach (DictionaryEntry item in httpResponseContext.Headers)
+            {
+                rpcHttp.Headers.Add(item.Key.ToString(), item.Value.ToString());
+            }
+            rpcHttp.Headers.Add("content-type", httpResponseContext.ContentType);
+
+            return rpcHttp;
         }
 
         public static TypedData ToTypedData(this object value)
@@ -84,63 +141,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 }
             }
             return typedData;
-        }
-
-        public static HttpRequestContext ToHttpContext (this RpcHttp rpcHttp)
-        {
-            var httpRequestContext =  new HttpRequestContext
-            {
-                Method = rpcHttp.Method,
-                Url = rpcHttp.Url,
-                OriginalUrl = rpcHttp.Url,
-                Headers = rpcHttp.Headers,
-                Params = rpcHttp.Params,
-                Query = rpcHttp.Query
-            };
-
-            if (rpcHttp.Body != null)
-            {
-                httpRequestContext.Body = rpcHttp.Body.ToObject();
-            }
-
-            if (rpcHttp.RawBody != null)
-            {
-                httpRequestContext.Body = rpcHttp.RawBody.ToObject();
-            }
-
-            return httpRequestContext;
-        }
-
-        public static RpcHttp ToRpcHttp (this HttpResponseContext httpResponseContext)
-        {
-            var rpcHttp = new RpcHttp
-            {
-                StatusCode = httpResponseContext.StatusCode
-            };
-
-            if (httpResponseContext.Body != null)
-            {
-                rpcHttp.Body = httpResponseContext.Body.ToTypedData();
-            }
-
-            // Add all the headers. ContentType is separated for convenience
-            foreach (DictionaryEntry item in httpResponseContext.Headers)
-            {
-                rpcHttp.Headers.Add(item.Key.ToString(), item.Value.ToString());
-            }
-            rpcHttp.Headers.Add("content-type", httpResponseContext.ContentType);
-
-            return rpcHttp;
-        }
-
-        public static RpcException ToRpcException (this Exception exception)
-        {
-            return new RpcException
-            {
-                Message = exception?.Message,
-                Source = exception?.Source ?? "",
-                StackTrace = exception?.StackTrace ?? ""
-            };
         }
     }
 }

@@ -13,46 +13,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     public class RpcLogger : ILogger
     {
-        FunctionMessagingClient _Client;
+        FunctionMessagingClient _client;
         string _invocationId = "";
         string _requestId = "";
 
         public RpcLogger(FunctionMessagingClient client)
         {
-            _Client = client;
-        }
-
-        public void SetContext(string requestId, string invocationId)
-        {
-            _requestId = requestId;
-            _invocationId = invocationId;
+            _client = client;
         }
 
         public IDisposable BeginScope<TState>(TState state) =>
             throw new NotImplementedException();
-
-        public bool IsEnabled(LogLevel logLevel) =>
-            throw new NotImplementedException();
-
-        public async void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
-        {
-            if (_Client != null)
-            {
-                var logMessage = new StreamingMessage
-                {
-                    RequestId = _requestId,
-                    RpcLog = new RpcLog()
-                    {
-                        Exception = exception?.ToRpcException(),
-                        InvocationId = _invocationId,
-                        Level = ConvertLogLevel(logLevel),
-                        Message = formatter(state, exception)
-                    }
-                };
-
-                await _Client.WriteAsync(logMessage);
-            }
-        }
 
         public static RpcLog.Types.Level ConvertLogLevel(LogLevel logLevel)
         {
@@ -73,6 +44,35 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 default:
                     return RpcLog.Types.Level.None;
             }
+        }
+
+        public bool IsEnabled(LogLevel logLevel) =>
+            throw new NotImplementedException();
+
+        public async void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        {
+            if (_client != null)
+            {
+                var logMessage = new StreamingMessage
+                {
+                    RequestId = _requestId,
+                    RpcLog = new RpcLog()
+                    {
+                        Exception = exception?.ToRpcException(),
+                        InvocationId = _invocationId,
+                        Level = ConvertLogLevel(logLevel),
+                        Message = formatter(state, exception)
+                    }
+                };
+
+                await _client.WriteAsync(logMessage);
+            }
+        }
+
+        public void SetContext(string requestId, string invocationId)
+        {
+            _requestId = requestId;
+            _invocationId = invocationId;
         }
     }
 }

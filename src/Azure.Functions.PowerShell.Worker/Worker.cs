@@ -17,40 +17,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     public static class Worker
     {
+        static readonly FunctionLoader s_functionLoader = new FunctionLoader();
         static FunctionMessagingClient s_client;
+        static RpcLogger s_logger;
         static System.Management.Automation.PowerShell s_ps;
         static Runspace s_runspace;
-        static readonly FunctionLoader s_FunctionLoader = new FunctionLoader();
-        static RpcLogger s_Logger;
-
-        public async static Task Main(string[] args)
-        {
-            if (args.Length != 10)
-            {
-                Console.WriteLine("usage --host <host> --port <port> --workerId <workerId> --requestId <requestId> --grpcMaxMessageLength <length>");
-                return;
-            }
-            StartupArguments startupArguments = StartupArguments.Parse(args);
-
-            // Initialize Rpc client, logger, and PowerShell
-            s_client = new FunctionMessagingClient(startupArguments.Host, startupArguments.Port);
-            s_Logger = new RpcLogger(s_client);
-            InitPowerShell();
-
-            // Send StartStream message
-            var streamingMessage = new StreamingMessage() {
-                RequestId = startupArguments.RequestId,
-                StartStream = new StartStream() { WorkerId = startupArguments.WorkerId }
-            };
-
-            await s_client.WriteAsync(streamingMessage);
-
-            await ProcessEvent();
-        }
 
         static void InitPowerShell()
         {
-            var host = new AzureFunctionsHost(s_Logger);
+            var host = new AzureFunctionsHost(s_logger);
 
             s_runspace = RunspaceFactory.CreateRunspace(host);
             s_runspace.Open();
@@ -67,6 +42,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             s_ps.Commands.Clear();
         }
 
+        public async static Task Main(string[] args)
+        {
+            if (args.Length != 10)
+            {
+                Console.WriteLine("usage --host <host> --port <port> --workerId <workerId> --requestId <requestId> --grpcMaxMessageLength <length>");
+                return;
+            }
+            StartupArguments startupArguments = StartupArguments.Parse(args);
+
+            // Initialize Rpc client, logger, and PowerShell
+            s_client = new FunctionMessagingClient(startupArguments.Host, startupArguments.Port);
+            s_logger = new RpcLogger(s_client);
+            InitPowerShell();
+
+            // Send StartStream message
+            var streamingMessage = new StreamingMessage() {
+                RequestId = startupArguments.RequestId,
+                StartStream = new StartStream() { WorkerId = startupArguments.WorkerId }
+            };
+
+            await s_client.WriteAsync(streamingMessage);
+
+            await ProcessEvent();
+        }
+
         static async Task ProcessEvent()
         {
             using (s_client)
@@ -80,25 +80,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                         case StreamingMessage.ContentOneofCase.WorkerInitRequest:
                             response = HandleWorkerInitRequest.Invoke(
                                 s_ps,
-                                s_FunctionLoader,
+                                s_functionLoader,
                                 message,
-                                s_Logger);
+                                s_logger);
                             break;
 
                         case StreamingMessage.ContentOneofCase.FunctionLoadRequest:
                             response = HandleFunctionLoadRequest.Invoke(
                                 s_ps,
-                                s_FunctionLoader,
+                                s_functionLoader,
                                 message,
-                                s_Logger);
+                                s_logger);
                             break;
 
                         case StreamingMessage.ContentOneofCase.InvocationRequest:
                             response = HandleInvocationRequest.Invoke(
                                 s_ps,
-                                s_FunctionLoader,
+                                s_functionLoader,
                                 message,
-                                s_Logger);
+                                s_logger);
                             break;
 
                         default:

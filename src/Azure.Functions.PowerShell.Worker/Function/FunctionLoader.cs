@@ -11,6 +11,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     public class FunctionLoader
     {
         readonly MapField<string, Function> _LoadedFunctions = new MapField<string, Function>();
+        
+        public (string ScriptPath, string EntryPoint) GetFunc(string functionId) => 
+            (_LoadedFunctions[functionId].ScriptPath, _LoadedFunctions[functionId].EntryPoint);
+        
+        public FunctionInfo GetInfo(string functionId) => _LoadedFunctions[functionId].Info;
+
         public void Load(string functionId, RpcFunctionMetadata metadata)
         {
             // TODO: catch "load" issues at "func start" time.
@@ -22,16 +28,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 EntryPoint = metadata.EntryPoint
             });
         }
-
-        public FunctionInfo GetInfo(string functionId) => _LoadedFunctions[functionId].Info;
-        public (string ScriptPath, string EntryPoint) GetFunc(string functionId) => 
-            (_LoadedFunctions[functionId].ScriptPath, _LoadedFunctions[functionId].EntryPoint);
     }
 
     public class Function
     {
+        public string EntryPoint {get; internal set;}
         public FunctionInfo Info {get; internal set;}
         public string ScriptPath {get; internal set;}
-        public string EntryPoint {get; internal set;}
     }
 }

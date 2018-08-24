@@ -24,12 +24,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <summary>
         /// The private reference of the logger.
         /// </summary>
-        RpcLogger _logger;
+        RpcLogger _logger { get; set; }
 
         /// <summary>
         /// An instance of the PSRawUserInterface object.
         /// </summary>
-        RawUserInterface RawUi = new RawUserInterface();
+        readonly RawUserInterface RawUi = new RawUserInterface();
 
         /// <summary>
         /// Gets an instance of the PSRawUserInterface object for this host
