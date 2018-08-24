@@ -16,35 +16,35 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
     /// applications. Not all members are implemented. Those that aren't throw a
     /// NotImplementedException.
     /// </summary>
-    internal class AzureFunctionsHost : PSHost
+    class AzureFunctionsHost : PSHost
     {
         /// <summary>
         /// The private reference of the logger.
         /// </summary>
-        private RpcLogger _logger;
+        RpcLogger _logger;
 
         /// <summary>
         /// Creates an instance of the PSHostUserInterface object for this
         /// application.
         /// </summary>
-        private HostUserInterface HostUI;
+        HostUserInterface HostUI;
 
         /// <summary>
         /// The culture info of the thread that created
         /// this object.
         /// </summary>
-        private CultureInfo originalCultureInfo = System.Threading.Thread.CurrentThread.CurrentCulture;
+        CultureInfo originalCultureInfo = System.Threading.Thread.CurrentThread.CurrentCulture;
 
         /// <summary>
         /// The UI culture info of the thread that created
         /// this object.
         /// </summary>
-        private CultureInfo originalUICultureInfo = System.Threading.Thread.CurrentThread.CurrentUICulture;
+        CultureInfo originalUICultureInfo = System.Threading.Thread.CurrentThread.CurrentUICulture;
 
         /// <summary>
         /// The identifier of the PSHost implementation.
         /// </summary>
-        private Guid Id = Guid.NewGuid();
+        Guid Id = Guid.NewGuid();
 
         /// <summary>
         /// Initializes a new instance of the Host class. Keep
@@ -99,17 +99,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// Not implemented by this class. The call fails with an exception.
         /// </summary>
         public override void EnterNestedPrompt()
-        {
-            throw new NotImplementedException("The method or operation is not implemented.");
-        }
+            => throw new NotImplementedException("The method or operation is not implemented.");
 
         /// <summary>
         /// Not implemented by this class. The call fails with an exception.
         /// </summary>
         public override void ExitNestedPrompt()
-        {
-            throw new NotImplementedException("The method or operation is not implemented.");
-        }
+            => throw new NotImplementedException("The method or operation is not implemented.");
 
         /// <summary>
         /// This API is called before an external application process is started. Typically
@@ -139,9 +135,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// </summary>
         /// <param name="exitCode">The exit code that the host application should use.</param>
         public override void SetShouldExit(int exitCode)
-        {
-            throw new NotImplementedException("The method or operation is not implemented.");
-        }
+            => throw new NotImplementedException("The method or operation is not implemented.");
     }
 }
 

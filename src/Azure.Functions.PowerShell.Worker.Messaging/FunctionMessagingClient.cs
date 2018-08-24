@@ -14,9 +14,9 @@ namespace Azure.Functions.PowerShell.Worker.Messaging
 {
     public class FunctionMessagingClient : IDisposable
     {
-        public bool isDisposed = false;
-        private AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
-        private SemaphoreSlim _writeStreamHandle = new SemaphoreSlim(1, 1);
+        public bool isDisposed;
+        AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
+        SemaphoreSlim _writeStreamHandle = new SemaphoreSlim(1, 1);
 
         public FunctionMessagingClient(string host, int port)
         {
@@ -41,19 +41,11 @@ namespace Azure.Functions.PowerShell.Worker.Messaging
             }
         }
 
-        public async Task<bool> MoveNext()
-        {
-            if(isDisposed) return false;
+        public async Task<bool> MoveNext() =>
+            !isDisposed && await _call.ResponseStream.MoveNext(CancellationToken.None);
 
-            return await _call.ResponseStream.MoveNext(CancellationToken.None);
-        }
-
-        public StreamingMessage GetCurrentMessage()
-        {
-            if(isDisposed) return null;
-
-            return _call.ResponseStream.Current;
-        }
+        public StreamingMessage GetCurrentMessage() =>
+            isDisposed ? null : _call.ResponseStream.Current;
 
         public void Dispose()
         {

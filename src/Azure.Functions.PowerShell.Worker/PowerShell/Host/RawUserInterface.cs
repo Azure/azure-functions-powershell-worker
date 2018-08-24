@@ -14,7 +14,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
     /// class are implemented. More complex methods are not implemented and will
     /// throw a NotImplementedException.
     /// </summary>
-    internal class RawUserInterface : PSHostRawUserInterface
+    class RawUserInterface : PSHostRawUserInterface
     {
         /// <summary>
         /// Gets or sets the background color of text to be written.

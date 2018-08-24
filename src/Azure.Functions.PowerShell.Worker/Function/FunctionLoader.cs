@@ -10,7 +10,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     public class FunctionLoader
     {
-        private readonly MapField<string, Function> _LoadedFunctions = new MapField<string, Function>();
+        readonly MapField<string, Function> _LoadedFunctions = new MapField<string, Function>();
         public void Load(string functionId, RpcFunctionMetadata metadata)
         {
             // TODO: catch "load" issues at "func start" time.

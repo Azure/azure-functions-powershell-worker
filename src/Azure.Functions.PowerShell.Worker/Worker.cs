@@ -15,13 +15,14 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
-    public class Worker
+    public static class Worker
     {
-        private static FunctionMessagingClient s_client;
-        private static System.Management.Automation.PowerShell s_ps;
-        private static Runspace s_runspace;
-        private static FunctionLoader s_FunctionLoader = new FunctionLoader();
-        private static RpcLogger s_Logger;
+        static FunctionMessagingClient s_client;
+        static System.Management.Automation.PowerShell s_ps;
+        static Runspace s_runspace;
+        static readonly FunctionLoader s_FunctionLoader = new FunctionLoader();
+        static RpcLogger s_Logger;
+
         public async static Task Main(string[] args)
         {
             if (args.Length != 10)
@@ -47,7 +48,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             await ProcessEvent();
         }
 
-        private static void InitPowerShell()
+        static void InitPowerShell()
         {
             var host = new AzureFunctionsHost(s_Logger);
 
@@ -66,7 +67,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             s_ps.Commands.Clear();
         }
 
-        private static async Task ProcessEvent()
+        static async Task ProcessEvent()
         {
             using (s_client)
             {

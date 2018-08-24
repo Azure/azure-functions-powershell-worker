@@ -21,7 +21,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         // It logs the item that comes and stores it as the $return out binding.
         // The last item stored as $return will be returned to the function host.
 
-        private static string s_LogAndSetReturnValueScript = @"
+        static string s_LogAndSetReturnValueScript = @"
 param([Parameter(ValueFromPipeline=$true)]$return)
 
 $return | Out-Default
@@ -101,7 +101,7 @@ Set-Variable -Name '$return' -Value $return -Scope global
             }
         }
 
-        private static string BuildBindingHashtableScript(IDictionary<string, BindingInfo> outBindings)
+        static string BuildBindingHashtableScript(IDictionary<string, BindingInfo> outBindings)
         {
             // Since all of the out bindings are stored in variables at this point,
             // we must construct a script that will return those output bindings in a hashtable
@@ -129,7 +129,7 @@ Set-Variable -Name '$return' -Value $return -Scope global
         }
 
         // TODO: make sure this completely cleans up the runspace
-        private static void CleanupRunspace(this PowerShell ps)
+        static void CleanupRunspace(this PowerShell ps)
         {
             ps.Commands.Clear();
         }

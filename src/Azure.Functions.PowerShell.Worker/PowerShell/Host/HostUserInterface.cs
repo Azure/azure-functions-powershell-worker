@@ -19,17 +19,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
     /// applications. Few members are actually implemented. Those that aren't throw a
     /// NotImplementedException.
     /// </summary>
-    internal class HostUserInterface : PSHostUserInterface
+    class HostUserInterface : PSHostUserInterface
     {
         /// <summary>
         /// The private reference of the logger.
         /// </summary>
-        private RpcLogger _logger;
+        RpcLogger _logger;
 
         /// <summary>
         /// An instance of the PSRawUserInterface object.
         /// </summary>
-        private RawUserInterface RawUi = new RawUserInterface();
+        RawUserInterface RawUi = new RawUserInterface();
 
         /// <summary>
         /// Gets an instance of the PSRawUserInterface object for this host
@@ -50,10 +50,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <param name="descriptions">A collection of FieldDescription objects that 
         /// describe each field of the prompt.</param>
         /// <returns>Throws a NotImplementedException exception because we don't need a prompt.</returns>
-        public override Dictionary<string, PSObject> Prompt(string caption, string message, System.Collections.ObjectModel.Collection<FieldDescription> descriptions)
-        {
+        public override Dictionary<string, PSObject> Prompt(string caption, string message, System.Collections.ObjectModel.Collection<FieldDescription> descriptions) =>
             throw new NotImplementedException("The method or operation is not implemented.");
-        }
 
         /// <summary>
         /// Provides a set of choices that enable the user to choose a single option from a set of options. 
@@ -65,10 +63,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <param name="defaultChoice">The index of the label in the Choices parameter 
         /// collection. To indicate no default choice, set to -1.</param>
         /// <returns>Throws a NotImplementedException exception because we don't need a prompt.</returns>
-        public override int PromptForChoice(string caption, string message, System.Collections.ObjectModel.Collection<ChoiceDescription> choices, int defaultChoice)
-        {
+        public override int PromptForChoice(string caption, string message, System.Collections.ObjectModel.Collection<ChoiceDescription> choices, int defaultChoice) =>
             throw new NotImplementedException("The method or operation is not implemented.");
-        }
 
         /// <summary>
         /// Prompts the user for credentials with a specified prompt window caption, 
@@ -79,10 +75,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <param name="userName">The user name whose credential is to be prompted for.</param>
         /// <param name="targetName">The name of the target for which the credential is collected.</param>
         /// <returns>Throws a NotImplementedException exception because we don't need a prompt.</returns>
-        public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName)
-        {
+        public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName) =>
             throw new NotImplementedException("The method or operation is not implemented.");
-        }
 
         /// <summary>
         /// Prompts the user for credentials by using a specified prompt window caption, 
@@ -98,40 +92,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <param name="options">A PSCredentialUIOptions constant that identifies the UI 
         /// behavior when it gathers the credentials.</param>
         /// <returns>Throws a NotImplementedException exception because we don't need a prompt.</returns>
-        public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName, PSCredentialTypes allowedCredentialTypes, PSCredentialUIOptions options)
-        {
+        public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName, PSCredentialTypes allowedCredentialTypes, PSCredentialUIOptions options) =>
             throw new NotImplementedException("The method or operation is not implemented.");
-        }
 
         /// <summary>
         /// Reads characters that are entered by the user until a newline 
         /// (carriage return) is encountered.
         /// </summary>
         /// <returns>Throws a NotImplemented exception because we are in a non-interactive experience.</returns>
-        public override string ReadLine()
-        {
+        public override string ReadLine() =>
             throw new NotImplementedException("The method or operation is not implemented.");
-        }
 
         /// <summary>
         /// Reads characters entered by the user until a newline (carriage return) 
         /// is encountered and returns the characters as a secure string.
         /// </summary>
         /// <returns>Throws a NotImplemented exception because we are in a non-interactive experience.</returns>
-        public override System.Security.SecureString ReadLineAsSecureString()
-        {
+        public override System.Security.SecureString ReadLineAsSecureString() =>
             throw new NotImplementedException("The method or operation is not implemented.");
-        }
 
         /// <summary>
         /// Writes a new line character (carriage return) to the output display 
         /// of the host.
         /// </summary>
         /// <param name="value">The characters to be written.</param>
-        public override void Write(string value)
-        {
-            _logger.LogInformation(value);
-        }
+        public override void Write(string value) => _logger.LogInformation(value);
 
         /// <summary>
         /// Writes characters to the output display of the host with possible 
@@ -140,48 +125,37 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <param name="foregroundColor">The color of the characters.</param>
         /// <param name="backgroundColor">The backgound color to use.</param>
         /// <param name="value">The characters to be written.</param>
-        public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value)
-        {
-            // Just ignore the colors.
+        public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) =>
             _logger.LogInformation(value);
-        }
 
         /// <summary>
         /// Writes a debug message to the output display of the host.
         /// </summary>
         /// <param name="message">The debug message that is displayed.</param>
-        public override void WriteDebugLine(string message)
-        {
+        public override void WriteDebugLine(string message) =>
             _logger.LogDebug(String.Format(CultureInfo.CurrentCulture, "DEBUG: {0}", message));
-        }
 
         /// <summary>
         /// Writes an error message to the output display of the host.
         /// </summary>
         /// <param name="value">The error message that is displayed.</param>
-        public override void WriteErrorLine(string value)
-        {
+        public override void WriteErrorLine(string value) =>
             _logger.LogError(String.Format(CultureInfo.CurrentCulture, "ERROR: {0}", value));
-        }
 
         /// <summary>
         /// Writes a newline character (carriage return) 
         /// to the output display of the host. 
         /// </summary>
-        public override void WriteLine()
-        {
-            //do nothing because we don't need to log empty lines
-        }
+        public override void WriteLine() {} //do nothing because we don't need to log empty lines
 
         /// <summary>
         /// Writes a line of characters to the output display of the host 
         /// and appends a newline character(carriage return). 
         /// </summary>
         /// <param name="value">The line to be written.</param>
-        public override void WriteLine(string value)
-        {
+        public override void WriteLine(string value) =>
             _logger.LogInformation(value);
-        }
+
 
         /// <summary>
         /// Writes a line of characters to the output display of the host 
@@ -190,39 +164,30 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// <param name="foregroundColor">The forground color of the display. </param>
         /// <param name="backgroundColor">The background color of the display. </param>
         /// <param name="value">The line to be written.</param>
-        public override void WriteLine(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value)
-        {
-            // Write to the log, ignore the colors
+        public override void WriteLine(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) =>
             _logger.LogInformation(value);
-        }
 
         /// <summary>
         /// Writes a progress report to the output display of the host.
         /// </summary>
         /// <param name="sourceId">Unique identifier of the source of the record. </param>
         /// <param name="record">A ProgressReport object.</param>
-        public override void WriteProgress(long sourceId, ProgressRecord record)
-        {
+        public override void WriteProgress(long sourceId, ProgressRecord record) =>
             _logger.LogTrace(String.Format(CultureInfo.CurrentCulture, "PROGRESS: {0}", record.StatusDescription));
-        }
 
         /// <summary>
         /// Writes a verbose message to the output display of the host.
         /// </summary>
         /// <param name="message">The verbose message that is displayed.</param>
-        public override void WriteVerboseLine(string message)
-        {
+        public override void WriteVerboseLine(string message) =>
             _logger.LogTrace(String.Format(CultureInfo.CurrentCulture, "VERBOSE: {0}", message));
-        }
 
         /// <summary>
         /// Writes a warning message to the output display of the host.
         /// </summary>
         /// <param name="message">The warning message that is displayed.</param>
-        public override void WriteWarningLine(string message)
-        {
+        public override void WriteWarningLine(string message) =>
             _logger.LogWarning(String.Format(CultureInfo.CurrentCulture, "WARNING: {0}", message));
-        }
     }
 }
 

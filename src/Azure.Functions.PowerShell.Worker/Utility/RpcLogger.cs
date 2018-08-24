@@ -13,9 +13,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     public class RpcLogger : ILogger
     {
-        private FunctionMessagingClient _Client;
-        private string _invocationId = "";
-        private string _requestId = "";
+        FunctionMessagingClient _Client;
+        string _invocationId = "";
+        string _requestId = "";
 
         public RpcLogger(FunctionMessagingClient client)
         {
@@ -28,15 +28,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             _invocationId = invocationId;
         }
 
-        public IDisposable BeginScope<TState>(TState state)
-        {
+        public IDisposable BeginScope<TState>(TState state) =>
             throw new NotImplementedException();
-        }
 
-        public bool IsEnabled(LogLevel logLevel)
-        {
+        public bool IsEnabled(LogLevel logLevel) =>
             throw new NotImplementedException();
-        }
 
         public async void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
@@ -47,7 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     RequestId = _requestId,
                     RpcLog = new RpcLog()
                     {
-                        Exception = exception == null ? null : exception.ToRpcException(),
+                        Exception = exception?.ToRpcException(),
                         InvocationId = _invocationId,
                         Level = ConvertLogLevel(logLevel),
                         Message = formatter(state, exception)
