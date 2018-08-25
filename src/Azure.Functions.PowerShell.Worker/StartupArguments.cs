@@ -17,6 +17,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         public static StartupArguments Parse(string[] args)
         {
+            if (args.Length != 10)
+            {
+                Console.WriteLine("usage --host <host> --port <port> --workerId <workerId> --requestId <requestId> --grpcMaxMessageLength <length>");
+                throw new InvalidOperationException("Incorrect startup arguments were given.");
+            }
+
             StartupArguments arguments = new StartupArguments();
             for (int i = 1; i < 10; i+=2)
             {

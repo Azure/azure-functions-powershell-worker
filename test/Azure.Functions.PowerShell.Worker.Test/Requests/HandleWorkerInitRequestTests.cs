@@ -1,14 +1,10 @@
-using System;
 using Microsoft.Azure.Functions.PowerShellWorker.Requests;
+using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Xunit;
 
 namespace Azure.Functions.PowerShell.Worker.Test
 {
-    using System.Management.Automation;
-    using System.Management.Automation.Runspaces;
-    using Microsoft.Azure.Functions.PowerShellWorker.Utility;
-
     public class HandleWorkerInitRequestTests
     {
         [Fact]

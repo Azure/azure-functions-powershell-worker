@@ -15,13 +15,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     public static class TypeExtensions
     {
-        public static HttpRequestContext ToHttpContext (this RpcHttp rpcHttp)
+        static HttpRequestContext ToHttpRequestContext (this RpcHttp rpcHttp)
         {
             var httpRequestContext =  new HttpRequestContext
             {
                 Method = rpcHttp.Method,
                 Url = rpcHttp.Url,
-                OriginalUrl = rpcHttp.Url,
                 Headers = rpcHttp.Headers,
                 Params = rpcHttp.Params,
                 Query = rpcHttp.Query
@@ -34,7 +33,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
             if (rpcHttp.RawBody != null)
             {
-                httpRequestContext.Body = rpcHttp.RawBody.ToObject();
+                httpRequestContext.RawBody = rpcHttp.RawBody.ToObject();
             }
 
             return httpRequestContext;
@@ -52,15 +51,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 case TypedData.DataOneofCase.Json:
                     return JsonConvert.DeserializeObject<Hashtable>(data.Json);
                 case TypedData.DataOneofCase.Bytes:
-                    return data.Bytes;
+                    return data.Bytes.ToByteArray();
                 case TypedData.DataOneofCase.Double:
                     return data.Double;
                 case TypedData.DataOneofCase.Http:
-                    return data.Http.ToHttpContext();
+                    return data.Http.ToHttpRequestContext();
                 case TypedData.DataOneofCase.Int:
                     return data.Int;
                 case TypedData.DataOneofCase.Stream:
-                    return data.Stream;
+                    return data.Stream.ToByteArray();
                 case TypedData.DataOneofCase.String:
                     return data.String;
                 case TypedData.DataOneofCase.None:
@@ -80,7 +79,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             };
         }
 
-        public static RpcHttp ToRpcHttp (this HttpResponseContext httpResponseContext)
+        static RpcHttp ToRpcHttp (this HttpResponseContext httpResponseContext)
         {
             var rpcHttp = new RpcHttp
             {
@@ -97,7 +96,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             {
                 rpcHttp.Headers.Add(item.Key.ToString(), item.Value.ToString());
             }
-            rpcHttp.Headers.Add("content-type", httpResponseContext.ContentType);
+
+            // Allow the user to set content-type in the Headers
+            if (!rpcHttp.Headers.ContainsKey("content-type"))
+            {
+                rpcHttp.Headers.Add("content-type", httpResponseContext.ContentType);
+            }
 
             return rpcHttp;
         }
@@ -111,29 +115,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 return typedData;
             }
 
-            if (LanguagePrimitives.TryConvertTo<byte[]>(
-                        value, out byte[] arr))
+            if (LanguagePrimitives.TryConvertTo(value, out byte[] arr))
             {
                 typedData.Bytes = ByteString.CopyFrom(arr);
             }
-            else if(LanguagePrimitives.TryConvertTo<HttpResponseContext>(
-                        value, out HttpResponseContext http))
+            else if(LanguagePrimitives.TryConvertTo(value, out HttpResponseContext http))
             {
                 typedData.Http = http.ToRpcHttp();
             }
-            else if (LanguagePrimitives.TryConvertTo<Hashtable>(
-                        value, out Hashtable hashtable))
+            else if (LanguagePrimitives.TryConvertTo(value, out Hashtable hashtable))
             {
                     typedData.Json = JsonConvert.SerializeObject(hashtable);
             }
-            else if (LanguagePrimitives.TryConvertTo<string>(
-                        value, out string str))
+            else if (LanguagePrimitives.TryConvertTo(value, out string str))
             {
                 // Attempt to parse the string into json. If it fails,
                 // fallback to storing as a string
                 try
                 {
-                    typedData.Json = JsonConvert.SerializeObject(str);
+                    JsonConvert.DeserializeObject(str);
+                    typedData.Json = str;
                 }
                 catch
                 {

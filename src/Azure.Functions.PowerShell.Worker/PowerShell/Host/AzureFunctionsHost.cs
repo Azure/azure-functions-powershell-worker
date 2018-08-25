@@ -16,7 +16,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
     /// applications. Not all members are implemented. Those that aren't throw a
     /// NotImplementedException.
     /// </summary>
-    class AzureFunctionsHost : PSHost
+    class AzureFunctionsPowerShellHost : PSHost
     {
         /// <summary>
         /// The private reference of the logger.
@@ -82,7 +82,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host
         /// </summary>
         public override Version Version => new Version(1, 0, 0, 0);
 
-        public AzureFunctionsHost(RpcLogger logger)
+        public AzureFunctionsPowerShellHost(RpcLogger logger)
         {
             _logger = logger;
             HostUI = new HostUserInterface(logger);

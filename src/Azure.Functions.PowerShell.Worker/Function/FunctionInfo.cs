@@ -10,18 +10,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     public class FunctionInfo
     {
-        public MapField<string, BindingInfo> Bindings {get; private set;}
-        public string Directory {get; private set;}
-        public string HttpOutputName {get; private set;}
-        public string Name {get; private set;}
-        public MapField<string, BindingInfo> OutputBindings {get; private set;}
+        public string Directory {get; set;}
+        public string HttpOutputName {get; set;}
+        public string Name {get; set;}
+        public MapField<string, BindingInfo> Bindings { get; } = new MapField<string, BindingInfo>();
+        public MapField<string, BindingInfo> OutputBindings { get; } = new MapField<string, BindingInfo>();
+
+        public FunctionInfo() { }
 
         public FunctionInfo(RpcFunctionMetadata metadata)
         {
             Name = metadata.Name;
             Directory = metadata.Directory;
-            Bindings = new MapField<string, BindingInfo>();
-            OutputBindings = new MapField<string, BindingInfo>();
             HttpOutputName = "";
 
             foreach (var binding in metadata.Bindings)

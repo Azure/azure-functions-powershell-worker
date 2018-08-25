@@ -25,7 +25,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         static void InitPowerShell()
         {
-            var host = new AzureFunctionsHost(s_logger);
+            var host = new AzureFunctionsPowerShellHost(s_logger);
 
             s_runspace = RunspaceFactory.CreateRunspace(host);
             s_runspace.Open();
@@ -44,11 +44,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         public async static Task Main(string[] args)
         {
-            if (args.Length != 10)
-            {
-                Console.WriteLine("usage --host <host> --port <port> --workerId <workerId> --requestId <requestId> --grpcMaxMessageLength <length>");
-                return;
-            }
             StartupArguments startupArguments = StartupArguments.Parse(args);
 
             // Initialize Rpc client, logger, and PowerShell
