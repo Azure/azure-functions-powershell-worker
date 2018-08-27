@@ -1,0 +1,8 @@
+{
+    "Description":{
+        "Language":"powershell",
+        "Extension":".ps1",
+        "DefaultExecutablePath":"dotnet",
+        "DefaultWorkerPath":"Azure.Functions.PowerShell.Worker.dll"
+    }
+}
