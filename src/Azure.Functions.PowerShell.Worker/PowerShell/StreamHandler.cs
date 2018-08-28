@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(data is PSDataCollection<DebugRecord> records)
             {
-                _logger.LogDebug($"DEBUG: {records[0].Message}");
+                _logger.LogDebug($"DEBUG: {records[e.Index].Message}");
             }
         }
 
@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(data is PSDataCollection<ErrorRecord> records)
             {
-                _logger.LogError(records[0].Exception, $"ERROR: {records[0].Exception.Message}");
+                _logger.LogError(records[e.Index].Exception, $"ERROR: {records[e.Index].Exception.Message}");
             }
         }
 
@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(data is PSDataCollection<InformationRecord> records)
             {
-                _logger.LogInformation($"INFORMATION: {records[0].MessageData}");
+                _logger.LogInformation($"INFORMATION: {records[e.Index].MessageData}");
             }
         }
 
@@ -47,7 +47,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(data is PSDataCollection<ProgressRecord> records)
             {
-                _logger.LogTrace($"PROGRESS: {records[0].StatusDescription}");
+                _logger.LogTrace($"PROGRESS: {records[e.Index].StatusDescription}");
             }
         }
 
@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(data is PSDataCollection<VerboseRecord> records)
             {
-                _logger.LogTrace($"VERBOSE: {records[0].Message}");
+                _logger.LogTrace($"VERBOSE: {records[e.Index].Message}");
             }
         }
 
