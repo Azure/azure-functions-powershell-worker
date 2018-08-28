@@ -19,51 +19,51 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _logger = logger;
         }
 
-        public void DebugDataAdded(object data, DataAddedEventArgs e)
+        public void DebugDataAdding(object data, DataAddingEventArgs e)
         {
-            if(data is PSDataCollection<DebugRecord> records)
+            if(e.ItemAdded is DebugRecord record)
             {
-                _logger.LogDebug($"DEBUG: {records[e.Index].Message}");
+                _logger.LogDebug($"DEBUG: {record.Message}");
             }
         }
 
-        public void ErrorDataAdded(object data, DataAddedEventArgs e)
+        public void ErrorDataAdding(object data, DataAddingEventArgs e)
         {
-            if(data is PSDataCollection<ErrorRecord> records)
+            if(e.ItemAdded is ErrorRecord record)
             {
-                _logger.LogError(records[e.Index].Exception, $"ERROR: {records[e.Index].Exception.Message}");
+                _logger.LogError(record.Exception, $"ERROR: {record.Exception.Message}");
             }
         }
 
-        public void InformationDataAdded(object data, DataAddedEventArgs e)
+        public void InformationDataAdding(object data, DataAddingEventArgs e)
         {
-            if(data is PSDataCollection<InformationRecord> records)
+            if(e.ItemAdded is InformationRecord record)
             {
-                _logger.LogInformation($"INFORMATION: {records[e.Index].MessageData}");
+                _logger.LogInformation($"INFORMATION: {record.MessageData}");
             }
         }
 
-        public void ProgressDataAdded(object data, DataAddedEventArgs e)
+        public void ProgressDataAdding(object data, DataAddingEventArgs e)
         {
-            if(data is PSDataCollection<ProgressRecord> records)
+            if(e.ItemAdded is ProgressRecord record)
             {
-                _logger.LogTrace($"PROGRESS: {records[e.Index].StatusDescription}");
+                _logger.LogTrace($"PROGRESS: {record.StatusDescription}");
             }
         }
 
-        public void VerboseDataAdded(object data, DataAddedEventArgs e)
+        public void VerboseDataAdding(object data, DataAddingEventArgs e)
         {
-            if(data is PSDataCollection<VerboseRecord> records)
+            if(e.ItemAdded is VerboseRecord record)
             {
-                _logger.LogTrace($"VERBOSE: {records[e.Index].Message}");
+                _logger.LogTrace($"VERBOSE: {record.Message}");
             }
         }
 
-        public void WarningDataAdded(object data, DataAddedEventArgs e)
+        public void WarningDataAdding(object data, DataAddingEventArgs e)
         {
-            if(data is PSDataCollection<WarningRecord> records)
+            if(e.ItemAdded is WarningRecord record)
             {
-                _logger.LogWarning($"WARNING: {records[e.Index].Message}");
+                _logger.LogWarning($"WARNING: {record.Message}");
             }
         }
     }

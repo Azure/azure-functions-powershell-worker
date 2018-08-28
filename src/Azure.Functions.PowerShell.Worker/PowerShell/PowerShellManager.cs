@@ -48,12 +48,12 @@ Set-Variable -Name '$return' -Value $return -Scope global
 
             // Setup Stream event listeners
             var streamHandler = new StreamHandler(logger);
-            pwsh.Streams.Debug.DataAdded += streamHandler.DebugDataAdded;
-            pwsh.Streams.Error.DataAdded += streamHandler.ErrorDataAdded;
-            pwsh.Streams.Information.DataAdded += streamHandler.InformationDataAdded;
-            pwsh.Streams.Progress.DataAdded += streamHandler.ProgressDataAdded;
-            pwsh.Streams.Verbose.DataAdded += streamHandler.VerboseDataAdded;
-            pwsh.Streams.Warning.DataAdded += streamHandler.WarningDataAdded;
+            pwsh.Streams.Debug.DataAdding += streamHandler.DebugDataAdding;
+            pwsh.Streams.Error.DataAdding += streamHandler.ErrorDataAdding;
+            pwsh.Streams.Information.DataAdding += streamHandler.InformationDataAdding;
+            pwsh.Streams.Progress.DataAdding += streamHandler.ProgressDataAdding;
+            pwsh.Streams.Verbose.DataAdding += streamHandler.VerboseDataAdding;
+            pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
 
             manager.ResetRunspace();
 
