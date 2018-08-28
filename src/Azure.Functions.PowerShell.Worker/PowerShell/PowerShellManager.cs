@@ -12,6 +12,7 @@ using System.Text;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Microsoft.Extensions.Logging;
+using System.Management.Automation.Runspaces;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
@@ -31,32 +32,41 @@ $return | Out-Default
 Set-Variable -Name '$return' -Value $return -Scope global
 ";
 
+        readonly static string s_SetExecutionPolicyOnWindowsScript = @"
+if ($IsWindows)
+{
+    Set-ExecutionPolicy Unrestricted
+}
+";
+
         readonly static string s_TriggerMetadataParameterName = "TriggerMetadata";
 
         RpcLogger _logger;
         PowerShell _pwsh;
 
-        PowerShellManager(PowerShell pwsh, RpcLogger logger)
+        PowerShellManager(RpcLogger logger)
         {
-            _pwsh = pwsh;
+            _pwsh = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault());
             _logger = logger;
-        }
-
-        public static PowerShellManager Create(PowerShell pwsh, RpcLogger logger)
-        {
-            var manager = new PowerShellManager(pwsh, logger);
 
             // Setup Stream event listeners
             var streamHandler = new StreamHandler(logger);
-            pwsh.Streams.Debug.DataAdding += streamHandler.DebugDataAdding;
-            pwsh.Streams.Error.DataAdding += streamHandler.ErrorDataAdding;
-            pwsh.Streams.Information.DataAdding += streamHandler.InformationDataAdding;
-            pwsh.Streams.Progress.DataAdding += streamHandler.ProgressDataAdding;
-            pwsh.Streams.Verbose.DataAdding += streamHandler.VerboseDataAdding;
-            pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
+            _pwsh.Streams.Debug.DataAdding += streamHandler.DebugDataAdding;
+            _pwsh.Streams.Error.DataAdding += streamHandler.ErrorDataAdding;
+            _pwsh.Streams.Information.DataAdding += streamHandler.InformationDataAdding;
+            _pwsh.Streams.Progress.DataAdding += streamHandler.ProgressDataAdding;
+            _pwsh.Streams.Verbose.DataAdding += streamHandler.VerboseDataAdding;
+            _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
+        }
 
-            manager.ResetRunspace();
+        public static PowerShellManager Create(RpcLogger logger)
+        {                
+            var manager = new PowerShellManager(logger);
 
+            // Add HttpResponseContext namespace so users can reference
+            // HttpResponseContext without needing to specify the full namespace
+            manager.ExecuteScriptAndClearCommands($"using namespace {typeof(HttpResponseContext).Namespace}");
+            manager.ExecuteScriptAndClearCommands(s_SetExecutionPolicyOnWindowsScript);
             return manager;
         }
 
@@ -91,10 +101,6 @@ Set-Variable -Name '$return' -Value $return -Scope global
         {
             // Reset the runspace to the Initial Session State
             _pwsh.Runspace.ResetRunspaceState();
-
-            // Add HttpResponseContext namespace so users can reference
-            // HttpResponseContext without needing to specify the full namespace
-            ExecuteScriptAndClearCommands($"using namespace {typeof(HttpResponseContext).Namespace}");
         }
 
         void ExecuteScriptAndClearCommands(string script)

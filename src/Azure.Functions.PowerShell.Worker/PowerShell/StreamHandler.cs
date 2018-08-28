@@ -19,7 +19,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _logger = logger;
         }
 
-        public void DebugDataAdding(object data, DataAddingEventArgs e)
+        public void DebugDataAdding(object sender, DataAddingEventArgs e)
         {
             if(e.ItemAdded is DebugRecord record)
             {
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
-        public void ErrorDataAdding(object data, DataAddingEventArgs e)
+        public void ErrorDataAdding(object sender, DataAddingEventArgs e)
         {
             if(e.ItemAdded is ErrorRecord record)
             {
@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
-        public void InformationDataAdding(object data, DataAddingEventArgs e)
+        public void InformationDataAdding(object sender, DataAddingEventArgs e)
         {
             if(e.ItemAdded is InformationRecord record)
             {
@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
-        public void ProgressDataAdding(object data, DataAddingEventArgs e)
+        public void ProgressDataAdding(object sender, DataAddingEventArgs e)
         {
             if(e.ItemAdded is ProgressRecord record)
             {
@@ -51,7 +51,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
-        public void VerboseDataAdding(object data, DataAddingEventArgs e)
+        public void VerboseDataAdding(object sender, DataAddingEventArgs e)
         {
             if(e.ItemAdded is VerboseRecord record)
             {
@@ -59,7 +59,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
-        public void WarningDataAdding(object data, DataAddingEventArgs e)
+        public void WarningDataAdding(object sender, DataAddingEventArgs e)
         {
             if(e.ItemAdded is WarningRecord record)
             {

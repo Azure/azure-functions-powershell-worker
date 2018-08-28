@@ -29,9 +29,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // Initialize Rpc client, logger, and PowerShellManager
             s_client = new FunctionMessagingClient(startupArguments.Host, startupArguments.Port);
             s_logger = new RpcLogger(s_client);
-            s_powershellManager = PowerShellManager.Create(
-                System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault()),
-                s_logger);
+            s_powershellManager = PowerShellManager.Create(s_logger);
 
             // Send StartStream message
             var streamingMessage = new StreamingMessage() {
