@@ -20,26 +20,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         static readonly FunctionLoader s_functionLoader = new FunctionLoader();
         static FunctionMessagingClient s_client;
         static RpcLogger s_logger;
-        static System.Management.Automation.PowerShell s_ps;
+        static PowerShellManager s_powershellManager;
 
         static void InitPowerShell()
         {
-            s_ps = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault());
-            
+            System.Management.Automation.PowerShell ps = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault());
+
             // Setup Stream event listeners
             var streamHandler = new StreamHandler(s_logger);
-            s_ps.Streams.Debug.DataAdded += streamHandler.DebugDataAdded;
-            s_ps.Streams.Error.DataAdded += streamHandler.ErrorDataAdded;
-            s_ps.Streams.Information.DataAdded += streamHandler.InformationDataAdded;
-            s_ps.Streams.Progress.DataAdded += streamHandler.ProgressDataAdded;
-            s_ps.Streams.Verbose.DataAdded += streamHandler.VerboseDataAdded;
-            s_ps.Streams.Warning.DataAdded += streamHandler.WarningDataAdded;
+            ps.Streams.Debug.DataAdded += streamHandler.DebugDataAdded;
+            ps.Streams.Error.DataAdded += streamHandler.ErrorDataAdded;
+            ps.Streams.Information.DataAdded += streamHandler.InformationDataAdded;
+            ps.Streams.Progress.DataAdded += streamHandler.ProgressDataAdded;
+            ps.Streams.Verbose.DataAdded += streamHandler.VerboseDataAdded;
+            ps.Streams.Warning.DataAdded += streamHandler.WarningDataAdded;
 
             // Add HttpResponseContext namespace so users can reference
             // HttpResponseContext without needing to specify the full namespace
-            s_ps.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").Invoke();
-            s_ps.Commands.Clear();
-            s_ps.Runspace.ResetRunspaceState();
+            ps.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").Invoke();
+            ps.Commands.Clear();
+            ps.Runspace.ResetRunspaceState();
+
+            s_powershellManager = new PowerShellManager(ps, s_logger);
         }
 
         public async static Task Main(string[] args)
@@ -74,7 +76,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     {
                         case StreamingMessage.ContentOneofCase.WorkerInitRequest:
                             response = HandleWorkerInitRequest.Invoke(
-                                s_ps,
+                                s_powershellManager,
                                 s_functionLoader,
                                 message,
                                 s_logger);
@@ -82,7 +84,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                         case StreamingMessage.ContentOneofCase.FunctionLoadRequest:
                             response = HandleFunctionLoadRequest.Invoke(
-                                s_ps,
+                                s_powershellManager,
                                 s_functionLoader,
                                 message,
                                 s_logger);
@@ -90,7 +92,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                         case StreamingMessage.ContentOneofCase.InvocationRequest:
                             response = HandleInvocationRequest.Invoke(
-                                s_ps,
+                                s_powershellManager,
                                 s_functionLoader,
                                 message,
                                 s_logger);

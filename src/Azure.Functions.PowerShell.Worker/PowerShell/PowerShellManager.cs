@@ -17,7 +17,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
     using System.Management.Automation;
 
-    public static class PowerShellWorkerExtensions
+    public class PowerShellManager
     {
         // This script handles when the user adds something to the pipeline.
         // It logs the item that comes and stores it as the $return out binding.
@@ -32,6 +32,15 @@ Set-Variable -Name '$return' -Value $return -Scope global
 ";
 
         readonly static string s_TriggerMetadataParameterName = "TriggerMetadata";
+
+        RpcLogger _logger;
+        PowerShell _pwsh;
+
+        public PowerShellManager(PowerShell pwsh, RpcLogger logger)
+        {
+            _pwsh = pwsh;
+            _logger = logger;
+        }
 
         static string BuildBindingHashtableScript(IDictionary<string, BindingInfo> outBindings)
         {
@@ -60,37 +69,34 @@ Set-Variable -Name '$return' -Value $return -Scope global
             return script.ToString();
         }
 
-        // TODO: make sure this completely cleans up the runspace
-        static void CleanupRunspace(this PowerShell ps)
+        void CleanupRunspace()
         {
             // Reset the runspace to the Initial Session State
-            ps.Runspace.ResetRunspaceState();
+            _pwsh.Runspace.ResetRunspaceState();
 
             // Add HttpResponseContext namespace so users can reference
             // HttpResponseContext without needing to specify the full namespace
-            ps.ExecuteScriptAndClearCommands($"using namespace {typeof(HttpResponseContext).Namespace}");
+            ExecuteScriptAndClearCommands($"using namespace {typeof(HttpResponseContext).Namespace}");
         }
 
-        static void ExecuteScriptAndClearCommands(this PowerShell ps, string script)
+        void ExecuteScriptAndClearCommands(string script)
         {
-            ps.AddScript(script).Invoke();
-            ps.Commands.Clear();
+            _pwsh.AddScript(script).Invoke();
+            _pwsh.Commands.Clear();
         }
 
-        public static Collection<T> ExecuteScriptAndClearCommands<T>(this PowerShell ps, string script)
+        public Collection<T> ExecuteScriptAndClearCommands<T>(string script)
         {
-            var result = ps.AddScript(script).Invoke<T>();
-            ps.Commands.Clear();
+            var result = _pwsh.AddScript(script).Invoke<T>();
+            _pwsh.Commands.Clear();
             return result;
         }
 
-        public static PowerShell InvokeFunctionAndSetGlobalReturn(
-            this PowerShell ps,
+        public PowerShellManager InvokeFunctionAndSetGlobalReturn(
             string scriptPath,
             string entryPoint,
             Hashtable triggerMetadata,
-            IList<ParameterBinding> inputData,
-            RpcLogger logger)
+            IList<ParameterBinding> inputData)
         {
             try
             {
@@ -101,62 +107,62 @@ Set-Variable -Name '$return' -Value $return -Scope global
                 // the ParameterMetadata so that we can tell whether or not the user is asking
                 // for the $TriggerMetadata
 
-                using (ExecutionTimer.Start(logger, "Parameter metadata retrieved."))
+                using (ExecutionTimer.Start(_logger, "Parameter metadata retrieved."))
                 {
                     if (entryPoint != "")
                     {
-                        ps.ExecuteScriptAndClearCommands($@". {scriptPath}");
-                        parameterMetadata = ps.ExecuteScriptAndClearCommands<FunctionInfo>($@"Get-Command {entryPoint}")[0].Parameters;
-                        ps.AddScript($@". {entryPoint} @args");
+                        ExecuteScriptAndClearCommands($@". {scriptPath}");
+                        parameterMetadata = ExecuteScriptAndClearCommands<FunctionInfo>($@"Get-Command {entryPoint}")[0].Parameters;
+                        _pwsh.AddScript($@". {entryPoint} @args");
 
                     }
                     else
                     {
-                        parameterMetadata = ps.ExecuteScriptAndClearCommands<ExternalScriptInfo>($@"Get-Command {scriptPath}")[0].Parameters;
-                        ps.AddScript($@". {scriptPath} @args");
+                        parameterMetadata = ExecuteScriptAndClearCommands<ExternalScriptInfo>($@"Get-Command {scriptPath}")[0].Parameters;
+                        _pwsh.AddScript($@". {scriptPath} @args");
                     }
                 }
 
                 // Sets the variables for each input binding
                 foreach (ParameterBinding binding in inputData)
                 {
-                    ps.AddParameter(binding.Name, binding.Data.ToObject());
+                    _pwsh.AddParameter(binding.Name, binding.Data.ToObject());
                 }
 
                 // Gives access to additional Trigger Metadata if the user specifies TriggerMetadata
                 if(parameterMetadata.ContainsKey(s_TriggerMetadataParameterName))
                 {
-                    ps.AddParameter(s_TriggerMetadataParameterName, triggerMetadata);
-                    logger.LogDebug($"TriggerMetadata found. Value:{Environment.NewLine}{triggerMetadata.ToString()}");
+                    _pwsh.AddParameter(s_TriggerMetadataParameterName, triggerMetadata);
+                    _logger.LogDebug($"TriggerMetadata found. Value:{Environment.NewLine}{triggerMetadata.ToString()}");
                 }
 
                 // This script handles when the user adds something to the pipeline.
-                using (ExecutionTimer.Start(logger, "Execution of the user's function completed."))
+                using (ExecutionTimer.Start(_logger, "Execution of the user's function completed."))
                 {
-                    ps.ExecuteScriptAndClearCommands(s_LogAndSetReturnValueScript);
+                    ExecuteScriptAndClearCommands(s_LogAndSetReturnValueScript);
                 }
-                return ps;
+                return this;
             }
             catch(Exception e)
             {
-                ps.CleanupRunspace();
+                CleanupRunspace();
                 throw e;
             }
         }
 
-        public static Hashtable ReturnBindingHashtable(this PowerShell ps, IDictionary<string, BindingInfo> outBindings)
+        public Hashtable ReturnBindingHashtable(IDictionary<string, BindingInfo> outBindings)
         {
             try
             {
                 // This script returns a hashtable that contains the
                 // output bindings that we will return to the function host.
-                var result = ps.ExecuteScriptAndClearCommands<Hashtable>(BuildBindingHashtableScript(outBindings))[0];
-                ps.CleanupRunspace();
+                var result = ExecuteScriptAndClearCommands<Hashtable>(BuildBindingHashtableScript(outBindings))[0];
+                CleanupRunspace();
                 return result;
             }
             catch(Exception e)
             {
-                ps.CleanupRunspace();
+                CleanupRunspace();
                 throw e;
             }
         }

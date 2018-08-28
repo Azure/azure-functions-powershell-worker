@@ -3,17 +3,16 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace  Microsoft.Azure.Functions.PowerShellWorker.Requests
 {
-    using System.Management.Automation;
-
     public static class HandleWorkerInitRequest
     {
         public static StreamingMessage Invoke(
-            PowerShell powershell,
+            PowerShellManager powerShellManager,
             FunctionLoader functionLoader,
             StreamingMessage request,
             RpcLogger logger)

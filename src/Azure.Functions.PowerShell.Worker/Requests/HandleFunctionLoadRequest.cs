@@ -11,11 +11,12 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 namespace  Microsoft.Azure.Functions.PowerShellWorker.Requests
 {
     using System.Management.Automation;
+    using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 
     public static class HandleFunctionLoadRequest
     {
         public static StreamingMessage Invoke(
-            PowerShell powershell,
+            PowerShellManager powerShellManager,
             FunctionLoader functionLoader,
             StreamingMessage request,
             RpcLogger logger)

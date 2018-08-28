@@ -15,18 +15,11 @@ if($req.Query.Name) {
 }
 
 # you can write to the same streams as you would in a normal PowerShell script
-# Write-Verbose "Verbose $name" -Verbose
-# Write-Warning "Warning $i"
-
-# Write-Error -Message BAD
-if (!$global:i) {
-    $global:i = 0
-}
-$global:i++
-Write-Warning "Warning $global:i"
+Write-Verbose "Verbose $name" -Verbose
+Write-Warning "Warning $i"
 
 # You set the value of your output bindings by assignment `$nameOfOutputBinding = 'foo'`
 $res = [HttpResponseContext]@{
-    Body = @{ Hello = $global:i }
+    Body = @{ Hello = $name }
     ContentType = 'application/json'
 }
