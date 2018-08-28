@@ -56,8 +56,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Requests
             try
             {
                 result = powershell
-                    .SetGlobalVariables(triggerMetadata, invocationRequest.InputData)
-                    .InvokeFunctionAndSetGlobalReturn(scriptPath, entryPoint)
+                    .InvokeFunctionAndSetGlobalReturn(scriptPath, entryPoint, triggerMetadata, invocationRequest.InputData, logger)
                     .ReturnBindingHashtable(functionInfo.OutputBindings);
             }
             catch (Exception e)

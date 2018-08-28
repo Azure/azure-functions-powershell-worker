@@ -6,10 +6,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Text;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
@@ -28,6 +30,8 @@ $return | Out-Default
 
 Set-Variable -Name '$return' -Value $return -Scope global
 ";
+
+        readonly static string s_TriggerMetadataParameterName = "TriggerMetadata";
 
         static string BuildBindingHashtableScript(IDictionary<string, BindingInfo> outBindings)
         {
@@ -59,27 +63,78 @@ Set-Variable -Name '$return' -Value $return -Scope global
         // TODO: make sure this completely cleans up the runspace
         static void CleanupRunspace(this PowerShell ps)
         {
+            // Reset the runspace to the Initial Session State
+            ps.Runspace.ResetRunspaceState();
+
+            // Add HttpResponseContext namespace so users can reference
+            // HttpResponseContext without needing to specify the full namespace
+            ps.ExecuteScriptAndClearCommands($"using namespace {typeof(HttpResponseContext).Namespace}");
+        }
+
+        static void ExecuteScriptAndClearCommands(this PowerShell ps, string script)
+        {
+            ps.AddScript(script).Invoke();
             ps.Commands.Clear();
         }
 
-        public static PowerShell InvokeFunctionAndSetGlobalReturn(this PowerShell ps, string scriptPath, string entryPoint)
+        public static Collection<T> ExecuteScriptAndClearCommands<T>(this PowerShell ps, string script)
+        {
+            var result = ps.AddScript(script).Invoke<T>();
+            ps.Commands.Clear();
+            return result;
+        }
+
+        public static PowerShell InvokeFunctionAndSetGlobalReturn(
+            this PowerShell ps,
+            string scriptPath,
+            string entryPoint,
+            Hashtable triggerMetadata,
+            IList<ParameterBinding> inputData,
+            RpcLogger logger)
         {
             try
             {
+                Dictionary<string, ParameterMetadata> parameterMetadata;
+
                 // We need to take into account if the user has an entry point.
-                // If it does, we invoke the command of that name
-                if(entryPoint != "")
+                // If it does, we invoke the command of that name. We also need to fetch
+                // the ParameterMetadata so that we can tell whether or not the user is asking
+                // for the $TriggerMetadata
+
+                using (ExecutionTimer.Start(logger, "Parameter metadata retrieved."))
                 {
-                    ps.AddScript($@". {scriptPath}").Invoke();
-                    ps.AddScript($@". {entryPoint}");
+                    if (entryPoint != "")
+                    {
+                        ps.ExecuteScriptAndClearCommands($@". {scriptPath}");
+                        parameterMetadata = ps.ExecuteScriptAndClearCommands<FunctionInfo>($@"Get-Command {entryPoint}")[0].Parameters;
+                        ps.AddScript($@". {entryPoint} @args");
+
+                    }
+                    else
+                    {
+                        parameterMetadata = ps.ExecuteScriptAndClearCommands<ExternalScriptInfo>($@"Get-Command {scriptPath}")[0].Parameters;
+                        ps.AddScript($@". {scriptPath} @args");
+                    }
                 }
-                else
+
+                // Sets the variables for each input binding
+                foreach (ParameterBinding binding in inputData)
                 {
-                    ps.AddScript($@". {scriptPath}");
+                    ps.AddParameter(binding.Name, binding.Data.ToObject());
+                }
+
+                // Gives access to additional Trigger Metadata if the user specifies TriggerMetadata
+                if(parameterMetadata.ContainsKey(s_TriggerMetadataParameterName))
+                {
+                    ps.AddParameter(s_TriggerMetadataParameterName, triggerMetadata);
+                    logger.LogDebug($"TriggerMetadata found. Value:{Environment.NewLine}{triggerMetadata.ToString()}");
                 }
 
                 // This script handles when the user adds something to the pipeline.
-                ps.AddScript(s_LogAndSetReturnValueScript).Invoke();
+                using (ExecutionTimer.Start(logger, "Execution of the user's function completed."))
+                {
+                    ps.ExecuteScriptAndClearCommands(s_LogAndSetReturnValueScript);
+                }
                 return ps;
             }
             catch(Exception e)
@@ -95,37 +150,9 @@ Set-Variable -Name '$return' -Value $return -Scope global
             {
                 // This script returns a hashtable that contains the
                 // output bindings that we will return to the function host.
-                var result = ps.AddScript(BuildBindingHashtableScript(outBindings)).Invoke<Hashtable>()[0];
-                ps.Commands.Clear();
-                return result;
-            }
-            catch(Exception e)
-            {
+                var result = ps.ExecuteScriptAndClearCommands<Hashtable>(BuildBindingHashtableScript(outBindings))[0];
                 ps.CleanupRunspace();
-                throw e;
-            }
-        }
-
-        public static PowerShell SetGlobalVariables(this PowerShell ps, Hashtable triggerMetadata, IList<ParameterBinding> inputData)
-        {
-            try {
-                // Set the global $Context variable which contains trigger metadata
-                ps.AddCommand("Set-Variable").AddParameters( new Hashtable {
-                    { "Name", "Context"},
-                    { "Scope", "Global"},
-                    { "Value", triggerMetadata}
-                }).Invoke();
-
-                // Sets a global variable for each input binding
-                foreach (ParameterBinding binding in inputData)
-                {
-                    ps.AddCommand("Set-Variable").AddParameters( new Hashtable {
-                        { "Name", binding.Name},
-                        { "Scope", "Global"},
-                        { "Value",  binding.Data.ToObject()}
-                    }).Invoke();
-                }
-                return ps;
+                return result;
             }
             catch(Exception e)
             {
