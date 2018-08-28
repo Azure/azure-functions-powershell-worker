@@ -22,36 +22,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         static RpcLogger s_logger;
         static PowerShellManager s_powershellManager;
 
-        static void InitPowerShell()
-        {
-            System.Management.Automation.PowerShell ps = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault());
-
-            // Setup Stream event listeners
-            var streamHandler = new StreamHandler(s_logger);
-            ps.Streams.Debug.DataAdded += streamHandler.DebugDataAdded;
-            ps.Streams.Error.DataAdded += streamHandler.ErrorDataAdded;
-            ps.Streams.Information.DataAdded += streamHandler.InformationDataAdded;
-            ps.Streams.Progress.DataAdded += streamHandler.ProgressDataAdded;
-            ps.Streams.Verbose.DataAdded += streamHandler.VerboseDataAdded;
-            ps.Streams.Warning.DataAdded += streamHandler.WarningDataAdded;
-
-            // Add HttpResponseContext namespace so users can reference
-            // HttpResponseContext without needing to specify the full namespace
-            ps.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").Invoke();
-            ps.Commands.Clear();
-            ps.Runspace.ResetRunspaceState();
-
-            s_powershellManager = new PowerShellManager(ps, s_logger);
-        }
-
         public async static Task Main(string[] args)
         {
             StartupArguments startupArguments = StartupArguments.Parse(args);
 
-            // Initialize Rpc client, logger, and PowerShell
+            // Initialize Rpc client, logger, and PowerShellManager
             s_client = new FunctionMessagingClient(startupArguments.Host, startupArguments.Port);
             s_logger = new RpcLogger(s_client);
-            InitPowerShell();
+            s_powershellManager = PowerShellManager.Create(
+                System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault()),
+                s_logger);
 
             // Send StartStream message
             var streamingMessage = new StreamingMessage() {

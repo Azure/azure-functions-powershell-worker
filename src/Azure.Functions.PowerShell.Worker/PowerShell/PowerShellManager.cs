@@ -36,10 +36,28 @@ Set-Variable -Name '$return' -Value $return -Scope global
         RpcLogger _logger;
         PowerShell _pwsh;
 
-        public PowerShellManager(PowerShell pwsh, RpcLogger logger)
+        PowerShellManager(PowerShell pwsh, RpcLogger logger)
         {
             _pwsh = pwsh;
             _logger = logger;
+        }
+
+        public static PowerShellManager Create(PowerShell pwsh, RpcLogger logger)
+        {
+            var manager = new PowerShellManager(pwsh, logger);
+
+            // Setup Stream event listeners
+            var streamHandler = new StreamHandler(logger);
+            pwsh.Streams.Debug.DataAdded += streamHandler.DebugDataAdded;
+            pwsh.Streams.Error.DataAdded += streamHandler.ErrorDataAdded;
+            pwsh.Streams.Information.DataAdded += streamHandler.InformationDataAdded;
+            pwsh.Streams.Progress.DataAdded += streamHandler.ProgressDataAdded;
+            pwsh.Streams.Verbose.DataAdded += streamHandler.VerboseDataAdded;
+            pwsh.Streams.Warning.DataAdded += streamHandler.WarningDataAdded;
+
+            manager.ResetRunspace();
+
+            return manager;
         }
 
         static string BuildBindingHashtableScript(IDictionary<string, BindingInfo> outBindings)
@@ -69,7 +87,7 @@ Set-Variable -Name '$return' -Value $return -Scope global
             return script.ToString();
         }
 
-        void CleanupRunspace()
+        void ResetRunspace()
         {
             // Reset the runspace to the Initial Session State
             _pwsh.Runspace.ResetRunspaceState();
@@ -145,7 +163,7 @@ Set-Variable -Name '$return' -Value $return -Scope global
             }
             catch(Exception e)
             {
-                CleanupRunspace();
+                ResetRunspace();
                 throw e;
             }
         }
@@ -157,12 +175,12 @@ Set-Variable -Name '$return' -Value $return -Scope global
                 // This script returns a hashtable that contains the
                 // output bindings that we will return to the function host.
                 var result = ExecuteScriptAndClearCommands<Hashtable>(BuildBindingHashtableScript(outBindings))[0];
-                CleanupRunspace();
+                ResetRunspace();
                 return result;
             }
             catch(Exception e)
             {
-                CleanupRunspace();
+                ResetRunspace();
                 throw e;
             }
         }
