@@ -12,7 +12,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
 {
-    public class FunctionMessagingClient : IDisposable
+    internal class FunctionMessagingClient : IDisposable
     {
         SemaphoreSlim _writeStreamHandle = new SemaphoreSlim(1, 1);
         AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;

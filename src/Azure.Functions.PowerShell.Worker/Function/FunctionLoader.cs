@@ -8,7 +8,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
-    public class FunctionLoader
+    internal class FunctionLoader
     {
         readonly MapField<string, Function> _LoadedFunctions = new MapField<string, Function>();
         
@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         }
     }
 
-    public class Function
+    internal class Function
     {
         public string EntryPoint {get; internal set;}
         public FunctionInfo Info {get; internal set;}

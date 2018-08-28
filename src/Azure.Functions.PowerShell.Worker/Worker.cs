@@ -17,6 +17,9 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
+    /// <summary>
+    /// The PowerShell language worker for Azure Function
+    /// </summary>
     public static class Worker
     {
         static readonly FunctionLoader s_functionLoader = new FunctionLoader();
@@ -49,6 +52,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             s_ps.Commands.Clear();
         }
 
+        /// <summary>
+        /// Entry point of the language worker.
+        /// </summary>
         public async static Task Main(string[] args)
         {
             WorkerArguments arguments = null;
