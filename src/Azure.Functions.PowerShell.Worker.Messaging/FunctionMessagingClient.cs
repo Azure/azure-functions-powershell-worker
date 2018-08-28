@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
-namespace Azure.Functions.PowerShell.Worker.Messaging
+namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
 {
     public class FunctionMessagingClient : IDisposable
     {
