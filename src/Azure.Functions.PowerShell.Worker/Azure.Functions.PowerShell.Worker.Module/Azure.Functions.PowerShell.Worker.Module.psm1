@@ -56,22 +56,23 @@ function Push-OutputBinding {
     process {
         switch ($PSCmdlet.ParameterSetName) {
             NameValue {
-                if(!$script:_OutputBindings.ContainsKey($Name) -or $Force.IsPresent) {
-                    $script:_OutputBindings[$Name] = $Value
-                } else {
-                    throw "Output binding '$Name' is already set. To override the value, use -Force."
-                }
+                Push-KeyValueOutputBinding -Name $Name -Value $Value -Force:$Force.IsPresent
             }
             InputObject {
                 $InputObject.GetEnumerator() | ForEach-Object {
-                    if(!$script:_OutputBindings.ContainsKey($_.Name) -or $Force.IsPresent) {
-                        $script:_OutputBindings[$_.Name] = $_.Value
-                    } else {
-                        throw "Output binding '$($_.Name)' is already set. To override the value, use -Force."
-                    }
+                    Push-KeyValueOutputBinding -Name $_.Name -Value $_.Value -Force:$Force.IsPresent
                 }
             }
         }
+    }
+}
+
+# Helper private function that sets an OutputBinding.
+function Push-KeyValueOutputBinding($Name, $Value) {
+    if(!$script:_OutputBindings.ContainsKey($Name) -or $Force.IsPresent) {
+        $script:_OutputBindings[$Name] = $Value
+    } else {
+        throw "Output binding '$Name' is already set. To override the value, use -Force."
     }
 }
 
