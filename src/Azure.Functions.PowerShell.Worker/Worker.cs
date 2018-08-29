@@ -5,13 +5,10 @@
 
 using System;
 using System.Threading.Tasks;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 
 using CommandLine;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
-using Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host;
 using Microsoft.Azure.Functions.PowerShellWorker.Requests;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;

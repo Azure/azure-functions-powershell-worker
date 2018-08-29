@@ -35,7 +35,7 @@ Set-Variable -Name '$return' -Value $return -Scope global
         readonly static string s_SetExecutionPolicyOnWindowsScript = @"
 if ($IsWindows)
 {
-    Set-ExecutionPolicy Unrestricted
+    Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope Process
 }
 ";
 
