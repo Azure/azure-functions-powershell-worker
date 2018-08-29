@@ -44,7 +44,19 @@ function Get-OutputBinding {
 }
 
 # Helper private function that sets an OutputBinding.
-function Push-KeyValueOutputBinding($Name, $Value) {
+function Push-KeyValueOutputBinding {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [object]
+        $Value,
+
+        [switch]
+        $Force
+    )
     if(!$script:_OutputBindings.ContainsKey($Name) -or $Force.IsPresent) {
         $script:_OutputBindings[$Name] = $Value
     } else {
