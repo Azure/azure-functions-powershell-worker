@@ -18,6 +18,9 @@ if($req.Query.Name) {
 Write-Verbose "Verbose $name" -Verbose
 Write-Warning "Warning $name"
 
+# items in the pipeline get logged
+$name
+
 # You set the value of your output bindings by assignment `$nameOfOutputBinding = 'foo'`
 $res = [HttpResponseContext]@{
     Body = @{ Hello = $name }

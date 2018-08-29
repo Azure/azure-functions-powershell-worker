@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         readonly static string s_LogAndSetReturnValueScript = @"
 param([Parameter(ValueFromPipeline=$true)]$return)
 
-$return | Out-Default
+Write-Information $return
 
 Set-Variable -Name '$return' -Value $return -Scope global
 ";
