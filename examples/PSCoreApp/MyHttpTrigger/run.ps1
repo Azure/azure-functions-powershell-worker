@@ -16,7 +16,7 @@ if($req.Query.Name) {
 
 # you can write to the same streams as you would in a normal PowerShell script
 Write-Verbose "Verbose $name" -Verbose
-Write-Warning "Warning $i"
+Write-Warning "Warning $name"
 
 # You set the value of your output bindings by assignment `$nameOfOutputBinding = 'foo'`
 $res = [HttpResponseContext]@{

@@ -72,6 +72,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 .ToString();
 
             _logger.LogTrace(logMessage);
+
+            s_stopwatch.Reset();
         }
     }
 }
