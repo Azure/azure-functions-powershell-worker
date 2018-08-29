@@ -5,7 +5,7 @@
 
 using System;
 
-using Azure.Functions.PowerShell.Worker.Messaging;
+using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Microsoft.Extensions.Logging;
 
