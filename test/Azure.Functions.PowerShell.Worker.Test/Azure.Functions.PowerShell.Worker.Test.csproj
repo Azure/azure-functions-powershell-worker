@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Azure.Functions.PowerShell.Worker\Azure.Functions.PowerShell.Worker.csproj" />
-    <ProjectReference Include="..\..\src\Azure.Functions.PowerShell.Worker.Messaging\Azure.Functions.PowerShell.Worker.Messaging.csproj" />
   </ItemGroup>
 
 </Project>

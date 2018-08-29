@@ -7,8 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8C758288-390
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.Functions.PowerShell.Worker", "src\Azure.Functions.PowerShell.Worker\Azure.Functions.PowerShell.Worker.csproj", "{939262BA-4823-405E-81CD-436C0B77D524}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.Functions.PowerShell.Worker.Messaging", "src\Azure.Functions.PowerShell.Worker.Messaging\Azure.Functions.PowerShell.Worker.Messaging.csproj", "{A1581262-DE79-4C01-AD6C-88BE7C3E6322}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{12092936-4F2A-4B40-9AF2-56C840D44FEA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.Functions.PowerShell.Worker.Test", "test\Azure.Functions.PowerShell.Worker.Test\Azure.Functions.PowerShell.Worker.Test.csproj", "{535C8DA3-479D-42BF-B1AF-5B03ECAF67A4}"
@@ -38,18 +36,6 @@ Global
 		{939262BA-4823-405E-81CD-436C0B77D524}.Release|x64.Build.0 = Release|Any CPU
 		{939262BA-4823-405E-81CD-436C0B77D524}.Release|x86.ActiveCfg = Release|Any CPU
 		{939262BA-4823-405E-81CD-436C0B77D524}.Release|x86.Build.0 = Release|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Debug|x64.Build.0 = Debug|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Debug|x86.Build.0 = Debug|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Release|x64.ActiveCfg = Release|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Release|x64.Build.0 = Release|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Release|x86.ActiveCfg = Release|Any CPU
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322}.Release|x86.Build.0 = Release|Any CPU
 		{535C8DA3-479D-42BF-B1AF-5B03ECAF67A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{535C8DA3-479D-42BF-B1AF-5B03ECAF67A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{535C8DA3-479D-42BF-B1AF-5B03ECAF67A4}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -65,7 +51,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{939262BA-4823-405E-81CD-436C0B77D524} = {8C758288-3909-4CE1-972D-1BE966628D6C}
-		{A1581262-DE79-4C01-AD6C-88BE7C3E6322} = {8C758288-3909-4CE1-972D-1BE966628D6C}
 		{535C8DA3-479D-42BF-B1AF-5B03ECAF67A4} = {12092936-4F2A-4B40-9AF2-56C840D44FEA}
 	EndGlobalSection
 EndGlobal

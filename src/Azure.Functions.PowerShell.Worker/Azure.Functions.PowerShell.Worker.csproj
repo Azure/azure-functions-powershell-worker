@@ -6,10 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Azure.Functions.PowerShell.Worker.Messaging\Azure.Functions.PowerShell.Worker.Messaging.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="6.1.0-rc.1" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
