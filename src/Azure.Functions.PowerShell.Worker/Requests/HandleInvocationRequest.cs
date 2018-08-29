@@ -13,12 +13,10 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Requests
 {
-    using System.Management.Automation;
-
     internal static class HandleInvocationRequest
     {
         public static StreamingMessage Invoke(
-            PowerShell powershell,
+            PowerShellManager powerShellManager,
             FunctionLoader functionLoader,
             StreamingMessage request,
             RpcLogger logger)
@@ -55,9 +53,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Requests
             Hashtable result = null;
             try
             {
-                result = powershell
-                    .SetGlobalVariables(triggerMetadata, invocationRequest.InputData)
-                    .InvokeFunctionAndSetGlobalReturn(scriptPath, entryPoint)
+                result = powerShellManager
+                    .InvokeFunctionAndSetGlobalReturn(scriptPath, entryPoint, triggerMetadata, invocationRequest.InputData)
                     .ReturnBindingHashtable(functionInfo.OutputBindings);
             }
             catch (Exception e)

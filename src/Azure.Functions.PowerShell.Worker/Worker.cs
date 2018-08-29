@@ -1,16 +1,14 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
 using System;
 using System.Threading.Tasks;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 
 using CommandLine;
+using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
-using Microsoft.Azure.Functions.PowerShellWorker.PowerShell.Host;
 using Microsoft.Azure.Functions.PowerShellWorker.Requests;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -25,32 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         static readonly FunctionLoader s_functionLoader = new FunctionLoader();
         static FunctionMessagingClient s_client;
         static RpcLogger s_logger;
-        static System.Management.Automation.PowerShell s_ps;
-        static Runspace s_runspace;
-
-        static void InitPowerShell()
-        {
-            var host = new AzureFunctionsPowerShellHost(s_logger);
-
-            s_runspace = RunspaceFactory.CreateRunspace(host);
-            s_runspace.Open();
-            s_ps = System.Management.Automation.PowerShell.Create();
-            s_ps.Runspace = s_runspace;
-
-            if (Platform.IsWindows)
-            {
-                s_ps.AddCommand("Set-ExecutionPolicy")
-                    .AddParameter("ExecutionPolicy", "Unrestricted")
-                    .AddParameter("Scope", "Process")
-                    .Invoke();
-                s_ps.Commands.Clear();
-            }
-
-            // Add HttpResponseContext namespace so users can reference
-            // HttpResponseContext without needing to specify the full namespace
-            s_ps.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").Invoke();
-            s_ps.Commands.Clear();
-        }
+        static PowerShellManager s_powershellManager;
 
         /// <summary>
         /// Entry point of the language worker.
@@ -62,10 +35,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .WithParsed(ops => arguments = ops)
                 .WithNotParsed(err => Environment.Exit(1));
 
-            // Initialize Rpc client, logger, and PowerShell
+            // Initialize Rpc client, logger, and PowerShellManager
             s_client = new FunctionMessagingClient(arguments.Host, arguments.Port);
             s_logger = new RpcLogger(s_client);
-            InitPowerShell();
+            s_powershellManager = PowerShellManager.Create(s_logger);
 
             // Send StartStream message
             var streamingMessage = new StreamingMessage() {
@@ -89,7 +62,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     {
                         case StreamingMessage.ContentOneofCase.WorkerInitRequest:
                             response = HandleWorkerInitRequest.Invoke(
-                                s_ps,
+                                s_powershellManager,
                                 s_functionLoader,
                                 message,
                                 s_logger);
@@ -97,7 +70,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                         case StreamingMessage.ContentOneofCase.FunctionLoadRequest:
                             response = HandleFunctionLoadRequest.Invoke(
-                                s_ps,
+                                s_powershellManager,
                                 s_functionLoader,
                                 message,
                                 s_logger);
@@ -105,7 +78,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                         case StreamingMessage.ContentOneofCase.InvocationRequest:
                             response = HandleInvocationRequest.Invoke(
-                                s_ps,
+                                s_powershellManager,
                                 s_functionLoader,
                                 message,
                                 s_logger);
