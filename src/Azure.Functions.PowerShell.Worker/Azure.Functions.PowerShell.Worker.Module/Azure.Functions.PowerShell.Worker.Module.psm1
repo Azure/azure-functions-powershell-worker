@@ -54,21 +54,22 @@ function Push-OutputBinding {
         $Force
     )
     process {
-        $dict = @{}
         switch ($PSCmdlet.ParameterSetName) {
             NameValue {
-                $dict[$Name] = $Value
+                if(!$script:_OutputBindings.ContainsKey($Name) -or $Force.IsPresent) {
+                    $script:_OutputBindings[$Name] = $Value
+                } else {
+                    throw "Output binding '$Name' is already set. To override the value, use -Force."
+                }
             }
             InputObject {
-                $dict = $InputObject
-            }
-        }
-
-        $dict.GetEnumerator() | ForEach-Object {
-            if(!$script:_OutputBindings.ContainsKey($_.Name) -or $Force.IsPresent) {
-                $script:_OutputBindings[$_.Name] = $_.Value
-            } else {
-                throw "Output binding '$($_.Name)' is already set. To override the value, use -Force."
+                $InputObject.GetEnumerator() | ForEach-Object {
+                    if(!$script:_OutputBindings.ContainsKey($_.Name) -or $Force.IsPresent) {
+                        $script:_OutputBindings[$_.Name] = $_.Value
+                    } else {
+                        throw "Output binding '$($_.Name)' is already set. To override the value, use -Force."
+                    }
+                }
             }
         }
     }
