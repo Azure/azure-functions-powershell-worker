@@ -10,7 +10,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
     using System.Management.Automation;
 
-    public class StreamHandler
+    internal class StreamHandler
     {
         RpcLogger _logger;
 

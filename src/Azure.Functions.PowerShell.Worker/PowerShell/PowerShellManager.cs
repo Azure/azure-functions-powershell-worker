@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
     using System.Management.Automation;
 
-    public class PowerShellManager
+    internal class PowerShellManager
     {
         // This script handles when the user adds something to the pipeline.
         // It logs the item that comes and stores it as the $return out binding.

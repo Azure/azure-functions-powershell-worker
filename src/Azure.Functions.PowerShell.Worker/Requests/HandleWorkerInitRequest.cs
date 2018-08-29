@@ -9,7 +9,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace  Microsoft.Azure.Functions.PowerShellWorker.Requests
 {
-    public static class HandleWorkerInitRequest
+    internal static class HandleWorkerInitRequest
     {
         public static StreamingMessage Invoke(
             PowerShellManager powerShellManager,

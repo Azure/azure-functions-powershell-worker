@@ -13,7 +13,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker.Requests
     using System.Management.Automation;
     using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 
-    public static class HandleFunctionLoadRequest
+    internal static class HandleFunctionLoadRequest
     {
         public static StreamingMessage Invoke(
             PowerShellManager powerShellManager,

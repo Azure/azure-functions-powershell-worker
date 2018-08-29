@@ -24,7 +24,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
     /// </code>
     /// This will print a message like "Execution of MyMethod completed. [50ms]" to the logs.
     /// </example>
-    public struct ExecutionTimer : IDisposable
+    internal struct ExecutionTimer : IDisposable
     {
         static Stopwatch s_stopwatch => s_threadStaticStopwatch ?? (s_threadStaticStopwatch = new Stopwatch());
         [ThreadStatic]

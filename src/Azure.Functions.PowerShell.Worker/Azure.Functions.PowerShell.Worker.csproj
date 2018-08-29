@@ -3,13 +3,24 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-  </PropertyGroup>
+    <Product>Azure Function PowerShell Language Worker</Product>
+    <Company>Microsoft Corporation</Company>
+    <Copyright>(c) Microsoft Corporation. All rights reserved.</Copyright>
 
+    <LangVersion>Latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+    <NeutralLanguage>en-US</NeutralLanguage>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="6.1.0-rc.1" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="CommandLineParser" Version="2.3.0" />
+    <PackageReference Include="Grpc" Version="1.14.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.6.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,9 +28,5 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-
-  <PropertyGroup>
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
 
 </Project>
