@@ -8,6 +8,52 @@ $script:_OutputBindings = @{}
 
 <#
 .SYNOPSIS
+    Gets the hashtable of the output bindings set so far.
+.DESCRIPTION
+    Gets the hashtable of the output bindings set so far.
+.EXAMPLE
+    PS > Get-OutputBinding
+    Gets the hashtable of all the output bindings set so far.
+.EXAMPLE
+    PS > Get-OutputBinding -Name res
+    Gets the hashtable of specific output binding.
+.EXAMPLE
+    PS > Get-OutputBinding -Name r*
+    Gets the hashtable of output bindings that match the wildcard.
+.PARAMETER Name
+    The name of the output binding you want to get. Supports wildcards.
+.OUTPUTS
+    The hashtable of binding names to their respective value.
+#>
+function Get-OutputBinding {
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
+        [string[]]
+        $Name = '*'
+    )
+    begin {
+        $bindings = @{}
+    }
+    process {
+        $script:_OutputBindings.GetEnumerator() | Where-Object Name -Like $Name | ForEach-Object { $null = $bindings.Add($_.Name, $_.Value) }
+    }
+    end {
+        return $bindings
+    }
+}
+
+# Helper private function that sets an OutputBinding.
+function Push-KeyValueOutputBinding($Name, $Value) {
+    if(!$script:_OutputBindings.ContainsKey($Name) -or $Force.IsPresent) {
+        $script:_OutputBindings[$Name] = $Value
+    } else {
+        throw "Output binding '$Name' is already set. To override the value, use -Force."
+    }
+}
+
+<#
+.SYNOPSIS
     Sets the value for the specified output binding.
 .DESCRIPTION
     Sets the value for the specified output binding.
@@ -64,51 +110,5 @@ function Push-OutputBinding {
                 }
             }
         }
-    }
-}
-
-# Helper private function that sets an OutputBinding.
-function Push-KeyValueOutputBinding($Name, $Value) {
-    if(!$script:_OutputBindings.ContainsKey($Name) -or $Force.IsPresent) {
-        $script:_OutputBindings[$Name] = $Value
-    } else {
-        throw "Output binding '$Name' is already set. To override the value, use -Force."
-    }
-}
-
-<#
-.SYNOPSIS
-    Gets the hashtable of the output bindings set so far.
-.DESCRIPTION
-    Gets the hashtable of the output bindings set so far.
-.EXAMPLE
-    PS > Get-OutputBinding
-    Gets the hashtable of all the output bindings set so far.
-.EXAMPLE
-    PS > Get-OutputBinding -Name res
-    Gets the hashtable of specific output binding.
-.EXAMPLE
-    PS > Get-OutputBinding -Name r*
-    Gets the hashtable of output bindings that match the wildcard.
-.PARAMETER Name
-    The name of the output binding you want to get. Supports wildcards.
-.OUTPUTS
-    The hashtable of binding names to their respective value.
-#>
-function Get-OutputBinding {
-    [CmdletBinding()]
-    param(
-        [Parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
-        [string[]]
-        $Name = '*'
-    )
-    begin {
-        $bindings = @{}
-    }
-    process {
-        $script:_OutputBindings.GetEnumerator() | Where-Object Name -Like $Name | ForEach-Object { $null = $bindings.Add($_.Name, $_.Value) }
-    }
-    end {
-        return $bindings
     }
 }
