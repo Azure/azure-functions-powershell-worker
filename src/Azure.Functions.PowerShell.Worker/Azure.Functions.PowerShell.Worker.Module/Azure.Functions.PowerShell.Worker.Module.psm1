@@ -28,39 +28,48 @@ function Push-OutputBinding {
     param (
         [Parameter(
             Mandatory=$true,
-            ParameterSetName="NameValue")]
+            ParameterSetName="NameValue",
+            Position=0,
+            ValueFromPipelineByPropertyName=$true)]
         [string]
         $Name,
 
         [Parameter(
             Mandatory=$true,
-            ParameterSetName="NameValue")]
+            ParameterSetName="NameValue",
+            Position=1,
+            ValueFromPipelineByPropertyName=$true)]
+        [object]
         $Value,
 
         [Parameter(
             Mandatory=$true,
-            ValueFromPipeline=$true,
-            ParameterSetName="InputObject")]
+            ParameterSetName="InputObject",
+            Position=0,
+            ValueFromPipeline=$true)]
+        [hashtable]
         $InputObject,
 
         [switch]
         $Force
     )
-    $dict = @{}
-    switch ($PSCmdlet.ParameterSetName) {
-        NameValue {
-            $dict[$Name] = $Value
+    process {
+        $dict = @{}
+        switch ($PSCmdlet.ParameterSetName) {
+            NameValue {
+                $dict[$Name] = $Value
+            }
+            InputObject {
+                $dict = $InputObject
+            }
         }
-        InputObject {
-            $dict = $InputObject
-        }
-    }
 
-    $dict.GetEnumerator() | ForEach-Object {
-        if(!$script:_OutputBindings.ContainsKey($_.Name) -or $Force.IsPresent) {
-            $script:_OutputBindings[$_.Name] = $_.Value
-        } else {
-            throw "Output binding '$($_.Name)' is already set. To override the value, use -Force."
+        $dict.GetEnumerator() | ForEach-Object {
+            if(!$script:_OutputBindings.ContainsKey($_.Name) -or $Force.IsPresent) {
+                $script:_OutputBindings[$_.Name] = $_.Value
+            } else {
+                throw "Output binding '$($_.Name)' is already set. To override the value, use -Force."
+            }
         }
     }
 }
