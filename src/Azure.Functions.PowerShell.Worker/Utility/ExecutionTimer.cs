@@ -26,11 +26,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
     /// </example>
     public struct ExecutionTimer : IDisposable
     {
+        [ThreadStatic]
+        private static readonly Stopwatch s_stopwatch = new Stopwatch();
+
         readonly RpcLogger _logger;
-
         readonly string _message;
-
-        readonly Stopwatch _stopwatch;
 
         /// <summary>
         /// Create a new execution timer and start it.
@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             string message)
         {
             var timer = new ExecutionTimer(logger, message);
-            timer._stopwatch.Start();
+            s_stopwatch.Start();
             return timer;
         }
 
@@ -53,7 +53,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         {
             _logger = logger;
             _message = message;
-            _stopwatch = new Stopwatch();
         }
 
         /// <summary>
@@ -62,12 +61,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         /// </summary>
         public void Dispose()
         {
-            _stopwatch.Stop();
+            s_stopwatch.Stop();
 
             string logMessage = new StringBuilder()
                 .Append(_message)
                 .Append(" [")
-                .Append(_stopwatch.ElapsedMilliseconds)
+                .Append(s_stopwatch.ElapsedMilliseconds)
                 .Append("ms]")
                 .ToString();
 
