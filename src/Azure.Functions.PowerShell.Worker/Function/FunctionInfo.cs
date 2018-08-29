@@ -8,7 +8,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
-    public class FunctionInfo
+    internal class FunctionInfo
     {
         public string Directory {get; set;}
         public string HttpOutputName {get; set;}

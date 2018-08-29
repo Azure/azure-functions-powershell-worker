@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
-    public class RpcLogger : ILogger
+    internal class RpcLogger : ILogger
     {
         FunctionMessagingClient _client;
         string _invocationId = "";

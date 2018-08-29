@@ -8,16 +8,49 @@ using Google.Protobuf.Collections;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
+    /// <summary>
+    /// Custom type represent the context of the in-coming Http request.
+    /// </summary>
     public class HttpRequestContext : IEquatable<HttpRequestContext>
     {
-        public object Body {get; set;}
-        public MapField<string, string> Headers {get; set;}
-        public string Method {get; set;}
-        public string Url {get; set;}
-        public MapField<string, string> Params {get; set;}
-        public MapField<string, string> Query {get; set;}
-        public object RawBody {get; set;}
+        /// <summary>
+        /// Gets the Body of the Http request.
+        /// </summary>
+        public object Body { get; internal set; }
 
+        /// <summary>
+        /// Gets the Headers of the Http request.
+        /// </summary>
+        public MapField<string, string> Headers { get; internal set; }
+
+        /// <summary>
+        /// Gets the Method of the Http request.
+        /// </summary>
+        public string Method { get; internal set; }
+
+        /// <summary>
+        /// Gets the Url of the Http request.
+        /// </summary>
+        public string Url { get; internal set; }
+
+        /// <summary>
+        /// Gets the Params of the Http request.
+        /// </summary>
+        public MapField<string, string> Params { get; internal set; }
+
+        /// <summary>
+        /// Gets the Query of the Http request.
+        /// </summary>
+        public MapField<string, string> Query { get; internal set; }
+
+        /// <summary>
+        /// Gets the RawBody of the Http request.
+        /// </summary>
+        public object RawBody { get; internal set; }
+
+        /// <summary>
+        /// Compare with another HttpRequestContext object.
+        /// </summary>
         public bool Equals(HttpRequestContext other)
         {
             return Method == other.Method

@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
     using System.Management.Automation;
 
-    public static class PowerShellWorkerExtensions
+    internal static class PowerShellWorkerExtensions
     {
         // This script handles when the user adds something to the pipeline.
         // It logs the item that comes and stores it as the $return out binding.

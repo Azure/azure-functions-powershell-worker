@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Requests
 {
     using System.Management.Automation;
 
-    public static class HandleInvocationRequest
+    internal static class HandleInvocationRequest
     {
         public static StreamingMessage Invoke(
             PowerShell powershell,

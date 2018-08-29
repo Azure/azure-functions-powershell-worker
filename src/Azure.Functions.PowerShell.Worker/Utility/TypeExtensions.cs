@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
-    public static class TypeExtensions
+    internal static class TypeExtensions
     {
         static HttpRequestContext ToHttpRequestContext (this RpcHttp rpcHttp)
         {
