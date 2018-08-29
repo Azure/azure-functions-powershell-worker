@@ -26,8 +26,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
     /// </example>
     public struct ExecutionTimer : IDisposable
     {
+        static Stopwatch s_stopwatch => s_threadStaticStopwatch ?? (s_threadStaticStopwatch = new Stopwatch());
         [ThreadStatic]
-        private static readonly Stopwatch s_stopwatch = new Stopwatch();
+        static Stopwatch s_threadStaticStopwatch;
 
         readonly RpcLogger _logger;
         readonly string _message;
