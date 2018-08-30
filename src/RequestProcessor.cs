@@ -8,7 +8,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-using System.Management.Automation;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
@@ -18,27 +17,27 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 {
     internal class RequestProcessor
     {
-        private readonly MessagingStream msgStream;
-        private readonly RpcLogger logger;
-        private readonly PowerShellManager powerShellManager;
-        private readonly FunctionLoader functionLoader;
+        private readonly FunctionLoader _functionLoader;
+        private readonly RpcLogger _logger;
+        private readonly MessagingStream _msgStream;
+        private readonly PowerShellManager _powerShellManager;
 
         internal RequestProcessor(MessagingStream msgStream)
         {
-            this.msgStream = msgStream;
-            logger = new RpcLogger(msgStream);
-            powerShellManager = PowerShellManager.Create(logger);
-            functionLoader = new FunctionLoader();
+            _msgStream = msgStream;
+            _logger = new RpcLogger(msgStream);
+            _powerShellManager = PowerShellManager.Create(_logger);
+            _functionLoader = new FunctionLoader();
         }
 
         internal async Task ProcessRequestLoop()
         {
-            using (msgStream)
+            using (_msgStream)
             {
                 StreamingMessage request, response;
-                while (await msgStream.MoveNext())
+                while (await _msgStream.MoveNext())
                 {
-                    request = msgStream.GetCurrentMessage();
+                    request = _msgStream.GetCurrentMessage();
                     switch (request.ContentCase)
                     {
                         case StreamingMessage.ContentOneofCase.WorkerInitRequest:
@@ -57,7 +56,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                             throw new InvalidOperationException($"Not supportted message type: {request.ContentCase}");
                     }
 
-                    await msgStream.WriteAsync(response);
+                    await _msgStream.WriteAsync(response);
                 }
             }
         }
@@ -90,7 +89,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             // Try to load the functions
             try
             {
-                functionLoader.Load(functionLoadRequest.FunctionId, functionLoadRequest.Metadata);
+                _functionLoader.Load(functionLoadRequest.FunctionId, functionLoadRequest.Metadata);
             }
             catch (Exception e)
             {
@@ -114,11 +113,11 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             InvocationRequest invocationRequest = request.InvocationRequest;
 
             // Set the RequestId and InvocationId for logging purposes
-            logger.SetContext(request.RequestId, invocationRequest.InvocationId);
+            _logger.SetContext(request.RequestId, invocationRequest.InvocationId);
 
             // Load information about the function
-            var functionInfo = functionLoader.GetInfo(invocationRequest.FunctionId);
-            (string scriptPath, string entryPoint) = functionLoader.GetFunc(invocationRequest.FunctionId);
+            var functionInfo = _functionLoader.GetInfo(invocationRequest.FunctionId);
+            (string scriptPath, string entryPoint) = _functionLoader.GetFunc(invocationRequest.FunctionId);
 
             // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
             Hashtable triggerMetadata = new Hashtable();
@@ -143,7 +142,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             Hashtable result = null;
             try
             {
-                result = powerShellManager
+                result = _powerShellManager
                     .InvokeFunctionAndSetGlobalReturn(scriptPath, entryPoint, triggerMetadata, invocationRequest.InputData)
                     .ReturnBindingHashtable(functionInfo.OutputBindings);
             }
