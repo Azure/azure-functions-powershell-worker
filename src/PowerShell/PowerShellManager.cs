@@ -7,7 +7,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Text;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -17,7 +16,6 @@ using System.Management.Automation.Runspaces;
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
     using System.Management.Automation;
-    using System.Reflection;
 
     internal class PowerShellManager
     {
@@ -44,7 +42,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
         public static PowerShellManager Create(RpcLogger logger)
         {
-            // Set up initial session state: set execution policy, import helper module, and using namespace
+            // Set up initial session state
             var initialSessionState = InitialSessionState.CreateDefault();
             if(Platform.IsWindows)
             {
@@ -52,15 +50,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
             var pwsh = PowerShell.Create(initialSessionState);
 
-            // Add HttpResponseContext namespace so users can reference
-            // HttpResponseContext without needing to specify the full namespace
-            // and also import the Azure Functions binding helper module
+            // Build path to the Azure Functions binding helper module
             string modulePath = System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
                 "Azure.Functions.PowerShell.Worker.Module",
                 "Azure.Functions.PowerShell.Worker.Module.psd1");
+
+            // Add HttpResponseContext namespace so users can reference
+            // HttpResponseContext without needing to specify the full namespace
             pwsh.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}")
                 .AddStatement()
+                // Import the Azure Functions binding helper module
                 .AddCommand("Import-Module")
                 .AddParameter("Name", modulePath)
                 .AddParameter("Scope", "Global")
@@ -83,7 +83,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 // If it does, we invoke the command of that name. We also need to fetch
                 // the ParameterMetadata so that we can tell whether or not the user is asking
                 // for the $TriggerMetadata
-
                 using (ExecutionTimer.Start(_logger, "Parameter metadata retrieved."))
                 {
                     if (entryPoint != "")
