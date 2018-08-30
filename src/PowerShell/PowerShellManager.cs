@@ -20,10 +20,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
     internal class PowerShellManager
     {
-        readonly static string s_TriggerMetadataParameterName = "TriggerMetadata";
+        private const string s_TriggerMetadataParameterName = "TriggerMetadata";
 
-        RpcLogger _logger;
-        PowerShell _pwsh;
+        private RpcLogger _logger;
+        private PowerShell _pwsh;
 
         internal PowerShellManager(RpcLogger logger)
         {
@@ -73,7 +73,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     if (entryPoint != "")
                     {
                         parameterMetadata = _pwsh
-                            .AddScript($@". {scriptPath}")
+                            .AddCommand("Import-Module")
+                            .AddParameter("Name", scriptPath)
                             .AddStatement()
                             .AddCommand("Get-Command", useLocalScope: true).AddParameter("Name", entryPoint)
                             .InvokeAndClearCommands<FunctionInfo>()[0].Parameters;
@@ -83,8 +84,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     }
                     else
                     {
-                        parameterMetadata = _pwsh.AddCommand("Get-Command", useLocalScope: true).AddParameter("Name", scriptPath)
+                        parameterMetadata = _pwsh.AddCommand("Get-Command").AddParameter("Name", scriptPath)
                             .InvokeAndClearCommands<ExternalScriptInfo>()[0].Parameters;
+
                         _pwsh.AddCommand(scriptPath, useLocalScope: true);
                     }
                 }
@@ -109,13 +111,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     Collection<PSObject> pipelineItems = _pwsh.InvokeAndClearCommands<PSObject>();
                     foreach (var psobject in pipelineItems)
                     {
-                        _logger.LogInformation($"FROM FUNCTION: {psobject.ToString()}");
+                        _logger.LogInformation($"OUTPUT: {psobject.ToString()}");
                     }
                     
                     returnObject = pipelineItems[pipelineItems.Count - 1];
                 }
                 
-                var result = _pwsh.AddCommand("Azure.Functions.PowerShell.Worker.Module\\Get-OutputBinding", useLocalScope: true)
+                var result = _pwsh.AddCommand("Azure.Functions.PowerShell.Worker.Module\\Get-OutputBinding")
                     .AddParameter("Purge")
                     .InvokeAndClearCommands<Hashtable>()[0];
 
@@ -127,14 +129,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
             finally
             {
-                ResetRunspace();
+                ResetRunspace(scriptPath);
             }
         }
 
-        private void ResetRunspace()
+        private void ResetRunspace(string scriptPath)
         {
             // Reset the runspace to the Initial Session State
             _pwsh.Runspace.ResetRunspaceState();
+
+            // If the function had an entry point, this will remove the module that was loaded
+            var moduleName = Path.GetFileNameWithoutExtension(scriptPath);
+            _pwsh.AddCommand("Get-Module").AddParameter("Name", moduleName)
+                .AddCommand("Remove-Module").InvokeAndClearCommands();
         }
     }
 }
