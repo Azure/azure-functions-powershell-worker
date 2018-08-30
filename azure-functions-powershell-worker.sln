@@ -5,11 +5,11 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8C758288-3909-4CE1-972D-1BE966628D6C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.Functions.PowerShell.Worker", "src\Azure.Functions.PowerShell.Worker\Azure.Functions.PowerShell.Worker.csproj", "{939262BA-4823-405E-81CD-436C0B77D524}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.Functions.PowerShell.Worker", "src\Azure.Functions.PowerShell.Worker.csproj", "{939262BA-4823-405E-81CD-436C0B77D524}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{12092936-4F2A-4B40-9AF2-56C840D44FEA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.Functions.PowerShell.Worker.Test", "test\Azure.Functions.PowerShell.Worker.Test\Azure.Functions.PowerShell.Worker.Test.csproj", "{535C8DA3-479D-42BF-B1AF-5B03ECAF67A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Azure.Functions.PowerShell.Worker.Test", "test\Azure.Functions.PowerShell.Worker.Test.csproj", "{535C8DA3-479D-42BF-B1AF-5B03ECAF67A4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
