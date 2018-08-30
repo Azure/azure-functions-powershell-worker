@@ -13,13 +13,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     internal class RpcLogger : ILogger
     {
-        FunctionMessagingClient _client;
-        string _invocationId = "";
-        string _requestId = "";
+        private MessagingStream _msgStream;
+        private string _invocationId = "";
+        private string _requestId = "";
 
-        public RpcLogger(FunctionMessagingClient client)
+        public RpcLogger(MessagingStream msgStream)
         {
-            _client = client;
+            _msgStream = msgStream;
         }
 
         public IDisposable BeginScope<TState>(TState state) =>
@@ -51,7 +51,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
         public async void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
-            if (_client != null)
+            if (_msgStream != null)
             {
                 var logMessage = new StreamingMessage
                 {
@@ -65,7 +65,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     }
                 };
 
-                await _client.WriteAsync(logMessage);
+                await _msgStream.WriteAsync(logMessage);
             }
         }
 

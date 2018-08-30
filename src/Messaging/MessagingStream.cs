@@ -12,13 +12,13 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
 {
-    internal class FunctionMessagingClient : IDisposable
+    internal class MessagingStream : IDisposable
     {
-        SemaphoreSlim _writeStreamHandle = new SemaphoreSlim(1, 1);
-        AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
-        public bool isDisposed;
+        private SemaphoreSlim _writeStreamHandle = new SemaphoreSlim(1, 1);
+        private AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
+        private bool isDisposed;
 
-        public FunctionMessagingClient(string host, int port)
+        public MessagingStream(string host, int port)
         {
             Channel channel = new Channel(host, port, ChannelCredentials.Insecure);
             _call = new FunctionRpc.FunctionRpcClient(channel).EventStream();
