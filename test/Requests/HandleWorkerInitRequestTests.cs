@@ -3,14 +3,14 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.Azure.Functions.PowerShellWorker.Requests;
+using Microsoft.Azure.Functions.PowerShellWorker;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Xunit;
 
 namespace Azure.Functions.PowerShell.Worker.Test
 {
-    public class HandleWorkerInitRequestTests
+    public class ProcessWorkerInitRequestTests
     {
         [Fact]
         public void HandleWorkerInitRequestSuccess()
@@ -29,14 +29,12 @@ namespace Azure.Functions.PowerShell.Worker.Test
                 }
             };
 
-            StreamingMessage result = HandleWorkerInitRequest.Invoke(
-                null,
-                null,
+            var requestProcessor = new RequestProcessor(null);
+            StreamingMessage result = requestProcessor.ProcessWorkerInitRequest(
                 new StreamingMessage()
                 {
                     RequestId = requestId
-                },
-                new RpcLogger(null)
+                }
             );
 
             Assert.Equal(requestId, result.RequestId);

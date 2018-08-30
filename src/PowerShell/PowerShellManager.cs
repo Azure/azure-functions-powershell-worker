@@ -46,7 +46,7 @@ if ($IsWindows)
 
         PowerShellManager(RpcLogger logger)
         {
-            _pwsh = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault());
+            _pwsh = PowerShell.Create(InitialSessionState.CreateDefault());
             _logger = logger;
 
             // Setup Stream event listeners
