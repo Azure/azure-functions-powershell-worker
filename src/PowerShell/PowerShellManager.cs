@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
     internal class PowerShellManager
     {
-        private const string s_TriggerMetadataParameterName = "TriggerMetadata";
+        private const string _TriggerMetadataParameterName = "TriggerMetadata";
 
         private RpcLogger _logger;
         private PowerShell _pwsh;
@@ -71,21 +71,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     if (entryPoint != "")
                     {
                         parameterMetadata = _pwsh
-                            .AddCommand("Import-Module")
-                            .AddParameter("Name", scriptPath)
+                            .AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", scriptPath)
                             .AddStatement()
-                            .AddCommand("Get-Command", useLocalScope: true).AddParameter("Name", entryPoint)
+                            .AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddParameter("Name", entryPoint)
                             .InvokeAndClearCommands<FunctionInfo>()[0].Parameters;
 
-                        _pwsh.AddCommand(entryPoint, useLocalScope: true);
+                        _pwsh.AddCommand(entryPoint);
 
                     }
                     else
                     {
-                        parameterMetadata = _pwsh.AddCommand("Get-Command").AddParameter("Name", scriptPath)
+                        parameterMetadata = _pwsh.AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddParameter("Name", scriptPath)
                             .InvokeAndClearCommands<ExternalScriptInfo>()[0].Parameters;
 
-                        _pwsh.AddCommand(scriptPath, useLocalScope: true);
+                        _pwsh.AddCommand(scriptPath);
                     }
                 }
 
@@ -96,9 +95,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
 
                 // Gives access to additional Trigger Metadata if the user specifies TriggerMetadata
-                if(parameterMetadata.ContainsKey(s_TriggerMetadataParameterName))
+                if(parameterMetadata.ContainsKey(_TriggerMetadataParameterName))
                 {
-                    _pwsh.AddParameter(s_TriggerMetadataParameterName, triggerMetadata);
+                    _pwsh.AddParameter(_TriggerMetadataParameterName, triggerMetadata);
                     _logger.LogDebug($"TriggerMetadata found. Value:{Environment.NewLine}{triggerMetadata.ToString()}");
                 }
 
@@ -138,8 +137,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             // If the function had an entry point, this will remove the module that was loaded
             var moduleName = Path.GetFileNameWithoutExtension(scriptPath);
-            _pwsh.AddCommand("Get-Module").AddParameter("Name", moduleName)
-                .AddCommand("Remove-Module").InvokeAndClearCommands();
+            _pwsh.AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
+                .AddParameter("Name", moduleName)
+                .AddParameter("ErrorAction", "SilentlyContinue")
+                .InvokeAndClearCommands();
         }
     }
 }
