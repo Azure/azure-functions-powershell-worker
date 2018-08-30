@@ -30,7 +30,10 @@ function Get-OutputBinding {
     param(
         [Parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
         [string[]]
-        $Name = '*'
+        $Name = '*',
+
+        [switch]
+        $Purge
     )
     begin {
         $bindings = @{}
@@ -39,6 +42,9 @@ function Get-OutputBinding {
         $script:_OutputBindings.GetEnumerator() | Where-Object Name -Like $Name | ForEach-Object { $null = $bindings.Add($_.Name, $_.Value) }
     }
     end {
+        if($Purge.IsPresent) {
+            $script:_OutputBindings.Clear()
+        }
         return $bindings
     }
 }

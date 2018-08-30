@@ -26,7 +26,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         {
             _msgStream = msgStream;
             _logger = new RpcLogger(msgStream);
-            _powerShellManager = PowerShellManager.Create(_logger);
+            _powerShellManager = new PowerShellManager(_logger);
             _functionLoader = new FunctionLoader();
         }
 
@@ -63,15 +63,27 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
         internal StreamingMessage ProcessWorkerInitRequest(StreamingMessage request)
         {
+            StatusResult status = new StatusResult()
+            {
+                Status = StatusResult.Types.Status.Success
+            };
+
+            try
+            {
+                _powerShellManager.InitializeRunspace();
+            }
+            catch (Exception e)
+            {
+                status.Status = StatusResult.Types.Status.Failure;
+                status.Exception = e.ToRpcException();
+            }
+
             return new StreamingMessage()
             {
                 RequestId = request.RequestId,
                 WorkerInitResponse = new WorkerInitResponse()
                 {
-                    Result = new StatusResult()
-                    {
-                        Status = StatusResult.Types.Status.Success
-                    }
+                    Result = status
                 }
             };
         }
@@ -143,8 +155,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             try
             {
                 result = _powerShellManager
-                    .InvokeFunctionAndSetGlobalReturn(scriptPath, entryPoint, triggerMetadata, invocationRequest.InputData)
-                    .ReturnBindingHashtable(functionInfo.OutputBindings);
+                    .InvokeFunction(scriptPath, entryPoint, triggerMetadata, invocationRequest.InputData);
             }
             catch (Exception e)
             {

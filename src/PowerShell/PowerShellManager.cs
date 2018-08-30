@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -20,14 +21,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     internal class PowerShellManager
     {
         readonly static string s_TriggerMetadataParameterName = "TriggerMetadata";
-        readonly static bool s_UseLocalScope = true;
 
         RpcLogger _logger;
         PowerShell _pwsh;
 
-        PowerShellManager(PowerShell pwsh, RpcLogger logger)
+        internal PowerShellManager(RpcLogger logger)
         {
-            _pwsh = pwsh;
+            var initialSessionState = InitialSessionState.CreateDefault();
+            initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+            _pwsh = PowerShell.Create(initialSessionState);
             _logger = logger;
 
             // Setup Stream event listeners
@@ -40,36 +42,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
         }
 
-        public static PowerShellManager Create(RpcLogger logger)
+        internal void InitializeRunspace()
         {
-            // Set up initial session state
-            var initialSessionState = InitialSessionState.CreateDefault();
-            if(Platform.IsWindows)
-            {
-                initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
-            }
-            var pwsh = PowerShell.Create(initialSessionState);
-
-            // Build path to the Azure Functions binding helper module
-            string modulePath = System.IO.Path.Join(
-                AppDomain.CurrentDomain.BaseDirectory,
-                "Azure.Functions.PowerShell.Worker.Module",
-                "Azure.Functions.PowerShell.Worker.Module.psd1");
-
             // Add HttpResponseContext namespace so users can reference
             // HttpResponseContext without needing to specify the full namespace
-            pwsh.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}")
-                .AddStatement()
-                // Import the Azure Functions binding helper module
-                .AddCommand("Import-Module")
-                .AddParameter("Name", modulePath)
-                .AddParameter("Scope", "Global")
-                .InvokeAndClearCommands();
-
-            return new PowerShellManager(pwsh, logger);
+            _pwsh.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").InvokeAndClearCommands();
+            
+            // Prepend the path to the internal Modules folder to the PSModulePath
+            var modulePath = Environment.GetEnvironmentVariable("PSModulePath");
+            var additionalPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
+            Environment.SetEnvironmentVariable("PSModulePath", $"{additionalPath}{Path.PathSeparator}{modulePath}");
         }
 
-        public Hashtable InvokeFunction(
+        internal Hashtable InvokeFunction(
             string scriptPath,
             string entryPoint,
             Hashtable triggerMetadata,
@@ -88,22 +73,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     if (entryPoint != "")
                     {
                         parameterMetadata = _pwsh
-                            .AddScript($@". {scriptPath}", s_UseLocalScope)
+                            .AddScript($@". {scriptPath}")
                             .AddStatement()
-                            .AddCommand("Get-Command", s_UseLocalScope).AddParameter("Name", entryPoint)
+                            .AddCommand("Get-Command", useLocalScope: true).AddParameter("Name", entryPoint)
                             .InvokeAndClearCommands<FunctionInfo>()[0].Parameters;
 
-                        _pwsh
-                            .AddScript($@". {scriptPath}", s_UseLocalScope)
-                            .AddStatement()
-                            .AddCommand(entryPoint, s_UseLocalScope);
+                        _pwsh.AddCommand(entryPoint, useLocalScope: true);
 
                     }
                     else
                     {
-                        parameterMetadata = _pwsh.AddCommand("Get-Command", s_UseLocalScope).AddParameter("Name", scriptPath)
+                        parameterMetadata = _pwsh.AddCommand("Get-Command", useLocalScope: true).AddParameter("Name", scriptPath)
                             .InvokeAndClearCommands<ExternalScriptInfo>()[0].Parameters;
-                        _pwsh.AddCommand(scriptPath, s_UseLocalScope);
+                        _pwsh.AddCommand(scriptPath, useLocalScope: true);
                     }
                 }
 
@@ -127,40 +109,32 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     Collection<PSObject> pipelineItems = _pwsh.InvokeAndClearCommands<PSObject>();
                     foreach (var psobject in pipelineItems)
                     {
-                        _logger.LogInformation(psobject.ToString());
+                        _logger.LogInformation($"FROM FUNCTION: {psobject.ToString()}");
                     }
                     
                     returnObject = pipelineItems[pipelineItems.Count - 1];
                 }
                 
-                var result = _pwsh.AddCommand("Get-OutputBinding", s_UseLocalScope).InvokeAndClearCommands<Hashtable>()[0];
+                var result = _pwsh.AddCommand("Azure.Functions.PowerShell.Worker.Module\\Get-OutputBinding", useLocalScope: true)
+                    .AddParameter("Purge")
+                    .InvokeAndClearCommands<Hashtable>()[0];
 
                 if(returnObject != null)
                 {
                     result.Add("$return", returnObject);
                 }
-                ResetRunspace();
                 return result;
             }
-            catch(Exception e)
+            finally
             {
                 ResetRunspace();
-                throw;
             }
         }
 
-        void ResetRunspace()
+        private void ResetRunspace()
         {
             // Reset the runspace to the Initial Session State
             _pwsh.Runspace.ResetRunspaceState();
-
-            // TODO: Change this to clearing the variable by running in the module
-            string modulePath = System.IO.Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Azure.Functions.PowerShell.Worker.Module", "Azure.Functions.PowerShell.Worker.Module.psd1");
-            _pwsh.AddCommand("Import-Module")
-                .AddParameter("Name", modulePath)
-                .AddParameter("Scope", "Global")
-                .AddParameter("Force")
-                .InvokeAndClearCommands();
         }
     }
 }
