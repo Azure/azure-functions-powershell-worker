@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using Google.Protobuf.Collections;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
