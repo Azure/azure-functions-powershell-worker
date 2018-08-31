@@ -34,16 +34,15 @@ namespace Azure.Functions.PowerShell.Worker.Test
                 }
             };
 
-            var expected = new HttpRequestContext
-            {
-                Method = method,
-                Url = url,
-                Headers = new MapField<string, string>(),
-                Params = new MapField<string, string>(),
-                Query = new MapField<string, string>()
-            };
+            var httpRequestContext = (HttpRequestContext)input.ToObject();
 
-            Assert.Equal(expected, (HttpRequestContext)input.ToObject());
+            Assert.Equal(httpRequestContext.Method, method);
+            Assert.Equal(httpRequestContext.Url, url);
+            Assert.Null(httpRequestContext.Body);
+            Assert.Null(httpRequestContext.RawBody);
+            Assert.Empty(httpRequestContext.Headers);
+            Assert.Empty(httpRequestContext.Params);
+            Assert.Empty(httpRequestContext.Query);
         }
 
         [Fact]
@@ -66,25 +65,20 @@ namespace Azure.Functions.PowerShell.Worker.Test
             input.Http.Params.Add(key, value);
             input.Http.Query.Add(key, value);
 
-            var expected = new HttpRequestContext
-            {
-                Method = method,
-                Url = url,
-                Headers = new MapField<string, string>
-                {
-                    {key, value}
-                },
-                Params = new MapField<string, string>
-                {
-                    {key, value}
-                },
-                Query = new MapField<string, string>
-                {
-                    {key, value}
-                }
-            };
+            var httpRequestContext = (HttpRequestContext)input.ToObject();
 
-            Assert.Equal(expected, (HttpRequestContext)input.ToObject());
+            Assert.Equal(httpRequestContext.Method, method);
+            Assert.Equal(httpRequestContext.Url, url);
+            Assert.Null(httpRequestContext.Body);
+            Assert.Null(httpRequestContext.RawBody);
+
+            Assert.Single(httpRequestContext.Headers);
+            Assert.Single(httpRequestContext.Params);
+            Assert.Single(httpRequestContext.Query);
+
+            Assert.Equal(httpRequestContext.Headers[key], value);
+            Assert.Equal(httpRequestContext.Params[key], value);
+            Assert.Equal(httpRequestContext.Query[key], value);
         }
 
         [Fact]
@@ -115,14 +109,19 @@ namespace Azure.Functions.PowerShell.Worker.Test
             {
                 Method = method,
                 Url = url,
-                Headers = new MapField<string, string>(),
-                Params = new MapField<string, string>(),
-                Query = new MapField<string, string>(),
                 Body = data,
                 RawBody = data
             };
 
-            Assert.Equal(expected, (HttpRequestContext)input.ToObject());
+            var httpRequestContext = (HttpRequestContext)input.ToObject();
+
+            Assert.Equal(httpRequestContext.Method, method);
+            Assert.Equal(httpRequestContext.Url, url);
+            Assert.Equal(httpRequestContext.Body, data);
+            Assert.Equal(httpRequestContext.RawBody, data);
+            Assert.Empty(httpRequestContext.Headers);
+            Assert.Empty(httpRequestContext.Params);
+            Assert.Empty(httpRequestContext.Query);
         }
 
         [Fact]

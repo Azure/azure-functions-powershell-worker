@@ -20,11 +20,32 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             var httpRequestContext =  new HttpRequestContext
             {
                 Method = rpcHttp.Method,
-                Url = rpcHttp.Url,
-                Headers = rpcHttp.Headers,
-                Params = rpcHttp.Params,
-                Query = rpcHttp.Query
+                Url = rpcHttp.Url
             };
+
+            if (rpcHttp.Headers != null)
+            {
+                foreach (var pair in rpcHttp.Headers)
+                {
+                    httpRequestContext.Headers.TryAdd(pair.Key, pair.Value);
+                }
+            }
+
+            if (rpcHttp.Params != null)
+            {
+                foreach (var pair in rpcHttp.Params)
+                {
+                    httpRequestContext.Params.TryAdd(pair.Key, pair.Value);
+                }
+            }
+
+            if (rpcHttp.Query != null)
+            {
+                foreach (var pair in rpcHttp.Query)
+                {
+                    httpRequestContext.Query.TryAdd(pair.Key, pair.Value);
+                }
+            }
 
             if (rpcHttp.Body != null)
             {
@@ -73,9 +94,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         {
             return new RpcException
             {
-                Message = exception?.Message,
-                Source = exception?.Source ?? "",
-                StackTrace = exception?.StackTrace ?? ""
+                Message = exception.Message,
+                Source = exception.Source ?? "",
+                StackTrace = exception.StackTrace ?? ""
             };
         }
 
@@ -92,9 +113,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
 
             // Add all the headers. ContentType is separated for convenience
-            foreach (DictionaryEntry item in httpResponseContext.Headers)
+            foreach (var item in httpResponseContext.Headers)
             {
-                rpcHttp.Headers.Add(item.Key.ToString(), item.Value.ToString());
+                rpcHttp.Headers.Add(item.Key, item.Value);
             }
 
             // Allow the user to set content-type in the Headers
@@ -123,9 +144,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             {
                 typedData.Http = http.ToRpcHttp();
             }
-            else if (LanguagePrimitives.TryConvertTo(value, out Hashtable hashtable))
+            else if (LanguagePrimitives.TryConvertTo(value, out IDictionary hashtable))
             {
-                    typedData.Json = JsonConvert.SerializeObject(hashtable);
+                typedData.Json = JsonConvert.SerializeObject(hashtable);
             }
             else if (LanguagePrimitives.TryConvertTo(value, out string str))
             {
