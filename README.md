@@ -11,9 +11,9 @@ Prototype for Azure Functions PowerShell Language Worker
 ```powershell
 # Windows if you installed the Azure Functions Core Tools via npm
 Remove-Item -Recurse -Force ~\AppData\Roaming\npm\node_modules\azure-functions-core-tools\bin\workers\powershell
-Copy-Item src\Azure.Functions.PowerShell.Worker\bin\Debug\netcoreapp2.1\publish ~\AppData\Roaming\npm\node_modules\azure-functions-core-tools\bin\workers\powershell -Recurse -Force
+Copy-Item src\bin\Debug\netcoreapp2.1\publish ~\AppData\Roaming\npm\node_modules\azure-functions-core-tools\bin\workers\powershell -Recurse -Force
 
 # macOS if you installed the Azure Functions Core Tools via brew
 Remove-Item -Recurse -Force /usr/local/Cellar/azure-functions-core-tools/2.0.1-beta.33/workers/powershell
-Copy-Item src/Azure.Functions.PowerShell.Worker/bin/Debug/netcoreapp2.1/publish /usr/local/Cellar/azure-functions-core-tools/2.0.1-beta.33/workers/powershell -Recurse -Force
+Copy-Item src/bin/Debug/netcoreapp2.1/publish /usr/local/Cellar/azure-functions-core-tools/2.0.1-beta.33/workers/powershell -Recurse -Force
 ```

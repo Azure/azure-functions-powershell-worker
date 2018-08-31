@@ -1,10 +1,8 @@
-param($req, $TriggerMetadata)
-
-# Write-Host $TriggerMetadata["Name"]
-
 # Invoked with Invoke-RestMethod:
 # irm http://localhost:7071/api/MyHttpTrigger?Name=Tyler
-# Input bindings are added to the scope of the script: ex. `$req`
+# Input bindings are added via param block
+
+param($req, $TriggerMetadata)
 
 # If no name was passed by query parameter
 $name = 'World'
@@ -22,7 +20,7 @@ Write-Warning "Warning $name"
 $name
 
 # You set the value of your output bindings by assignment `$nameOfOutputBinding = 'foo'`
-$res = [HttpResponseContext]@{
+Push-OutputBinding -Name res -Value ([HttpResponseContext]@{
     Body = @{ Hello = $name }
     ContentType = 'application/json'
-}
+})
