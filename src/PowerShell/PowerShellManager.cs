@@ -28,7 +28,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         internal PowerShellManager(RpcLogger logger)
         {
             var initialSessionState = InitialSessionState.CreateDefault();
-            initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+            if(Platform.IsWindows)
+            {
+                initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+            }
             _pwsh = PowerShell.Create(initialSessionState);
             _logger = logger;
 
