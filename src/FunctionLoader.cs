@@ -38,7 +38,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         internal readonly string FunctionName;
         internal readonly string ScriptPath;
         internal readonly MapField<string, BindingInfo> AllBindings;
-        internal readonly MapField<string, BindingInfo> OutBindings;
+        internal readonly MapField<string, BindingInfo> OutputBindings;
 
         public FunctionInfo(RpcFunctionMetadata metadata)
         {
@@ -48,7 +48,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             ScriptPath = metadata.ScriptFile;
 
             AllBindings = new MapField<string, BindingInfo>();
-            OutBindings = new MapField<string, BindingInfo>();
+            OutputBindings = new MapField<string, BindingInfo>();
 
             foreach (var binding in metadata.Bindings)
             {
@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 // PowerShell doesn't support the 'InOut' type binding
                 if (binding.Value.Direction == BindingInfo.Types.Direction.Out)
                 {
-                    OutBindings.Add(binding.Key, binding.Value);
+                    OutputBindings.Add(binding.Key, binding.Value);
                 }
             }
         }

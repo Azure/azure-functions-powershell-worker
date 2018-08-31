@@ -166,7 +166,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 }
 
                 // Set out binding data and return response to be sent back to host
-                foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutBindings)
+                foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutputBindings)
                 {
                     // if one of the bindings is '$return' we need to set the ReturnValue
                     if(string.Equals(binding.Key, "$return", StringComparison.OrdinalIgnoreCase))
