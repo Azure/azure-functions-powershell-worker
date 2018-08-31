@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using Google.Protobuf.Collections;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
@@ -11,8 +12,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     /// <summary>
     /// Custom type represent the context of the in-coming Http request.
     /// </summary>
-    public class HttpRequestContext : IEquatable<HttpRequestContext>
+    public class HttpRequestContext
     {
+        /// <summary>
+        /// Constructor for HttpRequestContext.
+        /// </summary>
+        public HttpRequestContext()
+        {
+            Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            Params = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            Query = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+
         /// <summary>
         /// Gets the Body of the Http request.
         /// </summary>
@@ -21,7 +32,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Gets the Headers of the Http request.
         /// </summary>
-        public MapField<string, string> Headers { get; internal set; }
+        public Dictionary<string, string> Headers { get; private set; }
 
         /// <summary>
         /// Gets the Method of the Http request.
@@ -36,30 +47,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Gets the Params of the Http request.
         /// </summary>
-        public MapField<string, string> Params { get; internal set; }
+        public Dictionary<string, string> Params { get; private set; }
 
         /// <summary>
         /// Gets the Query of the Http request.
         /// </summary>
-        public MapField<string, string> Query { get; internal set; }
+        public Dictionary<string, string> Query { get; private set; }
 
         /// <summary>
         /// Gets the RawBody of the Http request.
         /// </summary>
         public object RawBody { get; internal set; }
-
-        /// <summary>
-        /// Compare with another HttpRequestContext object.
-        /// </summary>
-        public bool Equals(HttpRequestContext other)
-        {
-            return Method == other.Method
-                && Url == other.Url
-                && Headers.Equals(other.Headers)
-                && Params.Equals(other.Params)
-                && Query.Equals(other.Query)
-                && (Body == other.Body || Body.Equals(other.Body))
-                && (RawBody == other.RawBody || RawBody.Equals(other.RawBody));
-        }
     }
 }

@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using Google.Protobuf.Collections;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
@@ -14,9 +15,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         internal FunctionInfo GetFunctionInfo(string functionId)
         {
-            FunctionInfo funcInfo = null;
-            _loadedFunctions.TryGetValue(functionId, out funcInfo);
-            return funcInfo;
+            if (_loadedFunctions.TryGetValue(functionId, out FunctionInfo funcInfo))
+            {
+                return funcInfo;
+            }
+
+            throw new InvalidOperationException($"Function with the ID '{functionId}' was not loaded.");
         }
 
         internal void Load(FunctionLoadRequest request)

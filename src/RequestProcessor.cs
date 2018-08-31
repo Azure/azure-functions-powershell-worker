@@ -136,63 +136,58 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 }
             };
 
-            // Load information about the function
-            var functionInfo = _functionLoader.GetFunctionInfo(invocationRequest.FunctionId);
-            if (functionInfo == null)
-            {
-                status.Status = StatusResult.Types.Status.Failure;
-                status.Result = $"Function with the ID '{invocationRequest.FunctionId}' was not loaded.";
-                return response;
-            }
-
-            var scriptPath = functionInfo.ScriptPath;
-            var entryPoint = functionInfo.EntryPoint;
-            var triggerMetadata = new Hashtable();
-
-            // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
-            foreach (var dataItem in invocationRequest.TriggerMetadata)
-            {
-                triggerMetadata.Add(dataItem.Key, dataItem.Value.ToObject());
-            }
-
             // Invoke powershell logic and return hashtable of out binding data
-            Hashtable result = null;
             try
             {
+                // Load information about the function
+                var functionInfo = _functionLoader.GetFunctionInfo(invocationRequest.FunctionId);
+
+                // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
+                var triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase);
+                foreach (var dataItem in invocationRequest.TriggerMetadata)
+                {
+                    // MapField<K, V> is case-sensitive, but powershell is case-insensitive,
+                    // so for keys differ only in casing, the first wins.
+                    if (!triggerMetadata.ContainsKey(dataItem.Key))
+                    {
+                        triggerMetadata.Add(dataItem.Key, dataItem.Value.ToObject());
+                    }
+                }
+
                 // Set the RequestId and InvocationId for logging purposes
+                Hashtable result = null;
                 using (_logger.BeginScope(request.RequestId, invocationRequest.InvocationId))
                 {
                     result = _powerShellManager.InvokeFunction(
-                        scriptPath,
-                        entryPoint,
+                        functionInfo.ScriptPath,
+                        functionInfo.EntryPoint,
                         triggerMetadata,
                         invocationRequest.InputData);
+                }
+
+                // Set out binding data and return response to be sent back to host
+                foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutBindings)
+                {
+                    // if one of the bindings is '$return' we need to set the ReturnValue
+                    if(string.Equals(binding.Key, "$return", StringComparison.OrdinalIgnoreCase))
+                    {
+                        response.InvocationResponse.ReturnValue = result[binding.Key].ToTypedData();
+                        continue;
+                    }
+
+                    ParameterBinding paramBinding = new ParameterBinding()
+                    {
+                        Name = binding.Key,
+                        Data = result[binding.Key].ToTypedData()
+                    };
+
+                    response.InvocationResponse.OutputData.Add(paramBinding);
                 }
             }
             catch (Exception e)
             {
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = e.ToRpcException();
-                return response;
-            }
-
-            // Set out binding data and return response to be sent back to host
-            foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutBindings)
-            {
-                // if one of the bindings is '$return' we need to set the ReturnValue
-                if(string.Equals(binding.Key, "$return", StringComparison.OrdinalIgnoreCase))
-                {
-                    response.InvocationResponse.ReturnValue = result[binding.Key].ToTypedData();
-                    continue;
-                }
-
-                ParameterBinding paramBinding = new ParameterBinding()
-                {
-                    Name = binding.Key,
-                    Data = result[binding.Key].ToTypedData()
-                };
-
-                response.InvocationResponse.OutputData.Add(paramBinding);
             }
 
             return response;
