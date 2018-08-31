@@ -6,8 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.Text;
-
-using Microsoft.Extensions.Logging;
+using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
@@ -71,7 +70,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 .Append("ms]")
                 .ToString();
 
-            _logger.LogTrace(logMessage);
+            _logger.Log(LogLevel.Trace, logMessage);
 
             s_stopwatch.Reset();
         }

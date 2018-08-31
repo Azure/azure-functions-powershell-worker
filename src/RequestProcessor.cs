@@ -101,7 +101,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             // Try to load the functions
             try
             {
-                _functionLoader.Load(functionLoadRequest.FunctionId, functionLoadRequest.Metadata);
+                _functionLoader.Load(functionLoadRequest);
             }
             catch (Exception e)
             {
@@ -124,20 +124,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         {
             InvocationRequest invocationRequest = request.InvocationRequest;
 
-            // Set the RequestId and InvocationId for logging purposes
-            _logger.SetContext(request.RequestId, invocationRequest.InvocationId);
-
-            // Load information about the function
-            var functionInfo = _functionLoader.GetInfo(invocationRequest.FunctionId);
-            (string scriptPath, string entryPoint) = _functionLoader.GetFunc(invocationRequest.FunctionId);
-
-            // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
-            Hashtable triggerMetadata = new Hashtable();
-            foreach (var dataItem in invocationRequest.TriggerMetadata)
-            {
-                triggerMetadata.Add(dataItem.Key, dataItem.Value.ToObject());
-            }
-
             // Assume success unless something bad happens
             var status = new StatusResult() { Status = StatusResult.Types.Status.Success };
             var response = new StreamingMessage()
@@ -150,12 +136,38 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 }
             };
 
+            // Load information about the function
+            var functionInfo = _functionLoader.GetFunctionInfo(invocationRequest.FunctionId);
+            if (functionInfo == null)
+            {
+                status.Status = StatusResult.Types.Status.Failure;
+                status.Result = $"Function with the ID '{invocationRequest.FunctionId}' was not loaded.";
+                return response;
+            }
+
+            var scriptPath = functionInfo.ScriptPath;
+            var entryPoint = functionInfo.EntryPoint;
+            var triggerMetadata = new Hashtable();
+
+            // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
+            foreach (var dataItem in invocationRequest.TriggerMetadata)
+            {
+                triggerMetadata.Add(dataItem.Key, dataItem.Value.ToObject());
+            }
+
             // Invoke powershell logic and return hashtable of out binding data
             Hashtable result = null;
             try
             {
-                result = _powerShellManager
-                    .InvokeFunction(scriptPath, entryPoint, triggerMetadata, invocationRequest.InputData);
+                // Set the RequestId and InvocationId for logging purposes
+                using (_logger.BeginScope(request.RequestId, invocationRequest.InvocationId))
+                {
+                    result = _powerShellManager.InvokeFunction(
+                        scriptPath,
+                        entryPoint,
+                        triggerMetadata,
+                        invocationRequest.InputData);
+                }
             }
             catch (Exception e)
             {
@@ -165,8 +177,15 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             }
 
             // Set out binding data and return response to be sent back to host
-            foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutputBindings)
+            foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutBindings)
             {
+                // if one of the bindings is '$return' we need to set the ReturnValue
+                if(string.Equals(binding.Key, "$return", StringComparison.OrdinalIgnoreCase))
+                {
+                    response.InvocationResponse.ReturnValue = result[binding.Key].ToTypedData();
+                    continue;
+                }
+
                 ParameterBinding paramBinding = new ParameterBinding()
                 {
                     Name = binding.Key,
@@ -174,12 +193,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 };
 
                 response.InvocationResponse.OutputData.Add(paramBinding);
-
-                // if one of the bindings is $return we need to also set the ReturnValue
-                if(binding.Key == "$return")
-                {
-                    response.InvocationResponse.ReturnValue = paramBinding.Data;
-                }
             }
 
             return response;
