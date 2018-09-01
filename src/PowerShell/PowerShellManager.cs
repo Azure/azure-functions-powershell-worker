@@ -11,8 +11,8 @@ using System.IO;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
-using Microsoft.Extensions.Logging;
 using System.Management.Automation.Runspaces;
+using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
@@ -105,7 +105,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 if(parameterMetadata.ContainsKey(_TriggerMetadataParameterName))
                 {
                     _pwsh.AddParameter(_TriggerMetadataParameterName, triggerMetadata);
-                    _logger.LogDebug($"TriggerMetadata found. Value:{Environment.NewLine}{triggerMetadata.ToString()}");
+                    _logger.Log(LogLevel.Debug, $"TriggerMetadata found. Value:{Environment.NewLine}{triggerMetadata.ToString()}");
                 }
 
                 PSObject returnObject = null;
@@ -115,7 +115,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     Collection<PSObject> pipelineItems = _pwsh.InvokeAndClearCommands<PSObject>();
                     foreach (var psobject in pipelineItems)
                     {
-                        _logger.LogInformation($"OUTPUT: {psobject.ToString()}");
+                        _logger.Log(LogLevel.Information, $"OUTPUT: {psobject.ToString()}");
                     }
                     
                     returnObject = pipelineItems[pipelineItems.Count - 1];

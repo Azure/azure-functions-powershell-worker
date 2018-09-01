@@ -36,13 +36,18 @@ namespace Azure.Functions.PowerShell.Worker.Test
                 Type = "http"
             });
 
+            var functionLoadRequest = new FunctionLoadRequest{
+                FunctionId = functionId,
+                Metadata = metadata
+            };
+
             var functionLoader = new FunctionLoader();
-            functionLoader.Load(functionId, metadata);
+            functionLoader.Load(functionLoadRequest);
 
-            (string scriptPathResult, string entryPointResult) = functionLoader.GetFunc(functionId);
+            var funcInfo = functionLoader.GetFunctionInfo(functionId);
 
-            Assert.Equal(scriptPathExpected, scriptPathResult);
-            Assert.Equal("", entryPointResult);
+            Assert.Equal(scriptPathExpected, funcInfo.ScriptPath);
+            Assert.Equal("", funcInfo.EntryPoint);
         }
 
         [Fact]
@@ -70,13 +75,18 @@ namespace Azure.Functions.PowerShell.Worker.Test
                 Type = "http"
             });
 
+            var functionLoadRequest = new FunctionLoadRequest{
+                FunctionId = functionId,
+                Metadata = metadata
+            };
+
             var functionLoader = new FunctionLoader();
-            functionLoader.Load(functionId, metadata);
+            functionLoader.Load(functionLoadRequest);
 
-            (string scriptPathResult, string entryPointResult) = functionLoader.GetFunc(functionId);
+            var funcInfo = functionLoader.GetFunctionInfo(functionId);
 
-            Assert.Equal(scriptPathExpected, scriptPathResult);
-            Assert.Equal(entryPointExpected, entryPointResult);
+            Assert.Equal(scriptPathExpected, funcInfo.ScriptPath);
+            Assert.Equal(entryPointExpected, funcInfo.EntryPoint);
         }
 
         [Fact]
@@ -104,39 +114,20 @@ namespace Azure.Functions.PowerShell.Worker.Test
                 Type = "http"
             });
 
-            var infoExpected = new FunctionInfo
-            {
-                Directory = directory,
-                HttpOutputName = "",
-                Name = name
+            var functionLoadRequest = new FunctionLoadRequest{
+                FunctionId = functionId,
+                Metadata = metadata
             };
-            infoExpected.Bindings.Add("req", new BindingInfo
-            {
-                Direction = BindingInfo.Types.Direction.In,
-                Type = "httpTrigger"
-            });
-            infoExpected.Bindings.Add("res", new BindingInfo
-            {
-                Direction = BindingInfo.Types.Direction.Out,
-                Type = "http"
-            });
-
-            infoExpected.OutputBindings.Add("res", new BindingInfo
-            {
-                Direction = BindingInfo.Types.Direction.Out,
-                Type = "http"
-            });
 
             var functionLoader = new FunctionLoader();
-            functionLoader.Load(functionId, metadata);
+            functionLoader.Load(functionLoadRequest);
 
-            var infoResult = functionLoader.GetInfo(functionId);
+            var funcInfo = functionLoader.GetFunctionInfo(functionId);
 
-            Assert.Equal(directory, infoResult.Directory);
-            Assert.Equal("res", infoResult.HttpOutputName);
-            Assert.Equal(name, infoResult.Name);
-            Assert.Equal(infoExpected.Bindings.Count, infoResult.Bindings.Count);
-            Assert.Equal(infoExpected.OutputBindings.Count, infoResult.OutputBindings.Count);
+            Assert.Equal(directory, funcInfo.Directory);
+            Assert.Equal(name, funcInfo.FunctionName);
+            Assert.Equal(2, funcInfo.AllBindings.Count);
+            Assert.Equal(1, funcInfo.OutBindings.Count);
         }
     }
 }

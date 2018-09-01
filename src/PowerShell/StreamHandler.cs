@@ -4,7 +4,7 @@
 //
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
-using Microsoft.Extensions.Logging;
+using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is DebugRecord record)
             {
-                _logger.LogDebug($"DEBUG: {record.Message}");
+                _logger.Log(LogLevel.Debug, $"DEBUG: {record.Message}");
             }
         }
 
@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is ErrorRecord record)
             {
-                _logger.LogError(record.Exception, $"ERROR: {record.Exception.Message}");
+                _logger.Log(LogLevel.Error, $"ERROR: {record.Exception.Message}", record.Exception);
             }
         }
 
@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is InformationRecord record)
             {
-                _logger.LogInformation($"INFORMATION: {record.MessageData}");
+                _logger.Log(LogLevel.Information, $"INFORMATION: {record.MessageData}");
             }
         }
 
@@ -47,7 +47,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is ProgressRecord record)
             {
-                _logger.LogTrace($"PROGRESS: {record.StatusDescription}");
+                _logger.Log(LogLevel.Trace, $"PROGRESS: {record.StatusDescription}");
             }
         }
 
@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is VerboseRecord record)
             {
-                _logger.LogTrace($"VERBOSE: {record.Message}");
+                _logger.Log(LogLevel.Trace, $"VERBOSE: {record.Message}");
             }
         }
 
@@ -63,7 +63,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is WarningRecord record)
             {
-                _logger.LogWarning($"WARNING: {record.Message}");
+                _logger.Log(LogLevel.Warning, $"WARNING: {record.Message}");
             }
         }
     }

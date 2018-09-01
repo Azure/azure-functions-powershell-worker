@@ -14,7 +14,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
 {
     internal class MessagingStream : IDisposable
     {
-        private SemaphoreSlim _writeStreamHandle = new SemaphoreSlim(1, 1);
+        private SemaphoreSlim _writeSemaphore = new SemaphoreSlim(1, 1);
         private AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
         private bool isDisposed;
 
@@ -45,14 +45,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
 
             // Wait for the handle to be released because we can't have
             // more than one message being sent at the same time
-            await _writeStreamHandle.WaitAsync();
+            await _writeSemaphore.WaitAsync();
             try
             {
                 await _call.RequestStream.WriteAsync(message);
             }
             finally
             {
-                _writeStreamHandle.Release();
+                _writeSemaphore.Release();
             }
         }
     }
