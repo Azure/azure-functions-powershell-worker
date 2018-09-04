@@ -12,6 +12,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeBuildOutput>true</IncludeBuildOutput>
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
     <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
@@ -25,13 +26,13 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="worker.config.json">
+    <Content Include="worker.config.json" PackageCopyToOutput="true">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Modules\**">
+    </Content>
+    <Content Include="Modules\**" PackageCopyToOutput="true">
       <Link>Modules\%(RecursiveDir)\%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
 </Project>
