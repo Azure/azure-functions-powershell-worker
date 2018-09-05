@@ -15,6 +15,7 @@ What's available?
 What's coming?
 
 * More triggers and bindings
+* Tooling integration
 * A bunch of other good things
 
 ## Contributing
