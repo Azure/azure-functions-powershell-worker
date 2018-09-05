@@ -127,7 +127,7 @@ namespace Azure.Functions.PowerShell.Worker.Test
             Assert.Equal(directory, funcInfo.Directory);
             Assert.Equal(name, funcInfo.FunctionName);
             Assert.Equal(2, funcInfo.AllBindings.Count);
-            Assert.Equal(1, funcInfo.OutBindings.Count);
+            Assert.Single(funcInfo.OutputBindings);
         }
     }
 }
