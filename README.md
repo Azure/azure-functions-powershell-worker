@@ -6,16 +6,16 @@ This repository will host the PowerShell language worker implementation for Azur
 
 ## Overview
 
-PowerShell support for Functions is based on [PowerShell Core 6.1](https://github.com/powershell/powershell), [Functions on Linux](https://blogs.msdn.microsoft.com/appserviceteam/2017/11/15/functions-on-linux-preview/), and the [V2 Runtime](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions).
+PowerShell support for Functions is based on [PowerShell Core 6.1](https://github.com/powershell/powershell), [Functions on Linux](https://blogs.msdn.microsoft.com/appserviceteam/2017/11/15/functions-on-linux-preview/), and the [Azure Functions runtime V2](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions).
 
 What's available?
 
-* Develop using Functions Core Tools (CLI)
-* Triggers / Bindings (some untested) : HTTP/Webhook, Blob, Queue, Timer, Cosmos DB, Event Grid, Event Hubs and Service Bus
+* Triggers / Bindings : HTTP/Webhook
 
 What's coming?
 
-A ton of good things.
+* More triggers and bindings
+* A bunch of other good things
 
 ## Contributing
 
