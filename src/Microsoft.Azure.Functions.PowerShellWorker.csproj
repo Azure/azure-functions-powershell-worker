@@ -3,11 +3,12 @@ Copyright (c) Microsoft. All rights reserved.
 Licensed under the MIT license. See LICENSE file in the project root for full license information.
 -->
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="Azure.Functions.PowerShell.Worker.Package.props" />
+  <Import Project="Microsoft.Azure.Functions.PowerShellWorker.Package.props" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>  
     <Product>Azure Function PowerShell Language Worker</Product>
+    
     <LangVersion>Latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
@@ -26,6 +27,10 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />
   </ItemGroup>
 
+  <!-- Copy Content files to the language worker's directory -->
+  <PropertyGroup>
+    <ContentTargetFolders>contentFiles\any\any\workers\powershell</ContentTargetFolders>
+  </PropertyGroup>
   <ItemGroup>
     <Content Include="worker.config.json" PackageCopyToOutput="true">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

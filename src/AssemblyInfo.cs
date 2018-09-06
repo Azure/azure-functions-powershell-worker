@@ -5,5 +5,5 @@
 
 using System.Runtime.CompilerServices;
 
-[assembly:InternalsVisibleTo("Azure.Functions.PowerShell.Worker.Test")]
+[assembly:InternalsVisibleTo("Microsoft.Azure.Functions.PowerShellWorker.Test")]
 

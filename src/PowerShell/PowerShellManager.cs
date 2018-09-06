@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").InvokeAndClearCommands();
             
             // Set the PSModulePath
-            Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
+            Environment.SetEnvironmentVariable("PSModulePath", Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "workers", "powershell", "Modules"));
         }
 
         internal Hashtable InvokeFunction(
@@ -121,7 +121,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     returnObject = pipelineItems[pipelineItems.Count - 1];
                 }
                 
-                var result = _pwsh.AddCommand("Azure.Functions.PowerShell.Worker.Module\\Get-OutputBinding")
+                var result = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker.Module\\Get-OutputBinding")
                     .AddParameter("Purge")
                     .InvokeAndClearCommands<Hashtable>()[0];
 
