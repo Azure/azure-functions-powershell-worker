@@ -1,12 +1,9 @@
 {
     "version": "2.0",
-    "logger": {
-        "categoryFilter": {
-            "defaultLevel": "Trace",
-            "categoryLevels": {
-                "Worker": "Trace"
-            }
-        },
+    "Logging": {
+        "LogLevel": {
+			"Default": "Trace"
+		},
         "fileLoggingMode": "always"
     }
 }
