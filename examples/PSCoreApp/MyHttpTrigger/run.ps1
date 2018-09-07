@@ -1,6 +1,6 @@
 param($req, $TriggerMetadata)
 
-Write-Verbose "PowerShell HTTP trigger function processed a request."
+Write-Verbose "PowerShell HTTP trigger function processed a request." -Verbose
 
 if($req.Query.Name -or $req.Body.Name) {
     $name = $req.Query.Name
