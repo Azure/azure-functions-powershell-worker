@@ -1,7 +1,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'Azure.Functions.PowerShell.Worker.Module.psm1'
+RootModule = 'Microsoft.Azure.Functions.PowerShellWorker.Module.psm1'
 
 # Version number of this module.
 ModuleVersion = '0.1.0'

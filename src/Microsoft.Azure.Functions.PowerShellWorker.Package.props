@@ -5,7 +5,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
 <Project>
   <PropertyGroup>
     <Version>0.1.0</Version>
-    <PackageId>Azure.Functions.PowerShell.Worker</PackageId>
+    <PackageId>Microsoft.Azure.Functions.PowerShellWorker</PackageId>
     <Authors>Microsoft</Authors>
     <Owners>Microsoft</Owners>
     <Company>Microsoft Corporation</Company>
