@@ -113,12 +113,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 {
                     // Log everything we received from the pipeline and set the last one to be the ReturnObject
                     Collection<PSObject> pipelineItems = _pwsh.InvokeAndClearCommands<PSObject>();
-                    foreach (var psobject in pipelineItems)
+                    if (pipelineItems.Count > 0)
                     {
-                        _logger.Log(LogLevel.Information, $"OUTPUT: {psobject.ToString()}");
+                        foreach (var psobject in pipelineItems)
+                        {
+                            _logger.Log(LogLevel.Information, $"OUTPUT: {psobject.ToString()}");
+                        }
+                        returnObject =  pipelineItems[pipelineItems.Count - 1];
                     }
-                    
-                    returnObject = pipelineItems[pipelineItems.Count - 1];
                 }
                 
                 var result = _pwsh.AddCommand("Azure.Functions.PowerShell.Worker.Module\\Get-OutputBinding")
