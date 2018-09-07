@@ -111,3 +111,22 @@ dotnet ./src/WebJobs.Script.WebHost/bin/Debug/netcoreapp2.1/Microsoft.Azure.WebJ
 > Note: Remember to remove `"AzureWebJobsScriptRoot"`
 environment variable after you have finished debugging,
 because it will also influence the `func` CLI tool.
+
+### Packaging
+
+To package the PowerShell Language Worker as a nupkg, do the following:
+
+* `cd azure-functions-powershell-worker`
+* `dotnet publish`
+* `cd package`
+* `dotnet pack`
+
+That will place a `Microsoft.Azure.Functions.PowerShellWorker.*.nupkg` in:
+
+`azure-functions-powershell-worker/package/bin/Debug`
+
+It pulls the contents of the publish folder in:
+
+`azure-functions-powershell-worker/src/bin/Debug/netcoreapp2.1/publish`
+
+if you specify a different Configuration or TargetFramework that will be honored.

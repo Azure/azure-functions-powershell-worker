@@ -3,17 +3,16 @@ Copyright (c) Microsoft. All rights reserved.
 Licensed under the MIT license. See LICENSE file in the project root for full license information.
 -->
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="Microsoft.Azure.Functions.PowerShellWorker.Package.props" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>  
     <Product>Azure Function PowerShell Language Worker</Product>
+    <AssemblyName>Microsoft.Azure.Functions.PowerShellWorker</AssemblyName>
+    
     <LangVersion>Latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <IncludeBuildOutput>true</IncludeBuildOutput>
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
     <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
@@ -35,5 +34,4 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-
 </Project>
