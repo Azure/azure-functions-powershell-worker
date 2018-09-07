@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.IO;
 using System.Management.Automation;
 
 using Google.Protobuf;
@@ -137,31 +138,45 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 return typedData;
             }
 
-            if (LanguagePrimitives.TryConvertTo(value, out byte[] arr))
+            switch (value)
             {
-                typedData.Bytes = ByteString.CopyFrom(arr);
-            }
-            else if(LanguagePrimitives.TryConvertTo(value, out HttpResponseContext http))
-            {
-                typedData.Http = http.ToRpcHttp();
-            }
-            else if (LanguagePrimitives.TryConvertTo(value, out IDictionary hashtable))
-            {
-                typedData.Json = JsonConvert.SerializeObject(hashtable);
-            }
-            else if (LanguagePrimitives.TryConvertTo(value, out string str))
-            {
-                // Attempt to parse the string into json. If it fails,
-                // fallback to storing as a string
-                try
-                {
-                    JsonConvert.DeserializeObject(str);
-                    typedData.Json = str;
-                }
-                catch
-                {
-                    typedData.String = str;
-                }
+                case double d:
+                    typedData.Double = d;
+                    break;
+                case long l:
+                    typedData.Int = l;
+                    break;
+                case int i:
+                    typedData.Int = i;
+                    break;
+                case byte[] arr:
+                    typedData.Bytes = ByteString.CopyFrom(arr);
+                    break;
+                case Stream s:
+                    typedData.Stream = ByteString.FromStream(s);
+                    break;
+                case HttpResponseContext http:
+                    typedData.Http = http.ToRpcHttp();
+                    break;
+                case IDictionary hashtable:
+                    typedData.Json = JsonConvert.SerializeObject(hashtable);
+                    break;
+                default:
+                    // Handle everything else as a string
+                    var str = value.ToString();
+
+                    // Attempt to parse the string into json. If it fails,
+                    // fallback to storing as a string
+                    try
+                    {
+                        JsonConvert.DeserializeObject(str);
+                        typedData.Json = str;
+                    }
+                    catch
+                    {
+                        typedData.String = str;
+                    }
+                    break;
             }
             return typedData;
         }
