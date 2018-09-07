@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.IO;
 
 using Google.Protobuf;
 using Google.Protobuf.Collections;
@@ -314,10 +315,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(expected, input.ToTypedData());
         }
 
-        [Fact(Skip = "Int gets interpreted as byte[]")]
+        [Fact]
         public void TestObjectToTypedDataInt()
         {
-            var data = (long)1;
+            var data = 1;
 
             var input = (object)data;
             var expected = new TypedData
@@ -328,7 +329,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(expected, input.ToTypedData());
         }
 
-        [Fact(Skip = "Double gets interpreted as byte[]")]
+        [Fact]
         public void TestObjectToTypedDataDouble()
         {
             var data = 1.1;
@@ -370,18 +371,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(expected, input.ToTypedData());
         }
 
-        [Fact(Skip = "Stream gets interpreted as Bytes")]
+        [Fact]
         public void TestObjectToTypedDataStream()
         {
-            var data = ByteString.CopyFromUtf8("Hello World!").ToByteArray();
-
-            var input = (object)data;
-            var expected = new TypedData
+            using(MemoryStream data = new MemoryStream(100))
             {
-                Stream = ByteString.CopyFrom(data)
-            };
 
-            Assert.Equal(expected, input.ToTypedData());
+                var input = (object)data;
+                var expected = new TypedData
+                {
+                    Stream = ByteString.FromStream(data)
+                };
+
+                Assert.Equal(expected, input.ToTypedData());
+            }
         }
 
         [Fact]
