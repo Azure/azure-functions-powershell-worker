@@ -13,6 +13,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     internal class RpcLogger : IDisposable
     {
+        private const string SystemLogPrefix = "LanguageWorkerConsoleLog";
         private MessagingStream _msgStream;
         private string _invocationId;
         private string _requestId;
@@ -58,7 +59,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             {
                 // For system logs, we log to stdio with a prefix of LanguageWorkerConsoleLog.
                 // These are picked up by the Functions Host
-                Console.WriteLine($"LanguageWorkerConsoleLogRequest Id: {_requestId}\nInvocation Id: {_invocationId}\nLog Message:\n{message}");
+                Console.WriteLine($"{SystemLogPrefix}Request Id: {_requestId}\nInvocation Id: {_invocationId}\nLog Message:\n{message}\n");
             }
         }
     }
