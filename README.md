@@ -85,6 +85,9 @@ Lastly, run:
 func start
 ```
 
+> NOTE: If you would like to see more out of the logs, see the logging section in the
+[Azure Functions Host repo](https://github.com/Azure/azure-functions-host/wiki/Authoring-&-Testing-Language-Extensions#logs).
+
 #### Latest Host
 
 A developer may also use the latest host code by cloning the git repository [Azure Functions Host](https://github.com/Azure/azure-functions-host).
