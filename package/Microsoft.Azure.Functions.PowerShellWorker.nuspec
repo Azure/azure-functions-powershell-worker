@@ -21,10 +21,10 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     <copyright>© Microsoft Corporation. All rights reserved.</copyright>
     <tags>azure,functions,powershell,worker</tags>
     <contentFiles>
-      <files include="**/*" buildAction="None" copyToOutput="true" flatten="false"/>
+      <files include="**\*" buildAction="None" copyToOutput="true" flatten="false"/>
     </contentFiles>
   </metadata>
   <files>
-    <file src="../src/bin/$configuration$/$targetFramework$/publish/**/*" target="contentFiles/any/any/workers/powershell" />
+    <file src="..\src\bin\$configuration$\$targetFramework$\publish\**\*" target="contentFiles\any\any\workers\powershell" />
   </files>
 </package>
