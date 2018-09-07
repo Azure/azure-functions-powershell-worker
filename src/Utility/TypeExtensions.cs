@@ -70,7 +70,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             switch (data.DataCase)
             {
                 case TypedData.DataOneofCase.Json:
-                    return JsonConvert.DeserializeObject<Hashtable>(data.Json);
+                    var hashtable = JsonConvert.DeserializeObject<Hashtable>(data.Json);
+                    return new Hashtable(hashtable, StringComparer.OrdinalIgnoreCase);
                 case TypedData.DataOneofCase.Bytes:
                     return data.Bytes.ToByteArray();
                 case TypedData.DataOneofCase.Double:

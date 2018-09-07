@@ -1,26 +1,21 @@
-# Invoked with Invoke-RestMethod:
-# irm http://localhost:7071/api/MyHttpTrigger?Name=Tyler
-# Input bindings are added via param block
-
 param($req, $TriggerMetadata)
 
-# If no name was passed by query parameter
-$name = 'World'
+Write-Verbose "PowerShell HTTP trigger function processed a request."
 
-# You can interact with query parameters, the body of the request, etc.
-if($req.Query.Name) {
+if($req.Query.Name -or $req.Body.Name) {
     $name = $req.Query.Name
+    if (-not $name) { $name = $req.Body.Name }
+
+    $status = 200
+    $body = "Hello " + $name
+}
+else {
+    $status = 400
+    $body = "Please pass a name on the query string or in the request body."
 }
 
-# you can write to the same streams as you would in a normal PowerShell script
-Write-Verbose "Verbose $name" -Verbose
-Write-Warning "Warning $name"
-
-# items in the pipeline get logged
-$name
-
-# You set the value of your output bindings by assignment `$nameOfOutputBinding = 'foo'`
 Push-OutputBinding -Name res -Value ([HttpResponseContext]@{
-    Body = @{ Hello = $name }
-    ContentType = 'application/json'
+    StatusCode = $status
+    Body = $body
 })
+
