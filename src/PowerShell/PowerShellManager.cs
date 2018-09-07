@@ -123,7 +123,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     }
                 }
                 
-                var result = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker.Module\\Get-OutputBinding")
+                var result = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Get-OutputBinding")
                     .AddParameter("Purge")
                     .InvokeAndClearCommands<Hashtable>()[0];
 
