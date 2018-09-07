@@ -8,7 +8,7 @@ using Microsoft.Azure.Functions.PowerShellWorker;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Xunit;
 
-namespace Azure.Functions.PowerShell.Worker.Test
+namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
     public class FunctionLoaderTests
     {

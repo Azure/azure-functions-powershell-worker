@@ -14,7 +14,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Newtonsoft.Json;
 using Xunit;
 
-namespace Azure.Functions.PowerShell.Worker.Test
+namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
     public class TypeExtensionsTests
     {
