@@ -35,21 +35,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             _invocationId = null;
         }
 
-        public async void Log(LogLevel logLevel, string message, Exception exception = null)
+        public async void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
         {
-            var logMessage = new StreamingMessage
+            if (isUserLog)
             {
-                RequestId = _requestId,
-                RpcLog = new RpcLog()
+                // For user logs, we send them over Rpc with details about the invocation.
+                var logMessage = new StreamingMessage
                 {
-                    Exception = exception?.ToRpcException(),
-                    InvocationId = _invocationId,
-                    Level = logLevel,
-                    Message = message
-                }
-            };
+                    RequestId = _requestId,
+                    RpcLog = new RpcLog()
+                    {
+                        Exception = exception?.ToRpcException(),
+                        InvocationId = _invocationId,
+                        Level = logLevel,
+                        Message = message
+                    }
+                };
 
-            await _msgStream.WriteAsync(logMessage);
+                await _msgStream.WriteAsync(logMessage);
+            }
+            else
+            {
+                // For system logs, we log to stdio with a prefix of LanguageWorkerConsoleLog.
+                // These are picked up by the Functions Host
+                Console.WriteLine($"LanguageWorkerConsoleLogRequest Id: {_requestId}\nInvocation Id: {_invocationId}\nLog Message:\n{message}");
+            }
         }
     }
 }
