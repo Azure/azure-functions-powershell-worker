@@ -1,9 +1,9 @@
 {
     "version": "2.0",
-    "Logging": {
-        "LogLevel": {
-			"Default": "Trace"
-		},
+    "logging": {
+        "logLevel": {
+            "default": "Trace"
+        },
         "fileLoggingMode": "always"
     }
 }
