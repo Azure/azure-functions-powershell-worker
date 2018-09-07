@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is DebugRecord record)
             {
-                _logger.Log(LogLevel.Debug, $"DEBUG: {record.Message}");
+                _logger.Log(LogLevel.Debug, $"DEBUG: {record.Message}", isUserLog: true);
             }
         }
 
@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is ErrorRecord record)
             {
-                _logger.Log(LogLevel.Error, $"ERROR: {record.Exception.Message}", record.Exception);
+                _logger.Log(LogLevel.Error, $"ERROR: {record.Exception.Message}", record.Exception, isUserLog: true);
             }
         }
 
@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is InformationRecord record)
             {
-                _logger.Log(LogLevel.Information, $"INFORMATION: {record.MessageData}");
+                _logger.Log(LogLevel.Information, $"INFORMATION: {record.MessageData}", isUserLog: true);
             }
         }
 
@@ -47,7 +47,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is ProgressRecord record)
             {
-                _logger.Log(LogLevel.Trace, $"PROGRESS: {record.StatusDescription}");
+                _logger.Log(LogLevel.Trace, $"PROGRESS: {record.StatusDescription}", isUserLog: true);
             }
         }
 
@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is VerboseRecord record)
             {
-                _logger.Log(LogLevel.Trace, $"VERBOSE: {record.Message}");
+                _logger.Log(LogLevel.Trace, $"VERBOSE: {record.Message}", isUserLog: true);
             }
         }
 
@@ -63,7 +63,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is WarningRecord record)
             {
-                _logger.Log(LogLevel.Warning, $"WARNING: {record.Message}");
+                _logger.Log(LogLevel.Warning, $"WARNING: {record.Message}", isUserLog: true);
             }
         }
     }
