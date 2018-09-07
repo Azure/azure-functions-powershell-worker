@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").InvokeAndClearCommands();
             
             // Set the PSModulePath
-            Environment.SetEnvironmentVariable("PSModulePath", Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "workers", "powershell", "Modules"));
+            Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
         }
 
         internal Hashtable InvokeFunction(

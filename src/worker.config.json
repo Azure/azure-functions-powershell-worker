@@ -3,6 +3,6 @@
         "language":"powershell",
         "extensions":[".ps1"],
         "defaultExecutablePath":"dotnet",
-        "defaultWorkerPath":"../../Microsoft.Azure.Functions.PowerShellWorker.dll"
+        "defaultWorkerPath":"Microsoft.Azure.Functions.PowerShellWorker.dll"
     }
 }
