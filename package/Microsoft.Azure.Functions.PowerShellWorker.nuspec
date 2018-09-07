@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
 Copyright (c) Microsoft. All rights reserved.
 Licensed under the MIT license. See LICENSE file in the project root for full license information.
@@ -13,7 +13,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <licenseUrl>https://github.com/Azure/azure-functions-powershell-worker/blob/dev/LICENSE</licenseUrl>
     <projectUrl>https://github.com/Azure/azure-functions-powershell-worker</projectUrl>
-    <iconUrl>https://github.com/PowerShell/PowerShell/blob/master/assets/Powershell_64.png</iconUrl>
+    <iconUrl>https://github.com/PowerShell/PowerShell/blob/master/assets/Powershell_black_64.png?raw=true</iconUrl>
     <description>The Azure Function PowerShell Language Worker allows users to write Azure Function Apps using PowerShell. It leverages the PowerShell Core SDK.</description>
     <releaseNotes># 0.1.0
 
