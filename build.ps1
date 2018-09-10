@@ -36,9 +36,9 @@ function needsDotnetSdk () {
 function needsPowerShellGet () {
     $modules = Get-Module -ListAvailable -Name PowerShellGet | Where-Object Version -gt 1.6.0
     if ($modules.Count -gt 0) {
-        return $true
+        return $false
     }
-    return $false
+    return $true
 }
 
 function needsInvokeBuild () {
