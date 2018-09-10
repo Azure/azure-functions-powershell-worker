@@ -15,13 +15,12 @@ param(
 
     [Parameter()]
     [string]
-    $Configuration
+    $Configuration = "Debug"
 )
 
 $NeededTools = @{
     DotnetSdk = ".NET SDK latest"
     PowerShellGet = "PowerShellGet latest"
-    InvokeBuild = "InvokeBuild latest"
 }
 
 function needsDotnetSdk () {
@@ -41,13 +40,6 @@ function needsPowerShellGet () {
     return $true
 }
 
-function needsInvokeBuild () {
-    if (Get-Module -ListAvailable -Name InvokeBuild) {
-        return $false
-    }
-    return $true
-}
-
 function getMissingTools () {
     $missingTools = @()
 
@@ -56,9 +48,6 @@ function getMissingTools () {
     }
     if (needsPowerShellGet) {
         $missingTools += $NeededTools.PowerShellGet
-    }
-    if (needsInvokeBuild) {
-        $missingTools += $NeededTools.InvokeBuild
     }
 
     return $missingTools
@@ -81,12 +70,29 @@ if ($missingTools.Count -gt 0) {
     return
 }
 
+# Start at the root of the directory
+Push-Location $PSScriptRoot
+
+# Clean step
 if($Clean) {
-    Invoke-Build Clean -Configuration $Configuration
+    git clean -fdx
 }
 
-Invoke-Build Build -Configuration $Configuration
+# Build step
+dotnet build -c $Configuration
+dotnet publish -c $Configuration
+Push-Location package
+dotnet pack -c $Configuration
+Pop-Location
 
+# Test step
 if($Test) {
-    Invoke-Build Test -Configuration $Configuration
+    Push-Location test
+    dotnet test
+    Set-Location Modules
+    Invoke-Pester
+    Pop-Location
 }
+
+# Return to the original directory
+Pop-Location
