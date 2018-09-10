@@ -26,7 +26,7 @@ $NeededTools = @{
 
 function needsDotnetSdk () {
     try {
-        $opensslVersion = (dotnet --version)
+        $null = (dotnet --version)
     } catch {
         return $true
     }
