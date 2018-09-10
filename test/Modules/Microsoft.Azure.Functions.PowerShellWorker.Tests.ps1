@@ -14,12 +14,12 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
             }
             return $false
         }
-        if (!$h1) {
+        if (!$h2) {
             return $false
         }
     
         # If they don't have the same amount of key value pairs, fail early
-        if ($h1.Keys.Count -ne $h2.Keys.Count){
+        if ($h1.Count -ne $h2.Count){
             return $false
         }
     

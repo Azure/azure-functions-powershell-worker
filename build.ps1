@@ -7,15 +7,15 @@
 param(
     [Parameter()]
     [switch]
-    $Bootstrap,
-
-    [Parameter()]
-    [switch]
     $Clean,
 
     [Parameter()]
     [switch]
-    $Test
+    $Test,
+
+    [Parameter()]
+    [string]
+    $Configuration
 )
 
 $NeededTools = @{
@@ -26,7 +26,7 @@ $NeededTools = @{
 
 function needsDotnetSdk () {
     try {
-        $null = (dotnet --version)
+        return ((dotnet --version) -lt 2.1)
     } catch {
         return $true
     }
@@ -34,7 +34,7 @@ function needsDotnetSdk () {
 }
 
 function needsPowerShellGet () {
-    $modules = Get-Module -ListAvailable -Name PowerShellGet | Where-Object Version -gt 1.6.0
+    $modules = Get-Module -ListAvailable -Name PowerShellGet | Where-Object Version -ge 1.6.0
     if ($modules.Count -gt 0) {
         return $false
     }
@@ -68,7 +68,8 @@ function hasMissingTools () {
     return ((getMissingTools).Count -gt 0)
 }
 
-if ($Bootstrap) {
+$missingTools = getMissingTools
+if ($missingTools.Count -gt 0) {
     $string = "Here is what your environment is missing:`n"
     $missingTools = getMissingTools
     if (($missingTools).Count -eq 0) {
@@ -77,16 +78,15 @@ if ($Bootstrap) {
         $missingTools | ForEach-Object {$string += "* $_`n"}
     }
     Write-Host "`n$string`n"
-} elseif(hasMissingTools) {
-    Write-Host "You are missing needed tools. Run './build.ps1 -Bootstrap' to see what they are."
-} else {
-    if($Clean) {
-        Invoke-Build Clean
-    }
+    return
+}
 
-    Invoke-Build Build
+if($Clean) {
+    Invoke-Build Clean -Configuration $Configuration
+}
 
-    if($Test) {
-        Invoke-Build Test
-    }
+Invoke-Build Build -Configuration $Configuration
+
+if($Test) {
+    Invoke-Build Test -Configuration $Configuration
 }

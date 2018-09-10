@@ -5,7 +5,9 @@
 
 param(
     [string[]]
-    $Tasks
+    $Tasks,
+    [string]
+    $Configuration = 'Debug'
 )
 
 if ($MyInvocation.ScriptName -notlike '*Invoke-Build.ps1') {
@@ -16,20 +18,14 @@ if ($MyInvocation.ScriptName -notlike '*Invoke-Build.ps1') {
 $BuildRoot = $PSScriptRoot
 
 task Clean {
-    exec { dotnet clean }
-    Remove-Item -Recurse -Force src/bin -ErrorAction SilentlyContinue
-    Remove-Item -Recurse -Force src/obj -ErrorAction SilentlyContinue
-
-    # Remove the built nuget package
-    Remove-Item -Recurse -Force package/bin -ErrorAction SilentlyContinue
-    Remove-Item -Recurse -Force package/obj -ErrorAction SilentlyContinue
+    exec { git clean -fdx }
 }
 
 task Build {
-    exec { dotnet build }
-    exec { dotnet publish }
+    exec { dotnet build -c $Configuration }
+    exec { dotnet publish -c $Configuration }
     Set-Location package
-    exec { dotnet pack }
+    exec { dotnet pack -c $Configuration }
 }
 
 task Test {
