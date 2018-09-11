@@ -62,6 +62,8 @@ if($Clean) {
     git clean -fdx
 }
 
+# Build step
+
 # Install using PSDepend if it's available, otherwise use the backup script
 if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
     Invoke-PSDepend -Force
@@ -69,7 +71,6 @@ if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
     & "$PSScriptRoot/../tools/InstallDependencies.ps1"
 }
 
-# Build step
 dotnet build -c $Configuration
 dotnet publish -c $Configuration
 
