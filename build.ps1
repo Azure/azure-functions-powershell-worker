@@ -21,6 +21,7 @@ param(
 $NeededTools = @{
     DotnetSdk = ".NET SDK latest"
     PowerShellGet = "PowerShellGet latest"
+    Pester = "Pester latest"
 }
 
 function needsDotnetSdk () {
@@ -40,6 +41,14 @@ function needsPowerShellGet () {
     return $true
 }
 
+function needsPester () {
+    $modules = Get-Module -ListAvailable -Name Pester
+    if ($modules.Count -gt 0) {
+        return $false
+    }
+    return $true
+}
+
 function getMissingTools () {
     $missingTools = @()
 
@@ -49,12 +58,11 @@ function getMissingTools () {
     if (needsPowerShellGet) {
         $missingTools += $NeededTools.PowerShellGet
     }
+    if (needsPester) {
+        $missingTools += $NeededTools.Pester
+    }
 
     return $missingTools
-}
-
-function hasMissingTools () {
-    return ((getMissingTools).Count -gt 0)
 }
 
 $missingTools = getMissingTools
@@ -89,8 +97,7 @@ Pop-Location
 if($Test) {
     Push-Location test
     dotnet test
-    Set-Location Modules
-    Invoke-Pester
+    Invoke-Pester Modules
     Pop-Location
 }
 
