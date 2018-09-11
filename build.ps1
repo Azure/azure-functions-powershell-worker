@@ -20,7 +20,6 @@ param(
 
 $NeededTools = @{
     DotnetSdk = ".NET SDK latest"
-    PSDepend = "PSDepend latest"
 }
 
 function needsDotnetSdk () {
@@ -32,22 +31,11 @@ function needsDotnetSdk () {
     return $false
 }
 
-function needsPSDepend () {
-    $modules = Get-Module -ListAvailable -Name PSDepend
-    if ($modules.Count -gt 0) {
-        return $false
-    }
-    return $true
-}
-
 function getMissingTools () {
     $missingTools = @()
 
     if (needsDotnetSdk) {
         $missingTools += $NeededTools.DotnetSdk
-    }
-    if (needsPSDepend) {
-        $missingTools += $NeededTools.PSDepend
     }
 
     return $missingTools
