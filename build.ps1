@@ -74,16 +74,16 @@ if($Clean) {
     git clean -fdx
 }
 
-# Build step
-dotnet build -c $Configuration
-dotnet publish -c $Configuration
-
 # Install using PSDepend if it's available, otherwise use the backup script
 if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
     Invoke-PSDepend -Force
 } else {
     & "$PSScriptRoot/../tools/InstallDependencies.ps1"
 }
+
+# Build step
+dotnet build -c $Configuration
+dotnet publish -c $Configuration
 
 Push-Location package
 dotnet pack -c $Configuration
