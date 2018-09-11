@@ -68,7 +68,7 @@ if($Clean) {
 if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
     Invoke-PSDepend -Force
 } else {
-    & "$PSScriptRoot/../tools/InstallDependencies.ps1"
+    & "$PSScriptRoot/tools/InstallDependencies.ps1"
 }
 
 dotnet build -c $Configuration
