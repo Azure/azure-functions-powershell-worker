@@ -94,6 +94,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             
             // TODO: remove this when we figure out why it fixed #48
             _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", "AzureRm.Netcore").InvokeAndClearCommands();
+
+            AuthenticateToAzure();
         }
 
         internal Hashtable InvokeFunction(
@@ -105,9 +107,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             try
             {
                 Dictionary<string, ParameterMetadata> parameterMetadata;
-
-                // We attempt to authenticate to Azure with every invocation
-                AuthenticateToAzure();
 
                 // We need to take into account if the user has an entry point.
                 // If it does, we invoke the command of that name. We also need to fetch
