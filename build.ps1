@@ -20,8 +20,6 @@ param(
 
 $NeededTools = @{
     DotnetSdk = ".NET SDK latest"
-    PowerShellGet = "PowerShellGet latest"
-    Pester = "Pester latest"
 }
 
 function needsDotnetSdk () {
@@ -33,33 +31,11 @@ function needsDotnetSdk () {
     return $false
 }
 
-function needsPowerShellGet () {
-    $modules = Get-Module -ListAvailable -Name PowerShellGet | Where-Object Version -ge 1.6.0
-    if ($modules.Count -gt 0) {
-        return $false
-    }
-    return $true
-}
-
-function needsPester () {
-    $modules = Get-Module -ListAvailable -Name Pester
-    if ($modules.Count -gt 0) {
-        return $false
-    }
-    return $true
-}
-
 function getMissingTools () {
     $missingTools = @()
 
     if (needsDotnetSdk) {
         $missingTools += $NeededTools.DotnetSdk
-    }
-    if (needsPowerShellGet) {
-        $missingTools += $NeededTools.PowerShellGet
-    }
-    if (needsPester) {
-        $missingTools += $NeededTools.Pester
     }
 
     return $missingTools
@@ -87,8 +63,17 @@ if($Clean) {
 }
 
 # Build step
+
+# Install using PSDepend if it's available, otherwise use the backup script
+if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
+    Invoke-PSDepend -Path src -Force
+} else {
+    & "$PSScriptRoot/tools/InstallDependencies.ps1"
+}
+
 dotnet build -c $Configuration
 dotnet publish -c $Configuration
+
 Push-Location package
 dotnet pack -c $Configuration
 Pop-Location
