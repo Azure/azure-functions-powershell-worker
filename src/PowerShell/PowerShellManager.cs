@@ -50,18 +50,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
         }
 
-        internal void InitializeRunspace()
+        internal void AuthenticateToAzure()
         {
-            // Add HttpResponseContext namespace so users can reference
-            // HttpResponseContext without needing to specify the full namespace
-            _pwsh.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").InvokeAndClearCommands();
-            
-            // Set the PSModulePath
-            Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
-            
-            // TODO: remove this when we figure out why it fixed #48
-            _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", "AzureRm.Netcore").InvokeAndClearCommands();
-
             // Try to authenticate to Azure
             // TODO: The Azure Functions Host might supply these differently. This might change but works for the demo
             string applicationId = Environment.GetEnvironmentVariable("ApplicationId");
@@ -72,7 +62,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 string.IsNullOrEmpty(applicationSecret) ||
                 string.IsNullOrEmpty(tenantId))
             {
-                _logger.Log(LogLevel.Warning, "Required environment variables to authenticate to Azure were not present", isUserLog: true);
+                _logger.Log(LogLevel.Warning, "Required environment variables to authenticate to Azure were not present");
                 return;
             }
 
@@ -93,6 +83,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
+        internal void InitializeRunspace()
+        {
+            // Add HttpResponseContext namespace so users can reference
+            // HttpResponseContext without needing to specify the full namespace
+            _pwsh.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").InvokeAndClearCommands();
+            
+            // Set the PSModulePath
+            Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
+            
+            // TODO: remove this when we figure out why it fixed #48
+            _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", "AzureRm.Netcore").InvokeAndClearCommands();
+        }
+
         internal Hashtable InvokeFunction(
             string scriptPath,
             string entryPoint,
@@ -102,6 +105,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             try
             {
                 Dictionary<string, ParameterMetadata> parameterMetadata;
+
+                // We attempt to authenticate to Azure with every invocation
+                AuthenticateToAzure();
 
                 // We need to take into account if the user has an entry point.
                 // If it does, we invoke the command of that name. We also need to fetch

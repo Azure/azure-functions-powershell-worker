@@ -38,6 +38,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
         public async void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
         {
+            var invocationId = _invocationId ?? "N/A";
             if (isUserLog)
             {
                 // For user logs, we send them over Rpc with details about the invocation.
@@ -47,7 +48,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     RpcLog = new RpcLog()
                     {
                         Exception = exception?.ToRpcException(),
-                        InvocationId = _invocationId ?? _requestId,
+                        InvocationId = invocationId,
                         Level = logLevel,
                         Message = message
                     }
