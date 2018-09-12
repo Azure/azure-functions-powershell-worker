@@ -58,8 +58,8 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                             default:
                                 throw new InvalidOperationException($"Not supportted message type: {request.ContentCase}");
                         }
-                        await _msgStream.WriteAsync(response);
                     }
+                    await _msgStream.WriteAsync(response);
                 }
             }
         }
