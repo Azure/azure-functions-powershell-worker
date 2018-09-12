@@ -66,7 +66,7 @@ if($Clean) {
 
 # Install using PSDepend if it's available, otherwise use the backup script
 if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
-    Invoke-PSDepend -Force
+    Invoke-PSDepend -Path src -Force
 } else {
     & "$PSScriptRoot/tools/InstallDependencies.ps1"
 }

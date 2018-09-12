@@ -8,8 +8,8 @@
         Version = '1.1.0.0'
         Target = 'src/Modules'
     }
-    'AzureRM' = @{
-        Version = '6.8.1'
+    'AzureRM.Netcore' = @{
+        Version = '0.13.1'
         Target = 'src/Modules'
     }
 

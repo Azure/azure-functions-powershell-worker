@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Security;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -57,6 +58,39 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             
             // Set the PSModulePath
             Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
+            
+            // TODO: remove this when we figure out why it fixed #48
+            _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", "AzureRm.Netcore").InvokeAndClearCommands();
+
+            // Try to authenticate to Azure
+            // TODO: The Azure Functions Host might supply these differently. This might change but works for the demo
+            string applicationId = Environment.GetEnvironmentVariable("ApplicationId");
+            string applicationSecret = Environment.GetEnvironmentVariable("ApplicationSecret");
+            string tenantId = Environment.GetEnvironmentVariable("TenantId");
+
+            if (string.IsNullOrEmpty(applicationId) ||
+                string.IsNullOrEmpty(applicationSecret) ||
+                string.IsNullOrEmpty(tenantId))
+            {
+                _logger.Log(LogLevel.Warning, "Required environment variables to authenticate to Azure were not present", isUserLog: true);
+                return;
+            }
+
+            // Build SecureString
+            var secureString = new SecureString();
+            foreach (char item in applicationSecret)
+            {
+                secureString.AppendChar(item);
+            }
+            
+            using (ExecutionTimer.Start(_logger, "Authentication to Azure completed."))
+            {
+                _pwsh.AddCommand("Connect-AzureRmAccount")
+                    .AddParameter("Credential", new PSCredential(applicationId, secureString))
+                    .AddParameter("ServicePrincipal")
+                    .AddParameter("TenantId", tenantId)
+                    .InvokeAndClearCommands();
+            }
         }
 
         internal Hashtable InvokeFunction(

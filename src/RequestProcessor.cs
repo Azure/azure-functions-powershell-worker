@@ -38,25 +38,28 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 while (await _msgStream.MoveNext())
                 {
                     request = _msgStream.GetCurrentMessage();
-                    switch (request.ContentCase)
+                    
+                    using (_logger.BeginScope(request.RequestId, request.InvocationRequest?.InvocationId))
                     {
-                        case StreamingMessage.ContentOneofCase.WorkerInitRequest:
-                            response = ProcessWorkerInitRequest(request);
-                            break;
+                        switch (request.ContentCase)
+                        {
+                            case StreamingMessage.ContentOneofCase.WorkerInitRequest:
+                                response = ProcessWorkerInitRequest(request);
+                                break;
 
-                        case StreamingMessage.ContentOneofCase.FunctionLoadRequest:
-                            response = ProcessFunctionLoadRequest(request);
-                            break;
+                            case StreamingMessage.ContentOneofCase.FunctionLoadRequest:
+                                response = ProcessFunctionLoadRequest(request);
+                                break;
 
-                        case StreamingMessage.ContentOneofCase.InvocationRequest:
-                            response = ProcessInvocationRequest(request);
-                            break;
+                            case StreamingMessage.ContentOneofCase.InvocationRequest:
+                                response = ProcessInvocationRequest(request);
+                                break;
 
-                        default:
-                            throw new InvalidOperationException($"Not supportted message type: {request.ContentCase}");
+                            default:
+                                throw new InvalidOperationException($"Not supportted message type: {request.ContentCase}");
+                        }
+                        await _msgStream.WriteAsync(response);
                     }
-
-                    await _msgStream.WriteAsync(response);
                 }
             }
         }
@@ -156,14 +159,11 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
                 // Set the RequestId and InvocationId for logging purposes
                 Hashtable result = null;
-                using (_logger.BeginScope(request.RequestId, invocationRequest.InvocationId))
-                {
-                    result = _powerShellManager.InvokeFunction(
-                        functionInfo.ScriptPath,
-                        functionInfo.EntryPoint,
-                        triggerMetadata,
-                        invocationRequest.InputData);
-                }
+                result = _powerShellManager.InvokeFunction(
+                    functionInfo.ScriptPath,
+                    functionInfo.EntryPoint,
+                    triggerMetadata,
+                    invocationRequest.InputData);
 
                 // Set out binding data and return response to be sent back to host
                 foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutputBindings)
