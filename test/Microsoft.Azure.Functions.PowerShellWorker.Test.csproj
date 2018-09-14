@@ -18,4 +18,9 @@
     <ProjectReference Include="..\src\Microsoft.Azure.Functions.PowerShellWorker.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="PowerShell\testFunction.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
