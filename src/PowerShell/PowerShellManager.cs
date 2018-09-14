@@ -23,10 +23,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     {
         private const string _TriggerMetadataParameterName = "TriggerMetadata";
 
-        private RpcLogger _logger;
+        private ILogger _logger;
         private PowerShell _pwsh;
 
-        internal PowerShellManager(RpcLogger logger)
+        internal PowerShellManager(ILogger logger)
         {
             var initialSessionState = InitialSessionState.CreateDefault();
             

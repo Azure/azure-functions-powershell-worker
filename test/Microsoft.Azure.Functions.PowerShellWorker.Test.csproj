@@ -18,4 +18,12 @@
     <ProjectReference Include="..\src\Microsoft.Azure.Functions.PowerShellWorker.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Requests\ProcessFunctionLoadRequestTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="PowerShell\testFunction.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
