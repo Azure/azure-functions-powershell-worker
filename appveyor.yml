@@ -24,4 +24,4 @@ test_script:
   - pwsh: ./build.ps1 -NoBuild -Test
 
 artifacts:
-  - path: package/bin/$env:CONFIGURATION/Microsoft.Azure.Functions.PowerShellWorker.0.1.0.nupkg
+  - path: package\bin\$(configuration)\Microsoft.Azure.Functions.PowerShellWorker.*.nupkg
