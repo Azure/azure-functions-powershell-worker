@@ -19,8 +19,8 @@ install:
 
 build_script:
   - pwsh: |
-    $ErrorActionPreference = "Stop"
-    ./build.ps1 -Clean -Configuration $env:CONFIGURATION
+      $ErrorActionPreference = "Stop"
+      ./build.ps1 -Clean -Configuration $env:CONFIGURATION
 
 test_script:
   - pwsh: ./build.ps1 -NoBuild -Test
