@@ -14,6 +14,10 @@ param(
     $Test,
 
     [Parameter()]
+    [switch]
+    $NoBuild,
+
+    [Parameter()]
     [string]
     $Configuration = "Debug"
 )
@@ -58,28 +62,29 @@ if ($missingTools.Count -gt 0) {
 Push-Location $PSScriptRoot
 
 # Clean step
-if($Clean) {
+if($Clean.IsPresent) {
     git clean -fdx
 }
 
 # Build step
+if(!$NoBuild.IsPresent) {
+    # Install using PSDepend if it's available, otherwise use the backup script
+    if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
+        Invoke-PSDepend -Path src -Force
+    } else {
+        & "$PSScriptRoot/tools/InstallDependencies.ps1"
+    }
 
-# Install using PSDepend if it's available, otherwise use the backup script
-if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
-    Invoke-PSDepend -Path src -Force
-} else {
-    & "$PSScriptRoot/tools/InstallDependencies.ps1"
+    dotnet build -c $Configuration
+    dotnet publish -c $Configuration
+
+    Push-Location package
+    dotnet pack -c $Configuration
+    Pop-Location
 }
 
-dotnet build -c $Configuration
-dotnet publish -c $Configuration
-
-Push-Location package
-dotnet pack -c $Configuration
-Pop-Location
-
 # Test step
-if($Test) {
+if($Test.IsPresent) {
     Push-Location test
     dotnet test
     Invoke-Pester Modules
