@@ -18,10 +18,10 @@ install:
   - pwsh: Install-Module PSDepend -Force -Scope CurrentUser
 
 build_script:
-  - pwsh: ./build.ps1 -Clean -Configuration $(configuration)
+  - pwsh: ./build.ps1 -Clean -Configuration $env:CONFIGURATION
 
 test_script:
   - pwsh: ./build.ps1 -NoBuild -Test
 
 artifacts:
-  - path: package/bin/$(configuration)/Microsoft.Azure.Functions.PowerShellWorker.0.1.0.nupkg
+  - path: package/bin/$env:CONFIGURATION/Microsoft.Azure.Functions.PowerShellWorker.0.1.0.nupkg
