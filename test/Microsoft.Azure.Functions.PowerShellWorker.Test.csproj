@@ -22,5 +22,11 @@
     <None Update="PowerShell\testFunction.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="PowerShell\TestScripts\testBasicFunction.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="PowerShell\TestScripts\testFunctionWithEntryPoint.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
