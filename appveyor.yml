@@ -12,6 +12,9 @@ image:
 
 max_jobs: 1
 
+install:
+  - pwsh: Install-Module PSDepend -Force
+
 build_script:
   - pwsh: ./build.ps1 -Clean
 
@@ -19,4 +22,4 @@ test_script:
   - pwsh: ./build.ps1 -NoBuild -Test
 
 artifacts:
-  - path: package/bin/$(configuration)/Microsoft.Azure.Functions.PowerShell.Worker.0.1.0.nupkg
+  - path: package/bin/Debug/Microsoft.Azure.Functions.PowerShell.Worker.0.1.0.nupkg
