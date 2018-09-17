@@ -1,3 +1,9 @@
+![Azure Functions Logo](https://raw.githubusercontent.com/Azure/azure-functions-cli/master/src/Azure.Functions.Cli/npm/assets/azure-functions-logo-color-raster.png)
+
+|Branch|Status|
+|---|---|
+|master|[![Build status](https://ci.appveyor.com/api/projects/status/5mqrok4j3l89cnvx/branch/master?svg=true)](https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=master)|
+
 # Azure Functions PowerShell Language Worker
 
 This repository will host the PowerShell language worker implementation for Azure Functions.
