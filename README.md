@@ -3,6 +3,7 @@
 |Branch|Status|
 |---|---|
 |master|[![Build status](https://ci.appveyor.com/api/projects/status/5mqrok4j3l89cnvx/branch/master?svg=true)](https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=master)|
+|dev|[![Build status](https://ci.appveyor.com/api/projects/status/5mqrok4j3l89cnvx/branch/dev?svg=true)](https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=dev)|
 
 # Azure Functions PowerShell Language Worker
 
