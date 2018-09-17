@@ -12,9 +12,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
     internal class StreamHandler
     {
-        RpcLogger _logger;
+        ILogger _logger;
 
-        public StreamHandler(RpcLogger logger)
+        public StreamHandler(ILogger logger)
         {
             _logger = logger;
         }

@@ -29,7 +29,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         [ThreadStatic]
         static Stopwatch s_threadStaticStopwatch;
 
-        readonly RpcLogger _logger;
+        readonly ILogger _logger;
         readonly string _message;
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         /// <param name="message">The message to prefix the execution time with.</param>
         /// <returns>A new, started execution timer.</returns>
         public static ExecutionTimer Start(
-            RpcLogger logger,
+            ILogger logger,
             string message)
         {
             var timer = new ExecutionTimer(logger, message);
@@ -48,7 +48,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         }
 
         internal ExecutionTimer(
-            RpcLogger logger,
+            ILogger logger,
             string message)
         {
             _logger = logger;
