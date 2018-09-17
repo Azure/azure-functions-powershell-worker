@@ -15,6 +15,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
     public class PowerShellManagerTests
     {
+        public const string TestInputBindingName = "req";
+        public const string TestOutputBindingName = "res";
+        public const string TestStringData = "Foo";
+        public readonly List<ParameterBinding> TestInputData = new List<ParameterBinding> {
+            new ParameterBinding {
+                Name = TestInputBindingName,
+                Data = new TypedData {
+                    String = TestStringData
+                }
+            }
+        };
+
+
         [Fact]
         public void InitializeRunspaceSuccess()
         {
@@ -29,119 +42,74 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void InvokeBasicFunctionWorks()
         {
-            var key = "res";
-            var data = "Foo";
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
 
             manager.InitializeRunspace();
 
-            List<ParameterBinding> inputData = new List<ParameterBinding> {
-                new ParameterBinding {
-                    Name = "req",
-                    Data = new TypedData {
-                        String = data
-                    }
-                }
-            };
-
-                string path = System.IO.Path.Join(
+            string path = System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
                 "PowerShell/TestScripts/testBasicFunction.ps1");
-            Hashtable result = manager.InvokeFunction(path, "", null, inputData);
+            Hashtable result = manager.InvokeFunction(path, "", null, TestInputData);
 
-            Assert.Equal(data, result[key]);
+            Assert.Equal(TestStringData, result[TestOutputBindingName]);
         }
 
         [Fact]
         public void InvokeBasicFunctionWithTriggerMetadataWorks()
         {
-            var inKey = "req";
-            var outKey = "res";
-            var data = "Foo";
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
 
             manager.InitializeRunspace();
-
-            List<ParameterBinding> inputData = new List<ParameterBinding> {
-                new ParameterBinding {
-                    Name = inKey,
-                    Data = new TypedData {
-                        String = data
-                    }
-                }
-            };
 
             string path = System.IO.Path.Join(
             AppDomain.CurrentDomain.BaseDirectory,
             "PowerShell/TestScripts/testBasicFunctionWithTriggerMetadata.ps1");
             Hashtable triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase)
             {
-                { inKey, data }
+                { TestInputBindingName, TestStringData }
             };
 
-            Hashtable result = manager.InvokeFunction(path, "", triggerMetadata, inputData);
+            Hashtable result = manager.InvokeFunction(path, "", triggerMetadata, TestInputData);
 
-            Assert.Equal(data, result[outKey]);
+            Assert.Equal(TestStringData, result[TestOutputBindingName]);
         }
 
         [Fact]
         public void InvokeFunctionWithEntryPointWorks()
         {
-            var key = "res";
-            var data = "Foo";
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
 
             manager.InitializeRunspace();
 
-            List<ParameterBinding> inputData = new List<ParameterBinding> {
-                new ParameterBinding {
-                    Name = "req",
-                    Data = new TypedData {
-                        String = data
-                    }
-                }
-            };
-
             string path = System.IO.Path.Join(
             AppDomain.CurrentDomain.BaseDirectory,
             "PowerShell/TestScripts/testFunctionWithEntryPoint.ps1");
-            Hashtable result = manager.InvokeFunction(path, "Run", null, inputData);
+            Hashtable result = manager.InvokeFunction(path, "Run", null, TestInputData);
 
-            Assert.Equal(data, result[key]);
+            Assert.Equal(TestStringData, result[TestOutputBindingName]);
         }
 
         [Fact]
         public void FunctionShouldCleanupVariableTable()
         {
-            var key = "res";
-            var data = "Foo";
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
 
             manager.InitializeRunspace();
 
-            List<ParameterBinding> inputData = new List<ParameterBinding> {
-                new ParameterBinding {
-                    Name = "req",
-                    Data = new TypedData {
-                        String = data
-                    }
-                }
-            };
-
             string path = System.IO.Path.Join(
             AppDomain.CurrentDomain.BaseDirectory,
             "PowerShell/TestScripts/testFunctionCleanup.ps1");
 
-            Hashtable result1 = manager.InvokeFunction(path, "", null, inputData);
-            Assert.Equal("is not set", result1[key]);
+            Hashtable result1 = manager.InvokeFunction(path, "", null, TestInputData);
+            Assert.Equal("is not set", result1[TestOutputBindingName]);
 
             // the value shoould not change if the variable table is properly cleaned up.
-            Hashtable result2 = manager.InvokeFunction(path, "", null, inputData);
-            Assert.Equal("is not set", result2[key]);
+            Hashtable result2 = manager.InvokeFunction(path, "", null, TestInputData);
+            Assert.Equal("is not set", result2[TestOutputBindingName]);
         }
     }
 }
