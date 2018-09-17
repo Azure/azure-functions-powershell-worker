@@ -1,3 +1,3 @@
-﻿function Run($Req, $TriggerMetadata) {
-    Push-OutputBinding -Name res -Value foo
+﻿function Run($Req) {
+    Push-OutputBinding -Name res -Value $Req
 }

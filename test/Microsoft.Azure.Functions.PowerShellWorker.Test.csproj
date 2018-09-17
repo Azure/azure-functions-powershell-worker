@@ -19,14 +19,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="PowerShell\testFunction.ps1">
+    <Content Include="PowerShell\TestScripts\testBasicFunction.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="PowerShell\TestScripts\testBasicFunction.ps1">
+    </Content>
+    <Content Include="PowerShell\TestScripts\testFunctionWithEntryPoint.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="PowerShell\TestScripts\testFunctionWithEntryPoint.ps1">
+    </Content>
+    <Content Include="PowerShell\TestScripts\testBasicFunctionWithTriggerMetadata.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
+    <Content Include="PowerShell\TestScripts\testFunctionCleanup.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>
