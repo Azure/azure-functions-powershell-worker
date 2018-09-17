@@ -1,0 +1,29 @@
+version: 0.1.{build}
+pull_requests:
+  do_not_increment_build_number: true
+branches:
+  only:
+  - dev
+  - master
+
+image:
+- Ubuntu
+- Visual Studio 2017
+
+max_jobs: 1
+
+configuration: Debug
+
+install:
+  - pwsh: Install-Module PSDepend -Force -Scope CurrentUser
+
+build_script:
+  - pwsh: |
+      $ErrorActionPreference = "Stop"
+      ./build.ps1 -Clean -Configuration $env:CONFIGURATION
+
+test_script:
+  - pwsh: ./build.ps1 -NoBuild -Test
+
+artifacts:
+  - path: package\bin\*\Microsoft.Azure.Functions.PowerShellWorker.*.nupkg

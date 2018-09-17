@@ -14,6 +14,10 @@ param(
     $Test,
 
     [Parameter()]
+    [switch]
+    $NoBuild,
+
+    [Parameter()]
     [string]
     $Configuration = "Debug"
 )
@@ -54,37 +58,35 @@ if ($missingTools.Count -gt 0) {
     return
 }
 
-# Start at the root of the directory
-Push-Location $PSScriptRoot
-
 # Clean step
-if($Clean) {
+if($Clean.IsPresent) {
+    Push-Location $PSScriptRoot
     git clean -fdx
-}
-
-# Build step
-
-# Install using PSDepend if it's available, otherwise use the backup script
-if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
-    Invoke-PSDepend -Path src -Force
-} else {
-    & "$PSScriptRoot/tools/InstallDependencies.ps1"
-}
-
-dotnet build -c $Configuration
-dotnet publish -c $Configuration
-
-Push-Location package
-dotnet pack -c $Configuration
-Pop-Location
-
-# Test step
-if($Test) {
-    Push-Location test
-    dotnet test
-    Invoke-Pester Modules
     Pop-Location
 }
 
-# Return to the original directory
-Pop-Location
+# Build step
+if(!$NoBuild.IsPresent) {
+    # Install using PSDepend if it's available, otherwise use the backup script
+    if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
+        Invoke-PSDepend -Path "$PSScriptRoot/src" -Force
+    } else {
+        & "$PSScriptRoot/tools/InstallDependencies.ps1"
+    }
+
+    dotnet publish -c $Configuration $PSScriptRoot
+    dotnet pack -c $Configuration "$PSScriptRoot/package"
+}
+
+# Test step
+if($Test.IsPresent) {
+    dotnet test "$PSScriptRoot/test"
+
+    if($env:APPVEYOR) {
+        $res = Invoke-Pester "$PSScriptRoot/test/Modules" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru
+        (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\TestsResults.xml))
+        if ($res.FailedCount -gt 0) { throw "$($res.FailedCount) tests failed." }
+    } else {
+        Invoke-Pester "$PSScriptRoot/test/Modules"
+    }
+}
