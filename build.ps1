@@ -58,45 +58,35 @@ if ($missingTools.Count -gt 0) {
     return
 }
 
-# Start at the root of the directory
-Push-Location $PSScriptRoot
-
 # Clean step
 if($Clean.IsPresent) {
+    Push-Location $PSScriptRoot
     git clean -fdx
+    Pop-Location
 }
 
 # Build step
 if(!$NoBuild.IsPresent) {
     # Install using PSDepend if it's available, otherwise use the backup script
     if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
-        Invoke-PSDepend -Path src -Force
+        Invoke-PSDepend -Path "$PSScriptRoot/src" -Force
     } else {
         & "$PSScriptRoot/tools/InstallDependencies.ps1"
     }
 
-    dotnet build -c $Configuration
-    dotnet publish -c $Configuration
-
-    Push-Location package
-    dotnet pack -c $Configuration
-    Pop-Location
+    dotnet publish -c $Configuration $PSScriptRoot
+    dotnet pack -c $Configuration "$PSScriptRoot/package"
 }
 
 # Test step
 if($Test.IsPresent) {
-    Push-Location test
-    dotnet test
+    dotnet test "$PSScriptRoot/test"
 
     if($env:APPVEYOR) {
-        $res = Invoke-Pester Modules -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru
+        $res = Invoke-Pester "$PSScriptRoot/test/Modules" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru
         (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\TestsResults.xml))
         if ($res.FailedCount -gt 0) { throw "$($res.FailedCount) tests failed." }
     } else {
-        Invoke-Pester Modules
+        Invoke-Pester "$PSScriptRoot/test/Modules"
     }
-    Pop-Location
 }
-
-# Return to the original directory
-Pop-Location
