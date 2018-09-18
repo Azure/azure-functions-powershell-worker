@@ -4,58 +4,40 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
+[CmdletBinding()]
 param(
-    [Parameter()]
     [switch]
     $Clean,
 
-    [Parameter()]
+    [switch]
+    $Bootstrap,
+
     [switch]
     $Test,
 
-    [Parameter()]
     [switch]
     $NoBuild,
 
-    [Parameter()]
     [string]
     $Configuration = "Debug"
 )
 
-$NeededTools = @{
-    DotnetSdk = ".NET SDK latest"
-}
+Import-Module "$PSScriptRoot/tools/helper.psm1"
 
-function needsDotnetSdk () {
-    try {
-        return ((dotnet --version) -lt 2.1)
-    } catch {
-        return $true
+# Bootstrap step
+if ($Bootstrap.IsPresent) {
+    Write-Log "Validate and install missing prerequisits for building ..."
+    if (-not (Test-DotnetSDK)) {
+        Install-Dotnet
     }
-    return $false
-}
-
-function getMissingTools () {
-    $missingTools = @()
-
-    if (needsDotnetSdk) {
-        $missingTools += $NeededTools.DotnetSdk
+    if (-not (Get-Module -Name PSDepend -ListAvailable)) {
+        Write-Log -Warning "Module 'PSDepend' is missing. Installing 'PSDepend' ..."
+        Install-Module -Name PSDepend -Scope CurrentUser
     }
-
-    return $missingTools
-}
-
-$missingTools = getMissingTools
-if ($missingTools.Count -gt 0) {
-    $string = "Here is what your environment is missing:`n"
-    $missingTools = getMissingTools
-    if (($missingTools).Count -eq 0) {
-        $string += "* nothing!`n`n Run this script without a flag to build or a -Clean to clean."
-    } else {
-        $missingTools | ForEach-Object {$string += "* $_`n"}
+    if (-not (Get-Module -Name Pester -ListAvailable)) {
+        Write-Log -Warning "Module 'Pester' is missing. Installing 'Pester' ..."
+        Install-Module -Name PSDepend -Scope CurrentUser
     }
-    Write-Host "`n$string`n"
-    return
 }
 
 # Clean step
@@ -66,14 +48,18 @@ if($Clean.IsPresent) {
 }
 
 # Build step
+Find-Dotnet
+
 if(!$NoBuild.IsPresent) {
-    # Install using PSDepend if it's available, otherwise use the backup script
-    if ((Get-Module -ListAvailable -Name PSDepend).Count -gt 0) {
-        Invoke-PSDepend -Path "$PSScriptRoot/src" -Force
-    } else {
-        & "$PSScriptRoot/tools/InstallDependencies.ps1"
+    $requirements = "$PSScriptRoot/src/requirements.psd1"
+    $modules = Import-PowerShellDataFile $requirements
+
+    Write-Log "Install modules that are bundled with PowerShell Language worker, including"
+    foreach ($entry in $modules.GetEnumerator()) {
+        Write-Log -Indent "$($entry.Name) $($entry.Value.Version)"
     }
 
+    Invoke-PSDepend -Path $requirements -Force
     dotnet publish -c $Configuration $PSScriptRoot
     dotnet pack -c $Configuration "$PSScriptRoot/package"
 }

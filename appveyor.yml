@@ -1,6 +1,12 @@
 version: 0.1.{build}
+
 pull_requests:
   do_not_increment_build_number: true
+
+environment:
+  # Avoid expensive initialization of dotnet cli, see: http://donovanbrown.com/post/Stop-wasting-time-during-NET-Core-builds
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+
 branches:
   only:
   - dev
@@ -12,15 +18,13 @@ image:
 
 max_jobs: 1
 
-configuration: Release
-
 install:
-  - pwsh: Install-Module PSDepend -Force -Scope CurrentUser
+  - pwsh: ./build.ps1 -NoBuild -Bootstrap
 
 build_script:
   - pwsh: |
       $ErrorActionPreference = "Stop"
-      ./build.ps1 -Clean -Configuration $env:CONFIGURATION
+      ./build.ps1 -Clean -Configuration Release
 
 test_script:
   - pwsh: ./build.ps1 -NoBuild -Test
