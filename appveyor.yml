@@ -12,7 +12,7 @@ image:
 
 max_jobs: 1
 
-configuration: Debug
+configuration: Release
 
 install:
   - pwsh: Install-Module PSDepend -Force -Scope CurrentUser
