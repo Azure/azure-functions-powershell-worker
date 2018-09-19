@@ -3,10 +3,6 @@ version: 0.1.{build}
 pull_requests:
   do_not_increment_build_number: true
 
-environment:
-  # Avoid expensive initialization of dotnet cli, see: http://donovanbrown.com/post/Stop-wasting-time-during-NET-Core-builds
-  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-
 branches:
   only:
   - dev
