@@ -18,4 +18,18 @@
     <ProjectReference Include="..\src\Microsoft.Azure.Functions.PowerShellWorker.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="PowerShell\TestScripts\testBasicFunction.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PowerShell\TestScripts\testFunctionWithEntryPoint.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PowerShell\TestScripts\testBasicFunctionWithTriggerMetadata.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="PowerShell\TestScripts\testFunctionCleanup.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

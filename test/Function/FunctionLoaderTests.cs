@@ -16,7 +16,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         public void TestFunctionLoaderGetFunc()
         {
             var functionId = Guid.NewGuid().ToString();
-            var directory = "/Users/tylerleonhardt/Desktop/Tech/PowerShell/AzureFunctions/azure-functions-powershell-worker/examples/PSCoreApp/MyHttpTrigger";
+            var directory = "/Users/azure/PSCoreApp/MyHttpTrigger";
             var scriptPathExpected = $"{directory}/run.ps1";
             var metadata = new RpcFunctionMetadata
             {
@@ -54,7 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         public void TestFunctionLoaderGetFuncWithEntryPoint()
         {
             var functionId = Guid.NewGuid().ToString();
-            var directory = "/Users/tylerleonhardt/Desktop/Tech/PowerShell/AzureFunctions/azure-functions-powershell-worker/examples/PSCoreApp/MyHttpTrigger";
+            var directory = "/Users/azure/PSCoreApp/MyHttpTrigger";
             var scriptPathExpected = $"{directory}/run.ps1";
             var entryPointExpected = "Foo";
             var metadata = new RpcFunctionMetadata
@@ -93,7 +93,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         public void TestFunctionLoaderGetInfo()
         {
             var functionId = Guid.NewGuid().ToString();
-            var directory = "/Users/tylerleonhardt/Desktop/Tech/PowerShell/AzureFunctions/azure-functions-powershell-worker/examples/PSCoreApp/MyHttpTrigger";
+            var directory = "/Users/azure/PSCoreApp/MyHttpTrigger";
             var scriptPathExpected = $"{directory}/run.ps1";
             var name = "MyHttpTrigger";
             var metadata = new RpcFunctionMetadata
