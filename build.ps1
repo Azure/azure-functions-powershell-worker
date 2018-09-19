@@ -31,11 +31,11 @@ if ($Bootstrap.IsPresent) {
 
     if (-not (Get-Module -Name PSDepend -ListAvailable)) {
         Write-Log -Warning "Module 'PSDepend' is missing. Installing 'PSDepend' ..."
-        Install-Module -Name PSDepend -Scope CurrentUser
+        Install-Module -Name PSDepend -Scope CurrentUser -Force
     }
     if (-not (Get-Module -Name Pester -ListAvailable)) {
         Write-Log -Warning "Module 'Pester' is missing. Installing 'Pester' ..."
-        Install-Module -Name PSDepend -Scope CurrentUser
+        Install-Module -Name Pester -Scope CurrentUser -Force
     }
 }
 
