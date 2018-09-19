@@ -29,5 +29,5 @@ build_script:
 test_script:
   - pwsh: ./build.ps1 -NoBuild -Test
 
-artifacts:
-  - path: package\bin\*\Microsoft.Azure.Functions.PowerShellWorker.*.nupkg
+on_finish:
+  - pwsh: dir *.PowerShellWorker.*.nupkg -Recurse | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
