@@ -50,6 +50,10 @@ if($Clean.IsPresent) {
 Find-Dotnet
 
 if(!$NoBuild.IsPresent) {
+    if (-not (Get-Module -Name PSDepend -ListAvailable)) {
+        throw "Cannot find the 'PSDepend' module. Please specify '-Bootstrap' to install build dependencies."
+    }
+
     $requirements = "$PSScriptRoot/src/requirements.psd1"
     $modules = Import-PowerShellDataFile $requirements
 
@@ -65,6 +69,10 @@ if(!$NoBuild.IsPresent) {
 
 # Test step
 if($Test.IsPresent) {
+    if (-not (Get-Module -Name Pester -ListAvailable)) {
+        throw "Cannot find the 'Pester' module. Please specify '-Bootstrap' to install build dependencies."
+    }
+
     dotnet test "$PSScriptRoot/test"
 
     if($env:APPVEYOR) {

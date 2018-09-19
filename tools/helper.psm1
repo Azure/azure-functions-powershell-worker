@@ -7,12 +7,12 @@ using namespace System.Runtime.InteropServices
 
 $IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
 $MinimalSDKVersion = '2.1.300'
+$LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
 
 function Find-Dotnet
 {
-    $dotnetPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
     $dotnetFile = if ($IsWindowsEnv) { "dotnet.exe" } else { "dotnet" }
-    $dotnetExePath = Join-Path -Path $dotnetPath -ChildPath $dotnetFile
+    $dotnetExePath = Join-Path -Path $LocalDotnetDirPath -ChildPath $dotnetFile
 
     # If dotnet is already in the PATH, check to see if that version of dotnet can find the required SDK.
     # This is "typically" the globally installed dotnet.
@@ -24,8 +24,8 @@ function Find-Dotnet
 
     if (-not $foundDotnetWithRightVersion) {
         if (Test-DotnetSDK $dotnetExePath) {
-            Write-Warning "Can't find the dotnet SDK version $MinimalSDKVersion or higher, prepending '$dotnetPath' to PATH."
-            $env:PATH = $dotnetPath + [IO.Path]::PathSeparator + $env:PATH
+            Write-Warning "Can't find the dotnet SDK version $MinimalSDKVersion or higher, prepending '$LocalDotnetDirPath' to PATH."
+            $env:PATH = $LocalDotnetDirPath + [IO.Path]::PathSeparator + $env:PATH
         }
         else {
             throw "Cannot find the dotnet SDK for .NET Core 2.1. Please specify '-Bootstrap' to install build dependencies."
@@ -66,16 +66,13 @@ function Install-Dotnet {
     $obtainUrl = "https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain"
 
     try {
+        Remove-Item $LocalDotnetDirPath -Recurse -Force -ErrorAction SilentlyContinue
+        $installScript = if ($IsWindowsEnv) { "dotnet-install.ps1" } else { "dotnet-install.sh" }
+        Invoke-WebRequest -Uri $obtainUrl/$installScript -OutFile $installScript
+
         if ($IsWindowsEnv) {
-            Remove-Item "$env:LocalAppData\Microsoft\dotnet" -Recurse -Force -ErrorAction SilentlyContinue
-            $installScript = "dotnet-install.ps1"
-            Invoke-WebRequest -Uri $obtainUrl/$installScript -OutFile $installScript
             & .\$installScript -Channel $Channel -Version $Version
-        }
-        else {
-            Remove-Item "$env:HOME/.dotnet" -Recurse -Force -ErrorAction SilentlyContinue
-            $installScript = "dotnet-install.sh"
-            Invoke-WebRequest -Uri $obtainUrl/$installScript -OutFile $installScript
+        } else {
             bash ./$installScript -c $Channel -v $Version
         }
     }
