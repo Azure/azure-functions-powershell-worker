@@ -1,6 +1,8 @@
 version: 0.1.{build}
+
 pull_requests:
   do_not_increment_build_number: true
+
 branches:
   only:
   - dev
@@ -12,18 +14,16 @@ image:
 
 max_jobs: 1
 
-configuration: Release
-
 install:
-  - pwsh: Install-Module PSDepend -Force -Scope CurrentUser
+  - pwsh: ./build.ps1 -NoBuild -Bootstrap
 
 build_script:
   - pwsh: |
       $ErrorActionPreference = "Stop"
-      ./build.ps1 -Clean -Configuration $env:CONFIGURATION
+      ./build.ps1 -Clean -Configuration Release
 
 test_script:
   - pwsh: ./build.ps1 -NoBuild -Test
 
-artifacts:
-  - path: package\bin\*\Microsoft.Azure.Functions.PowerShellWorker.*.nupkg
+on_finish:
+  - pwsh: dir *.PowerShellWorker.*.nupkg -Recurse | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }

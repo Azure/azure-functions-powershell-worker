@@ -1,5 +1,5 @@
 @{
-    # Packaged with the PowerShell Language Worker
+    # Modules bundled with the PowerShell Language Worker
     'PowerShellGet' = @{
         Version = '1.6.7'
         Target = 'src/Modules'
@@ -11,11 +11,5 @@
     'AzureRM.Netcore' = @{
         Version = '0.13.1'
         Target = 'src/Modules'
-    }
-
-    # Dev dependencies
-    'Pester' = @{
-        Version = 'latest'
-        Target = 'CurrentUser'
     }
 }
