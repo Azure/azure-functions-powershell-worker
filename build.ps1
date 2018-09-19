@@ -27,9 +27,8 @@ Import-Module "$PSScriptRoot/tools/helper.psm1"
 # Bootstrap step
 if ($Bootstrap.IsPresent) {
     Write-Log "Validate and install missing prerequisits for building ..."
-    if (-not (Test-DotnetSDK)) {
-        Install-Dotnet
-    }
+    Install-Dotnet
+
     if (-not (Get-Module -Name PSDepend -ListAvailable)) {
         Write-Log -Warning "Module 'PSDepend' is missing. Installing 'PSDepend' ..."
         Install-Module -Name PSDepend -Scope CurrentUser

@@ -10,30 +10,24 @@ $MinimalSDKVersion = '2.1.300'
 
 function Find-Dotnet
 {
-    param([switch] $NoThrow)
-
-    $originalPath = $env:PATH
     $dotnetPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
+    $dotnetFile = if ($IsWindowsEnv) { "dotnet.exe" } else { "dotnet" }
+    $dotnetExePath = Join-Path -Path $dotnetPath -ChildPath $dotnetFile
 
-    # If there dotnet is already in the PATH, check to see if that version of dotnet can find the required SDK.
+    # If dotnet is already in the PATH, check to see if that version of dotnet can find the required SDK.
     # This is "typically" the globally installed dotnet.
-    if (Get-Command 'dotnet' -ErrorAction SilentlyContinue) {
-        $installedVersion = (dotnet --version)
-        if ($installedVersion -lt $MinimalSDKVersion) {
-            # Globally installed dotnet doesn't have the required SDK version, prepend the user local dotnet location.
+    $foundDotnetWithRightVersion = $false
+    $dotnetInPath = Get-Command 'dotnet' -ErrorAction SilentlyContinue
+    if ($dotnetInPath) {
+        $foundDotnetWithRightVersion = Test-DotnetSDK $dotnetInPath.Source
+    }
+
+    if (-not $foundDotnetWithRightVersion) {
+        if (Test-DotnetSDK $dotnetExePath) {
             Write-Warning "Can't find the dotnet SDK version $MinimalSDKVersion or higher, prepending '$dotnetPath' to PATH."
             $env:PATH = $dotnetPath + [IO.Path]::PathSeparator + $env:PATH
         }
-    }
-    else {
-        Write-Warning "Could not find 'dotnet', appending $dotnetPath to PATH."
-        $env:PATH += [IO.Path]::PathSeparator + $dotnetPath
-    }
-
-    if (-not (Get-Command 'dotnet' -ErrorAction SilentlyContinue)) {
-        # Restore the original PATH.
-        $env:PATH = $originalPath
-        if (-not $NoThrow) {
+        else {
             throw "Cannot find the dotnet SDK for .NET Core 2.1. Please specify '-Bootstrap' to install build dependencies."
         }
     }
@@ -41,25 +35,13 @@ function Find-Dotnet
 
 function Test-DotnetSDK
 {
-    Find-Dotnet -NoThrow
+    param($dotnetExePath)
 
-    $dotnet = Get-Command 'dotnet' -ErrorAction SilentlyContinue
-    $dotnetSDKExists = $null -ne $dotnet
-    $dotnetSDKVersion = if ($dotnetSDKExists) { dotent --version }
-
-    if ($dotnetSDKExists -and $dotnetSDKVersion -gt $MinimalSDKVersion) {
-        Write-Log "dotnet SDK $dotnetSDKVersion is found."
-        return $true
+    if (Test-Path $dotnetExePath) {
+        $installedVersion = & $dotnetExePath --version
+        return $installedVersion -ge $MinimalSDKVersion
     }
-
-    $logMsg = if (-not $dotnetSDKExists) {
-        "dotent SDK is not present. Installing dotnet SDK."
-    } else {
-        "dotnet SDK out of date. Require '$MinimalSDKVersion' but found '$dotnetSDKVersion'. Updating dotnet."
-    }
-
-    Write-Log $logMsg -Warning
-    return $false;
+    return $false
 }
 
 function Install-Dotnet {
@@ -68,6 +50,18 @@ function Install-Dotnet {
         [string]$Channel = 'release',
         [string]$Version = '2.1.401'
     )
+
+    try {
+        Find-Dotnet
+        return  # Simply return if we find dotnet SDk with the correct version
+    } catch { }
+
+    $logMsg = if (Get-Command 'dotnet' -ErrorAction SilentlyContinue) {
+        "dotent SDK is not present. Installing dotnet SDK."
+    } else {
+        "dotnet SDK out of date. Require '$MinimalSDKVersion' but found '$dotnetSDKVersion'. Updating dotnet."
+    }
+    Write-Log $logMsg -Warning
 
     $obtainUrl = "https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain"
 
