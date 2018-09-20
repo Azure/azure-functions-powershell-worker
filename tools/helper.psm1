@@ -93,9 +93,9 @@ function Restore-NuGetPackage
                    -not (Test-Path "$RepoRoot/test/obj/project.assets.json"))
     {
         if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent) {
-            $restoreArgs = "--verbosity detailed"
+            $restoreArgs = "--verbosity", "detailed"
         } else {
-            $restoreArgs = "--verbosity quiet"
+            $restoreArgs = "--verbosity", "quiet"
         }
 
         Write-Log "Run 'dotnet restore $restoreArgs'"
