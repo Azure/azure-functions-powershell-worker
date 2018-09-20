@@ -67,7 +67,7 @@ if(!$NoBuild.IsPresent) {
     }
 
     Invoke-PSDepend -Path $requirements -Force
-    dotnet publish --no-restore -c $Configuration $PSScriptRoot
+    dotnet publish -c $Configuration $PSScriptRoot
     dotnet pack -c $Configuration "$PSScriptRoot/package"
 }
 
