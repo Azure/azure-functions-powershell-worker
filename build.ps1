@@ -46,13 +46,18 @@ if($Clean.IsPresent) {
     Pop-Location
 }
 
-# Build step
+# Common step required by both build and test
 Find-Dotnet
+Restore-NuGetPackage
 
+# Build step
 if(!$NoBuild.IsPresent) {
     if (-not (Get-Module -Name PSDepend -ListAvailable)) {
         throw "Cannot find the 'PSDepend' module. Please specify '-Bootstrap' to install build dependencies."
     }
+
+    # Generate csharp code from protobuf if needed
+    New-gRPCAutoGenCode
 
     $requirements = "$PSScriptRoot/src/requirements.psd1"
     $modules = Import-PowerShellDataFile $requirements
@@ -63,7 +68,7 @@ if(!$NoBuild.IsPresent) {
     }
 
     Invoke-PSDepend -Path $requirements -Force
-    dotnet publish -c $Configuration $PSScriptRoot
+    dotnet publish --no-restore -c $Configuration $PSScriptRoot
     dotnet pack -c $Configuration "$PSScriptRoot/package"
 }
 

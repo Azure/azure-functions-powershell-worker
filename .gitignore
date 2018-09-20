@@ -61,3 +61,8 @@ StyleCop.Cache
 
 src/Modules
 !src/Modules/Microsoft.AzureFunctions.PowerShellWorker
+
+# protobuf
+protobuf/*
+FunctionRpc.cs
+FunctionRpcGrpc.cs
