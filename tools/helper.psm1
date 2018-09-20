@@ -82,31 +82,6 @@ function Install-Dotnet {
     }
 }
 
-function Restore-NuGetPackage
-{
-    [CmdletBinding()]
-    param(
-        [switch] $Force
-    )
-
-    if ($Force -or -not (Test-Path "$RepoRoot/src/obj/project.assets.json") -or
-                   -not (Test-Path "$RepoRoot/test/obj/project.assets.json"))
-    {
-        if ($PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent) {
-            $restoreArgs = "--verbosity", "detailed"
-        } else {
-            $restoreArgs = "--verbosity", "quiet"
-        }
-
-        Write-Log "Run 'dotnet restore $restoreArgs'"
-        dotnet restore "$RepoRoot" $restoreArgs
-
-        if ($LASTEXITCODE -ne 0) {
-            throw "'dotnet restore' failed."
-        }
-    }
-}
-
 function New-gRPCAutoGenCode
 {
     [CmdletBinding()]
@@ -140,6 +115,14 @@ function Resolve-ProtoBufToolPath
     if (-not $Script:protoc_Path) {
         Write-Log "Resolve the protobuf tools for auto-generating code"
         $nugetPath = "~/.nuget/packages"
+        $toolsPath = "$RepoRoot/tools"
+
+        if (-not (Test-Path "$toolsPath/obj/project.assets.json")) {
+            dotnet restore $toolsPath --verbosity quiet
+            if ($LASTEXITCODE -ne 0) {
+                throw "Cannot resolve protobuf tools. 'dotnet restore $toolsPath' failed."
+            }
+        }
 
         if ($IsWindowsEnv) {
             $plat_arch_Name = "windows_x64"
@@ -154,6 +137,7 @@ function Resolve-ProtoBufToolPath
         $Script:protoc_Path =
             Get-ChildItem "$nugetPath/grpc.tools/*/$protoc_Name" -Recurse |
             Where-Object FullName -Like "*$plat_arch_Name*" |
+            Sort-Object -Property FullName -Descending |
             Select-Object -First 1 | ForEach-Object FullName
 
         if (-not $Script:protoc_Path) {
@@ -163,6 +147,7 @@ function Resolve-ProtoBufToolPath
         $Script:grpc_csharp_plugin_Path =
             Get-ChildItem "$nugetPath/grpc.tools/*/$grpc_csharp_plugin_Name" -Recurse |
             Where-Object FullName -Like "*$plat_arch_Name*" |
+            Sort-Object -Property FullName -Descending |
             Select-Object -First 1 | ForEach-Object FullName
 
         if (-not $Script:grpc_csharp_plugin_Path) {
@@ -171,6 +156,7 @@ function Resolve-ProtoBufToolPath
 
         $Script:google_protobuf_tools_Path =
             Get-ChildItem "$nugetPath/google.protobuf.tools/*/tools" |
+            Sort-Object -Property FullName -Descending |
             Select-Object -First 1 | ForEach-Object FullName
 
         if (-not $Script:google_protobuf_tools_Path) {

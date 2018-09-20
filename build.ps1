@@ -48,7 +48,6 @@ if($Clean.IsPresent) {
 
 # Common step required by both build and test
 Find-Dotnet
-Restore-NuGetPackage
 
 # Build step
 if(!$NoBuild.IsPresent) {
