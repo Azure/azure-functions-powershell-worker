@@ -50,11 +50,12 @@ with any additional questions or comments.
 
 ### Build
 
-* Clone this repository
-* `cd azure-functions-powershell-worker`
-* `dotnet publish`
-* Make note of the location of the publish directory:
-`src/bin/Dubug/netcoreapp2.1/publish`
+1. Clone this repository
+2. `cd azure-functions-powershell-worker`
+3. `./build.ps1`
+
+> NOTE: If you're missing a dependency,
+you will be asked to run `./build.ps1 -Bootstrap`
 
 ### Run & Debug
 
@@ -78,9 +79,9 @@ On macOS if you installed via `brew`
 /usr/local/Cellar/azure-functions-core-tools/<version>/workers/
 ```
 
-Copy the result of the `publish` directory into a `powershell` folder under `workers` so it looks something like:
-```
-/usr/local/Cellar/azure-functions-core-tools/<version>/workers/powershell/<contents of publish directory>
+Copy the result of the `publish` directory into a `powershell` folder under `workers`:
+```powershell
+Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp2.1/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell"
 ```
 
 Then `cd` into a Function App with PowerShell as the worker runtime 
@@ -110,8 +111,10 @@ set the environment variable `"AzureWebJobsScriptRoot"`
 to the root folder path (the folder which contains the `host.json`)
 of your test functions app.
 
-Then copy the `publish` directory to
-`"<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/netcoreapp2.1/workers/powershell"`.
+Then copy the `publish` directory to `workers`:
+```powershell
+Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp2.1/publish/ "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/netcoreapp2.1/workers/powershell"
+```
 
 Then you can start the host but running:
 ```sh
