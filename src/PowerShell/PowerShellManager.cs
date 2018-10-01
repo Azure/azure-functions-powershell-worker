@@ -75,7 +75,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             
             using (ExecutionTimer.Start(_logger, "Authentication to Azure completed."))
             {
-                _pwsh.AddCommand("Connect-AzureRmAccount")
+                _pwsh.AddCommand("Az.Profile\\Connect-AzAccount")
                     .AddParameter("Credential", new PSCredential(applicationId, secureString))
                     .AddParameter("ServicePrincipal")
                     .AddParameter("TenantId", tenantId)
