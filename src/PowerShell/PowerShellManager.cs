@@ -54,9 +54,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             // Try to authenticate to Azure
             // TODO: The Azure Functions Host might supply these differently. This might change but works for the demo
-            string applicationId = Environment.GetEnvironmentVariable("ApplicationId");
-            string applicationSecret = Environment.GetEnvironmentVariable("ApplicationSecret");
-            string tenantId = Environment.GetEnvironmentVariable("TenantId");
+            string applicationId = Environment.GetEnvironmentVariable("APPSETTING_WEBSITE_AUTH_CLIENT_ID");
+            string applicationSecret = Environment.GetEnvironmentVariable("APPSETTING_WEBSITE_AUTH_CLIENT_SECRET");
+            string tenantId = Environment.GetEnvironmentVariable("APPSETTING_WEBSITE_AUTH_TENANT_ID");
 
             if (string.IsNullOrEmpty(applicationId) ||
                 string.IsNullOrEmpty(applicationSecret) ||
@@ -91,9 +91,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             
             // Set the PSModulePath
             Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
-            
-            // TODO: remove this when we figure out why it fixed #48
-            _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", "AzureRm.Netcore").InvokeAndClearCommands();
 
             AuthenticateToAzure();
         }

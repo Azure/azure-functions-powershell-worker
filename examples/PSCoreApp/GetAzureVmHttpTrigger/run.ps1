@@ -13,7 +13,7 @@ $cmdletParameters.ErrorAction = "Stop"
 
 try {
     # Splat the parameters that were passed in via query parameters
-    $vms = Get-AzureRmVM @cmdletParameters
+    $vms = Get-AzVM @cmdletParameters
     $response = [HttpResponseContext]@{
         StatusCode = '200' # OK
         Body = ($vms | ConvertTo-Json)
