@@ -78,6 +78,7 @@ if($Test.IsPresent) {
     }
 
     dotnet test "$PSScriptRoot/test"
+    if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
 
     if($env:APPVEYOR) {
         $res = Invoke-Pester "$PSScriptRoot/test/Modules" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru
