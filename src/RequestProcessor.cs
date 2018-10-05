@@ -38,7 +38,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 while (await _msgStream.MoveNext())
                 {
                     request = _msgStream.GetCurrentMessage();
-                    
+
                     using (_logger.BeginScope(request.RequestId, request.InvocationRequest?.InvocationId))
                     {
                         switch (request.ContentCase)
@@ -66,10 +66,10 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
         internal StreamingMessage ProcessWorkerInitRequest(StreamingMessage request)
         {
-            StatusResult status = new StatusResult()
-            {
-                Status = StatusResult.Types.Status.Success
-            };
+            StreamingMessage response = NewStreamingMessageTemplate(
+                request.RequestId,
+                StreamingMessage.ContentOneofCase.WorkerInitResponse,
+                out StatusResult status);
 
             try
             {
@@ -81,108 +81,23 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 status.Exception = e.ToRpcException();
             }
 
-            return new StreamingMessage()
-            {
-                RequestId = request.RequestId,
-                WorkerInitResponse = new WorkerInitResponse()
-                {
-                    Result = status
-                }
-            };
+            return response;
         }
 
         internal StreamingMessage ProcessFunctionLoadRequest(StreamingMessage request)
         {
             FunctionLoadRequest functionLoadRequest = request.FunctionLoadRequest;
 
-            // Assume success unless something bad happens
-            StatusResult status = new StatusResult()
-            {
-                Status = StatusResult.Types.Status.Success
-            };
+            StreamingMessage response = NewStreamingMessageTemplate(
+                request.RequestId,
+                StreamingMessage.ContentOneofCase.FunctionLoadResponse,
+                out StatusResult status);
+            response.FunctionLoadResponse.FunctionId = functionLoadRequest.FunctionId;
 
-            // Try to load the functions
             try
             {
+                // Try loading the metadata of the function
                 _functionLoader.Load(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                status.Status = StatusResult.Types.Status.Failure;
-                status.Exception = e.ToRpcException();
-            }
-
-            return new StreamingMessage()
-            {
-                RequestId = request.RequestId,
-                FunctionLoadResponse = new FunctionLoadResponse()
-                {
-                    FunctionId = functionLoadRequest.FunctionId,
-                    Result = status
-                }
-            };
-        }
-
-        internal StreamingMessage ProcessInvocationRequest(StreamingMessage request)
-        {
-            InvocationRequest invocationRequest = request.InvocationRequest;
-
-            // Assume success unless something bad happens
-            var status = new StatusResult() { Status = StatusResult.Types.Status.Success };
-            var response = new StreamingMessage()
-            {
-                RequestId = request.RequestId,
-                InvocationResponse = new InvocationResponse()
-                {
-                    InvocationId = invocationRequest.InvocationId,
-                    Result = status
-                }
-            };
-
-            // Invoke powershell logic and return hashtable of out binding data
-            try
-            {
-                // Load information about the function
-                var functionInfo = _functionLoader.GetFunctionInfo(invocationRequest.FunctionId);
-
-                // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
-                var triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase);
-                foreach (var dataItem in invocationRequest.TriggerMetadata)
-                {
-                    // MapField<K, V> is case-sensitive, but powershell is case-insensitive,
-                    // so for keys differ only in casing, the first wins.
-                    if (!triggerMetadata.ContainsKey(dataItem.Key))
-                    {
-                        triggerMetadata.Add(dataItem.Key, dataItem.Value.ToObject());
-                    }
-                }
-
-                // Set the RequestId and InvocationId for logging purposes
-                Hashtable result = null;
-                result = _powerShellManager.InvokeFunction(
-                    functionInfo.ScriptPath,
-                    functionInfo.EntryPoint,
-                    triggerMetadata,
-                    invocationRequest.InputData);
-
-                // Set out binding data and return response to be sent back to host
-                foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutputBindings)
-                {
-                    // if one of the bindings is '$return' we need to set the ReturnValue
-                    if(string.Equals(binding.Key, "$return", StringComparison.OrdinalIgnoreCase))
-                    {
-                        response.InvocationResponse.ReturnValue = result[binding.Key].ToTypedData();
-                        continue;
-                    }
-
-                    ParameterBinding paramBinding = new ParameterBinding()
-                    {
-                        Name = binding.Key,
-                        Data = result[binding.Key].ToTypedData()
-                    };
-
-                    response.InvocationResponse.OutputData.Add(paramBinding);
-                }
             }
             catch (Exception e)
             {
@@ -192,5 +107,137 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
             return response;
         }
+
+        internal StreamingMessage ProcessInvocationRequest(StreamingMessage request)
+        {
+            InvocationRequest invocationRequest = request.InvocationRequest;
+
+            StreamingMessage response = NewStreamingMessageTemplate(
+                request.RequestId,
+                StreamingMessage.ContentOneofCase.InvocationResponse,
+                out StatusResult status);
+            response.InvocationResponse.InvocationId = invocationRequest.InvocationId;
+
+            // Invoke powershell logic and return hashtable of out binding data
+            try
+            {
+                // Load information about the function
+                var functionInfo = _functionLoader.GetFunctionInfo(invocationRequest.FunctionId);
+
+                Hashtable results = functionInfo.Type == AzFunctionType.OrchestrationFunction
+                    ? InvokeOrchestrationFunction(functionInfo, invocationRequest)
+                    : InvokeSingleActivityFunction(functionInfo, invocationRequest);
+
+                BindOutputFromResult(response.InvocationResponse, functionInfo, results);
+            }
+            catch (Exception e)
+            {
+                status.Status = StatusResult.Types.Status.Failure;
+                status.Exception = e.ToRpcException();
+            }
+
+            return response;
+        }
+
+        #region Helper_Methods
+
+        /// <summary>
+        /// Create an object of 'StreamingMessage' as a template, for further update.
+        /// </summary>
+        private StreamingMessage NewStreamingMessageTemplate(string requestId, StreamingMessage.ContentOneofCase msgType, out StatusResult status)
+        {
+            // Assume success. The state of the status object can be changed in the caller.
+            status = new StatusResult() { Status = StatusResult.Types.Status.Success };
+            var response = new StreamingMessage() { RequestId = requestId };
+
+            switch (msgType)
+            {
+                case StreamingMessage.ContentOneofCase.WorkerInitResponse:
+                    response.WorkerInitResponse = new WorkerInitResponse() { Result = status };
+                    break;
+                case StreamingMessage.ContentOneofCase.FunctionLoadResponse:
+                    response.FunctionLoadResponse = new FunctionLoadResponse() { Result = status };
+                    break;
+                case StreamingMessage.ContentOneofCase.InvocationResponse:
+                    response.InvocationResponse = new InvocationResponse() { Result = status };
+                    break;
+                default:
+                    throw new InvalidOperationException("Unreachable code.");
+            }
+
+            return response;
+        }
+
+        /// <summary>
+        /// Invoke an orchestration function.
+        /// </summary>
+        private Hashtable InvokeOrchestrationFunction(AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
+        {
+            throw new NotImplementedException("Durable function is not yet supported for PowerShell");
+        }
+
+        /// <summary>
+        /// Invoke a regular function or an activity function.
+        /// </summary>
+        private Hashtable InvokeSingleActivityFunction(AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
+        {
+            // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
+            var triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase);
+            foreach (var dataItem in invocationRequest.TriggerMetadata)
+            {
+                // MapField<K, V> is case-sensitive, but powershell is case-insensitive,
+                // so for keys differ only in casing, the first wins.
+                if (!triggerMetadata.ContainsKey(dataItem.Key))
+                {
+                    triggerMetadata.Add(dataItem.Key, dataItem.Value.ToObject());
+                }
+            }
+
+            return _powerShellManager.InvokeFunction(
+                functionInfo,
+                triggerMetadata,
+                invocationRequest.InputData);
+        }
+
+        /// <summary>
+        /// Set the 'ReturnValue' and 'OutputData' based on the invocation results appropriately.
+        /// </summary>
+        private void BindOutputFromResult(InvocationResponse response, AzFunctionInfo functionInfo, Hashtable results)
+        {
+            switch (functionInfo.Type)
+            {
+                case AzFunctionType.RegularFunction:
+                    // Set out binding data and return response to be sent back to host
+                    foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutputBindings)
+                    {
+                        // if one of the bindings is '$return' we need to set the ReturnValue
+                        string outBindingName = binding.Key;
+                        if(string.Equals(outBindingName, AzFunctionInfo.DollarReturn, StringComparison.OrdinalIgnoreCase))
+                        {
+                            response.ReturnValue = results[outBindingName].ToTypedData(_powerShellManager);
+                            continue;
+                        }
+
+                        ParameterBinding paramBinding = new ParameterBinding()
+                        {
+                            Name = outBindingName,
+                            Data = results[outBindingName].ToTypedData(_powerShellManager)
+                        };
+
+                        response.OutputData.Add(paramBinding);
+                    }
+                    break;
+
+                case AzFunctionType.OrchestrationFunction:
+                case AzFunctionType.ActivityFunction:
+                    response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData(_powerShellManager);
+                    break;
+                
+                default:
+                    throw new InvalidOperationException("Unreachable code.");
+            }
+        }
+
+        #endregion
     }
 }

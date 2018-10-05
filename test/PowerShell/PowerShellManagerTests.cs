@@ -26,7 +26,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             }
         };
+        public readonly RpcFunctionMetadata rpcFunctionMetadata = new RpcFunctionMetadata();
 
+        private AzFunctionInfo GetAzFunctionInfo(string scriptFile, string entryPoint)
+        {
+            rpcFunctionMetadata.ScriptFile = scriptFile;
+            rpcFunctionMetadata.EntryPoint = entryPoint;
+            return new AzFunctionInfo(rpcFunctionMetadata);
+        }
 
         [Fact]
         public void InitializeRunspaceSuccess()
@@ -50,7 +57,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             string path = System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
                 "PowerShell/TestScripts/testBasicFunction.ps1");
-            Hashtable result = manager.InvokeFunction(path, "", null, TestInputData);
+
+            var functionInfo = GetAzFunctionInfo(path, string.Empty);
+            Hashtable result = manager.InvokeFunction(functionInfo, null, TestInputData);
 
             Assert.Equal(TestStringData, result[TestOutputBindingName]);
         }
@@ -71,7 +80,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 { TestInputBindingName, TestStringData }
             };
 
-            Hashtable result = manager.InvokeFunction(path, "", triggerMetadata, TestInputData);
+            var functionInfo = GetAzFunctionInfo(path, string.Empty);
+            Hashtable result = manager.InvokeFunction(functionInfo, triggerMetadata, TestInputData);
 
             Assert.Equal(TestStringData, result[TestOutputBindingName]);
         }
@@ -85,9 +95,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             manager.InitializeRunspace();
 
             string path = System.IO.Path.Join(
-            AppDomain.CurrentDomain.BaseDirectory,
-            "PowerShell/TestScripts/testFunctionWithEntryPoint.ps1");
-            Hashtable result = manager.InvokeFunction(path, "Run", null, TestInputData);
+                AppDomain.CurrentDomain.BaseDirectory,
+                "PowerShell/TestScripts/testFunctionWithEntryPoint.ps1");
+
+            var functionInfo = GetAzFunctionInfo(path, "Run");
+            Hashtable result = manager.InvokeFunction(functionInfo, null, TestInputData);
 
             Assert.Equal(TestStringData, result[TestOutputBindingName]);
         }
@@ -101,14 +113,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             manager.InitializeRunspace();
 
             string path = System.IO.Path.Join(
-            AppDomain.CurrentDomain.BaseDirectory,
-            "PowerShell/TestScripts/testFunctionCleanup.ps1");
+                AppDomain.CurrentDomain.BaseDirectory,
+                "PowerShell/TestScripts/testFunctionCleanup.ps1");
 
-            Hashtable result1 = manager.InvokeFunction(path, "", null, TestInputData);
+            var functionInfo = GetAzFunctionInfo(path, string.Empty);
+            Hashtable result1 = manager.InvokeFunction(functionInfo, null, TestInputData);
             Assert.Equal("is not set", result1[TestOutputBindingName]);
 
             // the value shoould not change if the variable table is properly cleaned up.
-            Hashtable result2 = manager.InvokeFunction(path, "", null, TestInputData);
+            Hashtable result2 = manager.InvokeFunction(functionInfo, null, TestInputData);
             Assert.Equal("is not set", result2[TestOutputBindingName]);
         }
     }

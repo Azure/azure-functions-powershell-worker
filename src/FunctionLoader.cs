@@ -11,11 +11,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     internal class FunctionLoader
     {
-        private readonly MapField<string, FunctionInfo> _loadedFunctions = new MapField<string, FunctionInfo>();
+        private readonly MapField<string, AzFunctionInfo> _loadedFunctions = new MapField<string, AzFunctionInfo>();
 
-        internal FunctionInfo GetFunctionInfo(string functionId)
+        internal AzFunctionInfo GetFunctionInfo(string functionId)
         {
-            if (_loadedFunctions.TryGetValue(functionId, out FunctionInfo funcInfo))
+            if (_loadedFunctions.TryGetValue(functionId, out AzFunctionInfo funcInfo))
             {
                 return funcInfo;
             }
@@ -27,20 +27,35 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             // TODO: catch "load" issues at "func start" time.
             // ex. Script doesn't exist, entry point doesn't exist
-            _loadedFunctions.Add(request.FunctionId, new FunctionInfo(request.Metadata));
+            _loadedFunctions.Add(request.FunctionId, new AzFunctionInfo(request.Metadata));
         }
     }
 
-    internal class FunctionInfo
+    internal enum AzFunctionType
     {
+        None = 0,
+        RegularFunction = 1,
+        OrchestrationFunction = 2,
+        ActivityFunction = 3
+    }
+
+    internal class AzFunctionInfo
+    {
+        private const string OrchestrationTrigger = "orchestrationTrigger";
+        private const string ActivityTrigger = "activityTrigger";
+
+        internal const string TriggerMetadata = "TriggerMetadata";
+        internal const string DollarReturn = "$return";
+
         internal readonly string Directory;
         internal readonly string EntryPoint;
         internal readonly string FunctionName;
         internal readonly string ScriptPath;
+        internal readonly AzFunctionType Type;
         internal readonly MapField<string, BindingInfo> AllBindings;
         internal readonly MapField<string, BindingInfo> OutputBindings;
 
-        public FunctionInfo(RpcFunctionMetadata metadata)
+        internal AzFunctionInfo(RpcFunctionMetadata metadata)
         {
             FunctionName = metadata.Name;
             Directory = metadata.Directory;
@@ -52,12 +67,32 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             foreach (var binding in metadata.Bindings)
             {
-                AllBindings.Add(binding.Key, binding.Value);
+                string bindingName = binding.Key;
+                BindingInfo bindingInfo = binding.Value;
+
+                AllBindings.Add(bindingName, bindingInfo);
 
                 // PowerShell doesn't support the 'InOut' type binding
-                if (binding.Value.Direction == BindingInfo.Types.Direction.Out)
+                if (bindingInfo.Direction == BindingInfo.Types.Direction.In)
                 {
-                    OutputBindings.Add(binding.Key, binding.Value);
+                    switch (bindingInfo.Type)
+                    {
+                        case OrchestrationTrigger:
+                            Type = AzFunctionType.OrchestrationFunction;
+                            break;
+                        case ActivityTrigger:
+                            Type = AzFunctionType.ActivityFunction;
+                            break;
+                        default:
+                            Type = AzFunctionType.RegularFunction;
+                            break;
+                    }
+                    continue;
+                }
+
+                if (bindingInfo.Direction == BindingInfo.Types.Direction.Out)
+                {
+                    OutputBindings.Add(bindingName, bindingInfo);
                 }
             }
         }

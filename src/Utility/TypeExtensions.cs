@@ -10,13 +10,15 @@ using System.Management.Automation;
 
 using Google.Protobuf;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     internal static class TypeExtensions
     {
-        static HttpRequestContext ToHttpRequestContext (this RpcHttp rpcHttp)
+        private static HttpRequestContext ToHttpRequestContext (this RpcHttp rpcHttp)
         {
             var httpRequestContext =  new HttpRequestContext
             {
@@ -61,7 +63,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             return httpRequestContext;
         }
 
-        public static object ToObject (this TypedData data)
+        internal static object ToObject(this TypedData data)
         {
             if (data == null)
             {
@@ -71,8 +73,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             switch (data.DataCase)
             {
                 case TypedData.DataOneofCase.Json:
-                    var hashtable = JsonConvert.DeserializeObject<Hashtable>(data.Json);
-                    return new Hashtable(hashtable, StringComparer.OrdinalIgnoreCase);
+                    return DeserializeJson(data.Json);
                 case TypedData.DataOneofCase.Bytes:
                     return data.Bytes.ToByteArray();
                 case TypedData.DataOneofCase.Double:
@@ -92,7 +93,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
         }
 
-        public static RpcException ToRpcException (this Exception exception)
+        private static JsonSerializerSettings setting =
+            new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.None, MaxDepth = 10 };
+        private static object DeserializeJson(string json)
+        {
+            var obj = JsonConvert.DeserializeObject(json, setting);
+            switch (obj)
+            {
+                case JObject dict:
+                    return new Hashtable(dict.ToObject<Hashtable>(), StringComparer.OrdinalIgnoreCase);
+                case JArray list:
+                    return list.ToObject<object[]>();
+                default:
+                    return obj;
+            }
+        }
+
+        internal static RpcException ToRpcException(this Exception exception)
         {
             return new RpcException
             {
@@ -102,7 +119,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             };
         }
 
-        static RpcHttp ToRpcHttp (this HttpResponseContext httpResponseContext)
+        private static RpcHttp ToRpcHttp(this HttpResponseContext httpResponseContext, PowerShellManager psHelper)
         {
             var rpcHttp = new RpcHttp
             {
@@ -111,7 +128,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
             if (httpResponseContext.Body != null)
             {
-                rpcHttp.Body = httpResponseContext.Body.ToTypedData();
+                rpcHttp.Body = httpResponseContext.Body.ToTypedData(psHelper);
             }
 
             // Add all the headers. ContentType is separated for convenience
@@ -129,8 +146,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             return rpcHttp;
         }
 
-        public static TypedData ToTypedData(this object value)
+        internal static TypedData ToTypedData(this object value, PowerShellManager psHelper)
         {
+            if (value is TypedData self)
+            {
+                return self;
+            }
+
             TypedData typedData = new TypedData();
 
             if (value == null)
@@ -156,29 +178,42 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     typedData.Stream = ByteString.FromStream(s);
                     break;
                 case HttpResponseContext http:
-                    typedData.Http = http.ToRpcHttp();
+                    typedData.Http = http.ToRpcHttp(psHelper);
                     break;
-                case IDictionary hashtable:
-                    typedData.Json = JsonConvert.SerializeObject(hashtable);
+                case string str:
+                    if (IsValidJson(str)) { typedData.Json = str; } else { typedData.String = str; }
                     break;
                 default:
-                    // Handle everything else as a string
-                    var str = value.ToString();
-
-                    // Attempt to parse the string into json. If it fails,
-                    // fallback to storing as a string
-                    try
-                    {
-                        JsonConvert.DeserializeObject(str);
-                        typedData.Json = str;
-                    }
-                    catch
-                    {
-                        typedData.String = str;
-                    }
-                    break;
+                    typedData.Json = psHelper.ConvertToJson(value);   
+                    break;             
             }
             return typedData;
+        }
+
+        private static bool IsValidJson(string str)
+        {
+            str = str.Trim();
+            int len = str.Length;
+            if (len < 2)
+            {
+                return false;
+            }
+
+            if ((str[0] == '{' && str[len - 1] == '}') ||
+                (str[0] == '[' && str[len - 1] == ']'))
+            {
+                try
+                {
+                    JToken.Parse(str);
+                    return true;
+                }
+                catch (Exception)
+                {
+                    // Ignore all exceptions
+                }
+            }
+
+            return false;
         }
     }
 }
