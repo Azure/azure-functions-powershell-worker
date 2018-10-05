@@ -184,6 +184,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     if (IsValidJson(str)) { typedData.Json = str; } else { typedData.String = str; }
                     break;
                 default:
+                    if (psHelper == null) { throw new ArgumentNullException(nameof(psHelper)); }
                     typedData.Json = psHelper.ConvertToJson(value);   
                     break;             
             }

@@ -110,7 +110,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 // If an entry point is defined, we load the script as a module and invoke the function with that name.
                 // We also need to fetch the ParameterMetadata to know what to pass in as arguments.
                 var parameterMetadata = RetriveParameterMetadata(functionInfo, out moduleName);
-                _pwsh.AddCommand(String.IsNullOrEmpty(entryPoint) ? scriptPath : $@"{moduleName}\{entryPoint}");
+                _pwsh.AddCommand(String.IsNullOrEmpty(entryPoint) ? scriptPath : entryPoint);
 
                 // Set arguments for each input binding parameter
                 foreach (ParameterBinding binding in inputData)
@@ -188,7 +188,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     moduleName = Path.GetFileNameWithoutExtension(scriptPath);
                     return _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", scriptPath)
                                 .AddStatement()
-                                .AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddParameter("Name", $"{moduleName}\\{entryPoint}")
+                                .AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddParameter("Name", entryPoint)
                                 .InvokeAndClearCommands<FunctionInfo>()[0].Parameters;
                 }
             }

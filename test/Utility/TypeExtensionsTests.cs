@@ -10,6 +10,7 @@ using System.IO;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using Microsoft.Azure.Functions.PowerShellWorker;
+using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Newtonsoft.Json;
@@ -243,7 +244,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            Assert.Equal(expected, input.ToTypedData());
+            Assert.Equal(expected, input.ToTypedData(null));
         }
 
         [Fact]
@@ -266,7 +267,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            Assert.Equal(expected, input.ToTypedData());
+            Assert.Equal(expected, input.ToTypedData(null));
         }
 
         [Fact]
@@ -289,7 +290,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            Assert.Equal(expected, input.ToTypedData());
+            Assert.Equal(expected, input.ToTypedData(null));
         }
 
         [Fact]
@@ -312,7 +313,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            Assert.Equal(expected, input.ToTypedData());
+            Assert.Equal(expected, input.ToTypedData(null));
         }
 
         [Fact]
@@ -326,7 +327,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Int = data
             };
 
-            Assert.Equal(expected, input.ToTypedData());
+            Assert.Equal(expected, input.ToTypedData(null));
         }
 
         [Fact]
@@ -340,7 +341,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Double = data
             };
 
-            Assert.Equal(expected, input.ToTypedData());
+            Assert.Equal(expected, input.ToTypedData(null));
         }
 
         [Fact]
@@ -354,7 +355,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 String = data
             };
 
-            Assert.Equal(expected, input.ToTypedData());
+            Assert.Equal(expected, input.ToTypedData(null));
         }
 
         [Fact]
@@ -368,7 +369,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Bytes = ByteString.CopyFrom(data)
             };
 
-            Assert.Equal(expected, input.ToTypedData());
+            Assert.Equal(expected, input.ToTypedData(null));
         }
 
         [Fact]
@@ -383,7 +384,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     Stream = ByteString.FromStream(data)
                 };
 
-                Assert.Equal(expected, input.ToTypedData());
+                Assert.Equal(expected, input.ToTypedData(null));
             }
         }
 
@@ -398,21 +399,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Json = data
             };
 
-            Assert.Equal(expected, input.ToTypedData());
+            Assert.Equal(expected, input.ToTypedData(null));
         }
 
         [Fact]
         public void TestObjectToTypedDataJsonHashtable()
         {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.InitializeRunspace();
+
             var data = new Hashtable { { "foo", "bar" } };
 
             var input = (object)data;
             var expected = new TypedData
             {
                 Json = "{\"foo\":\"bar\"}"
-        };
+            };
 
-            Assert.Equal(expected, input.ToTypedData());
+            Assert.Equal(expected, input.ToTypedData(manager));
         }
         #endregion
     }
