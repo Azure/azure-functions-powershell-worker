@@ -8,6 +8,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reflection;
+using System.IO;
+using System.Security;
+using System.Threading;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -34,6 +37,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private readonly ILogger _logger;
         private readonly PowerShell _pwsh;
         private bool _runspaceInited;
+        private readonly AutoResetEvent _actionEvent;
 
         private readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
 
@@ -67,6 +71,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _logger = logger;
             _pwsh = pwsh;
             _pwsh.Runspace.Name = $"PowerShellManager{id}";
+            _actionEvent = new AutoResetEvent(initialState: false);
         }
 
         /// <summary>
@@ -196,11 +201,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             string scriptPath = functionInfo.ScriptPath;
             string entryPoint = functionInfo.EntryPoint;
+            bool hasSetInvocationContext = false;
 
             Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
 
             try
             {
+                // If the function has a output binding of the 'orchestrationClient' type, then we set the binding name
+                // in the module context for the 'Start-NewOrchestration' function to use.
+                if (!String.IsNullOrEmpty(functionInfo.OrchestrationClientBindingName))
+                {
+                    _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext")
+                         .AddParameter("OrchestrationStarter", functionInfo.OrchestrationClientBindingName)
+                         .InvokeAndClearCommands();
+                    hasSetInvocationContext = true;
+                }
+
                 if (string.IsNullOrEmpty(entryPoint))
                 {
                     _pwsh.AddCommand(functionInfo.DeployedPSFuncName ?? scriptPath);
@@ -282,7 +298,71 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
             finally
             {
+                if (hasSetInvocationContext)
+                {
+                    ClearInvocationContext();
+                }
+
                 outputBindings.Clear();
+                ResetRunspace();
+            }
+        }
+
+        internal Hashtable InvokeFunction(
+            AzFunctionInfo functionInfo,
+            string contextParamName,
+            OrchestrationContext context)
+        {
+            string scriptPath = functionInfo.ScriptPath;
+            string entryPoint = functionInfo.EntryPoint;
+
+            string moduleName = null;
+            context.ActionEvent = _actionEvent;
+
+            try
+            {
+                var parameterMetadata = RetriveParameterMetadata(functionInfo, out moduleName);
+                if (!parameterMetadata.ContainsKey(contextParamName))
+                {
+                    // TODO: we should do more analysis in FunctionLoadRequest phase
+                    throw new InvalidOperationException($"Orchestration function should define the parameter '-{contextParamName}'");
+                }
+
+                _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext")
+                     .AddParameter("OrchestrationContext", context)
+                     .InvokeAndClearCommands();
+
+                _pwsh.AddCommand(String.IsNullOrEmpty(entryPoint) ? scriptPath : entryPoint)
+                     .AddParameter(contextParamName, context);
+
+                var outputBuffer = new PSDataCollection<object>();
+                var asyncResult = _pwsh.BeginInvoke<object, object>(input: null, output: outputBuffer);
+
+                var waitHandles = new WaitHandle[] { _actionEvent, asyncResult.AsyncWaitHandle };
+                int index = WaitHandle.WaitAny(waitHandles);
+
+                OrchestrationMessage retResult = null;
+                if (index == 0)
+                {
+                    _pwsh.Stop();
+                    retResult = new OrchestrationMessage(isDone: false, actions: context.Actions, output: null);
+                }
+                else
+                {
+                    _pwsh.EndInvoke(asyncResult);
+                    int count = outputBuffer.Count;
+                    object result = count > 0 ? outputBuffer[count - 1] : null;
+                    retResult = new OrchestrationMessage(isDone: true, actions: context.Actions, output: result);
+                }
+
+                return new Hashtable() { { AzFunctionInfo.DollarReturn, retResult } };
+            }
+            finally
+            {
+                _pwsh.Streams.ClearStreams();
+                _pwsh.Commands.Clear();
+
+                ClearInvocationContext();
                 ResetRunspace();
             }
         }
@@ -339,6 +419,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
 
             return performanceDetails;
+        }
+
+        private void ClearInvocationContext()
+        {
+            _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext")
+                 .AddParameter("Clear", true)
+                 .InvokeAndClearCommands();
         }
     }
 }

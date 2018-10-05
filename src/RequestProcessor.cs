@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Management.Automation.Remoting;
 using System.Threading.Tasks;
 
+using Newtonsoft.Json;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
@@ -374,7 +375,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             InvocationRequest invocationRequest,
             FunctionInvocationPerformanceStopwatch stopwatch)
         {
-            throw new NotImplementedException(PowerShellWorkerStrings.DurableFunctionNotSupported);
+            // Quote from https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings:
+            //
+            // "Orchestrator functions should never use any input or output bindings other than the orchestration trigger binding.
+            //  Doing so has the potential to cause problems with the Durable Task extension because those bindings may not obey the single-threading and I/O rules."
+            //
+            // Therefore, it's by design that 'InputData' contains only one item, which is the metadata of the orchestration context.
+
+            ParameterBinding context = invocationRequest.InputData[0];
+            var durableFuncContext = JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String);
+            return _powerShellManager.InvokeFunction(functionInfo, context.Name, durableFuncContext);
         }
 
         /// <summary>
