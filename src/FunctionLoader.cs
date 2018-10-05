@@ -41,6 +41,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
     internal class AzFunctionInfo
     {
+        private const string OrchestrationClient = "orchestrationClient";
         private const string OrchestrationTrigger = "orchestrationTrigger";
         private const string ActivityTrigger = "activityTrigger";
 
@@ -51,6 +52,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         internal readonly string EntryPoint;
         internal readonly string FunctionName;
         internal readonly string ScriptPath;
+        internal readonly string OrchestrationClientBindingName;
         internal readonly AzFunctionType Type;
         internal readonly MapField<string, BindingInfo> AllBindings;
         internal readonly MapField<string, BindingInfo> OutputBindings;
@@ -92,6 +94,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                 if (bindingInfo.Direction == BindingInfo.Types.Direction.Out)
                 {
+                    if (bindingInfo.Type == OrchestrationClient)
+                    {
+                        OrchestrationClientBindingName = bindingName;
+                    }
                     OutputBindings.Add(bindingName, bindingInfo);
                 }
             }
