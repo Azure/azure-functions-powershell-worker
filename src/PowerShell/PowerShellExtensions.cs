@@ -13,15 +13,29 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     {
         public static void InvokeAndClearCommands(this PowerShell pwsh)
         {
-            pwsh.Invoke();
-            pwsh.Commands.Clear();
+            try
+            {
+                pwsh.Invoke();
+            }
+            finally
+            {
+                pwsh.Streams.ClearStreams();
+                pwsh.Commands.Clear();
+            }
         }
 
         public static Collection<T> InvokeAndClearCommands<T>(this PowerShell pwsh)
         {
-            var result = pwsh.Invoke<T>();
-            pwsh.Commands.Clear();
-            return result;
+            try
+            {
+                var result = pwsh.Invoke<T>();
+                return result;
+            }
+            finally
+            {
+                pwsh.Streams.ClearStreams();
+                pwsh.Commands.Clear();
+            }
         }
     }
 }

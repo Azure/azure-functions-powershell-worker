@@ -21,10 +21,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
     internal class PowerShellManager
     {
-        private const string _TriggerMetadataParameterName = "TriggerMetadata";
-
-        private ILogger _logger;
-        private PowerShell _pwsh;
+        private readonly ILogger _logger;
+        private readonly PowerShell _pwsh;
 
         internal PowerShellManager(ILogger logger)
         {
@@ -88,104 +86,128 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             // Add HttpResponseContext namespace so users can reference
             // HttpResponseContext without needing to specify the full namespace
             _pwsh.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").InvokeAndClearCommands();
-            
+
             // Set the PSModulePath
             Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
 
             AuthenticateToAzure();
         }
 
+        /// <summary>
+        /// Execution a function fired by a trigger or an activity function scheduled by an orchestration.
+        /// </summary>
         internal Hashtable InvokeFunction(
-            string scriptPath,
-            string entryPoint,
+            AzFunctionInfo functionInfo,
             Hashtable triggerMetadata,
             IList<ParameterBinding> inputData)
         {
+            string scriptPath = functionInfo.ScriptPath;
+            string entryPoint = functionInfo.EntryPoint;
+            string moduleName = null;
+
             try
             {
-                Dictionary<string, ParameterMetadata> parameterMetadata;
+                // If an entry point is defined, we load the script as a module and invoke the function with that name.
+                // We also need to fetch the ParameterMetadata to know what to pass in as arguments.
+                var parameterMetadata = RetriveParameterMetadata(functionInfo, out moduleName);
+                _pwsh.AddCommand(String.IsNullOrEmpty(entryPoint) ? scriptPath : entryPoint);
 
-                // We need to take into account if the user has an entry point.
-                // If it does, we invoke the command of that name. We also need to fetch
-                // the ParameterMetadata so that we can tell whether or not the user is asking
-                // for the $TriggerMetadata
-                using (ExecutionTimer.Start(_logger, "Parameter metadata retrieved."))
-                {
-                    if (entryPoint != "")
-                    {
-                        parameterMetadata = _pwsh
-                            .AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", scriptPath)
-                            .AddStatement()
-                            .AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddParameter("Name", entryPoint)
-                            .InvokeAndClearCommands<FunctionInfo>()[0].Parameters;
-
-                        _pwsh.AddCommand(entryPoint);
-
-                    }
-                    else
-                    {
-                        parameterMetadata = _pwsh.AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddParameter("Name", scriptPath)
-                            .InvokeAndClearCommands<ExternalScriptInfo>()[0].Parameters;
-
-                        _pwsh.AddCommand(scriptPath);
-                    }
-                }
-
-                // Sets the variables for each input binding
+                // Set arguments for each input binding parameter
                 foreach (ParameterBinding binding in inputData)
                 {
-                    _pwsh.AddParameter(binding.Name, binding.Data.ToObject());
+                    if (parameterMetadata.ContainsKey(binding.Name))
+                    {
+                        _pwsh.AddParameter(binding.Name, binding.Data.ToObject());
+                    }
                 }
 
                 // Gives access to additional Trigger Metadata if the user specifies TriggerMetadata
-                if(parameterMetadata.ContainsKey(_TriggerMetadataParameterName))
+                if(parameterMetadata.ContainsKey(AzFunctionInfo.TriggerMetadata))
                 {
-                    _pwsh.AddParameter(_TriggerMetadataParameterName, triggerMetadata);
-                    _logger.Log(LogLevel.Debug, $"TriggerMetadata found. Value:{Environment.NewLine}{triggerMetadata.ToString()}");
+                    _logger.Log(LogLevel.Debug, "Parameter '-TriggerMetadata' found.");
+                    _pwsh.AddParameter(AzFunctionInfo.TriggerMetadata, triggerMetadata);
                 }
 
-                PSObject returnObject = null;
+                Collection<object> pipelineItems = null;
                 using (ExecutionTimer.Start(_logger, "Execution of the user's function completed."))
                 {
-                    // Log everything we received from the pipeline and set the last one to be the ReturnObject
-                    Collection<PSObject> pipelineItems = _pwsh.InvokeAndClearCommands<PSObject>();
-                    if (pipelineItems.Count > 0)
-                    {
-                        foreach (var psobject in pipelineItems)
-                        {
-                            _logger.Log(LogLevel.Information, $"OUTPUT: {psobject.ToString()}");
-                        }
-                        returnObject =  pipelineItems[pipelineItems.Count - 1];
-                    }
+                    pipelineItems = _pwsh.InvokeAndClearCommands<object>();
                 }
-                
-                var result = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Get-OutputBinding")
-                    .AddParameter("Purge")
-                    .InvokeAndClearCommands<Hashtable>()[0];
 
-                if(returnObject != null)
+                var result = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Get-OutputBinding")
+                                  .AddParameter("Purge")
+                                  .InvokeAndClearCommands<Hashtable>()[0];
+
+                if (pipelineItems != null && pipelineItems.Count > 0)
                 {
-                    result.Add("$return", returnObject);
+                    // Log everything we received from the pipeline and set the last one to be the ReturnObject
+                    foreach (var item in pipelineItems)
+                    {
+                        _logger.Log(LogLevel.Information, $"OUTPUT: {item.ToString()}");
+                    }
+                    result.Add(AzFunctionInfo.DollarReturn, pipelineItems[pipelineItems.Count - 1]);
                 }
+
                 return result;
             }
             finally
             {
-                ResetRunspace(scriptPath);
+                ResetRunspace(moduleName);
             }
         }
 
-        private void ResetRunspace(string scriptPath)
+        /// <summary>
+        /// Helper method to convert the result returned from a function to JSON.
+        /// </summary>
+        internal string ConvertToJson(object fromObj)
+        {
+            return _pwsh.AddCommand("Microsoft.PowerShell.Utility\\ConvertTo-Json")
+                        .AddParameter("InputObject", fromObj)
+                        .AddParameter("Depth", 10)
+                        .AddParameter("Compress", true)
+                        .InvokeAndClearCommands<string>()[0];
+        }
+
+        private Dictionary<string, ParameterMetadata> RetriveParameterMetadata(
+            AzFunctionInfo functionInfo,
+            out string moduleName)
+        {
+            moduleName = null;
+            string scriptPath = functionInfo.ScriptPath;
+            string entryPoint = functionInfo.EntryPoint;
+
+            using (ExecutionTimer.Start(_logger, "Parameter metadata retrieved."))
+            {
+                if (String.IsNullOrEmpty(entryPoint))
+                {
+                    return _pwsh.AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddParameter("Name", scriptPath)
+                                .InvokeAndClearCommands<ExternalScriptInfo>()[0].Parameters;
+                }
+                else
+                {
+                    moduleName = Path.GetFileNameWithoutExtension(scriptPath);
+                    return _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", scriptPath)
+                                .AddStatement()
+                                .AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddParameter("Name", entryPoint)
+                                .InvokeAndClearCommands<FunctionInfo>()[0].Parameters;
+                }
+            }
+        }
+
+        private void ResetRunspace(string moduleName)
         {
             // Reset the runspace to the Initial Session State
             _pwsh.Runspace.ResetRunspaceState();
 
-            // If the function had an entry point, this will remove the module that was loaded
-            var moduleName = Path.GetFileNameWithoutExtension(scriptPath);
-            _pwsh.AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
-                .AddParameter("Name", moduleName)
-                .AddParameter("ErrorAction", "SilentlyContinue")
-                .InvokeAndClearCommands();
+            if (!String.IsNullOrEmpty(moduleName))
+            {
+                // If the function had an entry point, this will remove the module that was loaded
+                _pwsh.AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
+                    .AddParameter("Name", moduleName)
+                    .AddParameter("Force", true)
+                    .AddParameter("ErrorAction", "SilentlyContinue")
+                    .InvokeAndClearCommands();
+            }
         }
     }
 }
