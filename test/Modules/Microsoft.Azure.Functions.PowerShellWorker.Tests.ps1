@@ -5,37 +5,47 @@
 
 Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
 
-    # Helper function that tests hashtable equality
-    function IsEqualHashtable ($h1, $h2) {
-        # Handle nulls
-        if (!$h1) {
-            if(!$h2) {
-                return $true
-            }
-            return $false
-        }
-        if (!$h2) {
-            return $false
-        }
-    
-        # If they don't have the same amount of key value pairs, fail early
-        if ($h1.Count -ne $h2.Count){
-            return $false
-        }
-    
-        # Check to make sure every key exists in the other and that the values are the same
-        foreach ($key in $h1.Keys) {
-            if (!$h2.ContainsKey($key) -or $h1[$key] -ne $h2[$key]) {
+    BeforeAll {
+        # Move the .psd1 and .psm1 files to the publish folder so that the dlls can be found
+        $binFolder = Resolve-Path -Path "$PSScriptRoot/../bin"
+        $workerDll = Get-ChildItem -Path $binFolder -Filter "Microsoft.Azure.Functions.PowerShellWorker.dll" -Recurse | Select-Object -First 1
+
+        $moduleFolder = Join-Path -Path $workerDll.Directory.FullName -ChildPath "Modules\Microsoft.Azure.Functions.PowerShellWorker"
+        $modulePath = Join-Path -Path $moduleFolder -ChildPath "Microsoft.Azure.Functions.PowerShellWorker.psd1"
+        Import-Module $modulePath
+
+        # Helper function that tests hashtable equality
+        function IsEqualHashtable ($h1, $h2) {
+            # Handle nulls
+            if (!$h1) {
+                if(!$h2) {
+                    return $true
+                }
                 return $false
             }
+            if (!$h2) {
+                return $false
+            }
+
+            # If they don't have the same amount of key value pairs, fail early
+            if ($h1.Count -ne $h2.Count){
+                return $false
+            }
+
+            # Check to make sure every key exists in the other and that the values are the same
+            foreach ($key in $h1.Keys) {
+                if (!$h2.ContainsKey($key) -or $h1[$key] -ne $h2[$key]) {
+                    return $false
+                }
+            }
+            return $true
         }
-        return $true
     }
 
     Context 'Push-OutputBinding tests' {
-        BeforeEach {
-            Import-Module "$PSScriptRoot/../../src/Modules/Microsoft.Azure.Functions.PowerShellWorker/Microsoft.Azure.Functions.PowerShellWorker.psd1" -Force
-            $module = (Get-Module Microsoft.Azure.Functions.PowerShellWorker)[0]
+
+        AfterAll {
+            Get-OutputBinding -Purge > $null
         }
 
         It 'Can add a value via parameters' {
@@ -43,7 +53,7 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
             $Value = 5
 
             Push-OutputBinding -Name $Key -Value $Value
-            $result = & $module { $script:_OutputBindings }
+            $result = Get-OutputBinding -Purge
             $result[$Key] | Should -BeExactly $Value
         }
 
@@ -65,35 +75,41 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
             )
 
             $InputData | Push-OutputBinding
-            $result = & $module { $script:_OutputBindings }
+            $result = Get-OutputBinding -Purge
             IsEqualHashtable $result $Expected | Should -BeTrue `
                 -Because 'The hashtables should be identical'
         }
 
         It 'Throws if you attempt to overwrite an Output binding' {
-            Push-OutputBinding Foo 5
-            { Push-OutputBinding Foo 6} | Should -Throw
+            try {
+                Push-OutputBinding Foo 5
+                { Push-OutputBinding Foo 6} | Should -Throw
+            } finally {
+                Get-OutputBinding -Purge > $null
+            }
         }
 
         It 'Can overwrite values if "-Force" is specified' {
-            $internalHashtable = & $module { $script:_OutputBindings }
             Push-OutputBinding Foo 5
-            IsEqualHashtable @{Foo = 5} $internalHashtable | Should -BeTrue `
+            $result = Get-OutputBinding -Purge
+            IsEqualHashtable @{Foo = 5} $result | Should -BeTrue `
                 -Because 'The hashtables should be identical'
 
             Push-OutputBinding Foo 6 -Force
-            IsEqualHashtable @{Foo = 6} $internalHashtable | Should -BeTrue `
+            $result = Get-OutputBinding -Purge
+            IsEqualHashtable @{Foo = 6} $result | Should -BeTrue `
                 -Because '-Force should let you overwrite the output binding'
         }
     }
 
     Context 'Get-OutputBinding tests' {
         BeforeAll {
-            Import-Module "$PSScriptRoot/../../src/Modules/Microsoft.Azure.Functions.PowerShellWorker/Microsoft.Azure.Functions.PowerShellWorker.psd1" -Force
-            $module = (Get-Module Microsoft.Azure.Functions.PowerShellWorker)[0]
-            & $module {
-                $script:_OutputBindings = @{ Foo = 1; Bar = 'Baz'; Food = 'apple'}
-            }
+            $inputData = @{ Foo = 1; Bar = 'Baz'; Food = 'apple'}
+            $inputData | Push-OutputBinding
+        }
+
+        AfterAll {
+            Get-OutputBinding -Purge
         }
 
         It 'Can get the output binding hashmap - <Description>' -TestCases @(
@@ -129,13 +145,11 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
         }
 
         It 'Can use the "-Purge" flag to clear the Output bindings' {
-            $initialState = (& $module { $script:_OutputBindings }).Clone()
-
             $result = Get-OutputBinding -Purge
-            IsEqualHashtable $result $initialState | Should -BeTrue `
+            IsEqualHashtable $result $inputData | Should -BeTrue `
                 -Because 'The full hashtable should be returned'
 
-            $newState = & $module { $script:_OutputBindings }
+            $newState = Get-OutputBinding
             IsEqualHashtable @{} $newState | Should -BeTrue `
                 -Because 'The OutputBindings should be empty'
         }
