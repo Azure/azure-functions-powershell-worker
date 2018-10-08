@@ -11,7 +11,10 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
         $workerDll = Get-ChildItem -Path $binFolder -Filter "Microsoft.Azure.Functions.PowerShellWorker.dll" -Recurse | Select-Object -First 1
 
         $moduleFolder = Join-Path -Path $workerDll.Directory.FullName -ChildPath "Modules\Microsoft.Azure.Functions.PowerShellWorker"
-        $modulePath = Join-Path -Path $moduleFolder -ChildPath "Microsoft.Azure.Functions.PowerShellWorker.psd1"
+        $pubFolder = Join-Path -Path $workerDll.Directory.FullName -ChildPath "publish"
+        Copy-Item -Path $moduleFolder/* -Destination $pubFolder -ErrorAction SilentlyContinue
+
+        $modulePath = Join-Path -Path $pubFolder -ChildPath "Microsoft.Azure.Functions.PowerShellWorker.psd1"
         Import-Module $modulePath
 
         # Helper function that tests hashtable equality
