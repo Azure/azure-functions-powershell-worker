@@ -95,7 +95,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
         private static JsonSerializerSettings setting =
             new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.None, MaxDepth = 10 };
-        private static object DeserializeJson(string json)
+        internal static object DeserializeJson(string json)
         {
             var obj = JsonConvert.DeserializeObject(json, setting);
             switch (obj)

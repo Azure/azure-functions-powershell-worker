@@ -12,6 +12,7 @@ using System.Threading;
 using Newtonsoft.Json;
 using Microsoft.Azure.Functions.PowerShellWorker.Action;
 using Microsoft.Azure.Functions.PowerShellWorker.History;
+using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
 {
@@ -64,7 +65,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
             {
                 taskScheduled.IsProcessed = true;
                 taskCompleted.IsProcessed = true;
-                WriteObject(taskCompleted.Result);
+                WriteObject(TypeExtensions.DeserializeJson(taskCompleted.Result));
             }
             else
             {
