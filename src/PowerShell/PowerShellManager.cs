@@ -163,7 +163,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             return _pwsh.AddCommand("Microsoft.PowerShell.Utility\\ConvertTo-Json")
                         .AddParameter("InputObject", fromObj)
-                        .AddParameter("Depth", 10)
+                        .AddParameter("Depth", 3)
                         .AddParameter("Compress", true)
                         .InvokeAndClearCommands<string>()[0];
         }
