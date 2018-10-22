@@ -16,7 +16,7 @@ try {
     $data = Get-CoinPrice @cmdletParameters
     $response = [HttpResponseContext]@{
         StatusCode = '200' # OK
-        Body = ($data | ConvertTo-Json)
+        Body = $data
     }
 } catch {
     $response = [HttpResponseContext]@{
