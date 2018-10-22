@@ -22,6 +22,10 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManager _powerShellManager;
 
+        // used to determine if we have already added the Function App's 'Modules'
+        // folder to the PSModulePath
+        private bool _prependedPath;
+
         internal RequestProcessor(MessagingStream msgStream)
         {
             _msgStream = msgStream;
@@ -98,6 +102,16 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 // Try loading the metadata of the function
                 _functionLoader.Load(functionLoadRequest);
+
+                // if we haven't yet, add the well-known Function App module path to the PSModulePath
+                // The location of this module path is in a folder called "Modules" in the root of the Function App.
+                if (!_prependedPath)
+                {
+                    string functionAppModulesPath = System.IO.Path.Combine(
+                        functionLoadRequest.Metadata.Directory, "..", "Modules");
+                    _powerShellManager.PrependToPSModulePath(functionAppModulesPath);
+                    _prependedPath = true;
+                }
             }
             catch (Exception e)
             {

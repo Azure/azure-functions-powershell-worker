@@ -194,6 +194,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
+        internal void PrependToPSModulePath(string directory)
+        {
+            // Adds the passed in directory to the front of the PSModulePath using the path separator of the OS.
+            string psModulePath = Environment.GetEnvironmentVariable("PSModulePath");
+            Environment.SetEnvironmentVariable("PSModulePath", $"{directory}{Path.PathSeparator}{psModulePath}");
+        }
+
         private void ResetRunspace(string moduleName)
         {
             // Reset the runspace to the Initial Session State
