@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
@@ -107,8 +108,8 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 // The location of this module path is in a folder called "Modules" in the root of the Function App.
                 if (!_prependedPath)
                 {
-                    string functionAppModulesPath = System.IO.Path.Combine(
-                        functionLoadRequest.Metadata.Directory, "..", "Modules");
+                    string functionAppModulesPath = Path.GetFullPath(
+                        Path.Combine(functionLoadRequest.Metadata.Directory, "..", "Modules"));
                     _powerShellManager.PrependToPSModulePath(functionAppModulesPath);
                     _prependedPath = true;
                 }

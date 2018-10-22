@@ -59,6 +59,7 @@ PowerShell.sln.DotSettings.user
 *.msp
 StyleCop.Cache
 
+examples/PSCoreApp/Modules
 src/Modules
 !src/Modules/Microsoft.AzureFunctions.PowerShellWorker
 
