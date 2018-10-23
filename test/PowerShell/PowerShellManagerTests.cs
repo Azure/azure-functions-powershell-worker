@@ -124,5 +124,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Hashtable result2 = manager.InvokeFunction(functionInfo, null, TestInputData);
             Assert.Equal("is not set", result2[TestOutputBindingName]);
         }
+
+        [Fact]
+        public void PrependingToPSModulePathShouldWork()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            var data = "/some/unknown/directory";
+
+            string modulePathBefore = Environment.GetEnvironmentVariable("PSModulePath");
+            manager.PrependToPSModulePath(data);
+            try
+            {
+                // the data path should be ahead of anything else
+                Assert.Equal($"{data}{System.IO.Path.PathSeparator}{modulePathBefore}", Environment.GetEnvironmentVariable("PSModulePath"));
+            }
+            finally
+            {
+                // Set the PSModulePath back to what it was before
+                Environment.SetEnvironmentVariable("PSModulePath", modulePathBefore);
+            }
+        }
     }
 }
