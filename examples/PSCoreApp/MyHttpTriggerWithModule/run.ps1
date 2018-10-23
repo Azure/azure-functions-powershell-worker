@@ -1,6 +1,8 @@
 # Trigger the function by running Invoke-RestMethod:
 #   Specify parameters: Invoke-RestMethod `
 #                        -Uri http://localhost:7071/api/MyHttpTriggerWithModule?FromSymbol=BTC&ToSymbol=USD
+
+# Requires is supported
 #Requires -Modules @{ ModuleName="Coin"; ModuleVersion="0.2.9.44" }
 
 # Input bindings are passed in via param block.
