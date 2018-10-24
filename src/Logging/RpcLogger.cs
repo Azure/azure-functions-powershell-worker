@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Text;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -14,13 +15,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
     internal class RpcLogger : ILogger, IDisposable
     {
         private const string SystemLogPrefix = "LanguageWorkerConsoleLog";
-        private MessagingStream _msgStream;
+        private readonly MessagingStream _msgStream;
+        private readonly StringBuilder _systemLogMsg;
         private string _invocationId;
         private string _requestId;
 
         public RpcLogger(MessagingStream msgStream)
         {
             _msgStream = msgStream;
+            _systemLogMsg = new StringBuilder();
         }
 
         public IDisposable BeginScope(string requestId, string invocationId)
@@ -38,7 +41,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
         public override async void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
         {
-            var invocationId = _invocationId ?? "N/A";
             if (isUserLog)
             {
                 // For user logs, we send them over Rpc with details about the invocation.
@@ -48,7 +50,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     RpcLog = new RpcLog()
                     {
                         Exception = exception?.ToRpcException(),
-                        InvocationId = invocationId,
+                        InvocationId = _invocationId ?? "N/A",
                         Level = logLevel,
                         Message = message
                     }
@@ -60,7 +62,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             {
                 // For system logs, we log to stdio with a prefix of LanguageWorkerConsoleLog.
                 // These are picked up by the Functions Host
-                Console.WriteLine($"{SystemLogPrefix}Request Id: {_requestId}\nInvocation Id: {_invocationId}\nLog Message:\n{message}\n");
+                _systemLogMsg.Append(SystemLogPrefix).AppendLine("System Log: {");
+                if (!string.IsNullOrEmpty(_requestId))
+                {
+                    _systemLogMsg.AppendLine($"  Request-Id: {_requestId}");
+                }
+                if (!string.IsNullOrEmpty(_invocationId))
+                {
+                    _systemLogMsg.AppendLine($"  Invocation-Id: {_invocationId}");
+                }
+                _systemLogMsg.AppendLine($"  Log-Message: {message}").AppendLine("}");
+
+                Console.WriteLine(_systemLogMsg.ToString());
+                _systemLogMsg.Clear();
             }
         }
     }
