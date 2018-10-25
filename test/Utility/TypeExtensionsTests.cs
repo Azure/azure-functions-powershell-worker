@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Management.Automation;
 
 using Google.Protobuf;
 using Google.Protobuf.Collections;
@@ -162,12 +163,100 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void TestTypedDataToObjectJson()
         {
+            // A dictionary with simple key/value
             var data = "{\"Foo\":\"Bar\"}";
 
             var input = new TypedData { Json = data };
             var expected = JsonConvert.DeserializeObject<Hashtable>(data);
             var actual = (Hashtable)input.ToObject();
             Assert.Equal((string)expected["Foo"], (string)actual["Foo"]);
+        }
+
+        [Fact]
+        public void TestTypedDataToObjectJson2()
+        {
+            // A dictionary with an array value
+            var data = "{\"Foo\":[\"Bar\",\"Zoo\"]}";
+
+            var input = new TypedData { Json = data };
+            var actual = input.ToObject();
+            Assert.IsType<Hashtable>(actual);
+            var actualHash = (Hashtable)actual;
+            Assert.IsType<object[]>(actualHash["Foo"]);
+            var actualArray = (object[])actualHash["Foo"];
+            Assert.Equal(2, actualArray.Length);
+            Assert.Equal("Bar", actualArray[0]);
+            Assert.Equal("Zoo", actualArray[1]);
+        }
+
+        [Fact]
+        public void TestTypedDataToObjectJson3()
+        {
+            // A dictionary with a dictionary value
+            var data = "{\"Foo\":{\"Bar\":\"Zoo\"}}";
+
+            var input = new TypedData { Json = data };
+            var actual = input.ToObject();
+            Assert.IsType<Hashtable>(actual);
+            var actualHash = (Hashtable)actual;
+            Assert.IsType<Hashtable>(actualHash["Foo"]);
+            var nestedHash = (Hashtable)actualHash["Foo"];
+            Assert.Single(nestedHash);
+            Assert.Equal("Zoo", nestedHash["Bar"]);
+        }
+
+        [Fact]
+        public void TestTypedDataToObjectJson4()
+        {
+            // An array with simple value
+            var data = "[\"Foo\",\"Bar\"]";
+
+            var input = new TypedData { Json = data };
+            var actual = input.ToObject();
+            Assert.IsType<object[]>(actual);
+            var actualArray = (object[])actual;
+            Assert.Equal(2, actualArray.Length);
+            Assert.Equal("Foo", actualArray[0]);
+            Assert.Equal("Bar", actualArray[1]);
+        }
+
+        [Fact]
+        public void TestTypedDataToObjectJson5()
+        {
+            // An array with an array value
+            var data = "[\"Foo\", [\"Bar\", \"Zoo\"]]";
+
+            var input = new TypedData { Json = data };
+            var actual = input.ToObject();
+            Assert.IsType<object[]>(actual);
+            var actualArray = (object[])actual;
+            Assert.Equal(2, actualArray.Length);
+            Assert.Equal("Foo", actualArray[0]);
+
+            Assert.IsType<object[]>(actualArray[1]);
+            var nestedArray = (object[])actualArray[1];
+            Assert.Equal(2, nestedArray.Length);
+            Assert.Equal("Bar", nestedArray[0]);
+            Assert.Equal("Zoo", nestedArray[1]);
+        }
+
+        [Fact]
+        public void TestTypedDataToObjectJson6()
+        {
+            // An array with an array value
+            var data = "[\"Foo\", {\"Bar\":\"Zoo\"}]";
+
+            var input = new TypedData { Json = data };
+            var actual = input.ToObject();
+            Assert.IsType<object[]>(actual);
+            var actualArray = (object[])actual;
+            Assert.Equal(2, actualArray.Length);
+            Assert.Equal("Foo", actualArray[0]);
+
+            Assert.IsType<Hashtable>(actualArray[1]);
+            var nestedHash = (Hashtable)actualArray[1];
+            Assert.Single(nestedHash);
+            Assert.Equal("Zoo", nestedHash["Bar"]);
         }
 
         [Fact]
@@ -419,6 +508,92 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             Assert.Equal(expected, input.ToTypedData(manager));
         }
+
+        [Fact]
+        public void TestObjectToTypedDataJsonPSObject1()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.InitializeRunspace();
+
+            var data = new Hashtable { { "foo", "bar" } };
+            object input = PSObject.AsPSObject(data);
+
+            var expected = new TypedData
+            {
+                Json = "{\"foo\":\"bar\"}"
+            };
+
+            Assert.Equal(expected, input.ToTypedData(manager));
+        }
+
+        [Fact]
+        public void TestObjectToTypedDataJsonPSObject2()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.InitializeRunspace();
+
+            var data = new byte[] { 12,23,34 };
+            object input = PSObject.AsPSObject(data);
+
+            TypedData output = input.ToTypedData(manager);
+
+            Assert.Equal(TypedData.DataOneofCase.Bytes, output.DataCase);
+            Assert.Equal(3, output.Bytes.Length);
+        }
+
+        [Fact]
+        public void TestObjectToTypedDataJsonPSObject3()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.InitializeRunspace();
+
+            using (var data = new MemoryStream(new byte[] { 12,23,34 }))
+            {
+                object input = PSObject.AsPSObject(data);
+                TypedData output = input.ToTypedData(manager);
+
+                Assert.Equal(TypedData.DataOneofCase.Stream, output.DataCase);
+                Assert.Equal(3, output.Stream.Length);
+            }
+        }
+
+        [Fact]
+        public void TestObjectToTypedDataJsonPSObject4()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.InitializeRunspace();
+
+            object input = PSObject.AsPSObject("Hello World");
+            TypedData output = input.ToTypedData(manager);
+
+            Assert.Equal(TypedData.DataOneofCase.String, output.DataCase);
+            Assert.Equal("Hello World", output.String);
+        }
+
+        [Fact]
+        public void TestObjectToTypedDataJsonPSObject5()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.InitializeRunspace();
+
+            using (var ps = System.Management.Automation.PowerShell.Create())
+            {
+                object input = ps.AddScript("[pscustomobject]@{foo = 'bar'}").Invoke()[0];
+
+                var expected = new TypedData
+                {
+                    Json = "{\"foo\":\"bar\"}"
+                };
+
+                Assert.Equal(expected, input.ToTypedData(manager));
+            }
+        }
+
         #endregion
     }
 }
