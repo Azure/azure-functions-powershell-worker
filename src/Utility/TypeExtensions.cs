@@ -95,7 +95,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         }
 
         // PowerShell NuGet packages only have 'System.Management.Automation.dll' as the ref assembly, and thus types from other powershell assemblies
-        // cannot be used directly in an application that reference the PowerShell NuGet packages.
+        // cannot be used directly in an application that reference the PowerShell NuGet packages. This is tracked by PowerShell#8121.
         // Here we need to use 'Microsoft.PowerShell.Commands.JsonObject' from 'Microsoft.PowerShell.Commands.Utility'. Due the above issue, we have to
         // use reflection to call 'JsonObject.ConvertFromJson(...)'.
         private const string UtilityAssemblyFullName = "Microsoft.PowerShell.Commands.Utility, Version=6.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
