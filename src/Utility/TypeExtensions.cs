@@ -6,12 +6,13 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 using System.Management.Automation;
+using System.Reflection;
 
 using Google.Protobuf;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
@@ -73,7 +74,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             switch (data.DataCase)
             {
                 case TypedData.DataOneofCase.Json:
-                    return DeserializeJson(data.Json);
+                    return ConvertFromJson(data.Json);
                 case TypedData.DataOneofCase.Bytes:
                     return data.Bytes.ToByteArray();
                 case TypedData.DataOneofCase.Double:
@@ -89,24 +90,35 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 case TypedData.DataOneofCase.None:
                     return null;
                 default:
-                    return new InvalidOperationException("Data Case was not set.");
+                    return new InvalidOperationException("DataCase was not set.");
             }
         }
 
-        private static JsonSerializerSettings setting =
-            new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.None, MaxDepth = 3 };
-        private static object DeserializeJson(string json)
+        // PowerShell NuGet packages only have 'System.Management.Automation.dll' as the ref assembly, and thus types from other powershell assemblies
+        // cannot be used directly in an application that reference the PowerShell NuGet packages. This is tracked by PowerShell#8121.
+        // Here we need to use 'Microsoft.PowerShell.Commands.JsonObject' from 'Microsoft.PowerShell.Commands.Utility'. Due the above issue, we have to
+        // use reflection to call 'JsonObject.ConvertFromJson(...)'.
+        private static MethodInfo s_ConvertFromJson = null;
+        private static object ConvertFromJson(string json)
         {
-            var obj = JsonConvert.DeserializeObject(json, setting);
-            switch (obj)
+            const string UtilityAssemblyFullName = "Microsoft.PowerShell.Commands.Utility, Version=6.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
+
+            if (s_ConvertFromJson == null)
             {
-                case JObject dict:
-                    return new Hashtable(dict.ToObject<Hashtable>(), StringComparer.OrdinalIgnoreCase);
-                case JArray list:
-                    return list.ToObject<object[]>();
-                default:
-                    return obj;
+                Assembly utilityAssembly = AppDomain.CurrentDomain.GetAssemblies().First(asm => asm.FullName == UtilityAssemblyFullName);
+                Type jsonObjectType = utilityAssembly.GetType("Microsoft.PowerShell.Commands.JsonObject");
+                s_ConvertFromJson = jsonObjectType.GetMethod(
+                    name: "ConvertFromJson",
+                    types: new Type[] { typeof(string), typeof(bool), typeof(ErrorRecord).MakeByRefType() },
+                    modifiers: null);
             }
+
+            object retObj = s_ConvertFromJson.Invoke(null, new object[] { json, true, null });
+            if (retObj is PSObject psObj)
+            {
+                retObj = psObj.BaseObject;
+            }
+            return retObj;
         }
 
         internal static RpcException ToRpcException(this Exception exception)
@@ -160,6 +172,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 return typedData;
             }
 
+            // Save the original value.
+            // We will use the original value when converting to JSON, so members added by ETS can be captured in the serialization. 
+            var originalValue = value;
+            if (value is PSObject psObj && psObj.BaseObject != null)
+            {
+                value = psObj.BaseObject;
+            }
+
             switch (value)
             {
                 case double d:
@@ -185,8 +205,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     break;
                 default:
                     if (psHelper == null) { throw new ArgumentNullException(nameof(psHelper)); }
-                    typedData.Json = psHelper.ConvertToJson(value);   
-                    break;             
+                    typedData.Json = psHelper.ConvertToJson(originalValue);
+                    break;
             }
             return typedData;
         }
