@@ -510,7 +510,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
-        public void TestObjectToTypedDataJsonPSObject1()
+        public void TestObjectToTypedData_PSObjectToJson_1()
         {
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
@@ -528,54 +528,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
-        public void TestObjectToTypedDataJsonPSObject2()
-        {
-            var logger = new ConsoleLogger();
-            var manager = new PowerShellManager(logger);
-            manager.InitializeRunspace();
-
-            var data = new byte[] { 12,23,34 };
-            object input = PSObject.AsPSObject(data);
-
-            TypedData output = input.ToTypedData(manager);
-
-            Assert.Equal(TypedData.DataOneofCase.Bytes, output.DataCase);
-            Assert.Equal(3, output.Bytes.Length);
-        }
-
-        [Fact]
-        public void TestObjectToTypedDataJsonPSObject3()
-        {
-            var logger = new ConsoleLogger();
-            var manager = new PowerShellManager(logger);
-            manager.InitializeRunspace();
-
-            using (var data = new MemoryStream(new byte[] { 12,23,34 }))
-            {
-                object input = PSObject.AsPSObject(data);
-                TypedData output = input.ToTypedData(manager);
-
-                Assert.Equal(TypedData.DataOneofCase.Stream, output.DataCase);
-                Assert.Equal(3, output.Stream.Length);
-            }
-        }
-
-        [Fact]
-        public void TestObjectToTypedDataJsonPSObject4()
-        {
-            var logger = new ConsoleLogger();
-            var manager = new PowerShellManager(logger);
-            manager.InitializeRunspace();
-
-            object input = PSObject.AsPSObject("Hello World");
-            TypedData output = input.ToTypedData(manager);
-
-            Assert.Equal(TypedData.DataOneofCase.String, output.DataCase);
-            Assert.Equal("Hello World", output.String);
-        }
-
-        [Fact]
-        public void TestObjectToTypedDataJsonPSObject5()
+        public void TestObjectToTypedData_PSObjectToJson_2()
         {
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
@@ -592,6 +545,53 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
                 Assert.Equal(expected, input.ToTypedData(manager));
             }
+        }
+
+        [Fact]
+        public void TestObjectToTypedData_PSObjectToBytes()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.InitializeRunspace();
+
+            var data = new byte[] { 12,23,34 };
+            object input = PSObject.AsPSObject(data);
+
+            TypedData output = input.ToTypedData(manager);
+
+            Assert.Equal(TypedData.DataOneofCase.Bytes, output.DataCase);
+            Assert.Equal(3, output.Bytes.Length);
+        }
+
+        [Fact]
+        public void TestObjectToTypedData_PSObjectToStream()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.InitializeRunspace();
+
+            using (var data = new MemoryStream(new byte[] { 12,23,34 }))
+            {
+                object input = PSObject.AsPSObject(data);
+                TypedData output = input.ToTypedData(manager);
+
+                Assert.Equal(TypedData.DataOneofCase.Stream, output.DataCase);
+                Assert.Equal(3, output.Stream.Length);
+            }
+        }
+
+        [Fact]
+        public void TestObjectToTypedData_PSObjectToString()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.InitializeRunspace();
+
+            object input = PSObject.AsPSObject("Hello World");
+            TypedData output = input.ToTypedData(manager);
+
+            Assert.Equal(TypedData.DataOneofCase.String, output.DataCase);
+            Assert.Equal("Hello World", output.String);
         }
 
         #endregion
