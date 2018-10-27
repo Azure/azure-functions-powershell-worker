@@ -5,12 +5,11 @@
 
 Describe 'HttpTrigger Tests' {
     BeforeAll {
-        $FuncJob = & "$PSScriptRoot/setupE2Etests.ps1"
+        & "$PSScriptRoot/setupE2Etests.ps1"
         { Invoke-RestMethod 'http://localhost:7071' } | Should -Not -Throw -Because 'The E2E tests require a Function App to be running on port 7071'
     }
     AfterAll {
-        Stop-Job $FuncJob
-        Remove-Job $FuncJob
+        Get-Job -Name FuncJob | Stop-Job | Remove-Job
     }
     It 'Simple' {
         Invoke-RestMethod 'http://localhost:7071/api/MyHttpTrigger?Name=Atlas' | Should -Be 'Hello Atlas'

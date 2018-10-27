@@ -42,7 +42,7 @@ $Env:FUNCTIONS_WORKER_RUNTIME = "powershell"
 $Env:AZURE_FUNCTIONS_ENVIRONMENT = "development"
 $Env:Path = "$Env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
 
-Start-Job -ArgumentList (Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME) -ScriptBlock {
+Start-Job -Name FuncJob -ArgumentList (Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME) -ScriptBlock {
     Push-Location $Env:AzureWebJobsScriptRoot
 
     if ($IsMacOS -or $IsLinux) {
