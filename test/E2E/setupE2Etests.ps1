@@ -42,12 +42,15 @@ $Env:FUNCTIONS_WORKER_RUNTIME = "powershell"
 $Env:AZURE_FUNCTIONS_ENVIRONMENT = "development"
 $Env:Path = "$Env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
 
-Start-Job -ScriptBlock {
+Start-Job -ArgumentList (Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME) -ScriptBlock {
     Push-Location $Env:AzureWebJobsScriptRoot
-    Write-Host $args[0]
-    chmod +x $args[0]
+
+    if ($IsMacOS -or $IsLinux) {
+        chmod +x $args[0]
+    }
+
     & $args[0] host start
-} -ArgumentList (Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME)
+}
 
 Write-Host "Wait for Functions Host to start..."
 Start-Sleep -s 10
