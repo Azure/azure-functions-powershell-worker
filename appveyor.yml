@@ -14,13 +14,15 @@ image:
 
 max_jobs: 1
 
+configuration: Release
+
 install:
   - pwsh: ./build.ps1 -NoBuild -Bootstrap
 
 build_script:
   - pwsh: |
       $ErrorActionPreference = "Stop"
-      ./build.ps1 -Clean -Configuration Release
+      ./build.ps1 -Clean -Configuration $env:CONFIGURATION
 
 test_script:
   - pwsh: ./build.ps1 -NoBuild -Test

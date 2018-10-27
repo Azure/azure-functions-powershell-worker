@@ -32,7 +32,7 @@ Write-Host 'Extracting Functions Core Tools...'
 Expand-Archive $output -DestinationPath $FUNC_CLI_DIRECTORY
 
 Write-Host "Copying azure-functions-powershell-worker to  Functions Host workers directory..."
-Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/Debug/netcoreapp2.1/publish/" "$FUNC_CLI_DIRECTORY/workers/powershell"
+Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$env:CONFIGURATION/netcoreapp2.1/publish/" "$FUNC_CLI_DIRECTORY/workers/powershell"
 
 
 Write-Host "Staring Functions Host..."
