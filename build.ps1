@@ -81,10 +81,10 @@ if($Test.IsPresent) {
     if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
 
     if($env:APPVEYOR) {
-        $res = Invoke-Pester "$PSScriptRoot/test/Modules" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru
+        $res = Invoke-Pester "$PSScriptRoot/test/Unit/Modules" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru
         (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\TestsResults.xml))
         if ($res.FailedCount -gt 0) { throw "$($res.FailedCount) tests failed." }
     } else {
-        Invoke-Pester "$PSScriptRoot/test/Modules"
+        Invoke-Pester "$PSScriptRoot/test/Unit/Modules"
     }
 }
