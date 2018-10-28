@@ -9,15 +9,16 @@ $IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
 
 $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 if ($IsWindowsEnv) {
-    $FUNC_CLI_DOWNLOAD_URL = "https://functionsclibuilds.blob.core.windows.net/builds/2/latest/Azure.Functions.Cli.win-$arch.zip"
+    $os = "win"
     $FUNC_EXE_NAME = "func.exe"
 } elseif ($IsMacOS) {
-    $FUNC_CLI_DOWNLOAD_URL = "https://functionsclibuilds.blob.core.windows.net/builds/2/latest/Azure.Functions.Cli.osx-$arch.zip"
+    $os = "osx"
     $FUNC_EXE_NAME = "func"
 } else {
-    $FUNC_CLI_DOWNLOAD_URL = "https://functionsclibuilds.blob.core.windows.net/builds/2/latest/Azure.Functions.Cli.linux-$arch.zip"
+    $os = "linux"
     $FUNC_EXE_NAME = "func"
 }
+$FUNC_CLI_DOWNLOAD_URL = "https://functionsclibuilds.blob.core.windows.net/builds/2/latest/Azure.Functions.Cli.$os-$arch.zip"
 $FUNC_CLI_DIRECTORY = Join-Path $PSScriptRoot 'Azure.Functions.Cli'
 
 Write-Host 'Deleting Functions Core Tools if exists...'
@@ -25,6 +26,10 @@ Remove-Item -Force "$FUNC_CLI_DIRECTORY.zip" -ErrorAction Ignore
 Remove-Item -Recurse -Force $FUNC_CLI_DIRECTORY -ErrorAction Ignore
 
 Write-Host 'Downloading Functions Core Tools...'
+Invoke-RestMethod -Uri 'https://functionsclibuilds.blob.core.windows.net/builds/2/latest/version.txt' -OutFile version.txt
+Write-Host "Using version: $(Get-Content -Raw version.txt)"
+Remove-Item version.txt
+
 $output = "$FUNC_CLI_DIRECTORY.zip"
 Invoke-RestMethod -Uri $FUNC_CLI_DOWNLOAD_URL -OutFile $output
 

@@ -12,6 +12,6 @@ Describe 'HttpTrigger Tests' {
         Get-Job -Name FuncJob -ErrorAction SilentlyContinue | Stop-Job | Remove-Job
     }
     It 'Simple' {
-        Invoke-RestMethod 'http://localhost:7071/api/MyHttpTrigger?Name=Atlas' | Should -Be 'Hello Atlas'
+        Invoke-RestMethod 'http://localhost:7071/api/TestBasicHttpTrigger?Name=Atlas' | Should -Be 'Hello Atlas'
     }
 }
