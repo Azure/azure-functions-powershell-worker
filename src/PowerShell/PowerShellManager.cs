@@ -140,12 +140,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 if (pipelineItems != null && pipelineItems.Count > 0)
                 {
-                    // Log everything we received from the pipeline and set the last one to be the ReturnObject
+                    // Log everything we received from the pipeline
                     foreach (var item in pipelineItems)
                     {
                         _logger.Log(LogLevel.Information, $"OUTPUT: {item.ToString()}");
                     }
-                    result.Add(AzFunctionInfo.DollarReturn, pipelineItems[pipelineItems.Count - 1]);
+                    
+                    // TODO: See GitHub issue #82. We are not settled on how to handle the Azure Functions concept of the $returns Output Binding
+                    // If we would like to support Option 1 from #82, uncomment the following code:
+                    // object[] items = new object[pipelineItems.Count];
+                    // pipelineItems.CopyTo(items, 0);
+                    // result.Add(AzFunctionInfo.DollarReturn, items);
+
+                    // If we would like to support Option 2 from #82, uncomment this line:
+                    // result.Add(AzFunctionInfo.DollarReturn, pipelineItems[pipelineItems.Count - 1]);
                 }
 
                 return result;
