@@ -14,15 +14,42 @@ Describe 'HttpTrigger Tests' {
         Get-Job -Name FuncJob -ErrorAction SilentlyContinue | Stop-Job | Remove-Job
     }
 
-    It "Test basic HttpTrigger function" -TestCases @(
-        @{ Name = 'Atlas'; StatusCode = 200; Content = 'Hello Atlas' },
-        @{ Name = $null; StatusCode = 400 },
-        @{ StatusCode = 400 }
+    It "Test basic HttpTrigger function - Success" -TestCases @(
+        @{ 
+            FunctionName = 'TestBasicHttpTrigger'
+            InputNameData = 'Atlas'
+            ExpectedStatusCode = 200
+            ExpectedContent = 'Hello Atlas'
+        },
+        @{ 
+            FunctionName = 'TestBasicHttpTrigger'
+            InputNameData = $null
+            ExpectedStatusCode = 400
+        },
+        @{ 
+            FunctionName = 'TestBasicHttpTrigger'
+            ExpectedStatusCode = 400
+        },
+        @{ 
+            FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
+            InputNameData = 'Atlas'
+            ExpectedStatusCode = 200
+            ExpectedContent = 'Hello Atlas'
+        },
+        @{ 
+            FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
+            InputNameData = $null
+            ExpectedStatusCode = 400
+        },
+        @{ 
+            FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
+            ExpectedStatusCode = 400
+        }
     ) -Test {
-        param ($Name, $StatusCode, $Content)
+        param ($FunctionName, $InputNameData, $ExpectedStatusCode, $ExpectedContent)
 
-        if (Test-Path 'variable:Name') {
-            $url = "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger?Name=$Name"
+        if (Test-Path 'variable:InputNameData') {
+            $url = "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger?Name=$InputNameData"
         } else {
             $url = "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger"
         }
@@ -33,10 +60,20 @@ Describe 'HttpTrigger Tests' {
         } catch {
             $res = $_.Exception.Response
         }
-        [int]$res.StatusCode | Should -Be $StatusCode
+        [int]$res.StatusCode | Should -Be $ExpectedStatusCode
 
         if ($Content) {
-            $res.Content | Should -Be $Content
+            $res.Content | Should -Be $ExpectedContent
         }
+    }
+
+    It "Test basic HttpTrigger function - Error" {
+        try {
+            Invoke-WebRequest "$FUNCTIONS_BASE_URL/api/TestBadHttpTrigger"
+        } catch {
+            $res = $_.Exception.Response
+        }
+
+        [int]$res.StatusCode | Should -Be 500
     }
 }
