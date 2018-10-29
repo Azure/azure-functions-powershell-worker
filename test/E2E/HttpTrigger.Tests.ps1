@@ -15,7 +15,7 @@ Describe 'HttpTrigger Tests' {
     }
 
     It "Test basic HttpTrigger function" -TestCases @(
-        @{ Name = 'Atlas'; StatusCode = 200; Content = 'Hello World' },
+        @{ Name = 'Atlas'; StatusCode = 200; Content = 'Hello Atlas' },
         @{ Name = $null; StatusCode = 400 },
         @{ StatusCode = 400 }
     ) -Test {
