@@ -3,6 +3,8 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
+using namespace System.Net
+
 Describe 'HttpTrigger Tests' {
     BeforeAll {
         $FUNCTIONS_BASE_URL = 'http://localhost:7071'
@@ -14,39 +16,41 @@ Describe 'HttpTrigger Tests' {
         Get-Job -Name FuncJob -ErrorAction SilentlyContinue | Stop-Job | Remove-Job
     }
 
-    It "Test basic HttpTrigger function - Success" -TestCases @(
+    It "Test basic HttpTrigger function - Ok - $FunctionName" -TestCases @(
         @{ 
             FunctionName = 'TestBasicHttpTrigger'
-            InputNameData = 'Atlas'
-            ExpectedStatusCode = 200
-            ExpectedContent = 'Hello Atlas'
-        },
-        @{ 
-            FunctionName = 'TestBasicHttpTrigger'
-            InputNameData = $null
-            ExpectedStatusCode = 400
-        },
-        @{ 
-            FunctionName = 'TestBasicHttpTrigger'
-            ExpectedStatusCode = 400
-        },
-        @{ 
-            FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
-            InputNameData = 'Atlas'
-            ExpectedStatusCode = 200
             ExpectedContent = 'Hello Atlas'
         },
         @{ 
             FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
-            InputNameData = $null
-            ExpectedStatusCode = 400
-        },
-        @{ 
-            FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
-            ExpectedStatusCode = 400
+            ExpectedContent = 'Hello Atlas'
         }
     ) -Test {
-        param ($FunctionName, $InputNameData, $ExpectedStatusCode, $ExpectedContent)
+        param ($FunctionName, $ExpectedContent)
+
+        $res = Invoke-WebRequest "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger?Name=Atlas"
+        
+        $res.StatusCode | Should -Be ([HttpStatusCode]::OK)
+        $res.Content | Should -Be $ExpectedContent
+    }
+
+    It "Test basic HttpTrigger function - BadRequest - $FunctionName" -TestCases @(
+        @{ 
+            FunctionName = 'TestBasicHttpTrigger'
+            InputNameData = $null
+        },
+        @{ 
+            FunctionName = 'TestBasicHttpTrigger'
+        },
+        @{ 
+            FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
+            InputNameData = $null
+        },
+        @{ 
+            FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
+        }
+    ) -Test {
+        param ($FunctionName, $InputNameData)
 
         if (Test-Path 'variable:InputNameData') {
             $url = "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger?Name=$InputNameData"
@@ -54,26 +58,14 @@ Describe 'HttpTrigger Tests' {
             $url = "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger"
         }
 
-
-        try {
-            $res = Invoke-WebRequest $url
-        } catch {
-            $res = $_.Exception.Response
-        }
-        [int]$res.StatusCode | Should -Be $ExpectedStatusCode
-
-        if ($Content) {
-            $res.Content | Should -Be $ExpectedContent
-        }
+        $res = { invoke-webrequest $url } |
+            Should -Throw -ExpectedMessage 'Response status code does not indicate success: 400 (Bad Request).' -PassThru
+        $res.Exception.Response.StatusCode | Should -Be ([HttpStatusCode]::BadRequest)
     }
 
-    It "Test basic HttpTrigger function - Error" {
-        try {
-            Invoke-WebRequest "$FUNCTIONS_BASE_URL/api/TestBadHttpTrigger"
-        } catch {
-            $res = $_.Exception.Response
-        }
-
-        [int]$res.StatusCode | Should -Be 500
+    It "Test basic HttpTrigger function - InternalServerError" {
+        $res = { invoke-webrequest "$FUNCTIONS_BASE_URL/api/TestBadHttpTrigger" } |
+            Should -Throw -ExpectedMessage 'Response status code does not indicate success: 500 (Internal Server Error).' -PassThru
+        $res.Exception.Response.StatusCode | Should -Be ([HttpStatusCode]::InternalServerError)
     }
 }
