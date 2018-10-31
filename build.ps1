@@ -22,7 +22,7 @@ param(
     $Configuration = "Debug"
 )
 
-Import-Module "$PSScriptRoot/tools/helper.psm1"
+Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
 
 # Bootstrap step
 if ($Bootstrap.IsPresent) {
@@ -80,11 +80,6 @@ if($Test.IsPresent) {
     dotnet test "$PSScriptRoot/test"
     if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
 
-    if($env:APPVEYOR) {
-        $res = Invoke-Pester "$PSScriptRoot/test/Modules" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru
-        (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\TestsResults.xml))
-        if ($res.FailedCount -gt 0) { throw "$($res.FailedCount) tests failed." }
-    } else {
-        Invoke-Pester "$PSScriptRoot/test/Modules"
-    }
+    Invoke-Tests -Path "$PSScriptRoot/test/Unit/Modules" -OutputFile UnitTestsResults.xml
+    Invoke-Tests -Path "$PSScriptRoot/test/E2E" -OutputFile E2ETestsResults.xml
 }

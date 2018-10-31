@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             string path = System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
-                "PowerShell/TestScripts/testBasicFunction.ps1");
+                "Unit/PowerShell/TestScripts/testBasicFunction.ps1");
 
             var functionInfo = GetAzFunctionInfo(path, string.Empty);
             Hashtable result = manager.InvokeFunction(functionInfo, null, TestInputData);
@@ -73,8 +73,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             manager.InitializeRunspace();
 
             string path = System.IO.Path.Join(
-            AppDomain.CurrentDomain.BaseDirectory,
-            "PowerShell/TestScripts/testBasicFunctionWithTriggerMetadata.ps1");
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Unit/PowerShell/TestScripts/testBasicFunctionWithTriggerMetadata.ps1");
+
             Hashtable triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase)
             {
                 { TestInputBindingName, TestStringData }
@@ -96,7 +97,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             string path = System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
-                "PowerShell/TestScripts/testFunctionWithEntryPoint.ps1");
+                "Unit/PowerShell/TestScripts/testFunctionWithEntryPoint.ps1");
 
             var functionInfo = GetAzFunctionInfo(path, "Run");
             Hashtable result = manager.InvokeFunction(functionInfo, null, TestInputData);
@@ -114,7 +115,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             string path = System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
-                "PowerShell/TestScripts/testFunctionCleanup.ps1");
+                "Unit/PowerShell/TestScripts/testFunctionCleanup.ps1");
 
             var functionInfo = GetAzFunctionInfo(path, string.Empty);
             Hashtable result1 = manager.InvokeFunction(functionInfo, null, TestInputData);

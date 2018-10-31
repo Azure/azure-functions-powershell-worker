@@ -67,3 +67,6 @@ src/Modules
 protobuf/*
 FunctionRpc.cs
 FunctionRpcGrpc.cs
+
+# pulled in for tests
+Azure.Functions.Cli

@@ -168,6 +168,22 @@ function Resolve-ProtoBufToolPath
     }
 }
 
+function Invoke-Tests
+{
+    param(
+        [string] $Path,
+        [string] $OutputFile
+    )
+
+    if($env:APPVEYOR) {
+        $res = Invoke-Pester $Path -OutputFormat NUnitXml -OutputFile $OutputFile -PassThru
+        (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path $OutputFile))
+        if ($res.FailedCount -gt 0) { throw "$($res.FailedCount) tests failed." }
+    } else {
+        Invoke-Pester $Path
+    }
+}
+
 function Write-Log
 {
     param(
