@@ -16,7 +16,7 @@ Describe 'HttpTrigger Tests' {
         Get-Job -Name FuncJob -ErrorAction SilentlyContinue | Stop-Job | Remove-Job
     }
 
-    It "Test basic HttpTrigger function - Ok - $FunctionName" -TestCases @(
+    It "Test basic HttpTrigger function - Ok - <FunctionName>" -TestCases @(
         @{ 
             FunctionName = 'TestBasicHttpTrigger'
             ExpectedContent = 'Hello Atlas'
@@ -25,8 +25,8 @@ Describe 'HttpTrigger Tests' {
             FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
             ExpectedContent = 'Hello Atlas'
         }
-    ) -Test {
-        param ($FunctionName, $ExpectedContent)
+    ) {
+        param ($ExpectedContent)
 
         $res = Invoke-WebRequest "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger?Name=Atlas"
         
@@ -34,7 +34,7 @@ Describe 'HttpTrigger Tests' {
         $res.Content | Should -Be $ExpectedContent
     }
 
-    It "Test basic HttpTrigger function - BadRequest - $FunctionName" -TestCases @(
+    It "Test basic HttpTrigger function - BadRequest - <FunctionName>" -TestCases @(
         @{ 
             FunctionName = 'TestBasicHttpTrigger'
             InputNameData = $null
@@ -49,8 +49,8 @@ Describe 'HttpTrigger Tests' {
         @{ 
             FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
         }
-    ) -Test {
-        param ($FunctionName, $InputNameData)
+    ) {
+        param ($InputNameData)
 
         if (Test-Path 'variable:InputNameData') {
             $url = "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger?Name=$InputNameData"

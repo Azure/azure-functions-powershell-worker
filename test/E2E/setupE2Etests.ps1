@@ -3,12 +3,8 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
-using namespace System.Runtime.InteropServices
-
-$IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
-
 $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
-if ($IsWindowsEnv) {
+if ($IsWindows) {
     $FUNC_EXE_NAME = "func.exe"
     $os = "win"
 } else {
