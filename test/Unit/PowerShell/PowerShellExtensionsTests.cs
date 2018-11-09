@@ -10,7 +10,9 @@ using Xunit;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
+    using System;
     using System.Management.Automation;
+    using System.Runtime.InteropServices;
 
     public class PowerShellExtensionsTests
     {
@@ -40,16 +42,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void CanFormatObjectsToString()
         {
-            string expectedResult = @"
-Name                           Value
-----                           -----
-Foo                            bar
-
-
-";
+            string[] expectedResult = {
+                "",
+                "Name                           Value",
+                "----                           -----",
+                "Foo                            bar",
+                "",
+                "",
+                ""
+            };
 
             Hashtable data = new Hashtable {{ "Foo", "bar"}};   
-            Assert.Equal(expectedResult, 
+            Assert.Equal(
+                string.Join(Environment.NewLine, expectedResult), 
                 PowerShell.Create().FormatObjectToString(data));
         }
     }
