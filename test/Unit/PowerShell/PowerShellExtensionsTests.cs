@@ -2,7 +2,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
-
+using System.Collections;
 using System.Collections.ObjectModel;
 
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
@@ -35,6 +35,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Empty(pwsh.Commands.Commands);
 
             Assert.Single(results, data);
+        }
+
+        [Fact]
+        public void CanFormatObjectsToString()
+        {
+            string expectedResult = @"
+Name                           Value
+----                           -----
+Foo                            bar
+
+
+";
+
+            Hashtable data = new Hashtable {{ "Foo", "bar"}};   
+            Assert.Equal(expectedResult, 
+                PowerShell.Create().FormatObjectToString(data));
         }
     }
 }

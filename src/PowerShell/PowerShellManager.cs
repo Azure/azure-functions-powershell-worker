@@ -143,7 +143,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     // Log everything we received from the pipeline
                     foreach (var item in pipelineItems)
                     {
-                        _logger.Log(LogLevel.Information, $"OUTPUT: {item.ToString()}");
+                        _logger.Log(LogLevel.Information, $"OUTPUT: {_pwsh.FormatObjectToString(item)}", isUserLog: true);
                     }
                     
                     // TODO: See GitHub issue #82. We are not settled on how to handle the Azure Functions concept of the $returns Output Binding

@@ -37,5 +37,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 pwsh.Commands.Clear();
             }
         }
+
+        public static string FormatObjectToString(this PowerShell pwsh, object inputObject)
+        {
+            return pwsh.AddCommand("Write-Output")
+                .AddParameter("InputObject", inputObject)
+                .AddCommand("Out-String")
+                .InvokeAndClearCommands<string>()[0];
+        }
     }
 }
