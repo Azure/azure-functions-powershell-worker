@@ -36,6 +36,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Gets or sets the StatusCode of the Http response.
         /// </summary>
-        public string StatusCode { get; set; } = "200";
+        public int StatusCode { get; set; } = 200;
     }
 }
