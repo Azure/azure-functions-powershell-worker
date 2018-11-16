@@ -14,7 +14,7 @@ $name = $TriggerMetadata.req.Query.Name
 if (-not $name) { $name = $TriggerMetadata.req.Body.Name }
 
 if($name) {
-    $status = [System.Net.HttpStatusCode]::OK
+    $status = [System.Net.HttpStatusCode]::Accepted
     $body = "Hello " + $name
 }
 else {
