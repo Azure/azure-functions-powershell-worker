@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Net;
 using System.Collections.Generic;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
@@ -36,6 +37,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Gets or sets the StatusCode of the Http response.
         /// </summary>
-        public string StatusCode { get; set; } = "200";
+        public HttpStatusCode StatusCode { get; set; } = HttpStatusCode.OK;
     }
 }

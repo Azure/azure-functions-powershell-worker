@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Net;
 using System.Management.Automation;
 
 using Google.Protobuf;
@@ -390,7 +391,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var input = new HttpResponseContext
             {
                 Body = data,
-                StatusCode = "201"
+                StatusCode = HttpStatusCode.Created
             };
             var expected = new TypedData
             {

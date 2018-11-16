@@ -30,7 +30,7 @@ Describe 'HttpTrigger Tests' {
 
         $res = Invoke-WebRequest "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger?Name=Atlas"
         
-        $res.StatusCode | Should -Be ([HttpStatusCode]::OK)
+        $res.StatusCode | Should -Be ([HttpStatusCode]::Accepted)
         $res.Content | Should -Be $ExpectedContent
     }
 

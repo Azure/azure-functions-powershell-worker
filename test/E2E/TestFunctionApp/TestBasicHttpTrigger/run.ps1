@@ -14,11 +14,11 @@ $name = $req.Query.Name
 if (-not $name) { $name = $req.Body.Name }
 
 if($name) {
-    $status = 200
+    $status = 202
     $body = "Hello " + $name
 }
 else {
-    $status = 400
+    $status = "400"
     $body = "Please pass a name on the query string or in the request body."
 }
 
