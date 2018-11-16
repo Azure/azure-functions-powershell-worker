@@ -328,7 +328,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 Http = new RpcHttp
                 {
-                    StatusCode = HttpStatusCode.OK,
+                    StatusCode = "200",
                     Body = new TypedData { String = data },
                     Headers = { { "content-type", "text/plain" } }
                 }
@@ -351,7 +351,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 Http = new RpcHttp
                 {
-                    StatusCode = HttpStatusCode.OK,
+                    StatusCode = "200",
                     Body = new TypedData { String = data },
                     Headers = { { "content-type", "text/html" } }
                 }
@@ -374,7 +374,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 Http = new RpcHttp
                 {
-                    StatusCode = HttpStatusCode.OK,
+                    StatusCode = "200",
                     Body = new TypedData { String = data },
                     Headers = { { "content-type", "text/html" } }
                 }
@@ -397,7 +397,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 Http = new RpcHttp
                 {
-                    StatusCode = HttpStatusCode.Created,
+                    StatusCode = "201",
                     Body = new TypedData { String = data },
                     Headers = { { "content-type", "text/plain" } }
                 }
