@@ -135,7 +135,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         {
             var rpcHttp = new RpcHttp
             {
-                StatusCode = httpResponseContext.StatusCode.ToString()
+                StatusCode = httpResponseContext.StatusCode.ToString("d")
             };
 
             if (httpResponseContext.Body != null)

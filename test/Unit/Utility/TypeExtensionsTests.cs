@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Net;
 using System.Management.Automation;
 
 using Google.Protobuf;
@@ -327,7 +328,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 Http = new RpcHttp
                 {
-                    StatusCode = 200,
+                    StatusCode = HttpStatusCode.OK,
                     Body = new TypedData { String = data },
                     Headers = { { "content-type", "text/plain" } }
                 }
@@ -350,7 +351,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 Http = new RpcHttp
                 {
-                    StatusCode = 200,
+                    StatusCode = HttpStatusCode.OK,
                     Body = new TypedData { String = data },
                     Headers = { { "content-type", "text/html" } }
                 }
@@ -373,7 +374,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 Http = new RpcHttp
                 {
-                    StatusCode = 200,
+                    StatusCode = HttpStatusCode.OK,
                     Body = new TypedData { String = data },
                     Headers = { { "content-type", "text/html" } }
                 }
@@ -390,13 +391,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var input = new HttpResponseContext
             {
                 Body = data,
-                StatusCode = 201
+                StatusCode = HttpStatusCode.Created
             };
             var expected = new TypedData
             {
                 Http = new RpcHttp
                 {
-                    StatusCode = 201,
+                    StatusCode = HttpStatusCode.Created,
                     Body = new TypedData { String = data },
                     Headers = { { "content-type", "text/plain" } }
                 }
