@@ -52,9 +52,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             // Try to authenticate to Azure
             // TODO: The Azure Functions Host might supply these differently. This might change but works for the demo
-            string applicationId = Environment.GetEnvironmentVariable("APPSETTING_WEBSITE_AUTH_CLIENT_ID");
-            string applicationSecret = Environment.GetEnvironmentVariable("APPSETTING_WEBSITE_AUTH_CLIENT_SECRET");
-            string tenantId = Environment.GetEnvironmentVariable("APPSETTING_WEBSITE_AUTH_TENANT_ID");
+            string applicationId = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_APP_ID");
+            string applicationSecret = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_APP_PASSWORD");
+            string tenantId = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_TENANT_ID");
 
             if (string.IsNullOrEmpty(applicationId) ||
                 string.IsNullOrEmpty(applicationSecret) ||
