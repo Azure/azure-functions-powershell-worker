@@ -18,7 +18,7 @@ if($name) {
     $body = "Hello " + $name
 }
 else {
-    $status = 400
+    $status = "400"
     $body = "Please pass a name on the query string or in the request body."
 }
 
