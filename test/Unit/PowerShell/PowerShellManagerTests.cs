@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             manager.InitializeRunspace();
 
             Assert.Single(logger.FullLog);
-            Assert.Equal("Warning: Required environment variables to authenticate to Azure were not present", logger.FullLog[0]);
+            Assert.Equal("Warning: Required module to authenticate, Az.Profile, was not present on the PSModulePath", logger.FullLog[0]);
         }
 
         [Fact]
