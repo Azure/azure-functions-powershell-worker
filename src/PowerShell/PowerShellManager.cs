@@ -50,34 +50,75 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
         internal void AuthenticateToAzure()
         {
-            // Try to authenticate to Azure
-            // TODO: The Azure Functions Host might supply these differently. This might change but works for the demo
-            string applicationId = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_APP_ID");
-            string applicationSecret = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_APP_PASSWORD");
-            string tenantId = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_TENANT_ID");
+            // Check if Az.Profile is available
+            Collection<PSModuleInfo> azprofile = _pwsh.AddCommand("Get-Module")
+                .AddParameter("ListAvailable")
+                .AddParameter("Name", "Az.Profile")
+                .InvokeAndClearCommands<PSModuleInfo>();
 
-            if (string.IsNullOrEmpty(applicationId) ||
-                string.IsNullOrEmpty(applicationSecret) ||
-                string.IsNullOrEmpty(tenantId))
+            if (azprofile.Count == 0)
             {
-                _logger.Log(LogLevel.Warning, "Required environment variables to authenticate to Azure were not present");
+                _logger.Log(LogLevel.Warning, "Required module to authenticate, Az.Profile, was not present on the PSModulePath");
                 return;
             }
 
-            // Build SecureString
-            var secureString = new SecureString();
-            foreach (char item in applicationSecret)
+            // Try to authenticate to Azure using MSI
+            string msiSecret = Environment.GetEnvironmentVariable("MSI_SECRET");
+            string msiEndpoint = Environment.GetEnvironmentVariable("MSI_ENDPOINT");
+            string accountId = Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME");
+
+            if (!string.IsNullOrEmpty(msiSecret) &&
+                !string.IsNullOrEmpty(msiEndpoint) &&
+                !string.IsNullOrEmpty(accountId))
             {
-                secureString.AppendChar(item);
+                // NOTE: There is a limitation in Azure PowerShell that prevents us from using the parameter set:
+                // Connect-AzAccount -MSI or Connect-AzAccount -Identity
+                // see this GitHub issue https://github.com/Azure/azure-powershell/issues/7876
+                // As a workaround, we can all an API endpoint on the MSI_ENDPOINT to get an AccessToken and use that to authenticate
+                Collection<PSObject> response = _pwsh.AddCommand("Microsoft.PowerShell.Utility\\Invoke-RestMethod")
+                    .AddParameter("Method", "Get")
+                    .AddParameter("Headers", new Hashtable {{ "Secret", msiSecret }})
+                    .AddParameter("Uri", $"{msiEndpoint}?resource=https://management.azure.com&api-version=2017-09-01")
+                    .InvokeAndClearCommands<PSObject>();
+
+                using (ExecutionTimer.Start(_logger, "Authentication to Azure completed."))
+                {
+                    _pwsh.AddCommand("Az.Profile\\Connect-AzAccount")
+                        .AddParameter("AccessToken", response[0].Properties["access_token"].Value)
+                        .AddParameter("AccountId", accountId)
+                        .InvokeAndClearCommands();
+                }
             }
-            
-            using (ExecutionTimer.Start(_logger, "Authentication to Azure completed."))
+            else
             {
-                _pwsh.AddCommand("Az.Profile\\Connect-AzAccount")
-                    .AddParameter("Credential", new PSCredential(applicationId, secureString))
-                    .AddParameter("ServicePrincipal")
-                    .AddParameter("TenantId", tenantId)
-                    .InvokeAndClearCommands();
+                // Try to authenticate to Azure using Service Principal
+                string applicationId = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_APP_ID");
+                string applicationSecret = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_APP_PASSWORD");
+                string tenantId = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_TENANT_ID");
+
+                if (string.IsNullOrEmpty(applicationId) ||
+                    string.IsNullOrEmpty(applicationSecret) ||
+                    string.IsNullOrEmpty(tenantId))
+                {
+                    _logger.Log(LogLevel.Warning, "Required environment variables to authenticate to Azure were not present");
+                    return;
+                }
+
+                // Build SecureString
+                var secureString = new SecureString();
+                foreach (char item in applicationSecret)
+                {
+                    secureString.AppendChar(item);
+                }
+                
+                using (ExecutionTimer.Start(_logger, "Authentication to Azure completed."))
+                {
+                    _pwsh.AddCommand("Az.Profile\\Connect-AzAccount")
+                        .AddParameter("Credential", new PSCredential(applicationId, secureString))
+                        .AddParameter("ServicePrincipal")
+                        .AddParameter("TenantId", tenantId)
+                        .InvokeAndClearCommands();
+                }
             }
         }
 
