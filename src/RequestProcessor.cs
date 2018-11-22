@@ -111,6 +111,11 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                     string functionAppModulesPath = Path.GetFullPath(
                         Path.Combine(functionLoadRequest.Metadata.Directory, "..", "Modules"));
                     _powerShellManager.PrependToPSModulePath(functionAppModulesPath);
+
+                    // Since this is the first time we know where the location of the FunctionApp is,
+                    // we can attempt to authenticate to Azure at this time.
+                    _powerShellManager.AuthenticateToAzure();
+
                     _prependedPath = true;
                 }
             }

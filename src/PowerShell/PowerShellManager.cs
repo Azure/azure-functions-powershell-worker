@@ -130,8 +130,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             // Set the PSModulePath
             Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
-
-            AuthenticateToAzure();
         }
 
         /// <summary>
