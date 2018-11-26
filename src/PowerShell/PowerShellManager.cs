@@ -58,7 +58,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             if (azprofile.Count == 0)
             {
-                _logger.Log(LogLevel.Warning, "Required module to authenticate, Az.Profile, was not present on the PSModulePath");
+                _logger.Log(LogLevel.Warning, "Required module to automatically authenticate with Azure `Az.Profile` was not found in the PSModulePath.");
                 return;
             }
 
