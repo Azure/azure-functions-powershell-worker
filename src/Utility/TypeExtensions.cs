@@ -101,7 +101,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         private static MethodInfo s_ConvertFromJson = null;
         private static object ConvertFromJson(string json)
         {
-            const string UtilityAssemblyFullName = "Microsoft.PowerShell.Commands.Utility, Version=6.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
+            const string UtilityAssemblyFullName = "Microsoft.PowerShell.Commands.Utility, Version=6.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
 
             if (s_ConvertFromJson == null)
             {
