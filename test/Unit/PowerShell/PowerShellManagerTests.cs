@@ -42,7 +42,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var manager = new PowerShellManager(logger);
             manager.InitializeRunspace();
 
+<<<<<<< HEAD
             Assert.Empty(logger.FullLog);
+=======
+            Assert.Single(logger.FullLog);
+            Assert.Equal("Warning: Required module to authenticate, Az.Profile, was not present on the PSModulePath", logger.FullLog[0]);
+>>>>>>> ca97b495ff7b3c41cc744f3e3023924f7f36fc37
         }
 
         [Fact]

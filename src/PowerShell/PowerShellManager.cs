@@ -81,17 +81,24 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     .AddParameter("Uri", $"{msiEndpoint}?resource=https://management.azure.com&api-version=2017-09-01")
                     .InvokeAndClearCommands<PSObject>();
 
+<<<<<<< HEAD
                 using (ExecutionTimer.Start(_logger, "Authentication to Azure"))
+=======
+                using (ExecutionTimer.Start(_logger, "Authentication to Azure completed."))
+>>>>>>> ca97b495ff7b3c41cc744f3e3023924f7f36fc37
                 {
                     _pwsh.AddCommand("Az.Profile\\Connect-AzAccount")
                         .AddParameter("AccessToken", response[0].Properties["access_token"].Value)
                         .AddParameter("AccountId", accountId)
                         .InvokeAndClearCommands();
+<<<<<<< HEAD
 
                     if(_pwsh.HadErrors)
                     {
                         _logger.Log(LogLevel.Trace, "Failed to Authenticate to Azure. Check the logs for the errors generated.");
                     }
+=======
+>>>>>>> ca97b495ff7b3c41cc744f3e3023924f7f36fc37
                 }
             }
             else
@@ -105,7 +112,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     string.IsNullOrEmpty(applicationSecret) ||
                     string.IsNullOrEmpty(tenantId))
                 {
+<<<<<<< HEAD
                     _logger.Log(LogLevel.Warning, "Skip authentication to Azure. Environment variables for authenticating to Azure are not present.");
+=======
+                    _logger.Log(LogLevel.Warning, "Required environment variables to authenticate to Azure were not present");
+>>>>>>> ca97b495ff7b3c41cc744f3e3023924f7f36fc37
                     return;
                 }
 
@@ -116,18 +127,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     secureString.AppendChar(item);
                 }
                 
+<<<<<<< HEAD
                 using (ExecutionTimer.Start(_logger, "Authentication to Azure"))
+=======
+                using (ExecutionTimer.Start(_logger, "Authentication to Azure completed."))
+>>>>>>> ca97b495ff7b3c41cc744f3e3023924f7f36fc37
                 {
                     _pwsh.AddCommand("Az.Profile\\Connect-AzAccount")
                         .AddParameter("Credential", new PSCredential(applicationId, secureString))
                         .AddParameter("ServicePrincipal")
                         .AddParameter("TenantId", tenantId)
                         .InvokeAndClearCommands();
+<<<<<<< HEAD
 
                     if(_pwsh.HadErrors)
                     {
                         _logger.Log(LogLevel.Trace, "Failed to Authenticate to Azure. Check the logs for the errors generated.");
                     }
+=======
+>>>>>>> ca97b495ff7b3c41cc744f3e3023924f7f36fc37
                 }
             }
         }
