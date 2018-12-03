@@ -81,6 +81,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     .AddParameter("Uri", $"{msiEndpoint}?resource=https://management.azure.com&api-version=2017-09-01")
                     .InvokeAndClearCommands<PSObject>();
 
+                if(_pwsh.HadErrors) 
+                {
+                    _logger.Log(LogLevel.Trace, "Failed to Authenticate to Azure. Check the logs for the errors generated.");
+                    return;
+                }
+
                 using (ExecutionTimer.Start(_logger, "Authentication to Azure"))
                 {
                     _pwsh.AddCommand("Az.Profile\\Connect-AzAccount")
