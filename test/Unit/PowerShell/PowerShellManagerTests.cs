@@ -42,8 +42,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var manager = new PowerShellManager(logger);
             manager.InitializeRunspace();
 
-            Assert.Single(logger.FullLog);
-            Assert.Equal("Warning: Required environment variables to authenticate to Azure were not present", logger.FullLog[0]);
+            Assert.Empty(logger.FullLog);
         }
 
         [Fact]
