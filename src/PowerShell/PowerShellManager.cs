@@ -58,7 +58,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             if (azprofile.Count == 0)
             {
-                _logger.Log(LogLevel.Warning, "Required module to automatically authenticate with Azure `Az.Profile` was not found in the PSModulePath.");
+                _logger.Log(LogLevel.Trace, "Required module to automatically authenticate with Azure `Az.Profile` was not found in the PSModulePath.");
                 return;
             }
 
@@ -83,7 +83,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 if(_pwsh.HadErrors) 
                 {
-                    _logger.Log(LogLevel.Trace, "Failed to Authenticate to Azure via MSI. Check the logs for the errors generated.");
+                    _logger.Log(LogLevel.Warning, "Failed to Authenticate to Azure via MSI. Check the logs for the errors generated.");
                 }
                 else
                 {
@@ -97,7 +97,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                         if(_pwsh.HadErrors)
                         {
-                            _logger.Log(LogLevel.Trace, "Failed to Authenticate to Azure. Check the logs for the errors generated.");
+                            _logger.Log(LogLevel.Warning, "Failed to Authenticate to Azure. Check the logs for the errors generated.");
                         }
                         else
                         {
@@ -106,6 +106,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                         }
                     }
                 }
+            }
+            else
+            {
+                _logger.Log(LogLevel.Trace, "Skip authentication to Azure via MSI. Environment variables for authenticating to Azure are not present.");
             }
 
             // Try to authenticate to Azure using Service Principal
@@ -117,7 +121,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 string.IsNullOrEmpty(applicationSecret) ||
                 string.IsNullOrEmpty(tenantId))
             {
-                _logger.Log(LogLevel.Warning, "Skip authentication to Azure via Service Principal. Environment variables for authenticating to Azure are not present.");
+                _logger.Log(LogLevel.Trace, "Skip authentication to Azure via Service Principal. Environment variables for authenticating to Azure are not present.");
                 return;
             }
 
@@ -138,7 +142,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 if(_pwsh.HadErrors)
                 {
-                    _logger.Log(LogLevel.Trace, "Failed to Authenticate to Azure via Service Principal. Check the logs for the errors generated.");
+                    _logger.Log(LogLevel.Warning, "Failed to Authenticate to Azure via Service Principal. Check the logs for the errors generated.");
                 }
             }
         }
