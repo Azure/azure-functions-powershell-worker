@@ -161,7 +161,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 Collection<object> pipelineItems = null;
                 using (ExecutionTimer.Start(_logger, "Execution of the user's function completed."))
                 {
-                    pipelineItems = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Write-FunctionOutput")
+                    pipelineItems = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject")
                                          .InvokeAndClearCommands<object>();
                 }
 

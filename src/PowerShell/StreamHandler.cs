@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is InformationRecord record)
             {
-                string prefix = (record.Tags.Count == 1 && record.Tags[0] == WriteFunctionOutputCommand.OutputTag) ? "OUTPUT:" : "INFORMATION:";
+                string prefix = (record.Tags.Count == 1 && record.Tags[0] == "__PipelineObject__") ? "OUTPUT:" : "INFORMATION:";
                 _logger.Log(LogLevel.Information, $"{prefix} {record.MessageData}", isUserLog: true);
             }
         }
