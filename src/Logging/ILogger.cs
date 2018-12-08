@@ -8,8 +8,14 @@ using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
-    internal abstract class ILogger
+    /// <summary>
+    /// The abstract logger interface.
+    /// </summary>
+    public interface ILogger
     {
-        public abstract void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false);
+        /// <summary>
+        /// Method to log a message.
+        /// </summary>
+        void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false);
     }
 }
