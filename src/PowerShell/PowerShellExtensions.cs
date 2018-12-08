@@ -37,17 +37,5 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 pwsh.Commands.Clear();
             }
         }
-
-        public static string FormatObjectToString(this PowerShell pwsh, object inputObject)
-        {
-            // PowerShell's `Out-String -InputObject` handles collections differently
-            // than when receiving InputObjects from the pipeline. (i.e. `$collection | Out-String`).
-            // That is why we need `Write-Output` here. See related GitHub issue here:
-            // https://github.com/PowerShell/PowerShell/issues/8246
-            return pwsh.AddCommand("Write-Output")
-                .AddParameter("InputObject", inputObject)
-                .AddCommand("Out-String")
-                .InvokeAndClearCommands<string>()[0];
-        }
     }
 }
