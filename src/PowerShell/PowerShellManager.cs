@@ -51,12 +51,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         internal void AuthenticateToAzure()
         {
             // Check if Az.Profile is available
-            Collection<PSModuleInfo> azprofile = _pwsh.AddCommand("Get-Module")
+            Collection<PSModuleInfo> azProfile = _pwsh.AddCommand("Get-Module")
                 .AddParameter("ListAvailable")
                 .AddParameter("Name", "Az.Profile")
                 .InvokeAndClearCommands<PSModuleInfo>();
 
-            if (azprofile.Count == 0)
+            if (azProfile.Count == 0)
             {
                 _logger.Log(LogLevel.Trace, "Required module to automatically authenticate with Azure `Az.Profile` was not found in the PSModulePath.");
                 return;
@@ -110,40 +110,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             else
             {
                 _logger.Log(LogLevel.Trace, "Skip authentication to Azure via MSI. Environment variables for authenticating to Azure are not present.");
-            }
-
-            // Try to authenticate to Azure using Service Principal
-            string applicationId = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_APP_ID");
-            string applicationSecret = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_APP_PASSWORD");
-            string tenantId = Environment.GetEnvironmentVariable("SERVICE_PRINCIPAL_TENANT_ID");
-
-            if (string.IsNullOrEmpty(applicationId) ||
-                string.IsNullOrEmpty(applicationSecret) ||
-                string.IsNullOrEmpty(tenantId))
-            {
-                _logger.Log(LogLevel.Trace, "Skip authentication to Azure via Service Principal. Environment variables for authenticating to Azure are not present.");
-                return;
-            }
-
-            // Build SecureString
-            var secureString = new SecureString();
-            foreach (char item in applicationSecret)
-            {
-                secureString.AppendChar(item);
-            }
-            
-            using (ExecutionTimer.Start(_logger, "Authentication to Azure"))
-            {
-                _pwsh.AddCommand("Az.Profile\\Connect-AzAccount")
-                    .AddParameter("Credential", new PSCredential(applicationId, secureString))
-                    .AddParameter("ServicePrincipal")
-                    .AddParameter("TenantId", tenantId)
-                    .InvokeAndClearCommands();
-
-                if(_pwsh.HadErrors)
-                {
-                    _logger.Log(LogLevel.Warning, "Failed to Authenticate to Azure via Service Principal. Check the logs for the errors generated.");
-                }
             }
         }
 
