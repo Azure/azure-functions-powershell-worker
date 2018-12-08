@@ -38,24 +38,5 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             Assert.Single(results, data);
         }
-
-        [Fact]
-        public void CanFormatObjectsToString()
-        {
-            string[] expectedResult = {
-                "",
-                "Name                           Value",
-                "----                           -----",
-                "Foo                            bar",
-                "",
-                "",
-                ""
-            };
-
-            Hashtable data = new Hashtable {{ "Foo", "bar"}};   
-            Assert.Equal(
-                string.Join(Environment.NewLine, expectedResult), 
-                PowerShell.Create().FormatObjectToString(data));
-        }
     }
 }
