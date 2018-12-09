@@ -4,7 +4,9 @@
 //
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Net;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
@@ -57,5 +59,36 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// Gets the RawBody of the Http request.
         /// </summary>
         public object RawBody { get; internal set; }
+    }
+
+    /// <summary>
+    /// Custom type represent the context of the Http response.
+    /// </summary>
+    public class HttpResponseContext
+    {
+        /// <summary>
+        /// Gets or sets the Body of the Http response.
+        /// </summary>
+        public object Body { get; set; }
+
+        /// <summary>
+        /// Gets or sets the ContentType of the Http response.
+        /// </summary>
+        public string ContentType { get; set; } = "text/plain";
+
+        /// <summary>
+        /// Gets or sets the EnableContentNegotiation of the Http response.
+        /// </summary>
+        public bool EnableContentNegotiation { get; set; }
+
+        /// <summary>
+        /// Gets or sets the Headers of the Http response.
+        /// </summary>
+        public IDictionary Headers { get; set; }
+
+        /// <summary>
+        /// Gets or sets the StatusCode of the Http response.
+        /// </summary>
+        public HttpStatusCode StatusCode { get; set; } = HttpStatusCode.OK;
     }
 }

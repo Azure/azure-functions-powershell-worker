@@ -14,16 +14,16 @@ $name = $req.Query.Name
 if (-not $name) { $name = $req.Body.Name }
 
 if($name) {
-    $status = 202
-    $body = "Hello " + $name
+    # Cast the value to HttpResponseContext explicitly.
+    Push-OutputBinding -Name res -Value ([HttpResponseContext]@{
+        StatusCode = 202
+        Body = "Hello " + $name
+    })
 }
 else {
-    $status = "400"
-    $body = "Please pass a name on the query string or in the request body."
+    # Convert value to HttpResponseContext implicitly for 'http' output.
+    Push-OutputBinding -Name res -Value @{
+        StatusCode = "400"
+        Body = "Please pass a name on the query string or in the request body."
+    }
 }
-
-# You associate values to output bindings by calling 'Push-OutputBinding'.
-Push-OutputBinding -Name res -Value ([HttpResponseContext]@{
-    StatusCode = $status
-    Body = $body
-})

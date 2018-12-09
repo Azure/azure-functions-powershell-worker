@@ -143,6 +143,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 // Load information about the function
                 var functionInfo = _functionLoader.GetFunctionInfo(invocationRequest.FunctionId);
+                _powerShellManager.SetFunctionMetadata(functionInfo);
 
                 Hashtable results = functionInfo.Type == AzFunctionType.OrchestrationFunction
                     ? InvokeOrchestrationFunction(functionInfo, invocationRequest)
@@ -154,6 +155,10 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = e.ToRpcException();
+            }
+            finally
+            {
+                _powerShellManager.ClearFunctionMetadata();
             }
 
             return response;

@@ -3,8 +3,14 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
-# This holds the current state of the output bindings
+using namespace System.Management.Automation
+using namespace System.Management.Automation.Runspaces
+using namespace Microsoft.Azure.Functions.PowerShellWorker
+
+# This holds the current state of the output bindings.
 $script:_OutputBindings = @{}
+# This loads the resource strings.
+Import-LocalizedData LocalizedData -FileName PowerShellWorker.Resource.psd1
 
 <#
 .SYNOPSIS
@@ -49,6 +55,52 @@ function Get-OutputBinding {
     }
 }
 
+# Helper private function that validates the output value and do necessary conversion.
+function Convert-OutputBindingValue {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Name,
+
+        [Parameter(Mandatory=$true)]
+        [object]
+        $Value
+    )
+
+    # Check if we can get the binding metadata of the current running function.
+    $funcMetadataType = "FunctionMetadata" -as [type]
+    if ($null -eq $funcMetadataType) {
+        return $Value
+    }
+
+    # Get the runspace where we are currently running in.
+    $runspace = [Runspace]::DefaultRunspace
+    # Get all output bindings.
+    $bindingMap = $funcMetadataType::GetOutputBindingInfo($runspace.InstanceId)
+    if ($null -eq $bindingMap) {
+        return $Value
+    }
+
+    # Get the binding information of given output binding name.
+    $bindingInfo = $bindingMap[$Name]
+    if ($bindingInfo.Type -ne "http") {
+        return $Value
+    }
+
+    # Nothing to do if the value is already a HttpResponseContext object.
+    if ($Value -as [HttpResponseContext]) {
+        return $Value
+    }
+
+    try {
+        return [LanguagePrimitives]::ConvertTo($Value, [HttpResponseContext])
+    } catch [PSInvalidCastException] {
+        $conversionMsg = $_.Exception.Message
+        $errorMsg = $LocalizedData.InvalidHttpOutputValue -f $Name, $conversionMsg
+        throw $errorMsg
+    }
+}
+
 # Helper private function that sets an OutputBinding.
 function Push-KeyValueOutputBinding {
     param (
@@ -63,10 +115,13 @@ function Push-KeyValueOutputBinding {
         [switch]
         $Force
     )
-    if(!$script:_OutputBindings.ContainsKey($Name) -or $Force.IsPresent) {
+
+    if (!$script:_OutputBindings.ContainsKey($Name) -or $Force.IsPresent) {
+        $Value = Convert-OutputBindingValue -Name $Name -Value $Value
         $script:_OutputBindings[$Name] = $Value
     } else {
-        throw "Output binding '$Name' is already set. To override the value, use -Force."
+        $errorMsg = $LocalizedData.OutputBindingAlreadySet -f $Name
+        throw $errorMsg
     }
 }
 
