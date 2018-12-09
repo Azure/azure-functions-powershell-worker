@@ -368,7 +368,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var input = new HttpResponseContext
             {
                 Body = data,
-                Headers =  { { "content-type", "text/html" } }
+                Headers = new Hashtable { { "content-type", "text/html" } }
             };
             var expected = new TypedData
             {

@@ -253,7 +253,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Helper method to set the output binding metadata for the function that is about to run.
         /// </summary>
-        internal void SetFunctionMetadata(AzFunctionInfo functionInfo)
+        internal void RegisterFunctionMetadata(AzFunctionInfo functionInfo)
         {
             var outputBindings = new ReadOnlyDictionary<string, BindingInfo>(functionInfo.OutputBindings);
             FunctionMetadata.OutputBindingCache.AddOrUpdate(_pwsh.Runspace.InstanceId,
@@ -264,7 +264,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Helper method to clear the output binding metadata for the function that has done running.
         /// </summary>
-        internal void ClearFunctionMetadata()
+        internal void UnregisterFunctionMetadata()
         {
             FunctionMetadata.OutputBindingCache.TryRemove(_pwsh.Runspace.InstanceId, out _);
         }

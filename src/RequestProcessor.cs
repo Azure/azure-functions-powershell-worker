@@ -143,7 +143,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 // Load information about the function
                 var functionInfo = _functionLoader.GetFunctionInfo(invocationRequest.FunctionId);
-                _powerShellManager.SetFunctionMetadata(functionInfo);
+                _powerShellManager.RegisterFunctionMetadata(functionInfo);
 
                 Hashtable results = functionInfo.Type == AzFunctionType.OrchestrationFunction
                     ? InvokeOrchestrationFunction(functionInfo, invocationRequest)
@@ -158,7 +158,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             }
             finally
             {
-                _powerShellManager.ClearFunctionMetadata();
+                _powerShellManager.UnregisterFunctionMetadata();
             }
 
             return response;

@@ -147,16 +147,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
-        public void SetAndClearFunctionMetadataShouldWork()
+        public void RegisterAndUnregisterFunctionMetadataShouldWork()
         {
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
             var functionInfo = GetAzFunctionInfo("dummy-path", string.Empty);
 
             Assert.Empty(FunctionMetadata.OutputBindingCache);
-            manager.SetFunctionMetadata(functionInfo);
+            manager.RegisterFunctionMetadata(functionInfo);
             Assert.Single(FunctionMetadata.OutputBindingCache);
-            manager.ClearFunctionMetadata();
+            manager.UnregisterFunctionMetadata();
             Assert.Empty(FunctionMetadata.OutputBindingCache);
         }
     }
