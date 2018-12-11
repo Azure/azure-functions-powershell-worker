@@ -209,16 +209,5 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
             $ps.Streams.Information[$i].MessageData | Should -BeExactly "__LAST_INFO_MSG__"
             $ps.Streams.Information[$i].Tags | Should -BeNullOrEmpty
         }
-
-        It "'Trace-PipelineObject -WriteToInformationChannel' Writes input objects to information stream" {
-            $results = $ps.AddScript("0..19 | Trace-PipelineObject -WriteToInformationChannel").Invoke()
-            $results | Should -BeNullOrEmpty
-
-            $ps.Streams.Information.Count | Should -BeExactly 20
-            for ($i = 0; $i -lt 20; $i++) {
-                $ps.Streams.Information[$i].MessageData | Should -BeExactly "$i"
-                $ps.Streams.Information[$i].Tags | Should -BeExactly "__PipelineObject__"
-            }
-        }
     }
 }
