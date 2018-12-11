@@ -206,9 +206,36 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                         .InvokeAndClearCommands<string>()[0];
         }
 
-        private Dictionary<string, ParameterMetadata> RetriveParameterMetadata(
-            AzFunctionInfo functionInfo,
-            out string moduleName)
+        /// <summary>
+        /// Helper method to prepend the FunctionApp module folder to the module path.
+        /// </summary>
+        internal void PrependToPSModulePath(string directory)
+        {
+            // Adds the passed in directory to the front of the PSModulePath using the path separator of the OS.
+            string psModulePath = Environment.GetEnvironmentVariable("PSModulePath");
+            Environment.SetEnvironmentVariable("PSModulePath", $"{directory}{Path.PathSeparator}{psModulePath}");
+        }
+
+        /// <summary>
+        /// Helper method to set the output binding metadata for the function that is about to run.
+        /// </summary>
+        internal void RegisterFunctionMetadata(AzFunctionInfo functionInfo)
+        {
+            var outputBindings = new ReadOnlyDictionary<string, BindingInfo>(functionInfo.OutputBindings);
+            FunctionMetadata.OutputBindingCache.AddOrUpdate(_pwsh.Runspace.InstanceId,
+                                                            outputBindings,
+                                                            (key, value) => outputBindings);
+        }
+
+        /// <summary>
+        /// Helper method to clear the output binding metadata for the function that has done running.
+        /// </summary>
+        internal void UnregisterFunctionMetadata()
+        {
+            FunctionMetadata.OutputBindingCache.TryRemove(_pwsh.Runspace.InstanceId, out _);
+        }
+
+        private Dictionary<string, ParameterMetadata> RetriveParameterMetadata(AzFunctionInfo functionInfo, out string moduleName)
         {
             moduleName = null;
             string scriptPath = functionInfo.ScriptPath;
@@ -230,13 +257,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                                 .InvokeAndClearCommands<FunctionInfo>()[0].Parameters;
                 }
             }
-        }
-
-        internal void PrependToPSModulePath(string directory)
-        {
-            // Adds the passed in directory to the front of the PSModulePath using the path separator of the OS.
-            string psModulePath = Environment.GetEnvironmentVariable("PSModulePath");
-            Environment.SetEnvironmentVariable("PSModulePath", $"{directory}{Path.PathSeparator}{psModulePath}");
         }
 
         private void ResetRunspace(string moduleName)

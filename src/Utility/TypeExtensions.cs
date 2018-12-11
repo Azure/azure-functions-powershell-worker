@@ -143,10 +143,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 rpcHttp.Body = httpResponseContext.Body.ToTypedData(psHelper);
             }
 
+            rpcHttp.EnableContentNegotiation = httpResponseContext.EnableContentNegotiation;
+
             // Add all the headers. ContentType is separated for convenience
-            foreach (var item in httpResponseContext.Headers)
+            if (httpResponseContext.Headers != null)
             {
-                rpcHttp.Headers.Add(item.Key, item.Value);
+                foreach (DictionaryEntry item in httpResponseContext.Headers)
+                {
+                    rpcHttp.Headers.Add(item.Key.ToString(), item.Value.ToString());
+                }
             }
 
             // Allow the user to set content-type in the Headers

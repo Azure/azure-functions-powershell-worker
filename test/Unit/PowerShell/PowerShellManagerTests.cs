@@ -145,5 +145,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Environment.SetEnvironmentVariable("PSModulePath", modulePathBefore);
             }
         }
+
+        [Fact]
+        public void RegisterAndUnregisterFunctionMetadataShouldWork()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            var functionInfo = GetAzFunctionInfo("dummy-path", string.Empty);
+
+            Assert.Empty(FunctionMetadata.OutputBindingCache);
+            manager.RegisterFunctionMetadata(functionInfo);
+            Assert.Single(FunctionMetadata.OutputBindingCache);
+            manager.UnregisterFunctionMetadata();
+            Assert.Empty(FunctionMetadata.OutputBindingCache);
+        }
     }
 }
