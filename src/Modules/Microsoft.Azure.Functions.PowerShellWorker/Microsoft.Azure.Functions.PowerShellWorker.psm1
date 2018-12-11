@@ -186,9 +186,9 @@ function Push-OutputBinding {
 
 <#
 .SYNOPSIS
-    Write the formated output of the pipeline object to the information stream before passing the object down to the pipeline.
+    Write the formatted output of the pipeline object to the information stream before passing the object down to the pipeline.
 .DESCRIPTION
-    Write the formated output of the pipeline object to the information stream before passing the object down to the pipeline.
+    Write the formatted output of the pipeline object to the information stream before passing the object down to the pipeline.
 .PARAMETER InputObject
     The object from pipeline.
 .PARAMETER WriteToInformationChannel
@@ -206,6 +206,17 @@ function Trace-PipelineObject {
         [switch]
         $WriteToInformationChannel
     )
+
+    <#
+        This function behaves like 'Tee-Object'.
+        An input pipeline object is first pushed through a steppable pipeline that consists of 'Out-String | Trace-PipelineObject -WriteToInformationChannel',
+        and then it's written out back to the pipeline without change. In this approach, we can intercept and trace the pipeline objects in a streaming way
+        and keep the objects in pipeline at the same time.
+
+        This function has two parameter sets.
+         - Default set: intercept and trace the pipeline objects to the information stream by using a steppable pipeline.
+         - WriteToInformationChannel set: simply write the input pipeline objects to the information stream with a special tag.
+    #>
 
     Begin {
         if ($PSCmdlet.ParameterSetName -eq "Default") {
