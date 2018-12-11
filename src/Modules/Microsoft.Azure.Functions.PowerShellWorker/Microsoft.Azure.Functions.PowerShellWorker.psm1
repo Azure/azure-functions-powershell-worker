@@ -55,7 +55,7 @@ function Get-OutputBinding {
     }
 }
 
-# Helper private function that validates the output value and do necessary conversion.
+# Helper private function that validates the output value and does necessary conversion.
 function Convert-OutputBindingValue {
     param(
         [Parameter(Mandatory=$true)]
@@ -73,10 +73,8 @@ function Convert-OutputBindingValue {
         return $Value
     }
 
-    # Get the runspace where we are currently running in.
-    $runspace = [Runspace]::DefaultRunspace
-    # Get all output bindings.
-    $bindingMap = $funcMetadataType::GetOutputBindingInfo($runspace.InstanceId)
+    # Get the runspace where we are currently running in and then get all output bindings.
+    $bindingMap = $funcMetadataType::GetOutputBindingInfo([Runspace]::DefaultRunspace.InstanceId)
     if ($null -eq $bindingMap) {
         return $Value
     }
