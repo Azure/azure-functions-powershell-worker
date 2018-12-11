@@ -189,6 +189,7 @@ function Push-OutputBinding {
     Write the formatted output of the pipeline object to the information stream before passing the object down to the pipeline.
 .DESCRIPTION
     Write the formatted output of the pipeline object to the information stream before passing the object down to the pipeline.
+    This function is for the PowerShell worker to use only, to trace objects written into the pipeline in a streaming way.
 .PARAMETER InputObject
     The object from pipeline.
 .PARAMETER WriteToInformationChannel
@@ -196,50 +197,34 @@ function Push-OutputBinding {
 #>
 function Trace-PipelineObject {
 
-    [CmdletBinding(DefaultParameterSetName = "Default")]
+    [CmdletBinding()]
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [object]
-        $InputObject,
-
-        [Parameter(ParameterSetName = "WriteToInformationChannel")]
-        [switch]
-        $WriteToInformationChannel
+        $InputObject
     )
 
     <#
         This function behaves like 'Tee-Object'.
-        An input pipeline object is first pushed through a steppable pipeline that consists of 'Out-String | Trace-PipelineObject -WriteToInformationChannel',
+        An input pipeline object is first pushed through a steppable pipeline that consists of 'Out-String | Write-Information -Tags "__PipelineObject__"',
         and then it's written out back to the pipeline without change. In this approach, we can intercept and trace the pipeline objects in a streaming way
         and keep the objects in pipeline at the same time.
-
-        This function has two parameter sets.
-         - Default set: intercept and trace the pipeline objects to the information stream by using a steppable pipeline.
-         - WriteToInformationChannel set: simply write the input pipeline objects to the information stream with a special tag.
     #>
 
     Begin {
-        if ($PSCmdlet.ParameterSetName -eq "Default") {
-            $outStringCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.PowerShell.Utility\Out-String", [CommandTypes]::Cmdlet)
-            $tracePipeCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.Azure.Functions.PowerShellWorker\Trace-PipelineObject", [CommandTypes]::Function)
+        $outStringCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.PowerShell.Utility\Out-String", [CommandTypes]::Cmdlet)
+        $writeInfoCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.PowerShell.Utility\Write-Information", [CommandTypes]::Cmdlet)
 
-            $stepPipeline = { & $outStringCmd -Stream | & $tracePipeCmd -WriteToInformationChannel }.GetSteppablePipeline([CommandOrigin]::Internal)
-            $stepPipeline.Begin($PSCmdlet)
-        }
+        $stepPipeline = { & $outStringCmd -Stream | & $writeInfoCmd -Tags "__PipelineObject__" }.GetSteppablePipeline([CommandOrigin]::Internal)
+        $stepPipeline.Begin($PSCmdlet)
     }
 
     Process {
-        if ($PSCmdlet.ParameterSetName -eq "Default") {
-            $stepPipeline.Process($InputObject)
-            $InputObject
-        } else {
-            Write-Information -MessageData $InputObject -Tags "__PipelineObject__"
-        }
+        $stepPipeline.Process($InputObject)
+        $InputObject
     }
 
     End {
-        if ($PSCmdlet.ParameterSetName -eq "Default") {
-            $stepPipeline.End()
-        }
+        $stepPipeline.End()
     }
 }
