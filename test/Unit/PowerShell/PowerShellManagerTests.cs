@@ -197,7 +197,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 AppDomain.CurrentDomain.BaseDirectory,
                 "Unit/PowerShell/TestScripts/ProfileWithTerminatingError");
             
-            Assert.Throws(typeof(RuntimeException), () => manager.InvokeProfile());
+            Assert.Throws<RuntimeException>(() => manager.InvokeProfile());
             Assert.Single(logger.FullLog);
             Assert.Matches("Error: Invoking the Profile had errors. See logs for details. Profile location: ", logger.FullLog[0]);
         }
