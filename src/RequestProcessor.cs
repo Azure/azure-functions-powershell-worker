@@ -109,11 +109,10 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 // The location of this module path is in a folder called "Modules" in the root of the Function App.
                 if (!_initializedFunctionApp)
                 {
-                    string functionAppRoot = Path.GetFullPath(Path.Combine(functionLoadRequest.Metadata.Directory, ".."));
-                    _powerShellManager.FunctionAppRootLocation = functionAppRoot;
+                    FunctionLoader.FunctionAppRootLocation = Path.GetFullPath(Path.Combine(functionLoadRequest.Metadata.Directory, ".."));
 
                     // Prepend the Function App's 'Modules' folder to the PSModulePath
-                    _powerShellManager.PrependToPSModulePath(Path.Combine(functionAppRoot, "Modules"));
+                    _powerShellManager.PrependToPSModulePath(Path.Combine(FunctionLoader.FunctionAppRootLocation, "Modules"));
 
                     // Since this is the first time we know where the location of the FunctionApp is,
                     // we can attempt to execute the Profile.

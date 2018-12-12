@@ -13,6 +13,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     {
         private readonly MapField<string, AzFunctionInfo> _loadedFunctions = new MapField<string, AzFunctionInfo>();
 
+        internal static string FunctionAppRootLocation { get; set; }
+
         internal AzFunctionInfo GetFunctionInfo(string functionId)
         {
             if (_loadedFunctions.TryGetValue(functionId, out AzFunctionInfo funcInfo))
@@ -28,6 +30,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // TODO: catch "load" issues at "func start" time.
             // ex. Script doesn't exist, entry point doesn't exist
             _loadedFunctions.Add(request.FunctionId, new AzFunctionInfo(request.Metadata));
+
         }
     }
 

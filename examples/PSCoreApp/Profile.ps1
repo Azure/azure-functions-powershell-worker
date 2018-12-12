@@ -2,7 +2,7 @@
 # You can define helper functions, run commands, or specify environment variables
 # NOTE: any variables defined that are not environment variables will get reset after the first execution
 
-# Example usecases for a Profile.ps1:
+# Example usecases for a profile.ps1:
 
 # Authenticating with Azure PowerShell using MSI
 # $tokenAuthURI = $env:MSI_ENDPOINT + "?resource=https://management.azure.com&api-version=2017-09-01"

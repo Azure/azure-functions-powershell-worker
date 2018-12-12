@@ -165,7 +165,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
-            manager.FunctionAppRootLocation = System.IO.Path.Join(
+            FunctionLoader.FunctionAppRootLocation = System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
                 "Unit/PowerShell/TestScripts/ProfileBasic");
             
@@ -180,7 +180,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
-            manager.FunctionAppRootLocation = AppDomain.CurrentDomain.BaseDirectory;
+            FunctionLoader.FunctionAppRootLocation = AppDomain.CurrentDomain.BaseDirectory;
             
             manager.InvokeProfile();
 
@@ -193,11 +193,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
-            manager.FunctionAppRootLocation = System.IO.Path.Join(
+            FunctionLoader.FunctionAppRootLocation = System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
                 "Unit/PowerShell/TestScripts/ProfileWithTerminatingError");
             
-            Assert.Throws<RuntimeException>(() => manager.InvokeProfile());
+            Assert.Throws<CmdletInvocationException>(() => manager.InvokeProfile());
             Assert.Single(logger.FullLog);
             Assert.Matches("Error: Invoking the Profile had errors. See logs for details. Profile location: ", logger.FullLog[0]);
         }
@@ -207,7 +207,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
-            manager.FunctionAppRootLocation = System.IO.Path.Join(
+            FunctionLoader.FunctionAppRootLocation = System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
                 "Unit/PowerShell/TestScripts/ProfileWithNonTerminatingError");
             
