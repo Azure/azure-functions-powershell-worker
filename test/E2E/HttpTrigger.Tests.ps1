@@ -24,11 +24,15 @@ Describe 'HttpTrigger Tests' {
         @{ 
             FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
             ExpectedContent = 'Hello Atlas'
+        },
+        @{
+            FunctionName = 'TestBasicHttpTriggerWithProfile'
+            ExpectedContent = 'PROFILE'
         }
     ) {
-        param ($ExpectedContent)
+        param ($FunctionName, $ExpectedContent)
 
-        $res = Invoke-WebRequest "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger?Name=Atlas"
+        $res = Invoke-WebRequest "$FUNCTIONS_BASE_URL/api/$($FunctionName)?Name=Atlas"
         
         $res.StatusCode | Should -Be ([HttpStatusCode]::Accepted)
         $res.Content | Should -Be $ExpectedContent
@@ -50,12 +54,12 @@ Describe 'HttpTrigger Tests' {
             FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
         }
     ) {
-        param ($InputNameData)
+        param ($FunctionName, $InputNameData)
 
         if (Test-Path 'variable:InputNameData') {
-            $url = "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger?Name=$InputNameData"
+            $url = "$FUNCTIONS_BASE_URL/api/$($FunctionName)?Name=$InputNameData"
         } else {
-            $url = "$FUNCTIONS_BASE_URL/api/TestBasicHttpTrigger"
+            $url = "$FUNCTIONS_BASE_URL/api/$($FunctionName)"
         }
 
         $res = { invoke-webrequest $url } |
