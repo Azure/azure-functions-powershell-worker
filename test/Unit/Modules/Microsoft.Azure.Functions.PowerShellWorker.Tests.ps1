@@ -190,7 +190,7 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
             $ps.Streams.ClearStreams()
         }
 
-        It "'Trace-PipelineObject' Writes tracing to information stream while keeps input object in pipeline" {
+        It "Can write tracing to information stream while keeps input object in pipeline" {
             $results = $ps.AddCommand("Write-TestObject").AddCommand("Trace-PipelineObject").Invoke()
 
             $results.Count | Should -BeExactly 20
