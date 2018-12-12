@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
     {
         public List<string> FullLog = new List<string>();
 
-        public override void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
+        public void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
         {
             var log = $"{logLevel}: {message}";
             Console.WriteLine(log);

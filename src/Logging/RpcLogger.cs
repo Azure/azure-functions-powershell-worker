@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             _invocationId = null;
         }
 
-        public override async void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
+        public async void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
         {
             if (isUserLog)
             {

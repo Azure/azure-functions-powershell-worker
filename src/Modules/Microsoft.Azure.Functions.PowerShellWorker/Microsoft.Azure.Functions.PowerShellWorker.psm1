@@ -9,6 +9,10 @@ using namespace Microsoft.Azure.Functions.PowerShellWorker
 
 # This holds the current state of the output bindings.
 $script:_OutputBindings = @{}
+# These variables hold the ScriptBlock and CmdletInfo objects for constructing a SteppablePipeline of 'Out-String | Write-Information'.
+$script:outStringCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.PowerShell.Utility\Out-String", [CommandTypes]::Cmdlet)
+$script:writeInfoCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.PowerShell.Utility\Write-Information", [CommandTypes]::Cmdlet)
+$script:tracingSb = { & $script:outStringCmd -Stream | & $script:writeInfoCmd -Tags "__PipelineObject__" }
 # This loads the resource strings.
 Import-LocalizedData LocalizedData -FileName PowerShellWorker.Resource.psd1
 
@@ -181,5 +185,45 @@ function Push-OutputBinding {
                 }
             }
         }
+    }
+}
+
+<#
+.SYNOPSIS
+    Writes the formatted output of the pipeline object to the information stream before passing the object down to the pipeline.
+.DESCRIPTION
+    INTERNAL POWERSHELL WORKER USE ONLY. Writes the formatted output of the pipeline object to the information stream before passing the object down to the pipeline.
+.PARAMETER InputObject
+    The object from pipeline.
+#>
+function Trace-PipelineObject {
+
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [object]
+        $InputObject
+    )
+
+    <#
+        This function behaves like 'Tee-Object'.
+        An input pipeline object is first pushed through a steppable pipeline that consists of 'Out-String | Write-Information -Tags "__PipelineObject__"',
+        and then it's written out back to the pipeline without change. In this approach, we can intercept and trace the pipeline objects in a streaming way
+        and keep the objects in pipeline at the same time.
+    #>
+
+    Begin {
+        # A micro-optimization: we use the cached 'CmdletInfo' objects to avoid command resolution every time this cmdlet is called.
+        $stepPipeline = $script:tracingSb.GetSteppablePipeline([CommandOrigin]::Internal)
+        $stepPipeline.Begin($PSCmdlet)
+    }
+
+    Process {
+        $stepPipeline.Process($InputObject)
+        $InputObject
+    }
+
+    End {
+        $stepPipeline.End()
     }
 }

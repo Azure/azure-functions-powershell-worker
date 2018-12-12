@@ -154,4 +154,60 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
                 -Because 'The OutputBindings should be empty'
         }
     }
+
+    Context 'Trace-PipelineObject tests' {
+        BeforeAll {
+            $scriptToRun = @'
+    param($cmd, $modulePath)
+    Import-Module $modulePath
+    function Write-TestObject {
+        foreach ($i in 1..20) {
+            Write-Output $cmd
+        }
+        Write-Information '__LAST_INFO_MSG__'
+    }
+'@
+            $cmd = Get-Command Get-Command
+            $ps = [powershell]::Create()
+            $ps.AddScript($scriptToRun).AddParameter("cmd", $cmd).AddParameter("modulePath", $modulePath).Invoke()
+            $ps.Commands.Clear()
+            $ps.Streams.ClearStreams()
+
+            function Write-TestObject {
+                foreach ($i in 1..20) {
+                    Write-Output $cmd
+                }
+                Write-Information '__LAST_INFO_MSG__'
+            }
+        }
+
+        AfterAll {
+            $ps.Dispose()
+        }
+
+        AfterEach {
+            $ps.Commands.Clear()
+            $ps.Streams.ClearStreams()
+        }
+
+        It "Can write tracing to information stream while keeps input object in pipeline" {
+            $results = $ps.AddCommand("Write-TestObject").AddCommand("Trace-PipelineObject").Invoke()
+
+            $results.Count | Should -BeExactly 20
+            for ($i = 0; $i -lt 20; $i++) {
+                $results[0].Name | Should -BeExactly $cmd.Name
+            }
+
+            $outStringResults = Write-TestObject | Out-String -Stream
+            $ps.Streams.Information.Count | Should -BeExactly ($outStringResults.Count + 1)
+            $countWithoutTrailingNewLines = $outStringResults.Count - 2
+            for ($i = 0; $i -lt $countWithoutTrailingNewLines; $i++) {
+                $ps.Streams.Information[$i].MessageData | Should -BeExactly $outStringResults[$i]
+                $ps.Streams.Information[$i].Tags | Should -BeExactly "__PipelineObject__"
+            }
+
+            $ps.Streams.Information[$i].MessageData | Should -BeExactly "__LAST_INFO_MSG__"
+            $ps.Streams.Information[$i].Tags | Should -BeNullOrEmpty
+        }
+    }
 }
