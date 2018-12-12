@@ -105,36 +105,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         }
 
         /// <summary>
-        /// Wrap a string in quotes to make it safe to use in scripts.
-        /// </summary>
-        /// <param name="path">The path to wrap in quotes.</param>
-        /// <returns>The given path wrapped in quotes appropriately.</returns>
-        private static StringBuilder QuoteEscapeString(string path)
-        {
-            var sb = new StringBuilder(path.Length + 2); // Length of string plus two quotes
-            sb.Append('\'');
-            if (!path.Contains('\''))
-            {
-                sb.Append(path);
-            }
-            else
-            {
-                foreach (char c in path)
-                {
-                    if (c == '\'')
-                    {
-                        sb.Append("''");
-                        continue;
-                    }
-
-                    sb.Append(c);
-                }
-            }
-            sb.Append('\'');
-            return sb;
-        }
-
-        /// <summary>
         /// Execution a function fired by a trigger or an activity function scheduled by an orchestration.
         /// </summary>
         internal Hashtable InvokeFunction(
