@@ -29,7 +29,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
         // The path to the FunctionApp root. This is set at the first FunctionLoad message
         //and used for determining the path to the 'Profile.ps1' and 'Modules' folder.
-        internal string FunctionAppRootLocation { get; set; }
+        internal string FunctionAppRootLocation { get; set; } = AppDomain.CurrentDomain.BaseDirectory;
 
         internal PowerShellManager(ILogger logger)
         {
@@ -55,6 +55,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
         }
 
+        internal void InitializeRunspace()
+        {
+            // Add HttpResponseContext namespace so users can reference
+            // HttpResponseContext without needing to specify the full namespace
+            _pwsh.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").InvokeAndClearCommands();
+
+            // Set the PSModulePath
+            Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
+        }
+
         internal void InvokeProfile()
         {
             IEnumerable<string> profiles = Directory.EnumerateFiles(FunctionAppRootLocation, PROFILE_FILENAME);
@@ -65,13 +75,27 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
 
             var dotSourced = new StringBuilder(". ").Append(QuoteEscapeString(profiles.First()));
-            _pwsh.AddScript(dotSourced.ToString()).InvokeAndClearCommands();
+            
+            try
+            {
+                _pwsh.AddScript(dotSourced.ToString()).InvokeAndClearCommands();
+            }
+            catch (RuntimeException e)
+            {
+                _logger.Log(
+                    LogLevel.Error,
+                    $"Invoking the Profile had errors. See logs for details. Profile location: {FunctionAppRootLocation}",
+                    e,
+                    isUserLog: true);
+                throw;
+            }
             
             if (_pwsh.HadErrors)
             {
-                var logMessage = $"Invoking the Profile had errors. See logs for details. Profile location: {FunctionAppRootLocation}";
-                _logger.Log(LogLevel.Error, logMessage, isUserLog: true);
-                throw new InvalidOperationException(logMessage);
+                _logger.Log(
+                    LogLevel.Error,
+                    $"Invoking the Profile had errors. See logs for details. Profile location: {FunctionAppRootLocation}",
+                    isUserLog: true);
             }
         }
 
@@ -103,16 +127,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
             sb.Append('\'');
             return sb;
-        }
-
-        internal void InitializeRunspace()
-        {
-            // Add HttpResponseContext namespace so users can reference
-            // HttpResponseContext without needing to specify the full namespace
-            _pwsh.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").InvokeAndClearCommands();
-
-            // Set the PSModulePath
-            Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
         }
 
         /// <summary>

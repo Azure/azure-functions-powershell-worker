@@ -6,7 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
+using System.Management.Automation;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Xunit;
@@ -158,6 +158,64 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Single(FunctionMetadata.OutputBindingCache);
             manager.UnregisterFunctionMetadata();
             Assert.Empty(FunctionMetadata.OutputBindingCache);
+        }
+
+        [Fact]
+        public void ProfileShouldWork()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.FunctionAppRootLocation = System.IO.Path.Join(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Unit/PowerShell/TestScripts/ProfileBasic");
+            
+            manager.InvokeProfile();
+
+            Assert.Single(logger.FullLog);
+            Assert.Equal("Information: INFORMATION: Hello PROFILE", logger.FullLog[0]);
+        }
+
+        [Fact]
+        public void ProfileDoesNotExist()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.FunctionAppRootLocation = AppDomain.CurrentDomain.BaseDirectory;
+            
+            manager.InvokeProfile();
+
+            Assert.Single(logger.FullLog);
+            Assert.Matches("Trace: No 'Profile.ps1' found at: ", logger.FullLog[0]);
+        }
+
+        [Fact]
+        public void ProfileWithTerminatingError()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.FunctionAppRootLocation = System.IO.Path.Join(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Unit/PowerShell/TestScripts/ProfileWithTerminatingError");
+            
+            Assert.Throws(typeof(RuntimeException), () => manager.InvokeProfile());
+            Assert.Single(logger.FullLog);
+            Assert.Matches("Error: Invoking the Profile had errors. See logs for details. Profile location: ", logger.FullLog[0]);
+        }
+
+        [Fact]
+        public void ProfileWithNonTerminatingError()
+        {
+            var logger = new ConsoleLogger();
+            var manager = new PowerShellManager(logger);
+            manager.FunctionAppRootLocation = System.IO.Path.Join(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Unit/PowerShell/TestScripts/ProfileWithNonTerminatingError");
+            
+            manager.InvokeProfile();
+
+            Assert.Equal(2, logger.FullLog.Count);
+            Assert.Equal("Error: ERROR: help me!", logger.FullLog[0]);
+            Assert.Matches("Error: Invoking the Profile had errors. See logs for details. Profile location: ", logger.FullLog[1]);
         }
     }
 }
