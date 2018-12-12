@@ -124,8 +124,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             var funcInfo = functionLoader.GetFunctionInfo(functionId);
 
-            Assert.Equal(directory, funcInfo.Directory);
-            Assert.Equal(name, funcInfo.FunctionName);
+            Assert.Equal(directory, funcInfo.FuncDirectory);
+            Assert.Equal(name, funcInfo.FuncName);
             Assert.Equal(2, funcInfo.AllBindings.Count);
             Assert.Single(funcInfo.OutputBindings);
         }

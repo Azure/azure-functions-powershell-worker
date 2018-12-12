@@ -23,9 +23,8 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManager _powerShellManager;
 
-        // used to determine if we have already added the Function App's 'Modules'
-        // folder to the PSModulePath
-        private bool _prependedPath;
+        // Indicate whether we have done the worker process level initialization.
+        private bool _isOneTimeInitDone;
 
         internal RequestProcessor(MessagingStream msgStream)
         {
@@ -51,15 +50,12 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                             case StreamingMessage.ContentOneofCase.WorkerInitRequest:
                                 response = ProcessWorkerInitRequest(request);
                                 break;
-
                             case StreamingMessage.ContentOneofCase.FunctionLoadRequest:
                                 response = ProcessFunctionLoadRequest(request);
                                 break;
-
                             case StreamingMessage.ContentOneofCase.InvocationRequest:
                                 response = ProcessInvocationRequest(request);
                                 break;
-
                             default:
                                 throw new InvalidOperationException($"Not supportted message type: {request.ContentCase}");
                         }
@@ -76,19 +72,15 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 StreamingMessage.ContentOneofCase.WorkerInitResponse,
                 out StatusResult status);
 
-            try
-            {
-                _powerShellManager.InitializeRunspace();
-            }
-            catch (Exception e)
-            {
-                status.Status = StatusResult.Types.Status.Failure;
-                status.Exception = e.ToRpcException();
-            }
-
             return response;
         }
 
+        /// <summary>
+        /// Method to process a FunctionLoadRequest.
+        /// FunctionLoadRequest should be processed sequentially. There is no point to process FunctionLoadRequest
+        /// concurrently as a FunctionApp doesn't include a lot functions in general. Having this step sequential
+        /// will make the Runspace-level initialization easier and more predictable.
+        /// </summary>
         internal StreamingMessage ProcessFunctionLoadRequest(StreamingMessage request)
         {
             FunctionLoadRequest functionLoadRequest = request.FunctionLoadRequest;
@@ -101,23 +93,17 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
             try
             {
-                // Try loading the metadata of the function
-                _functionLoader.Load(functionLoadRequest);
-
-                // if we haven't yet, add the well-known Function App module path to the PSModulePath
-                // The location of this module path is in a folder called "Modules" in the root of the Function App.
-                if (!_prependedPath)
+                if (!_isOneTimeInitDone)
                 {
-                    string functionAppModulesPath = Path.GetFullPath(
-                        Path.Combine(functionLoadRequest.Metadata.Directory, "..", "Modules"));
-                    _powerShellManager.PrependToPSModulePath(functionAppModulesPath);
+                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
+                    _powerShellManager.PerformWorkerLevelInitialization();
+                    _powerShellManager.PerformRunspaceLevelInitialization();
 
-                    // Since this is the first time we know where the location of the FunctionApp is,
-                    // we can attempt to authenticate to Azure at this time.
-                    _powerShellManager.AuthenticateToAzure();
-
-                    _prependedPath = true;
+                    _isOneTimeInitDone = true;
                 }
+
+                // Load the metadata of the function.
+                _functionLoader.LoadFunction(functionLoadRequest);
             }
             catch (Exception e)
             {
@@ -128,6 +114,10 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             return response;
         }
 
+        /// <summary>
+        /// Method to process a InvocationRequest.
+        /// InvocationRequest should be processed in parallel eventually.
+        /// </summary>
         internal StreamingMessage ProcessInvocationRequest(StreamingMessage request)
         {
             InvocationRequest invocationRequest = request.InvocationRequest;
@@ -233,7 +223,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 case AzFunctionType.RegularFunction:
                     // Set out binding data and return response to be sent back to host
-                    foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutputBindings)
+                    foreach (KeyValuePair<string, ReadOnlyBindingInfo> binding in functionInfo.OutputBindings)
                     {
                         // if one of the bindings is '$return' we need to set the ReturnValue
                         string outBindingName = binding.Key;
