@@ -192,7 +192,7 @@ function Push-OutputBinding {
 .SYNOPSIS
     Writes the formatted output of the pipeline object to the information stream before passing the object down to the pipeline.
 .DESCRIPTION
-    This function is for the PowerShell worker to use only, to trace objects written into the pipeline in a streaming way.
+    INTERNAL POWERSHELL WORKER USE ONLY. Writes the formatted output of the pipeline object to the information stream before passing the object down to the pipeline.
 .PARAMETER InputObject
     The object from pipeline.
 #>
