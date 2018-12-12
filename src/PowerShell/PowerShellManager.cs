@@ -26,6 +26,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private readonly ILogger _logger;
         private readonly PowerShell _pwsh;
         private const string PROFILE_FILENAME = "Profile.ps1";
+        private readonly EnumerationOptions ENUMERATION_OPTIONS = new EnumerationOptions {
+            MatchCasing = MatchCasing.CaseInsensitive
+        };
 
         // The path to the FunctionApp root. This is set at the first FunctionLoad message
         //and used for determining the path to the 'Profile.ps1' and 'Modules' folder.
@@ -67,7 +70,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
         internal void InvokeProfile()
         {
-            IEnumerable<string> profiles = Directory.EnumerateFiles(FunctionAppRootLocation, PROFILE_FILENAME);
+            IEnumerable<string> profiles = Directory.EnumerateFiles(FunctionAppRootLocation, PROFILE_FILENAME, ENUMERATION_OPTIONS);
             if (profiles.Count() == 0)
             {
                 _logger.Log(LogLevel.Trace, $"No 'Profile.ps1' found at: {FunctionAppRootLocation}");
