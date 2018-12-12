@@ -9,6 +9,10 @@ using namespace Microsoft.Azure.Functions.PowerShellWorker
 
 # This holds the current state of the output bindings.
 $script:_OutputBindings = @{}
+# These variables hold the ScriptBlock and CmdletInfo objects for constructing a SteppablePipeline of 'Out-String | Write-Information'.
+$script:outStringCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.PowerShell.Utility\Out-String", [CommandTypes]::Cmdlet)
+$script:writeInfoCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.PowerShell.Utility\Write-Information", [CommandTypes]::Cmdlet)
+$script:tracingSb = { & $script:outStringCmd -Stream | & $script:writeInfoCmd -Tags "__PipelineObject__" }
 # This loads the resource strings.
 Import-LocalizedData LocalizedData -FileName PowerShellWorker.Resource.psd1
 
@@ -212,10 +216,8 @@ function Trace-PipelineObject {
     #>
 
     Begin {
-        $outStringCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.PowerShell.Utility\Out-String", [CommandTypes]::Cmdlet)
-        $writeInfoCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.PowerShell.Utility\Write-Information", [CommandTypes]::Cmdlet)
-
-        $stepPipeline = { & $outStringCmd -Stream | & $writeInfoCmd -Tags "__PipelineObject__" }.GetSteppablePipeline([CommandOrigin]::Internal)
+        # A micro-optimization: we use the cached 'CmdletInfo' objects to avoid command resolution every time this cmdlet is called.
+        $stepPipeline = $script:tracingSb.GetSteppablePipeline([CommandOrigin]::Internal)
         $stepPipeline.Begin($PSCmdlet)
     }
 
