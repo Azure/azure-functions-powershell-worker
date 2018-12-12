@@ -17,12 +17,19 @@ using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
+    using System.Linq;
     using System.Management.Automation;
+    using System.Text;
 
     internal class PowerShellManager
     {
         private readonly ILogger _logger;
         private readonly PowerShell _pwsh;
+        private const string PROFILE_FILENAME = "Profile.ps1";
+
+        // The path to the FunctionApp root. This is set at the first FunctionLoad message
+        //and used for determining the path to the 'Profile.ps1' and 'Modules' folder.
+        internal string FunctionAppRootLocation { get; set; }
 
         internal PowerShellManager(ILogger logger)
         {
@@ -48,69 +55,54 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
         }
 
-        internal void AuthenticateToAzure()
+        internal void InvokeProfile()
         {
-            // Check if Az.Profile is available
-            Collection<PSModuleInfo> azProfile = _pwsh.AddCommand("Get-Module")
-                .AddParameter("ListAvailable")
-                .AddParameter("Name", "Az.Profile")
-                .InvokeAndClearCommands<PSModuleInfo>();
-
-            if (azProfile.Count == 0)
+            IEnumerable<string> profiles = Directory.EnumerateFiles(FunctionAppRootLocation, PROFILE_FILENAME);
+            if (profiles.Count() == 0)
             {
-                _logger.Log(LogLevel.Trace, "Required module to automatically authenticate with Azure `Az.Profile` was not found in the PSModulePath.");
+                _logger.Log(LogLevel.Trace, $"No 'Profile.ps1' found at: {FunctionAppRootLocation}");
                 return;
             }
 
-            // Try to authenticate to Azure using MSI
-            string msiSecret = Environment.GetEnvironmentVariable("MSI_SECRET");
-            string msiEndpoint = Environment.GetEnvironmentVariable("MSI_ENDPOINT");
-            string accountId = Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME");
-
-            if (!string.IsNullOrEmpty(msiSecret) &&
-                !string.IsNullOrEmpty(msiEndpoint) &&
-                !string.IsNullOrEmpty(accountId))
+            var dotSourced = new StringBuilder(". ").Append(QuoteEscapeString(profiles.First()));
+            _pwsh.AddScript(dotSourced.ToString()).InvokeAndClearCommands();
+            
+            if (_pwsh.HadErrors)
             {
-                // NOTE: There is a limitation in Azure PowerShell that prevents us from using the parameter set:
-                // Connect-AzAccount -MSI or Connect-AzAccount -Identity
-                // see this GitHub issue https://github.com/Azure/azure-powershell/issues/7876
-                // As a workaround, we can all an API endpoint on the MSI_ENDPOINT to get an AccessToken and use that to authenticate
-                Collection<PSObject> response = _pwsh.AddCommand("Microsoft.PowerShell.Utility\\Invoke-RestMethod")
-                    .AddParameter("Method", "Get")
-                    .AddParameter("Headers", new Hashtable {{ "Secret", msiSecret }})
-                    .AddParameter("Uri", $"{msiEndpoint}?resource=https://management.azure.com&api-version=2017-09-01")
-                    .InvokeAndClearCommands<PSObject>();
+                var logMessage = $"Invoking the Profile had errors. See logs for details. Profile location: {FunctionAppRootLocation}";
+                _logger.Log(LogLevel.Error, logMessage, isUserLog: true);
+                throw new InvalidOperationException(logMessage);
+            }
+        }
 
-                if(_pwsh.HadErrors) 
-                {
-                    _logger.Log(LogLevel.Warning, "Failed to Authenticate to Azure via MSI. Check the logs for the errors generated.");
-                }
-                else
-                {
-                    // We have successfully authenticated to Azure so we can return out.
-                    using (ExecutionTimer.Start(_logger, "Authentication to Azure"))
-                    {
-                        _pwsh.AddCommand("Az.Profile\\Connect-AzAccount")
-                            .AddParameter("AccessToken", response[0].Properties["access_token"].Value)
-                            .AddParameter("AccountId", accountId)
-                            .InvokeAndClearCommands();
-
-                        if(_pwsh.HadErrors)
-                        {
-                            _logger.Log(LogLevel.Warning, "Failed to Authenticate to Azure. Check the logs for the errors generated.");
-                        }
-                        else
-                        {
-                            // We've successfully authenticated to Azure so we can return
-                            return;
-                        }
-                    }
-                }
+        /// <summary>
+        /// Wrap a string in quotes to make it safe to use in scripts.
+        /// </summary>
+        /// <param name="path">The path to wrap in quotes.</param>
+        /// <returns>The given path wrapped in quotes appropriately.</returns>
+        private static StringBuilder QuoteEscapeString(string path)
+        {
+            var sb = new StringBuilder(path.Length + 2); // Length of string plus two quotes
+            sb.Append('\'');
+            if (!path.Contains('\''))
+            {
+                sb.Append(path);
             }
             else
             {
-                _logger.Log(LogLevel.Trace, "Skip authentication to Azure via MSI. Environment variables for authenticating to Azure are not present.");
+                foreach (char c in path)
+                {
+                    if (c == '\'')
+                    {
+                        sb.Append("''");
+                        continue;
+                    }
+
+                    sb.Append(c);
+                }
             }
+            sb.Append('\'');
+            return sb;
         }
 
         internal void InitializeRunspace()

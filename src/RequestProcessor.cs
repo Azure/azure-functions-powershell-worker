@@ -23,9 +23,10 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManager _powerShellManager;
 
-        // used to determine if we have already added the Function App's 'Modules'
-        // folder to the PSModulePath
-        private bool _prependedPath;
+        // This is somewhat of a workaround for the fact that the WorkerInitialize message does
+        // not contain the file path of the Function App. Instead, we use this bool during the
+        // FunctionLoad message to initialize the Function App since we have the path.
+        private bool _initializedFunctionApp;
 
         internal RequestProcessor(MessagingStream msgStream)
         {
@@ -106,17 +107,19 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
                 // if we haven't yet, add the well-known Function App module path to the PSModulePath
                 // The location of this module path is in a folder called "Modules" in the root of the Function App.
-                if (!_prependedPath)
+                if (!_initializedFunctionApp)
                 {
-                    string functionAppModulesPath = Path.GetFullPath(
-                        Path.Combine(functionLoadRequest.Metadata.Directory, "..", "Modules"));
-                    _powerShellManager.PrependToPSModulePath(functionAppModulesPath);
+                    string functionAppRoot = Path.GetFullPath(Path.Combine(functionLoadRequest.Metadata.Directory, ".."));
+                    _powerShellManager.FunctionAppRootLocation = functionAppRoot;
+
+                    // Prepend the Function App's 'Modules' folder to the PSModulePath
+                    _powerShellManager.PrependToPSModulePath(Path.Combine(functionAppRoot, "Modules"));
 
                     // Since this is the first time we know where the location of the FunctionApp is,
-                    // we can attempt to authenticate to Azure at this time.
-                    _powerShellManager.AuthenticateToAzure();
+                    // we can attempt to execute the Profile.
+                    _powerShellManager.InvokeProfile();
 
-                    _prependedPath = true;
+                    _initializedFunctionApp = true;
                 }
             }
             catch (Exception e)
