@@ -8,7 +8,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Security;
+using System.Text;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -17,9 +19,7 @@ using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
-    using System.Linq;
     using System.Management.Automation;
-    using System.Text;
 
     internal class PowerShellManager
     {
