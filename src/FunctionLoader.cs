@@ -17,9 +17,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     {
         private readonly MapField<string, AzFunctionInfo> _loadedFunctions = new MapField<string, AzFunctionInfo>();
 
-        internal static string FunctionAppRootLocation { get; set; }
-        internal static string FunctionAppProfileLocation { get; set; } = null;
-        internal static string FunctionAppModulesLocation { get; set; } = null;
+        internal static string FunctionAppRootPath { get; set; }
+        internal static string FunctionAppProfilePath { get; set; } = null;
+        internal static string FunctionAppModulesPath { get; set; } = null;
 
         internal AzFunctionInfo GetFunctionInfo(string functionId)
         {
@@ -48,8 +48,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         internal static void SetupWellKnownPaths(string functionAppRootLocation)
         {
-            FunctionLoader.FunctionAppRootLocation = functionAppRootLocation;
-            FunctionLoader.FunctionAppModulesLocation = Path.Combine(functionAppRootLocation, "Modules");
+            FunctionLoader.FunctionAppRootPath = functionAppRootLocation;
+            FunctionLoader.FunctionAppModulesPath = Path.Combine(functionAppRootLocation, "Modules");
 
             // Find the profile.ps1 in the Function App root if it exists
             List<string> profiles = Directory.EnumerateFiles(functionAppRootLocation, "profile.ps1", new EnumerationOptions {
@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }).ToList();
             if (profiles.Count() > 0)
             {
-                FunctionLoader.FunctionAppProfileLocation = profiles[0];
+                FunctionLoader.FunctionAppProfilePath = profiles[0];
             }
         }
     }

@@ -59,10 +59,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
         internal void InvokeProfile()
         {
-            string functionAppProfileLocation = FunctionLoader.FunctionAppProfileLocation;
+            string functionAppProfileLocation = FunctionLoader.FunctionAppProfilePath;
             if (functionAppProfileLocation == null)
             {
-                _logger.Log(LogLevel.Trace, $"No 'Profile.ps1' found at: {FunctionLoader.FunctionAppRootLocation}");
+                _logger.Log(LogLevel.Trace, $"No 'profile.ps1' is found at the FunctionApp root folder: {FunctionLoader.FunctionAppRootPath}");
                 return;
             }
             
@@ -71,14 +71,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 // Import-Module on a .ps1 file will evaluate the script in the global scope.
                 _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
                     .AddParameter("Name", functionAppProfileLocation).AddParameter("PassThru", true)
-                    .AddCommand("Remove-Module")
+                    .AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
+                    .AddParameter("Force", true).AddParameter("ErrorAction", "SilentlyContinue")
                     .InvokeAndClearCommands();
             }
-            catch (CmdletInvocationException e)
+            catch (Exception e)
             {
                 _logger.Log(
                     LogLevel.Error,
-                    $"Invoking the Profile had errors. See logs for details. Profile location: {functionAppProfileLocation}",
+                    $"Fail to run profile.ps1. See logs for detailed errors. Profile location: {functionAppProfileLocation}",
                     e,
                     isUserLog: true);
                 throw;
@@ -88,7 +89,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 _logger.Log(
                     LogLevel.Error,
-                    $"Invoking the Profile had errors. See logs for details. Profile location: {functionAppProfileLocation}",
+                    $"Fail to run profile.ps1. See logs for detailed errors. Profile location: {functionAppProfileLocation}",
                     isUserLog: true);
             }
         }
