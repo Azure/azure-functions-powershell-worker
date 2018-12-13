@@ -23,9 +23,10 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManager _powerShellManager;
 
-        // used to determine if we have already added the Function App's 'Modules'
-        // folder to the PSModulePath
-        private bool _prependedPath;
+        // This is somewhat of a workaround for the fact that the WorkerInitialize message does
+        // not contain the file path of the Function App. Instead, we use this bool during the
+        // FunctionLoad message to initialize the Function App since we have the path.
+        private bool _initializedFunctionApp;
 
         internal RequestProcessor(MessagingStream msgStream)
         {
@@ -101,23 +102,26 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
             try
             {
-                // Try loading the metadata of the function
-                _functionLoader.Load(functionLoadRequest);
-
-                // if we haven't yet, add the well-known Function App module path to the PSModulePath
-                // The location of this module path is in a folder called "Modules" in the root of the Function App.
-                if (!_prependedPath)
+                // This is the first opportunity we have to obtain the location of the Function App on the file system
+                // so we run some additional setup including:
+                // * Storing some well-known paths in the Function Loader
+                // * Prepending the Function App 'Modules' path
+                // * Invoking the Function App's profile.ps1
+                if (!_initializedFunctionApp)
                 {
-                    string functionAppModulesPath = Path.GetFullPath(
-                        Path.Combine(functionLoadRequest.Metadata.Directory, "..", "Modules"));
-                    _powerShellManager.PrependToPSModulePath(functionAppModulesPath);
+                    // We obtain the Function App root path by navigating up 
+                    // one directory from the _Function_ directory we are given
+                    FunctionLoader.SetupWellKnownPaths(Path.GetFullPath(Path.Combine(functionLoadRequest.Metadata.Directory, "..")));
 
-                    // Since this is the first time we know where the location of the FunctionApp is,
-                    // we can attempt to authenticate to Azure at this time.
-                    _powerShellManager.AuthenticateToAzure();
+                    _powerShellManager.PrependToPSModulePath(FunctionLoader.FunctionAppModulesPath);
 
-                    _prependedPath = true;
+                    _powerShellManager.InvokeProfile();
+
+                    _initializedFunctionApp = true;
                 }
+
+                // Try loading the metadata of the function
+                _functionLoader.LoadFunction(functionLoadRequest);
             }
             catch (Exception e)
             {

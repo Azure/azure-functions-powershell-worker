@@ -6,7 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-
+using System.Management.Automation;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Xunit;
@@ -18,6 +18,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         public const string TestInputBindingName = "req";
         public const string TestOutputBindingName = "res";
         public const string TestStringData = "Foo";
+
+        internal static ConsoleLogger defaultTestLogger = new ConsoleLogger();
+        internal static PowerShellManager defaultTestManager = new PowerShellManager(defaultTestLogger);
+
         public readonly List<ParameterBinding> TestInputData = new List<ParameterBinding> {
             new ParameterBinding {
                 Name = TestInputBindingName,
@@ -128,12 +132,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void PrependingToPSModulePathShouldWork()
         {
-            var logger = new ConsoleLogger();
-            var manager = new PowerShellManager(logger);
             var data = "/some/unknown/directory";
 
             string modulePathBefore = Environment.GetEnvironmentVariable("PSModulePath");
-            manager.PrependToPSModulePath(data);
+            defaultTestManager.PrependToPSModulePath(data);
             try
             {
                 // the data path should be ahead of anything else
@@ -149,15 +151,87 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void RegisterAndUnregisterFunctionMetadataShouldWork()
         {
-            var logger = new ConsoleLogger();
-            var manager = new PowerShellManager(logger);
             var functionInfo = GetAzFunctionInfo("dummy-path", string.Empty);
 
             Assert.Empty(FunctionMetadata.OutputBindingCache);
-            manager.RegisterFunctionMetadata(functionInfo);
+            defaultTestManager.RegisterFunctionMetadata(functionInfo);
             Assert.Single(FunctionMetadata.OutputBindingCache);
-            manager.UnregisterFunctionMetadata();
+            defaultTestManager.UnregisterFunctionMetadata();
             Assert.Empty(FunctionMetadata.OutputBindingCache);
+        }
+
+        [Fact]
+        public void ProfileShouldWork()
+        {
+            //initialize fresh log
+            defaultTestLogger.FullLog.Clear();
+
+            CleanupFunctionLoaderStaticPaths();
+            FunctionLoader.SetupWellKnownPaths(System.IO.Path.Join(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Unit/PowerShell/TestScripts/ProfileBasic"));
+            
+            defaultTestManager.InvokeProfile();
+
+            Assert.Single(defaultTestLogger.FullLog);
+            Assert.Equal("Information: INFORMATION: Hello PROFILE", defaultTestLogger.FullLog[0]);
+        }
+
+        [Fact]
+        public void ProfileDoesNotExist()
+        {
+            //initialize fresh log
+            defaultTestLogger.FullLog.Clear();
+
+            CleanupFunctionLoaderStaticPaths();
+            FunctionLoader.SetupWellKnownPaths(AppDomain.CurrentDomain.BaseDirectory);
+            
+            defaultTestManager.InvokeProfile();
+
+            Assert.Single(defaultTestLogger.FullLog);
+            Assert.Matches("Trace: No 'profile.ps1' is found at the FunctionApp root folder: ", defaultTestLogger.FullLog[0]);
+        }
+
+        [Fact]
+        public void ProfileWithTerminatingError()
+        {
+            //initialize fresh log
+            defaultTestLogger.FullLog.Clear();
+
+            CleanupFunctionLoaderStaticPaths();
+            FunctionLoader.SetupWellKnownPaths(System.IO.Path.Join(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Unit/PowerShell/TestScripts/ProfileWithTerminatingError"));
+            
+            Assert.Throws<CmdletInvocationException>(() => defaultTestManager.InvokeProfile());
+            Assert.Single(defaultTestLogger.FullLog);
+            Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", defaultTestLogger.FullLog[0]);
+        }
+
+        [Fact]
+        public void ProfileWithNonTerminatingError()
+        {
+            //initialize fresh log
+            defaultTestLogger.FullLog.Clear();
+
+            CleanupFunctionLoaderStaticPaths();
+            FunctionLoader.SetupWellKnownPaths(System.IO.Path.Join(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "Unit/PowerShell/TestScripts/ProfileWithNonTerminatingError"));
+            
+            defaultTestManager.InvokeProfile();
+
+            Assert.Equal(2, defaultTestLogger.FullLog.Count);
+            Assert.Equal("Error: ERROR: help me!", defaultTestLogger.FullLog[0]);
+            Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", defaultTestLogger.FullLog[1]);
+        }
+
+        // Helper function that sets all the well-known paths in the Function Loader back to null.
+        private void CleanupFunctionLoaderStaticPaths()
+        {
+            FunctionLoader.FunctionAppRootPath = null;
+            FunctionLoader.FunctionAppProfilePath = null;
+            FunctionLoader.FunctionAppModulesPath = null;
         }
     }
 }

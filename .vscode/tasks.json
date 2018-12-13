@@ -3,13 +3,32 @@
     "tasks": [
         {
             "label": "build",
-            "command": "dotnet",
+            "command": "pwsh",
             "type": "process",
             "args": [
-                "build",
-                "${workspaceFolder}/psworker.csproj"
+                "-c",
+                "${workspaceFolder}/build.ps1"
             ],
-            "problemMatcher": "$msCompile"
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "test",
+            "command": "pwsh",
+            "type": "process",
+            "args": [
+                "-c",
+                "${workspaceFolder}/build.ps1",
+                "-Test"
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
         }
     ]
 }

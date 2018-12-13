@@ -8,7 +8,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Security;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -48,71 +47,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
         }
 
-        internal void AuthenticateToAzure()
-        {
-            // Check if Az.Profile is available
-            Collection<PSModuleInfo> azProfile = _pwsh.AddCommand("Get-Module")
-                .AddParameter("ListAvailable")
-                .AddParameter("Name", "Az.Profile")
-                .InvokeAndClearCommands<PSModuleInfo>();
-
-            if (azProfile.Count == 0)
-            {
-                _logger.Log(LogLevel.Trace, "Required module to automatically authenticate with Azure `Az.Profile` was not found in the PSModulePath.");
-                return;
-            }
-
-            // Try to authenticate to Azure using MSI
-            string msiSecret = Environment.GetEnvironmentVariable("MSI_SECRET");
-            string msiEndpoint = Environment.GetEnvironmentVariable("MSI_ENDPOINT");
-            string accountId = Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME");
-
-            if (!string.IsNullOrEmpty(msiSecret) &&
-                !string.IsNullOrEmpty(msiEndpoint) &&
-                !string.IsNullOrEmpty(accountId))
-            {
-                // NOTE: There is a limitation in Azure PowerShell that prevents us from using the parameter set:
-                // Connect-AzAccount -MSI or Connect-AzAccount -Identity
-                // see this GitHub issue https://github.com/Azure/azure-powershell/issues/7876
-                // As a workaround, we can all an API endpoint on the MSI_ENDPOINT to get an AccessToken and use that to authenticate
-                Collection<PSObject> response = _pwsh.AddCommand("Microsoft.PowerShell.Utility\\Invoke-RestMethod")
-                    .AddParameter("Method", "Get")
-                    .AddParameter("Headers", new Hashtable {{ "Secret", msiSecret }})
-                    .AddParameter("Uri", $"{msiEndpoint}?resource=https://management.azure.com&api-version=2017-09-01")
-                    .InvokeAndClearCommands<PSObject>();
-
-                if(_pwsh.HadErrors) 
-                {
-                    _logger.Log(LogLevel.Warning, "Failed to Authenticate to Azure via MSI. Check the logs for the errors generated.");
-                }
-                else
-                {
-                    // We have successfully authenticated to Azure so we can return out.
-                    using (ExecutionTimer.Start(_logger, "Authentication to Azure"))
-                    {
-                        _pwsh.AddCommand("Az.Profile\\Connect-AzAccount")
-                            .AddParameter("AccessToken", response[0].Properties["access_token"].Value)
-                            .AddParameter("AccountId", accountId)
-                            .InvokeAndClearCommands();
-
-                        if(_pwsh.HadErrors)
-                        {
-                            _logger.Log(LogLevel.Warning, "Failed to Authenticate to Azure. Check the logs for the errors generated.");
-                        }
-                        else
-                        {
-                            // We've successfully authenticated to Azure so we can return
-                            return;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                _logger.Log(LogLevel.Trace, "Skip authentication to Azure via MSI. Environment variables for authenticating to Azure are not present.");
-            }
-        }
-
         internal void InitializeRunspace()
         {
             // Add HttpResponseContext namespace so users can reference
@@ -121,6 +55,43 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             // Set the PSModulePath
             Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
+        }
+
+        internal void InvokeProfile()
+        {
+            string functionAppProfileLocation = FunctionLoader.FunctionAppProfilePath;
+            if (functionAppProfileLocation == null)
+            {
+                _logger.Log(LogLevel.Trace, $"No 'profile.ps1' is found at the FunctionApp root folder: {FunctionLoader.FunctionAppRootPath}");
+                return;
+            }
+            
+            try
+            {
+                // Import-Module on a .ps1 file will evaluate the script in the global scope.
+                _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                    .AddParameter("Name", functionAppProfileLocation).AddParameter("PassThru", true)
+                    .AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
+                    .AddParameter("Force", true).AddParameter("ErrorAction", "SilentlyContinue")
+                    .InvokeAndClearCommands();
+            }
+            catch (Exception e)
+            {
+                _logger.Log(
+                    LogLevel.Error,
+                    $"Fail to run profile.ps1. See logs for detailed errors. Profile location: {functionAppProfileLocation}",
+                    e,
+                    isUserLog: true);
+                throw;
+            }
+            
+            if (_pwsh.HadErrors)
+            {
+                _logger.Log(
+                    LogLevel.Error,
+                    $"Fail to run profile.ps1. See logs for detailed errors. Profile location: {functionAppProfileLocation}",
+                    isUserLog: true);
+            }
         }
 
         /// <summary>

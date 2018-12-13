@@ -31,5 +31,14 @@
     <Content Include="Unit\PowerShell\TestScripts\testFunctionCleanup.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Unit\PowerShell\TestScripts\ProfileBasic\profile.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Unit\PowerShell\TestScripts\ProfileWithTerminatingError\profile.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Unit\PowerShell\TestScripts\ProfileWithNonTerminatingError\Profile.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

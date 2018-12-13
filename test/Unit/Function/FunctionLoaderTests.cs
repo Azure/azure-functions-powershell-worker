@@ -42,7 +42,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             };
 
             var functionLoader = new FunctionLoader();
-            functionLoader.Load(functionLoadRequest);
+            functionLoader.LoadFunction(functionLoadRequest);
 
             var funcInfo = functionLoader.GetFunctionInfo(functionId);
 
@@ -81,7 +81,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             };
 
             var functionLoader = new FunctionLoader();
-            functionLoader.Load(functionLoadRequest);
+            functionLoader.LoadFunction(functionLoadRequest);
 
             var funcInfo = functionLoader.GetFunctionInfo(functionId);
 
@@ -120,7 +120,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             };
 
             var functionLoader = new FunctionLoader();
-            functionLoader.Load(functionLoadRequest);
+            functionLoader.LoadFunction(functionLoadRequest);
 
             var funcInfo = functionLoader.GetFunctionInfo(functionId);
 
