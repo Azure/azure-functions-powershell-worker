@@ -165,9 +165,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
-            FunctionLoader.FunctionAppRootLocation = System.IO.Path.Join(
+
+            CleanupFunctionLoaderStaticPaths();
+            FunctionLoader.SetupWellKnownPaths(System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
-                "Unit/PowerShell/TestScripts/ProfileBasic");
+                "Unit/PowerShell/TestScripts/ProfileBasic"));
             
             manager.InvokeProfile();
 
@@ -180,7 +182,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
-            FunctionLoader.FunctionAppRootLocation = AppDomain.CurrentDomain.BaseDirectory;
+
+            CleanupFunctionLoaderStaticPaths();
+            FunctionLoader.SetupWellKnownPaths(AppDomain.CurrentDomain.BaseDirectory);
             
             manager.InvokeProfile();
 
@@ -193,9 +197,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
-            FunctionLoader.FunctionAppRootLocation = System.IO.Path.Join(
+
+            CleanupFunctionLoaderStaticPaths();
+            FunctionLoader.SetupWellKnownPaths(System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
-                "Unit/PowerShell/TestScripts/ProfileWithTerminatingError");
+                "Unit/PowerShell/TestScripts/ProfileWithTerminatingError"));
             
             Assert.Throws<CmdletInvocationException>(() => manager.InvokeProfile());
             Assert.Single(logger.FullLog);
@@ -207,15 +213,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             var logger = new ConsoleLogger();
             var manager = new PowerShellManager(logger);
-            FunctionLoader.FunctionAppRootLocation = System.IO.Path.Join(
+
+            CleanupFunctionLoaderStaticPaths();
+            FunctionLoader.SetupWellKnownPaths(System.IO.Path.Join(
                 AppDomain.CurrentDomain.BaseDirectory,
-                "Unit/PowerShell/TestScripts/ProfileWithNonTerminatingError");
+                "Unit/PowerShell/TestScripts/ProfileWithNonTerminatingError"));
             
             manager.InvokeProfile();
 
             Assert.Equal(2, logger.FullLog.Count);
             Assert.Equal("Error: ERROR: help me!", logger.FullLog[0]);
             Assert.Matches("Error: Invoking the Profile had errors. See logs for details. Profile location: ", logger.FullLog[1]);
+        }
+
+        // Helper function that sets all the well-known paths in the Function Loader back to null.
+        private void CleanupFunctionLoaderStaticPaths()
+        {
+            FunctionLoader.FunctionAppRootLocation = null;
+            FunctionLoader.FunctionAppProfileLocation = null;
+            FunctionLoader.FunctionAppModulesLocation = null;
         }
     }
 }

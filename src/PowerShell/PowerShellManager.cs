@@ -8,9 +8,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Security;
-using System.Text;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -62,18 +59,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
         internal void InvokeProfile()
         {
-            string functionAppRootLocation = FunctionLoader.FunctionAppRootLocation;
-            List<string> profiles = Directory.EnumerateFiles(
-                functionAppRootLocation,
-                "profile.ps1", 
-                new EnumerationOptions {
-                    MatchCasing = MatchCasing.CaseInsensitive
-                })
-            .ToList();
-
-            if (profiles.Count() == 0)
+            string functionAppProfileLocation = FunctionLoader.FunctionAppProfileLocation;
+            if (functionAppProfileLocation == null)
             {
-                _logger.Log(LogLevel.Trace, $"No 'Profile.ps1' found at: {functionAppRootLocation}");
+                _logger.Log(LogLevel.Trace, $"No 'Profile.ps1' found at: {FunctionLoader.FunctionAppRootLocation}");
                 return;
             }
             
@@ -81,7 +70,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 // Import-Module on a .ps1 file will evaluate the script in the global scope.
                 _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                    .AddParameter("Name", profiles[0]).AddParameter("PassThru", true)
+                    .AddParameter("Name", functionAppProfileLocation).AddParameter("PassThru", true)
                     .AddCommand("Remove-Module")
                     .InvokeAndClearCommands();
             }
@@ -89,7 +78,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 _logger.Log(
                     LogLevel.Error,
-                    $"Invoking the Profile had errors. See logs for details. Profile location: {functionAppRootLocation}",
+                    $"Invoking the Profile had errors. See logs for details. Profile location: {functionAppProfileLocation}",
                     e,
                     isUserLog: true);
                 throw;
@@ -99,7 +88,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 _logger.Log(
                     LogLevel.Error,
-                    $"Invoking the Profile had errors. See logs for details. Profile location: {functionAppRootLocation}",
+                    $"Invoking the Profile had errors. See logs for details. Profile location: {functionAppProfileLocation}",
                     isUserLog: true);
             }
         }
