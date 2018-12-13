@@ -47,50 +47,59 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
         }
 
-        internal void InitializeRunspace()
+        /// <summary>
+        /// This method performs the one-time initialization at the worker process level.
+        /// </summary>
+        internal void PerformWorkerLevelInitialization()
         {
-            // Add HttpResponseContext namespace so users can reference
-            // HttpResponseContext without needing to specify the full namespace
-            _pwsh.AddScript($"using namespace {typeof(HttpResponseContext).Namespace}").InvokeAndClearCommands();
+            // Set the type accelerators for 'HttpResponseContext' and 'HttpResponseContext'.
+            // We probably will expose more public types from the worker in future for the interop between worker and the 'PowerShellWorker' module.
+            // But it's most likely only 'HttpResponseContext' and 'HttpResponseContext' are supposed to be used directly by users, so we only add
+            // type accelerators for these two explicitly.
+            var accelerator = typeof(PSObject).Assembly.GetType("System.Management.Automation.TypeAccelerators");
+            var addMethod = accelerator.GetMethod("Add", new Type[] { typeof(string), typeof(Type) });
+            addMethod.Invoke(null, new object[] { "HttpResponseContext", typeof(HttpResponseContext) });
+            addMethod.Invoke(null, new object[] { "HttpRequestContext", typeof(HttpRequestContext) });
 
             // Set the PSModulePath
-            Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
+            var workerModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
+            Environment.SetEnvironmentVariable("PSModulePath", $"{FunctionLoader.FunctionAppModulesPath}{Path.PathSeparator}{workerModulesPath}");
         }
 
+        /// <summary>
+        /// This method performs initialization that has to be done for each Runspace, e.g. profile.ps1.
+        /// </summary>
         internal void PerformRunspaceLevelInitialization()
         {
-            string functionAppProfileLocation = FunctionLoader.FunctionAppProfilePath;
-            if (functionAppProfileLocation == null)
+            Exception exception = null;
+            string profilePath = FunctionLoader.FunctionAppProfilePath;
+            if (profilePath == null)
             {
                 _logger.Log(LogLevel.Trace, $"No 'profile.ps1' is found at the FunctionApp root folder: {FunctionLoader.FunctionAppRootPath}");
                 return;
             }
-            
+
             try
             {
                 // Import-Module on a .ps1 file will evaluate the script in the global scope.
                 _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                    .AddParameter("Name", functionAppProfileLocation).AddParameter("PassThru", true)
-                    .AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
-                    .AddParameter("Force", true).AddParameter("ErrorAction", "SilentlyContinue")
-                    .InvokeAndClearCommands();
+                     .AddParameter("Name", profilePath).AddParameter("PassThru", true)
+                     .AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
+                     .AddParameter("Force", true).AddParameter("ErrorAction", "SilentlyContinue")
+                     .InvokeAndClearCommands();
             }
             catch (Exception e)
             {
-                _logger.Log(
-                    LogLevel.Error,
-                    $"Fail to run profile.ps1. See logs for detailed errors. Profile location: {functionAppProfileLocation}",
-                    e,
-                    isUserLog: true);
+                exception = e;
                 throw;
             }
-            
-            if (_pwsh.HadErrors)
+            finally
             {
-                _logger.Log(
-                    LogLevel.Error,
-                    $"Fail to run profile.ps1. See logs for detailed errors. Profile location: {functionAppProfileLocation}",
-                    isUserLog: true);
+                if (_pwsh.HadErrors)
+                {
+                    string errorMsg = $"Fail to run profile.ps1. See logs for detailed errors. Profile location: {profilePath}";
+                    _logger.Log(LogLevel.Error, errorMsg, exception, isUserLog: true);
+                }
             }
         }
 
@@ -108,22 +117,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             try
             {
-                // If an entry point is defined, we load the script as a module and invoke the function with that name.
-                // We also need to fetch the ParameterMetadata to know what to pass in as arguments.
-                var parameterMetadata = RetriveParameterMetadata(functionInfo, out moduleName);
-                _pwsh.AddCommand(String.IsNullOrEmpty(entryPoint) ? scriptPath : entryPoint);
+                bool hasEntryPoint = !string.IsNullOrEmpty(entryPoint);
+                if (hasEntryPoint)
+                {
+                    // If an entry point is defined, we import the script module.
+                    moduleName = Path.GetFileNameWithoutExtension(scriptPath);
+                    _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", scriptPath)
+                         .InvokeAndClearCommands();
+                }
+
+                _pwsh.AddCommand(hasEntryPoint ? entryPoint : scriptPath);
 
                 // Set arguments for each input binding parameter
                 foreach (ParameterBinding binding in inputData)
                 {
-                    if (parameterMetadata.ContainsKey(binding.Name))
+                    if (functionInfo.FuncParameters.Contains(binding.Name))
                     {
                         _pwsh.AddParameter(binding.Name, binding.Data.ToObject());
                     }
                 }
 
                 // Gives access to additional Trigger Metadata if the user specifies TriggerMetadata
-                if(parameterMetadata.ContainsKey(AzFunctionInfo.TriggerMetadata))
+                if(functionInfo.FuncParameters.Contains(AzFunctionInfo.TriggerMetadata))
                 {
                     _logger.Log(LogLevel.Debug, "Parameter '-TriggerMetadata' found.");
                     _pwsh.AddParameter(AzFunctionInfo.TriggerMetadata, triggerMetadata);
@@ -175,21 +190,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         }
 
         /// <summary>
-        /// Helper method to prepend the FunctionApp module folder to the module path.
-        /// </summary>
-        internal void PrependToPSModulePath(string directory)
-        {
-            // Adds the passed in directory to the front of the PSModulePath using the path separator of the OS.
-            string psModulePath = Environment.GetEnvironmentVariable("PSModulePath");
-            Environment.SetEnvironmentVariable("PSModulePath", $"{directory}{Path.PathSeparator}{psModulePath}");
-        }
-
-        /// <summary>
         /// Helper method to set the output binding metadata for the function that is about to run.
         /// </summary>
         internal void RegisterFunctionMetadata(AzFunctionInfo functionInfo)
         {
-            var outputBindings = new ReadOnlyDictionary<string, BindingInfo>(functionInfo.OutputBindings);
+            var outputBindings = functionInfo.OutputBindings;
             FunctionMetadata.OutputBindingCache.AddOrUpdate(_pwsh.Runspace.InstanceId,
                                                             outputBindings,
                                                             (key, value) => outputBindings);
@@ -203,36 +208,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             FunctionMetadata.OutputBindingCache.TryRemove(_pwsh.Runspace.InstanceId, out _);
         }
 
-        private Dictionary<string, ParameterMetadata> RetriveParameterMetadata(AzFunctionInfo functionInfo, out string moduleName)
-        {
-            moduleName = null;
-            string scriptPath = functionInfo.ScriptPath;
-            string entryPoint = functionInfo.EntryPoint;
-
-            using (ExecutionTimer.Start(_logger, "Parameter metadata retrieved."))
-            {
-                if (String.IsNullOrEmpty(entryPoint))
-                {
-                    return _pwsh.AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddParameter("Name", scriptPath)
-                                .InvokeAndClearCommands<ExternalScriptInfo>()[0].Parameters;
-                }
-                else
-                {
-                    moduleName = Path.GetFileNameWithoutExtension(scriptPath);
-                    return _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", scriptPath)
-                                .AddStatement()
-                                .AddCommand("Microsoft.PowerShell.Core\\Get-Command").AddParameter("Name", entryPoint)
-                                .InvokeAndClearCommands<FunctionInfo>()[0].Parameters;
-                }
-            }
-        }
-
         private void ResetRunspace(string moduleName)
         {
             // Reset the runspace to the Initial Session State
             _pwsh.Runspace.ResetRunspaceState();
 
-            if (!String.IsNullOrEmpty(moduleName))
+            if (!string.IsNullOrEmpty(moduleName))
             {
                 // If the function had an entry point, this will remove the module that was loaded
                 _pwsh.AddCommand("Microsoft.PowerShell.Core\\Remove-Module")

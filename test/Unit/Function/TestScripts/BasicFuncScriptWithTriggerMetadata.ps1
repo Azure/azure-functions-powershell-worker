@@ -1,11 +1,8 @@
-﻿#
+#
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
-param ($Req, $TriggerMetadata)
+param($req, $inputBlob, $TriggerMetadata)
 
-# Used for logging tests
-Write-Verbose "a log"
-
-Push-OutputBinding -Name res -Value $Req
+"DoNothing"

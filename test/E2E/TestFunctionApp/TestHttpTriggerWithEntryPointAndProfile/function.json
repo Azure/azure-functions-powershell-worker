@@ -1,0 +1,22 @@
+{
+  "disabled": false,
+  "scriptFile": "module.psm1",
+  "entryPoint": "Run",
+  "bindings": [
+    {
+      "authLevel": "function",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": [
+        "get",
+        "post"
+      ]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
+    }
+  ]
+}

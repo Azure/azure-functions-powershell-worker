@@ -19,26 +19,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Unit\PowerShell\TestScripts\testBasicFunction.ps1">
+    <Content Include="Unit\PowerShell\TestScripts\**\*">
+      <Link>TestScripts\PowerShell\%(RecursiveDir)\%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-    <Content Include="Unit\PowerShell\TestScripts\testFunctionWithEntryPoint.ps1">
+    <Content Include="Unit\Function\TestScripts\**\*">
+      <Link>TestScripts\Function\%(RecursiveDir)\%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Unit\PowerShell\TestScripts\testBasicFunctionWithTriggerMetadata.ps1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Unit\PowerShell\TestScripts\testFunctionCleanup.ps1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Unit\PowerShell\TestScripts\ProfileBasic\profile.ps1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Unit\PowerShell\TestScripts\ProfileWithTerminatingError\profile.ps1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Unit\PowerShell\TestScripts\ProfileWithNonTerminatingError\Profile.ps1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
 </Project>

@@ -4,7 +4,7 @@
 //
 
 using System;
-using Microsoft.Azure.Functions.PowerShellWorker;
+using System.IO;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Xunit;
 
@@ -12,122 +12,413 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
     public class FunctionLoaderTests
     {
-        [Fact]
-        public void TestFunctionLoaderGetFunc()
+        private readonly string _functionDirectory;
+        private readonly FunctionLoadRequest _functionLoadRequest;
+
+        public FunctionLoaderTests()
         {
+            _functionDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestScripts", "Function");
+
             var functionId = Guid.NewGuid().ToString();
-            var directory = "/Users/azure/PSCoreApp/MyHttpTrigger";
-            var scriptPathExpected = $"{directory}/run.ps1";
             var metadata = new RpcFunctionMetadata
             {
                 Name = "MyHttpTrigger",
-                EntryPoint = "",
-                Directory = directory,
-                ScriptFile = scriptPathExpected
+                Directory = _functionDirectory,
+                Bindings =
+                {
+                    { "req", new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "httpTrigger" } },
+                    { "inputBlob", new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "blobTrigger" } },
+                    { "res", new BindingInfo { Direction = BindingInfo.Types.Direction.Out, Type = "http" } }
+                }
             };
-            metadata.Bindings.Add("req", new BindingInfo
-            {
-                Direction = BindingInfo.Types.Direction.In,
-                Type = "httpTrigger"
-            });
-            metadata.Bindings.Add("res", new BindingInfo
-            {
-                Direction = BindingInfo.Types.Direction.Out,
-                Type = "http"
-            });
 
-            var functionLoadRequest = new FunctionLoadRequest{
+            _functionLoadRequest = new FunctionLoadRequest
+            {
                 FunctionId = functionId,
                 Metadata = metadata
             };
+        }
+
+        private FunctionLoadRequest GetFuncLoadRequest(string scriptFile, string entryPoint)
+        {
+            var functionLoadRequest = _functionLoadRequest.Clone();
+            functionLoadRequest.Metadata.ScriptFile = scriptFile;
+            functionLoadRequest.Metadata.EntryPoint = entryPoint;
+            return functionLoadRequest;
+        }
+
+        [Fact]
+        public void TestFunctionLoaderGetFunc()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "BasicFuncScript.ps1");
+            var entryPointToUse = string.Empty;
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
             var functionLoader = new FunctionLoader();
             functionLoader.LoadFunction(functionLoadRequest);
 
-            var funcInfo = functionLoader.GetFunctionInfo(functionId);
+            var funcInfo = functionLoader.GetFunctionInfo(functionLoadRequest.FunctionId);
 
-            Assert.Equal(scriptPathExpected, funcInfo.ScriptPath);
-            Assert.Equal("", funcInfo.EntryPoint);
+            Assert.Equal(scriptFileToUse, funcInfo.ScriptPath);
+            Assert.Equal(string.Empty, funcInfo.EntryPoint);
+
+            Assert.Equal(2, funcInfo.FuncParameters.Count);
+            Assert.Contains("req", funcInfo.FuncParameters);
+            Assert.Contains("inputBlob", funcInfo.FuncParameters);
+
+            Assert.Equal(3, funcInfo.AllBindings.Count);
+            Assert.Equal(2, funcInfo.InputBindings.Count);
+            Assert.Single(funcInfo.OutputBindings);
+        }
+
+        [Fact]
+        public void TestFunctionLoaderGetFuncWithTriggerMetadataParam()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "BasicFuncScriptWithTriggerMetadata.ps1");
+            var entryPointToUse = string.Empty;
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+
+            var functionLoader = new FunctionLoader();
+            functionLoader.LoadFunction(functionLoadRequest);
+
+            var funcInfo = functionLoader.GetFunctionInfo(functionLoadRequest.FunctionId);
+
+            Assert.Equal(scriptFileToUse, funcInfo.ScriptPath);
+            Assert.Equal(string.Empty, funcInfo.EntryPoint);
+
+            Assert.Equal(3, funcInfo.FuncParameters.Count);
+            Assert.Contains("req", funcInfo.FuncParameters);
+            Assert.Contains("inputBlob", funcInfo.FuncParameters);
+            Assert.Contains("TriggerMetadata", funcInfo.FuncParameters);
+
+            Assert.Equal(3, funcInfo.AllBindings.Count);
+            Assert.Equal(2, funcInfo.InputBindings.Count);
+            Assert.Single(funcInfo.OutputBindings);
         }
 
         [Fact]
         public void TestFunctionLoaderGetFuncWithEntryPoint()
         {
-            var functionId = Guid.NewGuid().ToString();
-            var directory = "/Users/azure/PSCoreApp/MyHttpTrigger";
-            var scriptPathExpected = $"{directory}/run.ps1";
-            var entryPointExpected = "Foo";
-            var metadata = new RpcFunctionMetadata
-            {
-                Name = "MyHttpTrigger",
-                EntryPoint = entryPointExpected,
-                Directory = directory,
-                ScriptFile = scriptPathExpected
-            };
-            metadata.Bindings.Add("req", new BindingInfo
-            {
-                Direction = BindingInfo.Types.Direction.In,
-                Type = "httpTrigger"
-            });
-            metadata.Bindings.Add("res", new BindingInfo
-            {
-                Direction = BindingInfo.Types.Direction.Out,
-                Type = "http"
-            });
-
-            var functionLoadRequest = new FunctionLoadRequest{
-                FunctionId = functionId,
-                Metadata = metadata
-            };
+            var scriptFileToUse = Path.Join(_functionDirectory, "FuncWithEntryPoint.psm1");
+            var entryPointToUse = "Run";
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
             var functionLoader = new FunctionLoader();
             functionLoader.LoadFunction(functionLoadRequest);
 
-            var funcInfo = functionLoader.GetFunctionInfo(functionId);
+            var funcInfo = functionLoader.GetFunctionInfo(functionLoadRequest.FunctionId);
 
-            Assert.Equal(scriptPathExpected, funcInfo.ScriptPath);
-            Assert.Equal(entryPointExpected, funcInfo.EntryPoint);
+            Assert.Equal(scriptFileToUse, funcInfo.ScriptPath);
+            Assert.Equal(entryPointToUse, funcInfo.EntryPoint);
+
+            Assert.Equal(2, funcInfo.FuncParameters.Count);
+            Assert.Contains("req", funcInfo.FuncParameters);
+            Assert.Contains("inputBlob", funcInfo.FuncParameters);
+
+            Assert.Equal(3, funcInfo.AllBindings.Count);
+            Assert.Equal(2, funcInfo.InputBindings.Count);
+            Assert.Single(funcInfo.OutputBindings);
         }
 
         [Fact]
-        public void TestFunctionLoaderGetInfo()
+        public void EntryPointIsSupportedWithPsm1FileOnly()
         {
-            var functionId = Guid.NewGuid().ToString();
-            var directory = "/Users/azure/PSCoreApp/MyHttpTrigger";
-            var scriptPathExpected = $"{directory}/run.ps1";
-            var name = "MyHttpTrigger";
-            var metadata = new RpcFunctionMetadata
-            {
-                Name = name,
-                EntryPoint = "",
-                Directory = directory,
-                ScriptFile = scriptPathExpected
-            };
-            metadata.Bindings.Add("req", new BindingInfo
-            {
-                Direction = BindingInfo.Types.Direction.In,
-                Type = "httpTrigger"
-            });
-            metadata.Bindings.Add("res", new BindingInfo
-            {
-                Direction = BindingInfo.Types.Direction.Out,
-                Type = "http"
-            });
+            var scriptFileToUse = Path.Join(_functionDirectory, "BasicFuncScript.ps1");
+            var entryPointToUse = "Run";
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
-            var functionLoadRequest = new FunctionLoadRequest{
-                FunctionId = functionId,
-                Metadata = metadata
-            };
-
+            Exception exception = null;
             var functionLoader = new FunctionLoader();
-            functionLoader.LoadFunction(functionLoadRequest);
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
 
-            var funcInfo = functionLoader.GetFunctionInfo(functionId);
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
+            Assert.Contains("EntryPoint", exception.Message);
+            Assert.Contains("(.psm1)", exception.Message);
+        }
 
-            Assert.Equal(directory, funcInfo.Directory);
-            Assert.Equal(name, funcInfo.FunctionName);
-            Assert.Equal(2, funcInfo.AllBindings.Count);
-            Assert.Single(funcInfo.OutputBindings);
+        [Fact]
+        public void Psm1IsSupportedWithEntryPointOnly()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "FuncWithEntryPoint.psm1");
+            var entryPointToUse = string.Empty;
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+
+            Exception exception = null;
+            var functionLoader = new FunctionLoader();
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
+            Assert.Contains("EntryPoint", exception.Message);
+            Assert.Contains("(.psm1)", exception.Message);
+        }
+
+        [Fact]
+        public void ParseErrorInScriptFileShouldBeDetected()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "FuncWithParseError.ps1");
+            var entryPointToUse = string.Empty;
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+
+            Exception exception = null;
+            var functionLoader = new FunctionLoader();
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
+            Assert.Contains("parsing errors", exception.Message);
+        }
+
+        [Fact]
+        public void EntryPointFunctionShouldExist()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "FuncWithEntryPoint.psm1");
+            var entryPointToUse = "CallMe";
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+
+            Exception exception = null;
+            var functionLoader = new FunctionLoader();
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
+            Assert.Contains("CallMe", exception.Message);
+            Assert.Contains("FuncWithEntryPoint.psm1", exception.Message);
+        }
+
+        [Fact]
+        public void MultipleEntryPointFunctionsShouldBeDetected()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "FuncWithMultiEntryPoints.psm1");
+            var entryPointToUse = "Run";
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+
+            Exception exception = null;
+            var functionLoader = new FunctionLoader();
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.IsType<ArgumentException>(exception);
+            Assert.Contains("Run", exception.Message);
+            Assert.Contains("FuncWithMultiEntryPoints.psm1", exception.Message);
+        }
+
+        [Fact]
+        public void ParametersShouldMatchInputBinding()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "BasicFuncScript.ps1");
+            var entryPointToUse = string.Empty;
+
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+            functionLoadRequest.Metadata.Bindings.Add("inputTable", new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "tableTrigger" });
+            functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
+
+            Exception exception = null;
+            var functionLoader = new FunctionLoader();
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.IsType<InvalidOperationException>(exception);
+            Assert.Contains("inputTable", exception.Message);
+            Assert.Contains("inputBlob", exception.Message);
+        }
+
+        [Fact]
+        public void ParametersShouldMatchInputBindingWithTriggerMetadataParam()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "BasicFuncScriptWithTriggerMetadata.ps1");
+            var entryPointToUse = string.Empty;
+
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+            functionLoadRequest.Metadata.Bindings.Add("inputTable", new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "tableTrigger" });
+            functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
+
+            Exception exception = null;
+            var functionLoader = new FunctionLoader();
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.IsType<InvalidOperationException>(exception);
+            Assert.Contains("inputTable", exception.Message);
+            Assert.Contains("inputBlob", exception.Message);
+        }
+
+        [Fact]
+        public void EntryPointParametersShouldMatchInputBinding()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "FuncWithEntryPoint.psm1");
+            var entryPointToUse = "Run";
+
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+            functionLoadRequest.Metadata.Bindings.Add("inputTable", new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "tableTrigger" });
+            functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
+
+            Exception exception = null;
+            var functionLoader = new FunctionLoader();
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.IsType<InvalidOperationException>(exception);
+            Assert.Contains("inputTable", exception.Message);
+            Assert.Contains("inputBlob", exception.Message);
+        }
+
+        [Fact]
+        public void EntryPointParametersShouldMatchInputBindingWithTriggerMetadataParam()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "FuncWithEntryPointAndTriggerMetadata.psm1");
+            var entryPointToUse = "Run";
+
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+            functionLoadRequest.Metadata.Bindings.Add("inputTable", new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "tableTrigger" });
+            functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
+
+            Exception exception = null;
+            var functionLoader = new FunctionLoader();
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.IsType<InvalidOperationException>(exception);
+            Assert.Contains("inputTable", exception.Message);
+            Assert.Contains("inputBlob", exception.Message);
+        }
+
+        [Fact]
+        public void InOutBindingIsNotSupported()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "BasicFuncScript.ps1");
+            var entryPointToUse = string.Empty;
+
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+            functionLoadRequest.Metadata.Bindings.Add("inoutBinding", new BindingInfo { Direction = BindingInfo.Types.Direction.Inout, Type = "queue" });
+
+            Exception exception = null;
+            var functionLoader = new FunctionLoader();
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.IsType<InvalidOperationException>(exception);
+            Assert.Contains("inoutBinding", exception.Message);
+            Assert.Contains("InOut", exception.Message);
+        }
+
+        [Fact]
+        public void ScriptNeedToHaveParameters()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "FuncHasNoParams.ps1");
+            var entryPointToUse = string.Empty;
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+
+            Exception exception = null;
+            var functionLoader = new FunctionLoader();
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.IsType<InvalidOperationException>(exception);
+            Assert.Contains("req", exception.Message);
+            Assert.Contains("inputBlob", exception.Message);
+        }
+
+        [Fact]
+        public void EntryPointNeedToHaveParameters()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "FuncWithEntryPoint.psm1");
+            var entryPointToUse = "Zoo";
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+
+            Exception exception = null;
+            var functionLoader = new FunctionLoader();
+            try
+            {
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                exception = e;
+            }
+
+            Assert.NotNull(exception);
+            Assert.IsType<InvalidOperationException>(exception);
+            Assert.Contains("req", exception.Message);
+            Assert.Contains("inputBlob", exception.Message);
         }
     }
 }

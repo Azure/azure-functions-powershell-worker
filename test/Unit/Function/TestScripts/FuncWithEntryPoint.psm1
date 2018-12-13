@@ -1,11 +1,19 @@
-﻿#
+#
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
-param ($Req, $TriggerMetadata)
+function Bar($req)
+{
+    "Bar"
+}
 
-# Used for logging tests
-Write-Verbose "a log"
+function Run($req, $inputBlob)
+{
+    "Run"
+}
 
-Push-OutputBinding -Name res -Value $Req
+function Zoo
+{
+    "Bar"
+}
