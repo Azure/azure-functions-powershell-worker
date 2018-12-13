@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             Environment.SetEnvironmentVariable("PSModulePath", Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules"));
         }
 
-        internal void InvokeProfile()
+        internal void PerformRunspaceLevelInitialization()
         {
             string functionAppProfileLocation = FunctionLoader.FunctionAppProfilePath;
             if (functionAppProfileLocation == null)

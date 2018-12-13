@@ -115,7 +115,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
                     _powerShellManager.PrependToPSModulePath(FunctionLoader.FunctionAppModulesPath);
 
-                    _powerShellManager.InvokeProfile();
+                    _powerShellManager.PerformRunspaceLevelInitialization();
 
                     _initializedFunctionApp = true;
                 }

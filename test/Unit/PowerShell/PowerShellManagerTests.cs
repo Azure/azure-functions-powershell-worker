@@ -171,7 +171,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 AppDomain.CurrentDomain.BaseDirectory,
                 "Unit/PowerShell/TestScripts/ProfileBasic"));
             
-            defaultTestManager.InvokeProfile();
+            defaultTestManager.PerformRunspaceLevelInitialization();
 
             Assert.Single(defaultTestLogger.FullLog);
             Assert.Equal("Information: INFORMATION: Hello PROFILE", defaultTestLogger.FullLog[0]);
@@ -186,7 +186,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             CleanupFunctionLoaderStaticPaths();
             FunctionLoader.SetupWellKnownPaths(AppDomain.CurrentDomain.BaseDirectory);
             
-            defaultTestManager.InvokeProfile();
+            defaultTestManager.PerformRunspaceLevelInitialization();
 
             Assert.Single(defaultTestLogger.FullLog);
             Assert.Matches("Trace: No 'profile.ps1' is found at the FunctionApp root folder: ", defaultTestLogger.FullLog[0]);
@@ -203,7 +203,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 AppDomain.CurrentDomain.BaseDirectory,
                 "Unit/PowerShell/TestScripts/ProfileWithTerminatingError"));
             
-            Assert.Throws<CmdletInvocationException>(() => defaultTestManager.InvokeProfile());
+            Assert.Throws<CmdletInvocationException>(() => defaultTestManager.PerformRunspaceLevelInitialization());
             Assert.Single(defaultTestLogger.FullLog);
             Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", defaultTestLogger.FullLog[0]);
         }
@@ -219,7 +219,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 AppDomain.CurrentDomain.BaseDirectory,
                 "Unit/PowerShell/TestScripts/ProfileWithNonTerminatingError"));
             
-            defaultTestManager.InvokeProfile();
+            defaultTestManager.PerformRunspaceLevelInitialization();
 
             Assert.Equal(2, defaultTestLogger.FullLog.Count);
             Assert.Equal("Error: ERROR: help me!", defaultTestLogger.FullLog[0]);
