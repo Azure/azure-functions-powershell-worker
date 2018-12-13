@@ -4,17 +4,14 @@
 
 # Example usecases for a profile.ps1:
 
-# Authenticating with Azure PowerShell using MSI
-# $tokenAuthURI = $env:MSI_ENDPOINT + "?resource=https://management.azure.com&api-version=2017-09-01"
-# $tokenResponse = Invoke-RestMethod -Method Get -Headers @{"Secret"="$env:MSI_SECRET"} -Uri $tokenAuthURI
-# Connect-AzAccount -AccessToken $tokenResponse.access_token -AccountId $env:WEBSITE_SITE_NAME
+<#
+# Authenticate with Azure PowerShell using MSI.
+$tokenAuthURI = $env:MSI_ENDPOINT + "?resource=https://management.azure.com&api-version=2017-09-01"
+$tokenResponse = Invoke-RestMethod -Method Get -Headers @{"Secret"="$env:MSI_SECRET"} -Uri $tokenAuthURI
+Connect-AzAccount -AccessToken $tokenResponse.access_token -AccountId $env:WEBSITE_SITE_NAME
 
-# Enabling legacy AzureRm alias in Azure PowerShell
-# Enable-AzureRmAlias
+# Enable legacy AzureRm alias in Azure PowerShell.
+Enable-AzureRmAlias
+#>
 
-# Defining a function that you can refernce in any of your PowerShell functions:
-# function Get-MyData {
-#     @{
-#         Foo = 5
-#     }
-# }
+# You can also define functions or aliases that can be referenced in any of your PowerShell functions.
