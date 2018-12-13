@@ -49,22 +49,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         internal static void SetupWellKnownPaths(string functionAppRootLocation)
         {
             FunctionLoader.FunctionAppRootLocation = functionAppRootLocation;
+            FunctionLoader.FunctionAppModulesLocation = Path.Combine(functionAppRootLocation, "Modules");
 
-            var enumerationOptions = new EnumerationOptions {
-                MatchCasing = MatchCasing.CaseInsensitive
-            };
             // Find the profile.ps1 in the Function App root if it exists
-            List<string> profiles = Directory.EnumerateFiles(functionAppRootLocation, "profile.ps1", enumerationOptions).ToList();
+            List<string> profiles = Directory.EnumerateFiles(functionAppRootLocation, "profile.ps1", new EnumerationOptions {
+                MatchCasing = MatchCasing.CaseInsensitive
+            }).ToList();
             if (profiles.Count() > 0)
             {
                 FunctionLoader.FunctionAppProfileLocation = profiles[0];
-            }
-
-            // Find the Modules directory in the Function App root if it exists
-            List<string> modulePaths = Directory.EnumerateFiles(functionAppRootLocation, "Modules", enumerationOptions).ToList();
-            if (modulePaths.Count() > 0)
-            {
-                FunctionLoader.FunctionAppModulesLocation = modulePaths[0];
             }
         }
     }

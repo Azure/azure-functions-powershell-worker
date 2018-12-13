@@ -113,11 +113,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                     // one directory from the _Function_ directory we are given
                     FunctionLoader.SetupWellKnownPaths(Path.GetFullPath(Path.Combine(functionLoadRequest.Metadata.Directory, "..")));
 
-                    if (FunctionLoader.FunctionAppModulesLocation != null)
-                    {
-                        // Prepend the Function App's 'Modules' folder to the PSModulePath
-                        _powerShellManager.PrependToPSModulePath(FunctionLoader.FunctionAppModulesLocation);
-                    }
+                    _powerShellManager.PrependToPSModulePath(FunctionLoader.FunctionAppModulesLocation);
 
                     _powerShellManager.InvokeProfile();
 
