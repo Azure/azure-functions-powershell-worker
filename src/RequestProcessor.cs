@@ -6,7 +6,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
@@ -23,10 +22,8 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManager _powerShellManager;
 
-        // This is somewhat of a workaround for the fact that the WorkerInitialize message does
-        // not contain the file path of the Function App. Instead, we use this bool during the
-        // FunctionLoad message to initialize the Function App since we have the path.
-        private bool _initializedFunctionApp;
+        // Indicate whether the FunctionApp has been initialized.
+        private bool _isFunctionAppInitialized;
 
         internal RequestProcessor(MessagingStream msgStream)
         {
@@ -52,15 +49,12 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                             case StreamingMessage.ContentOneofCase.WorkerInitRequest:
                                 response = ProcessWorkerInitRequest(request);
                                 break;
-
                             case StreamingMessage.ContentOneofCase.FunctionLoadRequest:
                                 response = ProcessFunctionLoadRequest(request);
                                 break;
-
                             case StreamingMessage.ContentOneofCase.InvocationRequest:
                                 response = ProcessInvocationRequest(request);
                                 break;
-
                             default:
                                 throw new InvalidOperationException($"Not supportted message type: {request.ContentCase}");
                         }
@@ -77,19 +71,15 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 StreamingMessage.ContentOneofCase.WorkerInitResponse,
                 out StatusResult status);
 
-            try
-            {
-                _powerShellManager.InitializeRunspace();
-            }
-            catch (Exception e)
-            {
-                status.Status = StatusResult.Types.Status.Failure;
-                status.Exception = e.ToRpcException();
-            }
-
             return response;
         }
 
+        /// <summary>
+        /// Method to process a FunctionLoadRequest.
+        /// FunctionLoadRequest should be processed sequentially. There is no point to process FunctionLoadRequest
+        /// concurrently as a FunctionApp doesn't include a lot functions in general. Having this step sequential
+        /// will make the Runspace-level initialization easier and more predictable.
+        /// </summary>
         internal StreamingMessage ProcessFunctionLoadRequest(StreamingMessage request)
         {
             FunctionLoadRequest functionLoadRequest = request.FunctionLoadRequest;
@@ -102,25 +92,19 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
             try
             {
-                // This is the first opportunity we have to obtain the location of the Function App on the file system
-                // so we run some additional setup including:
-                // * Storing some well-known paths in the Function Loader
-                // * Prepending the Function App 'Modules' path
-                // * Invoking the Function App's profile.ps1
-                if (!_initializedFunctionApp)
+                // Ideally, the initialization should happen when processing 'WorkerInitRequest', however, the 'WorkerInitRequest'
+                // message doesn't provide the file path of the FunctionApp. That information is not available until the first
+                // 'FunctionLoadRequest' comes in. Therefore, we run initialization here.
+                if (!_isFunctionAppInitialized)
                 {
-                    // We obtain the Function App root path by navigating up 
-                    // one directory from the _Function_ directory we are given
-                    FunctionLoader.SetupWellKnownPaths(Path.GetFullPath(Path.Combine(functionLoadRequest.Metadata.Directory, "..")));
+                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
+                    _powerShellManager.PerformWorkerLevelInitialization();
+                    _powerShellManager.PerformRunspaceLevelInitialization();
 
-                    _powerShellManager.PrependToPSModulePath(FunctionLoader.FunctionAppModulesPath);
-
-                    _powerShellManager.InvokeProfile();
-
-                    _initializedFunctionApp = true;
+                    _isFunctionAppInitialized = true;
                 }
 
-                // Try loading the metadata of the function
+                // Load the metadata of the function.
                 _functionLoader.LoadFunction(functionLoadRequest);
             }
             catch (Exception e)
@@ -132,6 +116,10 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             return response;
         }
 
+        /// <summary>
+        /// Method to process a InvocationRequest.
+        /// InvocationRequest should be processed in parallel eventually.
+        /// </summary>
         internal StreamingMessage ProcessInvocationRequest(StreamingMessage request)
         {
             InvocationRequest invocationRequest = request.InvocationRequest;
@@ -237,7 +225,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 case AzFunctionType.RegularFunction:
                     // Set out binding data and return response to be sent back to host
-                    foreach (KeyValuePair<string, BindingInfo> binding in functionInfo.OutputBindings)
+                    foreach (KeyValuePair<string, ReadOnlyBindingInfo> binding in functionInfo.OutputBindings)
                     {
                         // if one of the bindings is '$return' we need to set the ReturnValue
                         string outBindingName = binding.Key;

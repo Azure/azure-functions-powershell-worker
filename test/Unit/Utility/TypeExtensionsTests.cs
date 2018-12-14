@@ -10,8 +10,6 @@ using System.Net;
 using System.Management.Automation;
 
 using Google.Protobuf;
-using Google.Protobuf.Collections;
-using Microsoft.Azure.Functions.PowerShellWorker;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -22,6 +20,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
     public class TypeExtensionsTests
     {
+        private readonly ConsoleLogger _testLogger;
+        private readonly PowerShellManager _testManager;
+
+        public TypeExtensionsTests()
+        {
+            _testLogger = new ConsoleLogger();
+            _testManager = new PowerShellManager(_testLogger);
+        }
+
         #region TypedDataToObject
         [Fact]
         public void TestTypedDataToObjectHttpRequestContextBasic()
@@ -282,6 +289,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(expected, (byte[])input.ToObject());
         }
         #endregion
+
         #region ExceptionToRpcException
         [Fact]
         public void TestExceptionToRpcExceptionBasic()
@@ -314,6 +322,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(expected, input.ToRpcException());
         }
         #endregion
+
         #region ObjectToTypedData
         [Fact]
         public void TestObjectToTypedDataRpcHttpBasic()
@@ -495,10 +504,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void TestObjectToTypedDataJsonHashtable()
         {
-            var logger = new ConsoleLogger();
-            var manager = new PowerShellManager(logger);
-            manager.InitializeRunspace();
-
             var data = new Hashtable { { "foo", "bar" } };
 
             var input = (object)data;
@@ -507,16 +512,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Json = "{\"foo\":\"bar\"}"
             };
 
-            Assert.Equal(expected, input.ToTypedData(manager));
+            Assert.Equal(expected, input.ToTypedData(_testManager));
         }
 
         [Fact]
         public void TestObjectToTypedData_PSObjectToJson_1()
         {
-            var logger = new ConsoleLogger();
-            var manager = new PowerShellManager(logger);
-            manager.InitializeRunspace();
-
             var data = new Hashtable { { "foo", "bar" } };
             object input = PSObject.AsPSObject(data);
 
@@ -525,16 +526,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Json = "{\"foo\":\"bar\"}"
             };
 
-            Assert.Equal(expected, input.ToTypedData(manager));
+            Assert.Equal(expected, input.ToTypedData(_testManager));
         }
 
         [Fact]
         public void TestObjectToTypedData_PSObjectToJson_2()
         {
-            var logger = new ConsoleLogger();
-            var manager = new PowerShellManager(logger);
-            manager.InitializeRunspace();
-
             using (var ps = System.Management.Automation.PowerShell.Create())
             {
                 object input = ps.AddScript("[pscustomobject]@{foo = 'bar'}").Invoke()[0];
@@ -544,21 +541,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     Json = "{\"foo\":\"bar\"}"
                 };
 
-                Assert.Equal(expected, input.ToTypedData(manager));
+                Assert.Equal(expected, input.ToTypedData(_testManager));
             }
         }
 
         [Fact]
         public void TestObjectToTypedData_PSObjectToBytes()
         {
-            var logger = new ConsoleLogger();
-            var manager = new PowerShellManager(logger);
-            manager.InitializeRunspace();
-
             var data = new byte[] { 12,23,34 };
             object input = PSObject.AsPSObject(data);
 
-            TypedData output = input.ToTypedData(manager);
+            TypedData output = input.ToTypedData(_testManager);
 
             Assert.Equal(TypedData.DataOneofCase.Bytes, output.DataCase);
             Assert.Equal(3, output.Bytes.Length);
@@ -567,14 +560,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void TestObjectToTypedData_PSObjectToStream()
         {
-            var logger = new ConsoleLogger();
-            var manager = new PowerShellManager(logger);
-            manager.InitializeRunspace();
-
             using (var data = new MemoryStream(new byte[] { 12,23,34 }))
             {
                 object input = PSObject.AsPSObject(data);
-                TypedData output = input.ToTypedData(manager);
+                TypedData output = input.ToTypedData(_testManager);
 
                 Assert.Equal(TypedData.DataOneofCase.Stream, output.DataCase);
                 Assert.Equal(3, output.Stream.Length);
@@ -584,12 +573,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void TestObjectToTypedData_PSObjectToString()
         {
-            var logger = new ConsoleLogger();
-            var manager = new PowerShellManager(logger);
-            manager.InitializeRunspace();
-
             object input = PSObject.AsPSObject("Hello World");
-            TypedData output = input.ToTypedData(manager);
+            TypedData output = input.ToTypedData(_testManager);
 
             Assert.Equal(TypedData.DataOneofCase.String, output.DataCase);
             Assert.Equal("Hello World", output.String);
