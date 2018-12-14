@@ -129,7 +129,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             var exception = Assert.Throws<ArgumentException>(
                 () => new FunctionLoader().LoadFunction(functionLoadRequest));
-            Assert.Contains("EntryPoint", exception.Message);
+            Assert.Contains("entryPoint", exception.Message);
             Assert.Contains("(.psm1)", exception.Message);
         }
 
@@ -142,7 +142,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             var exception = Assert.Throws<ArgumentException>(
                 () => new FunctionLoader().LoadFunction(functionLoadRequest));
-            Assert.Contains("EntryPoint", exception.Message);
+            Assert.Contains("entryPoint", exception.Message);
             Assert.Contains("(.psm1)", exception.Message);
         }
 
