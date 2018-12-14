@@ -22,11 +22,16 @@ PowerShell support for Functions is based on [PowerShell Core 6.1](https://githu
 [Functions on Linux](https://blogs.msdn.microsoft.com/appserviceteam/2017/11/15/functions-on-linux-preview/),
 and the [Azure Functions runtime V2](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions).
 
-What's available?
+## What's available?
 
-* Triggers / Bindings : HTTP/Webhook
+### Triggers / Bindings
 
-What's coming?
+* HTTP Trigger (Webhook)
+* Timer Trigger
+* Blob Trigger
+* Queue Trigger
+
+## What's coming?
 
 * More triggers and bindings
 * Tooling integration
