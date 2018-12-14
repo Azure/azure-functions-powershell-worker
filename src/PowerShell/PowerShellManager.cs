@@ -67,7 +67,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         }
 
         /// <summary>
-        /// This method performs initialization that has to be done for each Runspace, e.g. profile.ps1.
+        /// This method performs initialization that has to be done for each Runspace, e.g. running the Function App's profile.ps1.
         /// </summary>
         internal void PerformRunspaceLevelInitialization()
         {
@@ -83,9 +83,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 // Import-Module on a .ps1 file will evaluate the script in the global scope.
                 _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
-                     .AddParameter("Name", profilePath).AddParameter("PassThru", true)
+                        .AddParameter("Name", profilePath)
+                        .AddParameter("PassThru", true)
                      .AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
-                     .AddParameter("Force", true).AddParameter("ErrorAction", "SilentlyContinue")
+                        .AddParameter("Force", true)
+                        .AddParameter("ErrorAction", "SilentlyContinue")
                      .InvokeAndClearCommands();
             }
             catch (Exception e)
@@ -117,16 +119,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             try
             {
-                bool hasEntryPoint = !string.IsNullOrEmpty(entryPoint);
-                if (hasEntryPoint)
+                if (string.IsNullOrEmpty(entryPoint))
+                {
+                    _pwsh.AddCommand(scriptPath);
+                }
+                else
                 {
                     // If an entry point is defined, we import the script module.
                     moduleName = Path.GetFileNameWithoutExtension(scriptPath);
-                    _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module").AddParameter("Name", scriptPath)
+                    _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                            .AddParameter("Name", scriptPath)
                          .InvokeAndClearCommands();
-                }
 
-                _pwsh.AddCommand(hasEntryPoint ? entryPoint : scriptPath);
+                    _pwsh.AddCommand(entryPoint);
+                }
 
                 // Set arguments for each input binding parameter
                 foreach (ParameterBinding binding in inputData)
@@ -152,7 +158,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
 
                 var result = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Get-OutputBinding")
-                                  .AddParameter("Purge", true)
+                                    .AddParameter("Purge", true)
                                   .InvokeAndClearCommands<Hashtable>()[0];
 
                 /*
@@ -183,9 +189,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         internal string ConvertToJson(object fromObj)
         {
             return _pwsh.AddCommand("Microsoft.PowerShell.Utility\\ConvertTo-Json")
-                        .AddParameter("InputObject", fromObj)
-                        .AddParameter("Depth", 3)
-                        .AddParameter("Compress", true)
+                            .AddParameter("InputObject", fromObj)
+                            .AddParameter("Depth", 3)
+                            .AddParameter("Compress", true)
                         .InvokeAndClearCommands<string>()[0];
         }
 
@@ -217,10 +223,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 // If the function had an entry point, this will remove the module that was loaded
                 _pwsh.AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
-                    .AddParameter("Name", moduleName)
-                    .AddParameter("Force", true)
-                    .AddParameter("ErrorAction", "SilentlyContinue")
-                    .InvokeAndClearCommands();
+                        .AddParameter("Name", moduleName)
+                        .AddParameter("Force", true)
+                        .AddParameter("ErrorAction", "SilentlyContinue")
+                     .InvokeAndClearCommands();
             }
         }
     }

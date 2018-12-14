@@ -29,18 +29,18 @@ Describe 'HttpTrigger Tests' {
             FunctionName = 'TestBasicHttpTriggerWithProfile'
             ExpectedContent = 'PROFILE'
         },
-		@{
-			FunctionName = 'TestHttpTriggerWithEntryPoint'
-			ExpectedContent = 'Hello Atlas'
-		},
-		@{
-			FunctionName = 'TestHttpTriggerWithEntryPointAndTriggerMetadata'
-			ExpectedContent = 'Hello Atlas'
-		},
-		@{
-			FunctionName = 'TestHttpTriggerWithEntryPointAndProfile'
-			ExpectedContent = 'PROFILE'
-		}
+        @{
+            FunctionName = 'TestHttpTriggerWithEntryPoint'
+            ExpectedContent = 'Hello Atlas'
+        },
+        @{
+            FunctionName = 'TestHttpTriggerWithEntryPointAndTriggerMetadata'
+            ExpectedContent = 'Hello Atlas'
+        },
+        @{
+            FunctionName = 'TestHttpTriggerWithEntryPointAndProfile'
+            ExpectedContent = 'PROFILE'
+        }
     ) {
         param ($FunctionName, $ExpectedContent)
 

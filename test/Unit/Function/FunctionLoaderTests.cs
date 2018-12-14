@@ -127,19 +127,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var entryPointToUse = "Run";
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<ArgumentException>(exception);
+            var exception = Assert.Throws<ArgumentException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("EntryPoint", exception.Message);
             Assert.Contains("(.psm1)", exception.Message);
         }
@@ -151,19 +140,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var entryPointToUse = string.Empty;
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<ArgumentException>(exception);
+            var exception = Assert.Throws<ArgumentException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("EntryPoint", exception.Message);
             Assert.Contains("(.psm1)", exception.Message);
         }
@@ -175,19 +153,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var entryPointToUse = string.Empty;
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<ArgumentException>(exception);
+            var exception = Assert.Throws<ArgumentException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("parsing errors", exception.Message);
         }
 
@@ -198,19 +165,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var entryPointToUse = "CallMe";
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<ArgumentException>(exception);
+            var exception = Assert.Throws<ArgumentException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("CallMe", exception.Message);
             Assert.Contains("FuncWithEntryPoint.psm1", exception.Message);
         }
@@ -222,19 +178,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var entryPointToUse = "Run";
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<ArgumentException>(exception);
+            var exception = Assert.Throws<ArgumentException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("Run", exception.Message);
             Assert.Contains("FuncWithMultiEntryPoints.psm1", exception.Message);
         }
@@ -249,19 +194,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             functionLoadRequest.Metadata.Bindings.Add("inputTable", new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "tableTrigger" });
             functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<InvalidOperationException>(exception);
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("inputTable", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
@@ -276,19 +210,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             functionLoadRequest.Metadata.Bindings.Add("inputTable", new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "tableTrigger" });
             functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<InvalidOperationException>(exception);
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("inputTable", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
@@ -303,19 +226,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             functionLoadRequest.Metadata.Bindings.Add("inputTable", new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "tableTrigger" });
             functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<InvalidOperationException>(exception);
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("inputTable", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
@@ -330,19 +242,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             functionLoadRequest.Metadata.Bindings.Add("inputTable", new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "tableTrigger" });
             functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<InvalidOperationException>(exception);
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("inputTable", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
@@ -356,19 +257,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
             functionLoadRequest.Metadata.Bindings.Add("inoutBinding", new BindingInfo { Direction = BindingInfo.Types.Direction.Inout, Type = "queue" });
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<InvalidOperationException>(exception);
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("inoutBinding", exception.Message);
             Assert.Contains("InOut", exception.Message);
         }
@@ -380,19 +270,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var entryPointToUse = string.Empty;
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<InvalidOperationException>(exception);
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("req", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
@@ -404,19 +283,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var entryPointToUse = "Zoo";
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
-            Exception exception = null;
-            var functionLoader = new FunctionLoader();
-            try
-            {
-                functionLoader.LoadFunction(functionLoadRequest);
-            }
-            catch (Exception e)
-            {
-                exception = e;
-            }
-
-            Assert.NotNull(exception);
-            Assert.IsType<InvalidOperationException>(exception);
+            var exception = Assert.Throws<InvalidOperationException>(
+                () => new FunctionLoader().LoadFunction(functionLoadRequest));
             Assert.Contains("req", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
