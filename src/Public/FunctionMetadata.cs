@@ -26,5 +26,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             OutputBindingCache.TryGetValue(runspaceInstanceId, out outputBindings);
             return outputBindings;
         }
+
+        /// <summary>
+        /// Helper method to set the output binding metadata for the function that is about to run.
+        /// </summary>
+        internal static void RegisterFunctionMetadata(Guid instanceId, AzFunctionInfo functionInfo)
+        {
+            var outputBindings = functionInfo.OutputBindings;
+            OutputBindingCache.AddOrUpdate(instanceId, outputBindings, (key, value) => outputBindings);
+        }
+
+        /// <summary>
+        /// Helper method to clear the output binding metadata for the function that has done running.
+        /// </summary>
+        internal static void UnregisterFunctionMetadata(Guid instanceId)
+        {
+            OutputBindingCache.TryRemove(instanceId, out _);
+        }
     }
 }
