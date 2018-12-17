@@ -21,7 +21,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         internal static string FunctionAppRootPath { get; private set; }
         internal static string FunctionAppProfilePath { get; private set; }
-        internal static string FunctionAppModulesPath { get; private set; }
+        internal static string FunctionModulePath { get; private set; }
 
         /// <summary>
         /// Query for function metadata can happen in parallel.
@@ -51,9 +51,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         internal static void SetupWellKnownPaths(FunctionLoadRequest request)
         {
+            // Resolve the FunctionApp root path
             FunctionAppRootPath = Path.GetFullPath(Path.Join(request.Metadata.Directory, ".."));
-            FunctionAppModulesPath =  Path.Join(FunctionAppRootPath, "Modules");
+            // Resolve module paths
+            var appLevelModulesPath = Path.Join(FunctionAppRootPath, "Modules");
+            var workerLevelModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
+            FunctionModulePath = $"{appLevelModulesPath}{Path.PathSeparator}{workerLevelModulesPath}";
 
+            // Resolve the FunctionApp profile path
             var options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive };
             var profiles = Directory.EnumerateFiles(FunctionAppRootPath, "profile.ps1", options);
             FunctionAppProfilePath = profiles.FirstOrDefault();

@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         public TypeExtensionsTests()
         {
             _testLogger = new ConsoleLogger();
-            _testManager = new PowerShellManager(_testLogger);
+            _testManager = TestUtils.NewTestPowerShellManager(_testLogger);
         }
 
         #region TypedDataToObject

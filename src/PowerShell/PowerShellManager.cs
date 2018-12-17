@@ -23,34 +23,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private readonly ILogger _logger;
         private readonly PowerShell _pwsh;
 
-        internal PowerShellManager(ILogger logger)
-        {
-            var initialSessionState = InitialSessionState.CreateDefault();
-
-            // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
-            if(Platform.IsWindows)
-            {
-                // This sets the execution policy on Windows to Unrestricted which is required to run the user's function scripts on
-                // Windows client versions. This is needed if a user is testing their function locally with the func CLI
-                initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
-            }
-            _pwsh = PowerShell.Create(initialSessionState);
-            _logger = logger;
-
-            // Setup Stream event listeners
-            var streamHandler = new StreamHandler(logger);
-            _pwsh.Streams.Debug.DataAdding += streamHandler.DebugDataAdding;
-            _pwsh.Streams.Error.DataAdding += streamHandler.ErrorDataAdding;
-            _pwsh.Streams.Information.DataAdding += streamHandler.InformationDataAdding;
-            _pwsh.Streams.Progress.DataAdding += streamHandler.ProgressDataAdding;
-            _pwsh.Streams.Verbose.DataAdding += streamHandler.VerboseDataAdding;
-            _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
-        }
-
         /// <summary>
-        /// This method performs the one-time initialization at the worker process level.
+        /// Gets the Runspace InstanceId.
         /// </summary>
-        internal void PerformWorkerLevelInitialization()
+        internal Guid InstanceId => _pwsh.Runspace.InstanceId;
+
+        static PowerShellManager()
         {
             // Set the type accelerators for 'HttpResponseContext' and 'HttpResponseContext'.
             // We probably will expose more public types from the worker in future for the interop between worker and the 'PowerShellWorker' module.
@@ -60,19 +38,49 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             var addMethod = accelerator.GetMethod("Add", new Type[] { typeof(string), typeof(Type) });
             addMethod.Invoke(null, new object[] { "HttpResponseContext", typeof(HttpResponseContext) });
             addMethod.Invoke(null, new object[] { "HttpRequestContext", typeof(HttpRequestContext) });
+        }
 
-            // Set the PSModulePath
-            var workerModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
-            Environment.SetEnvironmentVariable("PSModulePath", $"{FunctionLoader.FunctionAppModulesPath}{Path.PathSeparator}{workerModulesPath}");
+        internal PowerShellManager(ILogger logger)
+        {
+            if (FunctionLoader.FunctionAppRootPath == null)
+            {
+                throw new InvalidOperationException($"The FunctionApp root hasn't been resolved yet!");
+            }
+
+            var initialSessionState = InitialSessionState.CreateDefault();
+            initialSessionState.EnvironmentVariables.Add(
+                new SessionStateVariableEntry("PSModulePath", FunctionLoader.FunctionModulePath, null));
+
+            // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
+            if(Platform.IsWindows)
+            {
+                // This sets the execution policy on Windows to Unrestricted which is required to run the user's function scripts on
+                // Windows client versions. This is needed if a user is testing their function locally with the func CLI
+                initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+            }
+
+            _logger = logger;
+            _pwsh = PowerShell.Create(initialSessionState);
+
+            // Setup Stream event listeners
+            var streamHandler = new StreamHandler(logger);
+            _pwsh.Streams.Debug.DataAdding += streamHandler.DebugDataAdding;
+            _pwsh.Streams.Error.DataAdding += streamHandler.ErrorDataAdding;
+            _pwsh.Streams.Information.DataAdding += streamHandler.InformationDataAdding;
+            _pwsh.Streams.Progress.DataAdding += streamHandler.ProgressDataAdding;
+            _pwsh.Streams.Verbose.DataAdding += streamHandler.VerboseDataAdding;
+            _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
+
+            // Initialize the Runspace
+            InvokeProfile(FunctionLoader.FunctionAppProfilePath);
         }
 
         /// <summary>
-        /// This method performs initialization that has to be done for each Runspace, e.g. running the Function App's profile.ps1.
+        /// This method invokes the FunctionApp's profile.ps1.
         /// </summary>
-        internal void PerformRunspaceLevelInitialization()
+        internal void InvokeProfile(string profilePath)
         {
             Exception exception = null;
-            string profilePath = FunctionLoader.FunctionAppProfilePath;
             if (profilePath == null)
             {
                 _logger.Log(LogLevel.Trace, $"No 'profile.ps1' is found at the FunctionApp root folder: {FunctionLoader.FunctionAppRootPath}");
@@ -193,25 +201,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                             .AddParameter("Depth", 3)
                             .AddParameter("Compress", true)
                         .InvokeAndClearCommands<string>()[0];
-        }
-
-        /// <summary>
-        /// Helper method to set the output binding metadata for the function that is about to run.
-        /// </summary>
-        internal void RegisterFunctionMetadata(AzFunctionInfo functionInfo)
-        {
-            var outputBindings = functionInfo.OutputBindings;
-            FunctionMetadata.OutputBindingCache.AddOrUpdate(_pwsh.Runspace.InstanceId,
-                                                            outputBindings,
-                                                            (key, value) => outputBindings);
-        }
-
-        /// <summary>
-        /// Helper method to clear the output binding metadata for the function that has done running.
-        /// </summary>
-        internal void UnregisterFunctionMetadata()
-        {
-            FunctionMetadata.OutputBindingCache.TryRemove(_pwsh.Runspace.InstanceId, out _);
         }
 
         private void ResetRunspace(string moduleName)

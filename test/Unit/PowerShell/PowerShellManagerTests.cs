@@ -14,44 +14,77 @@ using Xunit;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
-    public class PowerShellManagerTests
+    internal class TestUtils
     {
-        private const string TestInputBindingName = "req";
-        private const string TestOutputBindingName = "res";
-        private const string TestStringData = "Foo";
+        internal const string TestInputBindingName = "req";
+        internal const string TestOutputBindingName = "res";
 
-        private readonly string _functionDirectory;
-        private readonly ConsoleLogger _testLogger;
-        private readonly PowerShellManager _testManager;
-        private readonly List<ParameterBinding> _testInputData;
-        private readonly RpcFunctionMetadata _rpcFunctionMetadata;
-        private readonly FunctionLoadRequest _functionLoadRequest;
+        internal static readonly string FunctionDirectory;
+        internal static readonly RpcFunctionMetadata RpcFunctionMetadata;
+        internal static readonly FunctionLoadRequest FunctionLoadRequest;
 
-        public PowerShellManagerTests()
+        static TestUtils()
         {
-            _functionDirectory = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "TestScripts", "PowerShell");
-            _rpcFunctionMetadata = new RpcFunctionMetadata()
+            FunctionDirectory = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "TestScripts", "PowerShell");
+            RpcFunctionMetadata = new RpcFunctionMetadata()
             {
                 Name = "TestFuncApp",
-                Directory = _functionDirectory,
+                Directory = FunctionDirectory,
                 Bindings =
                 {
                     { TestInputBindingName , new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "httpTrigger" } },
                     { TestOutputBindingName, new BindingInfo { Direction = BindingInfo.Types.Direction.Out, Type = "http" } }
                 }
             };
-            _functionLoadRequest = new FunctionLoadRequest {FunctionId = "FunctionId", Metadata = _rpcFunctionMetadata};
-            FunctionLoader.SetupWellKnownPaths(_functionLoadRequest);
 
+            FunctionLoadRequest = new FunctionLoadRequest {FunctionId = "FunctionId", Metadata = RpcFunctionMetadata};
+            FunctionLoader.SetupWellKnownPaths(FunctionLoadRequest);
+        }
+
+        // Have a single place to get a PowerShellManager for testing.
+        // This is to guarantee that the well known paths are setup before calling the constructor of PowerShellManager.
+        internal static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger)
+        {
+            return new PowerShellManager(logger);
+        }
+
+        internal static AzFunctionInfo NewAzFunctionInfo(string scriptFile, string entryPoint)
+        {
+            RpcFunctionMetadata.ScriptFile = scriptFile;
+            RpcFunctionMetadata.EntryPoint = entryPoint;
+            RpcFunctionMetadata.Directory = Path.GetDirectoryName(scriptFile);
+            return new AzFunctionInfo(RpcFunctionMetadata);
+        }
+
+        // Helper method to wait for debugger to attach and set a breakpoint.
+        internal static void Break()
+        {
+            while (!System.Diagnostics.Debugger.IsAttached)
+            {
+                System.Threading.Thread.Sleep(200);
+            }
+            System.Diagnostics.Debugger.Break();
+        }
+    }
+
+    public class PowerShellManagerTests
+    {
+        private const string TestStringData = "Foo";
+
+        private readonly ConsoleLogger _testLogger;
+        private readonly PowerShellManager _testManager;
+        private readonly List<ParameterBinding> _testInputData;
+
+        public PowerShellManagerTests()
+        {
             _testLogger = new ConsoleLogger();
-            _testManager = new PowerShellManager(_testLogger);
-            _testManager.PerformWorkerLevelInitialization();
+            _testManager = TestUtils.NewTestPowerShellManager(_testLogger);
 
             _testInputData = new List<ParameterBinding>
             {
                 new ParameterBinding
                 {
-                    Name = TestInputBindingName,
+                    Name = TestUtils.TestInputBindingName,
                     Data = new TypedData
                     {
                         String = TestStringData
@@ -60,65 +93,58 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             };
         }
 
-        private AzFunctionInfo GetAzFunctionInfo(string scriptFile, string entryPoint)
-        {
-            _rpcFunctionMetadata.ScriptFile = scriptFile;
-            _rpcFunctionMetadata.EntryPoint = entryPoint;
-            return new AzFunctionInfo(_rpcFunctionMetadata);
-        }
-
         [Fact]
         public void InvokeBasicFunctionWorks()
         {
-            string path = Path.Join(_functionDirectory, "testBasicFunction.ps1");
+            string path = Path.Join(TestUtils.FunctionDirectory, "testBasicFunction.ps1");
 
-            var functionInfo = GetAzFunctionInfo(path, string.Empty);
+            var functionInfo = TestUtils.NewAzFunctionInfo(path, string.Empty);
             Hashtable result = _testManager.InvokeFunction(functionInfo, null, _testInputData);
 
-            Assert.Equal(TestStringData, result[TestOutputBindingName]);
+            Assert.Equal(TestStringData, result[TestUtils.TestOutputBindingName]);
         }
 
         [Fact]
         public void InvokeBasicFunctionWithTriggerMetadataWorks()
         {
-            string path = Path.Join(_functionDirectory, "testBasicFunctionWithTriggerMetadata.ps1");
+            string path = Path.Join(TestUtils.FunctionDirectory, "testBasicFunctionWithTriggerMetadata.ps1");
             Hashtable triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase)
             {
-                { TestInputBindingName, TestStringData }
+                { TestUtils.TestInputBindingName, TestStringData }
             };
 
-            var functionInfo = GetAzFunctionInfo(path, string.Empty);
+            var functionInfo = TestUtils.NewAzFunctionInfo(path, string.Empty);
             Hashtable result = _testManager.InvokeFunction(functionInfo, triggerMetadata, _testInputData);
 
-            Assert.Equal(TestStringData, result[TestOutputBindingName]);
+            Assert.Equal(TestStringData, result[TestUtils.TestOutputBindingName]);
         }
 
         [Fact]
         public void InvokeFunctionWithEntryPointWorks()
         {
-            string path = Path.Join(_functionDirectory, "testFunctionWithEntryPoint.psm1");
-            var functionInfo = GetAzFunctionInfo(path, "Run");
+            string path = Path.Join(TestUtils.FunctionDirectory, "testFunctionWithEntryPoint.psm1");
+            var functionInfo = TestUtils.NewAzFunctionInfo(path, "Run");
             Hashtable result = _testManager.InvokeFunction(functionInfo, null, _testInputData);
 
-            Assert.Equal(TestStringData, result[TestOutputBindingName]);
+            Assert.Equal(TestStringData, result[TestUtils.TestOutputBindingName]);
         }
 
         [Fact]
         public void FunctionShouldCleanupVariableTable()
         {
-            string path = Path.Join(_functionDirectory, "testFunctionCleanup.ps1");
-            var functionInfo = GetAzFunctionInfo(path, string.Empty);
+            string path = Path.Join(TestUtils.FunctionDirectory, "testFunctionCleanup.ps1");
+            var functionInfo = TestUtils.NewAzFunctionInfo(path, string.Empty);
 
             Hashtable result1 = _testManager.InvokeFunction(functionInfo, null, _testInputData);
-            Assert.Equal("is not set", result1[TestOutputBindingName]);
+            Assert.Equal("is not set", result1[TestUtils.TestOutputBindingName]);
 
-            // the value shoould not change if the variable table is properly cleaned up.
+            // the value should not change if the variable table is properly cleaned up.
             Hashtable result2 = _testManager.InvokeFunction(functionInfo, null, _testInputData);
-            Assert.Equal("is not set", result2[TestOutputBindingName]);
+            Assert.Equal("is not set", result2[TestUtils.TestOutputBindingName]);
         }
 
         [Fact]
-        public void ModulePathShouldBeSetByWorkerLevelInitialization()
+        public void ModulePathShouldBeSetCorrectly()
         {
             string workerModulePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
             string funcAppModulePath = Path.Join(FunctionLoader.FunctionAppRootPath, "Modules");
@@ -129,13 +155,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void RegisterAndUnregisterFunctionMetadataShouldWork()
         {
-            string path = Path.Join(_functionDirectory, "testBasicFunction.ps1");
-            var functionInfo = GetAzFunctionInfo(path, string.Empty);
+            string path = Path.Join(TestUtils.FunctionDirectory, "testBasicFunction.ps1");
+            var functionInfo = TestUtils.NewAzFunctionInfo(path, string.Empty);
 
             Assert.Empty(FunctionMetadata.OutputBindingCache);
-            _testManager.RegisterFunctionMetadata(functionInfo);
+            FunctionMetadata.RegisterFunctionMetadata(_testManager.InstanceId, functionInfo);
             Assert.Single(FunctionMetadata.OutputBindingCache);
-            _testManager.UnregisterFunctionMetadata();
+            FunctionMetadata.UnregisterFunctionMetadata(_testManager.InstanceId);
             Assert.Empty(FunctionMetadata.OutputBindingCache);
         }
 
@@ -144,21 +170,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             //initialize fresh log
             _testLogger.FullLog.Clear();
-            var funcLoadReq = _functionLoadRequest.Clone();
-            funcLoadReq.Metadata.Directory = Path.Join(_functionDirectory, "ProfileBasic", "Func1");
+            var profilePath = Path.Join(TestUtils.FunctionDirectory, "ProfileBasic", "profile.ps1");
+            _testManager.InvokeProfile(profilePath);
 
-            try
-            {
-                FunctionLoader.SetupWellKnownPaths(funcLoadReq);
-                _testManager.PerformRunspaceLevelInitialization();
-
-                Assert.Single(_testLogger.FullLog);
-                Assert.Equal("Information: INFORMATION: Hello PROFILE", _testLogger.FullLog[0]);
-            }
-            finally
-            {
-                FunctionLoader.SetupWellKnownPaths(_functionLoadRequest);
-            }
+            Assert.Single(_testLogger.FullLog);
+            Assert.Equal("Information: INFORMATION: Hello PROFILE", _testLogger.FullLog[0]);
         }
 
         [Fact]
@@ -166,21 +182,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             //initialize fresh log
             _testLogger.FullLog.Clear();
-            var funcLoadReq = _functionLoadRequest.Clone();
-            funcLoadReq.Metadata.Directory = AppDomain.CurrentDomain.BaseDirectory;
+            _testManager.InvokeProfile(null);
 
-            try
-            {
-                FunctionLoader.SetupWellKnownPaths(funcLoadReq);
-                _testManager.PerformRunspaceLevelInitialization();
-
-                Assert.Single(_testLogger.FullLog);
-                Assert.Matches("Trace: No 'profile.ps1' is found at the FunctionApp root folder: ", _testLogger.FullLog[0]);
-            }
-            finally
-            {
-                FunctionLoader.SetupWellKnownPaths(_functionLoadRequest);
-            }
+            Assert.Single(_testLogger.FullLog);
+            Assert.Matches("Trace: No 'profile.ps1' is found at the FunctionApp root folder: ", _testLogger.FullLog[0]);
         }
 
         [Fact]
@@ -188,21 +193,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             //initialize fresh log
             _testLogger.FullLog.Clear();
-            var funcLoadReq = _functionLoadRequest.Clone();
-            funcLoadReq.Metadata.Directory = Path.Join(_functionDirectory, "ProfileWithTerminatingError", "Func1");
+            var profilePath = Path.Join(TestUtils.FunctionDirectory, "ProfileWithTerminatingError", "profile.ps1");
 
-            try
-            {
-                FunctionLoader.SetupWellKnownPaths(funcLoadReq);
-
-                Assert.Throws<CmdletInvocationException>(() => _testManager.PerformRunspaceLevelInitialization());
-                Assert.Single(_testLogger.FullLog);
-                Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", _testLogger.FullLog[0]);
-            }
-            finally
-            {
-                FunctionLoader.SetupWellKnownPaths(_functionLoadRequest);
-            }
+            Assert.Throws<CmdletInvocationException>(() => _testManager.InvokeProfile(profilePath));
+            Assert.Single(_testLogger.FullLog);
+            Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", _testLogger.FullLog[0]);
         }
 
         [Fact]
@@ -210,22 +205,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             //initialize fresh log
             _testLogger.FullLog.Clear();
-            var funcLoadReq = _functionLoadRequest.Clone();
-            funcLoadReq.Metadata.Directory = Path.Join(_functionDirectory, "ProfileWithNonTerminatingError", "Func1");
+            var profilePath = Path.Join(TestUtils.FunctionDirectory, "ProfileWithNonTerminatingError", "Profile.ps1");
+            _testManager.InvokeProfile(profilePath);
 
-            try
-            {
-                FunctionLoader.SetupWellKnownPaths(funcLoadReq);
-                _testManager.PerformRunspaceLevelInitialization();
-
-                Assert.Equal(2, _testLogger.FullLog.Count);
-                Assert.Equal("Error: ERROR: help me!", _testLogger.FullLog[0]);
-                Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", _testLogger.FullLog[1]);
-            }
-            finally
-            {
-                FunctionLoader.SetupWellKnownPaths(_functionLoadRequest);
-            }
+            Assert.Equal(2, _testLogger.FullLog.Count);
+            Assert.Equal("Error: ERROR: help me!", _testLogger.FullLog[0]);
+            Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", _testLogger.FullLog[1]);
         }
     }
 }

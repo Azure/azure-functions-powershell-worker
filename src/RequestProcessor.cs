@@ -20,7 +20,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         private readonly FunctionLoader _functionLoader;
         private readonly RpcLogger _logger;
         private readonly MessagingStream _msgStream;
-        private readonly PowerShellManager _powerShellManager;
+        private readonly PowerShellManagerPool _powershellPool;
 
         // Indicate whether the FunctionApp has been initialized.
         private bool _isFunctionAppInitialized;
@@ -29,7 +29,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         {
             _msgStream = msgStream;
             _logger = new RpcLogger(msgStream);
-            _powerShellManager = new PowerShellManager(_logger);
+            _powershellPool = new PowerShellManagerPool(_logger);
             _functionLoader = new FunctionLoader();
         }
 
@@ -98,9 +98,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 if (!_isFunctionAppInitialized)
                 {
                     FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
-                    _powerShellManager.PerformWorkerLevelInitialization();
-                    _powerShellManager.PerformRunspaceLevelInitialization();
-
+                    _powershellPool.Initialize();
                     _isFunctionAppInitialized = true;
                 }
 
@@ -122,6 +120,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         internal StreamingMessage ProcessInvocationRequest(StreamingMessage request)
         {
+            PowerShellManager psManager = null;
             InvocationRequest invocationRequest = request.InvocationRequest;
 
             StreamingMessage response = NewStreamingMessageTemplate(
@@ -130,18 +129,18 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 out StatusResult status);
             response.InvocationResponse.InvocationId = invocationRequest.InvocationId;
 
-            // Invoke powershell logic and return hashtable of out binding data
             try
             {
                 // Load information about the function
                 var functionInfo = _functionLoader.GetFunctionInfo(invocationRequest.FunctionId);
-                _powerShellManager.RegisterFunctionMetadata(functionInfo);
+                psManager = _powershellPool.CheckoutIdleWorker(functionInfo);
 
+                // Invoke the function and return a hashtable of out binding data
                 Hashtable results = functionInfo.Type == AzFunctionType.OrchestrationFunction
-                    ? InvokeOrchestrationFunction(functionInfo, invocationRequest)
-                    : InvokeSingleActivityFunction(functionInfo, invocationRequest);
+                    ? InvokeOrchestrationFunction(psManager, functionInfo, invocationRequest)
+                    : InvokeSingleActivityFunction(psManager, functionInfo, invocationRequest);
 
-                BindOutputFromResult(response.InvocationResponse, functionInfo, results);
+                BindOutputFromResult(psManager, response.InvocationResponse, functionInfo, results);
             }
             catch (Exception e)
             {
@@ -150,7 +149,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             }
             finally
             {
-                _powerShellManager.UnregisterFunctionMetadata();
+                _powershellPool.ReclaimUsedWorker(psManager);
             }
 
             return response;
@@ -188,7 +187,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Invoke an orchestration function.
         /// </summary>
-        private Hashtable InvokeOrchestrationFunction(AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
+        private Hashtable InvokeOrchestrationFunction(PowerShellManager psManager, AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
         {
             throw new NotImplementedException("Durable function is not yet supported for PowerShell");
         }
@@ -196,7 +195,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Invoke a regular function or an activity function.
         /// </summary>
-        private Hashtable InvokeSingleActivityFunction(AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
+        private Hashtable InvokeSingleActivityFunction(PowerShellManager psManager, AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
         {
             // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
             var triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase);
@@ -210,16 +209,13 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 }
             }
 
-            return _powerShellManager.InvokeFunction(
-                functionInfo,
-                triggerMetadata,
-                invocationRequest.InputData);
+            return psManager.InvokeFunction(functionInfo, triggerMetadata, invocationRequest.InputData);
         }
 
         /// <summary>
         /// Set the 'ReturnValue' and 'OutputData' based on the invocation results appropriately.
         /// </summary>
-        private void BindOutputFromResult(InvocationResponse response, AzFunctionInfo functionInfo, Hashtable results)
+        private void BindOutputFromResult(PowerShellManager psManager, InvocationResponse response, AzFunctionInfo functionInfo, Hashtable results)
         {
             switch (functionInfo.Type)
             {
@@ -231,14 +227,14 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                         string outBindingName = binding.Key;
                         if(string.Equals(outBindingName, AzFunctionInfo.DollarReturn, StringComparison.OrdinalIgnoreCase))
                         {
-                            response.ReturnValue = results[outBindingName].ToTypedData(_powerShellManager);
+                            response.ReturnValue = results[outBindingName].ToTypedData(psManager);
                             continue;
                         }
 
                         ParameterBinding paramBinding = new ParameterBinding()
                         {
                             Name = outBindingName,
-                            Data = results[outBindingName].ToTypedData(_powerShellManager)
+                            Data = results[outBindingName].ToTypedData(psManager)
                         };
 
                         response.OutputData.Add(paramBinding);
@@ -247,7 +243,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
                 case AzFunctionType.OrchestrationFunction:
                 case AzFunctionType.ActivityFunction:
-                    response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData(_powerShellManager);
+                    response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData(psManager);
                     break;
                 
                 default:
