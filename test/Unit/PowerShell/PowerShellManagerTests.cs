@@ -41,6 +41,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             FunctionLoader.SetupWellKnownPaths(FunctionLoadRequest);
         }
 
+        // Have a single place to get a PowerShellManager for testing.
+        // This is to guarantee that the well known paths are setup before calling the constructor of PowerShellManager.
         internal static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger)
         {
             return new PowerShellManager(logger);
@@ -54,15 +56,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             return new AzFunctionInfo(RpcFunctionMetadata);
         }
 
+        // Helper method to wait for debugger to attach and set a breakpoint.
         internal static void Break()
         {
-            /*
             while (!System.Diagnostics.Debugger.IsAttached)
             {
                 System.Threading.Thread.Sleep(200);
             }
             System.Diagnostics.Debugger.Break();
-            */
         }
     }
 
@@ -95,8 +96,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void InvokeBasicFunctionWorks()
         {
-            TestUtils.Break();
-
             string path = Path.Join(TestUtils.FunctionDirectory, "testBasicFunction.ps1");
 
             var functionInfo = TestUtils.NewAzFunctionInfo(path, string.Empty);
@@ -108,8 +107,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void InvokeBasicFunctionWithTriggerMetadataWorks()
         {
-            TestUtils.Break();
-
             string path = Path.Join(TestUtils.FunctionDirectory, "testBasicFunctionWithTriggerMetadata.ps1");
             Hashtable triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase)
             {
@@ -125,8 +122,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void InvokeFunctionWithEntryPointWorks()
         {
-            TestUtils.Break();
-
             string path = Path.Join(TestUtils.FunctionDirectory, "testFunctionWithEntryPoint.psm1");
             var functionInfo = TestUtils.NewAzFunctionInfo(path, "Run");
             Hashtable result = _testManager.InvokeFunction(functionInfo, null, _testInputData);
@@ -137,8 +132,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void FunctionShouldCleanupVariableTable()
         {
-            TestUtils.Break();
-
             string path = Path.Join(TestUtils.FunctionDirectory, "testFunctionCleanup.ps1");
             var functionInfo = TestUtils.NewAzFunctionInfo(path, string.Empty);
 
@@ -177,21 +170,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             //initialize fresh log
             _testLogger.FullLog.Clear();
-            var funcLoadReq = TestUtils.FunctionLoadRequest.Clone();
-            funcLoadReq.Metadata.Directory = Path.Join(TestUtils.FunctionDirectory, "ProfileBasic", "Func1");
+            var profilePath = Path.Join(TestUtils.FunctionDirectory, "ProfileBasic", "profile.ps1");
+            _testManager.InvokeProfile(profilePath);
 
-            try
-            {
-                FunctionLoader.SetupWellKnownPaths(funcLoadReq);
-                _testManager.InvokeProfile();
-
-                Assert.Single(_testLogger.FullLog);
-                Assert.Equal("Information: INFORMATION: Hello PROFILE", _testLogger.FullLog[0]);
-            }
-            finally
-            {
-                FunctionLoader.SetupWellKnownPaths(TestUtils.FunctionLoadRequest);
-            }
+            Assert.Single(_testLogger.FullLog);
+            Assert.Equal("Information: INFORMATION: Hello PROFILE", _testLogger.FullLog[0]);
         }
 
         [Fact]
@@ -199,21 +182,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             //initialize fresh log
             _testLogger.FullLog.Clear();
-            var funcLoadReq = TestUtils.FunctionLoadRequest.Clone();
-            funcLoadReq.Metadata.Directory = AppDomain.CurrentDomain.BaseDirectory;
+            _testManager.InvokeProfile(null);
 
-            try
-            {
-                FunctionLoader.SetupWellKnownPaths(funcLoadReq);
-                _testManager.InvokeProfile();
-
-                Assert.Single(_testLogger.FullLog);
-                Assert.Matches("Trace: No 'profile.ps1' is found at the FunctionApp root folder: ", _testLogger.FullLog[0]);
-            }
-            finally
-            {
-                FunctionLoader.SetupWellKnownPaths(TestUtils.FunctionLoadRequest);
-            }
+            Assert.Single(_testLogger.FullLog);
+            Assert.Matches("Trace: No 'profile.ps1' is found at the FunctionApp root folder: ", _testLogger.FullLog[0]);
         }
 
         [Fact]
@@ -221,21 +193,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             //initialize fresh log
             _testLogger.FullLog.Clear();
-            var funcLoadReq = TestUtils.FunctionLoadRequest.Clone();
-            funcLoadReq.Metadata.Directory = Path.Join(TestUtils.FunctionDirectory, "ProfileWithTerminatingError", "Func1");
+            var profilePath = Path.Join(TestUtils.FunctionDirectory, "ProfileWithTerminatingError", "profile.ps1");
 
-            try
-            {
-                FunctionLoader.SetupWellKnownPaths(funcLoadReq);
-
-                Assert.Throws<CmdletInvocationException>(() => _testManager.InvokeProfile());
-                Assert.Single(_testLogger.FullLog);
-                Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", _testLogger.FullLog[0]);
-            }
-            finally
-            {
-                FunctionLoader.SetupWellKnownPaths(TestUtils.FunctionLoadRequest);
-            }
+            Assert.Throws<CmdletInvocationException>(() => _testManager.InvokeProfile(profilePath));
+            Assert.Single(_testLogger.FullLog);
+            Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", _testLogger.FullLog[0]);
         }
 
         [Fact]
@@ -243,22 +205,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             //initialize fresh log
             _testLogger.FullLog.Clear();
-            var funcLoadReq = TestUtils.FunctionLoadRequest.Clone();
-            funcLoadReq.Metadata.Directory = Path.Join(TestUtils.FunctionDirectory, "ProfileWithNonTerminatingError", "Func1");
+            var profilePath = Path.Join(TestUtils.FunctionDirectory, "ProfileWithNonTerminatingError", "Profile.ps1");
+            _testManager.InvokeProfile(profilePath);
 
-            try
-            {
-                FunctionLoader.SetupWellKnownPaths(funcLoadReq);
-                _testManager.InvokeProfile();
-
-                Assert.Equal(2, _testLogger.FullLog.Count);
-                Assert.Equal("Error: ERROR: help me!", _testLogger.FullLog[0]);
-                Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", _testLogger.FullLog[1]);
-            }
-            finally
-            {
-                FunctionLoader.SetupWellKnownPaths(TestUtils.FunctionLoadRequest);
-            }
+            Assert.Equal(2, _testLogger.FullLog.Count);
+            Assert.Equal("Error: ERROR: help me!", _testLogger.FullLog[0]);
+            Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", _testLogger.FullLog[1]);
         }
     }
 }

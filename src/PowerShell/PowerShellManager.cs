@@ -72,16 +72,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
 
             // Initialize the Runspace
-            InvokeProfile();
+            InvokeProfile(FunctionLoader.FunctionAppProfilePath);
         }
 
         /// <summary>
-        /// This method invokes the Function App's profile.ps1.
+        /// This method invokes the FunctionApp's profile.ps1.
         /// </summary>
-        internal void InvokeProfile()
+        internal void InvokeProfile(string profilePath)
         {
             Exception exception = null;
-            string profilePath = FunctionLoader.FunctionAppProfilePath;
             if (profilePath == null)
             {
                 _logger.Log(LogLevel.Trace, $"No 'profile.ps1' is found at the FunctionApp root folder: {FunctionLoader.FunctionAppRootPath}");
