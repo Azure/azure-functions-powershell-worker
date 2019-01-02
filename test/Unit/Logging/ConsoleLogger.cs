@@ -21,5 +21,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Console.WriteLine(log);
             FullLog.Add(log);
         }
+
+        public void SetContext(string requestId, string invocationId) {}
+        public void ResetContext() {}
     }
 }

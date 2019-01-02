@@ -28,6 +28,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// </summary>
         internal Guid InstanceId => _pwsh.Runspace.InstanceId;
 
+        /// <summary>
+        /// Gets the associated logger.
+        /// </summary>
+        internal ILogger Logger => _logger;
+
         static PowerShellManager()
         {
             // Set the type accelerators for 'HttpResponseContext' and 'HttpResponseContext'.
@@ -48,6 +53,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
 
             var initialSessionState = InitialSessionState.CreateDefault();
+            initialSessionState.ThreadOptions = PSThreadOptions.ReuseThread;
             initialSessionState.EnvironmentVariables.Add(
                 new SessionStateVariableEntry("PSModulePath", FunctionLoader.FunctionModulePath, null));
 

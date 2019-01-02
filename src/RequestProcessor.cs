@@ -18,7 +18,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
     internal class RequestProcessor
     {
         private readonly FunctionLoader _functionLoader;
-        private readonly RpcLogger _logger;
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManagerPool _powershellPool;
 
@@ -28,8 +27,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         internal RequestProcessor(MessagingStream msgStream)
         {
             _msgStream = msgStream;
-            _logger = new RpcLogger(msgStream);
-            _powershellPool = new PowerShellManagerPool(_logger);
+            _powershellPool = new PowerShellManagerPool(msgStream);
             _functionLoader = new FunctionLoader();
         }
 
@@ -37,41 +35,35 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         {
             using (_msgStream)
             {
-                StreamingMessage request, response;
                 while (await _msgStream.MoveNext())
                 {
-                    request = _msgStream.GetCurrentMessage();
-
-                    using (_logger.BeginScope(request.RequestId, request.InvocationRequest?.InvocationId))
+                    StreamingMessage request = _msgStream.GetCurrentMessage();
+                    switch (request.ContentCase)
                     {
-                        switch (request.ContentCase)
-                        {
-                            case StreamingMessage.ContentOneofCase.WorkerInitRequest:
-                                response = ProcessWorkerInitRequest(request);
-                                break;
-                            case StreamingMessage.ContentOneofCase.FunctionLoadRequest:
-                                response = ProcessFunctionLoadRequest(request);
-                                break;
-                            case StreamingMessage.ContentOneofCase.InvocationRequest:
-                                response = ProcessInvocationRequest(request);
-                                break;
-                            default:
-                                throw new InvalidOperationException($"Not supportted message type: {request.ContentCase}");
-                        }
+                        case StreamingMessage.ContentOneofCase.WorkerInitRequest:
+                            await ProcessWorkerInitRequest(request);
+                            break;
+                        case StreamingMessage.ContentOneofCase.FunctionLoadRequest:
+                            await ProcessFunctionLoadRequest(request);
+                            break;
+                        case StreamingMessage.ContentOneofCase.InvocationRequest:
+                            _ = Task.Run(() => ProcessInvocationRequest(request));
+                            break;
+                        default:
+                            throw new InvalidOperationException($"Not supportted message type: {request.ContentCase}");
                     }
-                    await _msgStream.WriteAsync(response);
                 }
             }
         }
 
-        internal StreamingMessage ProcessWorkerInitRequest(StreamingMessage request)
+        internal async Task ProcessWorkerInitRequest(StreamingMessage request)
         {
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.WorkerInitResponse,
                 out StatusResult status);
 
-            return response;
+            await _msgStream.WriteAsync(response);
         }
 
         /// <summary>
@@ -80,7 +72,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         /// concurrently as a FunctionApp doesn't include a lot functions in general. Having this step sequential
         /// will make the Runspace-level initialization easier and more predictable.
         /// </summary>
-        internal StreamingMessage ProcessFunctionLoadRequest(StreamingMessage request)
+        internal async Task ProcessFunctionLoadRequest(StreamingMessage request)
         {
             FunctionLoadRequest functionLoadRequest = request.FunctionLoadRequest;
 
@@ -98,7 +90,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 if (!_isFunctionAppInitialized)
                 {
                     FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
-                    _powershellPool.Initialize();
+                    _powershellPool.Initialize(request.RequestId);
                     _isFunctionAppInitialized = true;
                 }
 
@@ -111,14 +103,14 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 status.Exception = e.ToRpcException();
             }
 
-            return response;
+            await _msgStream.WriteAsync(response);
         }
 
         /// <summary>
         /// Method to process a InvocationRequest.
-        /// InvocationRequest should be processed in parallel eventually.
+        /// InvocationRequest messages are processed in parallel.
         /// </summary>
-        internal StreamingMessage ProcessInvocationRequest(StreamingMessage request)
+        internal async Task ProcessInvocationRequest(StreamingMessage request)
         {
             PowerShellManager psManager = null;
             InvocationRequest invocationRequest = request.InvocationRequest;
@@ -133,7 +125,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 // Load information about the function
                 var functionInfo = _functionLoader.GetFunctionInfo(invocationRequest.FunctionId);
-                psManager = _powershellPool.CheckoutIdleWorker(functionInfo);
+                psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
 
                 // Invoke the function and return a hashtable of out binding data
                 Hashtable results = functionInfo.Type == AzFunctionType.OrchestrationFunction
@@ -152,7 +144,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 _powershellPool.ReclaimUsedWorker(psManager);
             }
 
-            return response;
+            await _msgStream.WriteAsync(response);
         }
 
         #region Helper_Methods
