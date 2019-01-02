@@ -144,7 +144,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// </summary>
         internal bool TryTake(out T result)
         {
-            return _queue.TryDequeue(out result);
+            if (_queue.TryDequeue(out result))
+            {
+                // Decrease the semaphore's count without blocking.
+                _semaphore.Wait(millisecondsTimeout: 0);
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
