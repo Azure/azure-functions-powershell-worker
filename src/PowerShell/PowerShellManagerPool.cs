@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -19,9 +20,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     /// </summary>
     internal class PowerShellManagerPool
     {
-        private const int UpperBound = 25;
+        private readonly int _upperBound = 25;
         private readonly MessagingStream _msgStream;
-        private readonly BlockingCollection<PowerShellManager> _pool;
+        private readonly AsyncConcurrentPool<PowerShellManager> _pool;
         private int _poolSize;
 
         /// <summary>
@@ -29,14 +30,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// </summary>
         internal PowerShellManagerPool(MessagingStream msgStream)
         {
+            string upperBound = Environment.GetEnvironmentVariable("InProcConcurrencyUpperBound");
+            if (string.IsNullOrEmpty(upperBound) || !int.TryParse(upperBound, out _upperBound))
+            {
+                _upperBound = 25;
+            }
+
             _msgStream = msgStream;
-            _pool = new BlockingCollection<PowerShellManager>(UpperBound);
+            _pool = new AsyncConcurrentPool<PowerShellManager>();
         }
 
         /// <summary>
         /// Initialize the pool and populate it with PowerShellManager instances.
-        /// When it's time to really implement this pool, we probably should instantiate PowerShellManager instances in a lazy way.
-        /// Maybe start from size 1 and increase the number of workers as needed.
+        /// We instantiate PowerShellManager instances in a lazy way, starting from size 1 and increase the number of workers as needed.
         /// </summary>
         internal void Initialize(string requestId)
         {
@@ -46,7 +52,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 logger.SetContext(requestId, invocationId: null);
                 _pool.Add(new PowerShellManager(logger));
-                _poolSize = _pool.Count;
+                _poolSize = 1;
             }
             finally
             {
@@ -55,10 +61,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         }
 
         /// <summary>
-        /// Checkout an idle PowerShellManager instance.
-        /// When it's time to really implement this pool, this method is supposed to block when there is no idle instance available.
+        /// Checkout an idle PowerShellManager instance in a non-blocking asynchronous way.
         /// </summary>
-        internal PowerShellManager CheckoutIdleWorker(StreamingMessage request, AzFunctionInfo functionInfo)
+        internal async Task<PowerShellManager> CheckoutIdleWorker(StreamingMessage request, AzFunctionInfo functionInfo)
         {
             PowerShellManager psManager = null;
             string requestId = request.RequestId;
@@ -68,8 +73,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             if (!_pool.TryTake(out psManager))
             {
                 // The pool doesn't have an idle one.
-                if (_poolSize < UpperBound &&
-                    Interlocked.Increment(ref _poolSize) <= UpperBound)
+                if (_poolSize < _upperBound &&
+                    Interlocked.Increment(ref _poolSize) <= _upperBound)
                 {
                     // If the pool hasn't reached its bounded capacity yet, then
                     // we create a new item and return it.
@@ -81,7 +86,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 {
                     // If the pool has reached its bounded capacity, then the thread
                     // should be blocked until an idle one becomes available.
-                    psManager = _pool.Take();
+                    psManager = await _pool.TakeAsync();
                 }
             }
 
@@ -103,6 +108,59 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 psManager.Logger.ResetContext();
                 _pool.Add(psManager);
             }
+        }
+    }
+
+    /// <summary>
+    /// An async concurrent pool implementation that wraps a concurrent queue.
+    /// </summary>
+    internal class AsyncConcurrentPool<T>
+    {
+        private readonly SemaphoreSlim _semaphore;
+        private readonly ConcurrentQueue<T> _queue;
+
+        internal AsyncConcurrentPool()
+        {
+            _semaphore = new SemaphoreSlim(0);
+            _queue = new ConcurrentQueue<T>();
+        }
+
+        /// <summary>
+        /// Gets the count of the pool.
+        /// </summary>
+        internal int Count => _queue.Count;
+
+        /// <summary>
+        /// Add one item to the pool.
+        /// </summary>
+        internal void Add(T item)
+        {
+            _queue.Enqueue(item);
+            _semaphore.Release();
+        }
+
+        /// <summary>
+        /// Try taking one item from the pool.
+        /// </summary>
+        internal bool TryTake(out T result)
+        {
+            return _queue.TryDequeue(out result);
+        }
+
+        /// <summary>
+        /// Take one item from the pool in a non-blocking async way.
+        /// </summary>
+        internal async Task<T> TakeAsync()
+        {
+            do
+            {
+                await _semaphore.WaitAsync();
+                if (_queue.TryDequeue(out T item))
+                {
+                    return item;
+                }
+            }
+            while (true);
         }
     }
 }

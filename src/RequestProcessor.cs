@@ -125,7 +125,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 // Load information about the function
                 var functionInfo = _functionLoader.GetFunctionInfo(invocationRequest.FunctionId);
-                psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
+                psManager = await _powershellPool.CheckoutIdleWorker(request, functionInfo);
 
                 // Invoke the function and return a hashtable of out binding data
                 Hashtable results = functionInfo.Type == AzFunctionType.OrchestrationFunction
