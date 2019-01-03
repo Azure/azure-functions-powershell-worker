@@ -53,10 +53,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             // Resolve the FunctionApp root path
             FunctionAppRootPath = Path.GetFullPath(Path.Join(request.Metadata.Directory, ".."));
+
             // Resolve module paths
             var appLevelModulesPath = Path.Join(FunctionAppRootPath, "Modules");
             var workerLevelModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
-            FunctionModulePath = $"{appLevelModulesPath}{Path.PathSeparator}{workerLevelModulesPath}";
+
+            // Managed dependencies are modules managed by Azure Functions
+            var workerLevelManagedDependencies = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "ManagedDependencies");
+
+            // Set FunctionApp module path
+            FunctionModulePath = $"{appLevelModulesPath}{Path.PathSeparator}" +
+                                 $"{workerLevelModulesPath}{Path.PathSeparator}" +
+                                 $"{workerLevelManagedDependencies}";
 
             // Resolve the FunctionApp profile path
             var options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive };
