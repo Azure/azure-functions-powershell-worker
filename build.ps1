@@ -67,6 +67,13 @@ if(!$NoBuild.IsPresent) {
     }
 
     Invoke-PSDepend -Path $requirements -Force
+
+    # TODO: Remove this once the SDK properly bundles modules
+    Get-WebFile -Url 'https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Modules/Windows/Microsoft.PowerShell.Utility/Microsoft.PowerShell.Utility.psd1' `
+        -OutFile "$PSScriptRoot/src/Modules/Microsoft.PowerShell.Utility/Microsoft.PowerShell.Utility.psd1"
+    Get-WebFile -Url 'https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Modules/Windows/Microsoft.PowerShell.Management/Microsoft.PowerShell.Management.psd1' `
+        -OutFile "$PSScriptRoot/src/Modules/Microsoft.PowerShell.Management/Microsoft.PowerShell.Management.psd1" 
+
     dotnet publish -c $Configuration $PSScriptRoot
     dotnet pack -c $Configuration "$PSScriptRoot/package"
 }
