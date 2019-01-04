@@ -147,11 +147,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         public void ModulePathShouldBeSetCorrectly()
         {
             string workerModulePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
-            string workerManagedDependenciesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "ManagedDependencies");
             string funcAppModulePath = Path.Join(FunctionLoader.FunctionAppRootPath, "Modules");
+            string funcAppManagedDependenciesPath = Path.Join(FunctionLoader.FunctionAppRootPath, "ManagedDependencies");
             string expectedPath = $"{funcAppModulePath}{Path.PathSeparator}" +
                                   $"{workerModulePath}{Path.PathSeparator}" +
-                                  $"{workerManagedDependenciesPath}";
+                                  $"{funcAppManagedDependenciesPath}";
             Assert.Equal(expectedPath, Environment.GetEnvironmentVariable("PSModulePath"));
         }
 
