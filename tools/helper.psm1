@@ -174,7 +174,7 @@ function Get-WebFile {
         [string] $OutFile
     )
     $directoryName = [System.IO.Path]::GetDirectoryName($OutFile)
-    if (!Test-Path $directoryName) {
+    if (!(Test-Path $directoryName)) {
         New-Item -Type Directory $directoryName
     }
     Remove-Item $OutFile -ErrorAction SilentlyContinue
