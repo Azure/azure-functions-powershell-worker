@@ -22,7 +22,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     {
         private readonly int _upperBound = 25;
         private readonly MessagingStream _msgStream;
-        private readonly AsyncConcurrentPool<PowerShellManager> _pool;
+        private readonly BlockingCollection<PowerShellManager> _pool;
         private int _poolSize;
 
         /// <summary>
@@ -33,11 +33,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             string upperBound = Environment.GetEnvironmentVariable("InProcConcurrencyUpperBound");
             if (string.IsNullOrEmpty(upperBound) || !int.TryParse(upperBound, out _upperBound))
             {
-                _upperBound = 1;
+                _upperBound = 5;
             }
 
             _msgStream = msgStream;
-            _pool = new AsyncConcurrentPool<PowerShellManager>();
+            _pool = new BlockingCollection<PowerShellManager>(_upperBound);
         }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Checkout an idle PowerShellManager instance in a non-blocking asynchronous way.
         /// </summary>
-        internal async Task<PowerShellManager> CheckoutIdleWorker(StreamingMessage request, AzFunctionInfo functionInfo)
+        internal PowerShellManager CheckoutIdleWorker(StreamingMessage request, AzFunctionInfo functionInfo)
         {
             PowerShellManager psManager = null;
             string requestId = request.RequestId;
@@ -86,7 +86,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 {
                     // If the pool has reached its bounded capacity, then the thread
                     // should be blocked until an idle one becomes available.
-                    psManager = await _pool.TakeAsync();
+                    psManager = _pool.Take();
                 }
             }
 
@@ -108,66 +108,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 psManager.Logger.ResetContext();
                 _pool.Add(psManager);
             }
-        }
-    }
-
-    /// <summary>
-    /// An async concurrent pool implementation that wraps a concurrent queue.
-    /// </summary>
-    internal class AsyncConcurrentPool<T>
-    {
-        private readonly SemaphoreSlim _semaphore;
-        private readonly ConcurrentQueue<T> _queue;
-
-        internal AsyncConcurrentPool()
-        {
-            _semaphore = new SemaphoreSlim(0);
-            _queue = new ConcurrentQueue<T>();
-        }
-
-        /// <summary>
-        /// Gets the count of the pool.
-        /// </summary>
-        internal int Count => _queue.Count;
-
-        /// <summary>
-        /// Add one item to the pool.
-        /// </summary>
-        internal void Add(T item)
-        {
-            _queue.Enqueue(item);
-            _semaphore.Release();
-        }
-
-        /// <summary>
-        /// Try taking one item from the pool.
-        /// </summary>
-        internal bool TryTake(out T result)
-        {
-            if (_queue.TryDequeue(out result))
-            {
-                // Decrease the semaphore's count without blocking.
-                _semaphore.Wait(millisecondsTimeout: 0);
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Take one item from the pool in a non-blocking async way.
-        /// </summary>
-        internal async Task<T> TakeAsync()
-        {
-            do
-            {
-                await _semaphore.WaitAsync();
-                if (_queue.TryDequeue(out T item))
-                {
-                    return item;
-                }
-            }
-            while (true);
         }
     }
 }

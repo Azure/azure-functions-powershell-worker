@@ -47,7 +47,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                             await ProcessFunctionLoadRequest(request);
                             break;
                         case StreamingMessage.ContentOneofCase.InvocationRequest:
-                            _ = Task.Run(() => ProcessInvocationRequest(request));
+                            ProcessInvocationRequest(request);
                             break;
                         default:
                             throw new InvalidOperationException($"Not supportted message type: {request.ContentCase}");
@@ -56,7 +56,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             }
         }
 
-        internal async Task ProcessWorkerInitRequest(StreamingMessage request)
+        private async Task ProcessWorkerInitRequest(StreamingMessage request)
         {
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
@@ -72,7 +72,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         /// concurrently as a FunctionApp doesn't include a lot functions in general. Having this step sequential
         /// will make the Runspace-level initialization easier and more predictable.
         /// </summary>
-        internal async Task ProcessFunctionLoadRequest(StreamingMessage request)
+        private async Task ProcessFunctionLoadRequest(StreamingMessage request)
         {
             FunctionLoadRequest functionLoadRequest = request.FunctionLoadRequest;
 
@@ -106,15 +106,21 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             await _msgStream.WriteAsync(response);
         }
 
+        private void ProcessInvocationRequest(StreamingMessage request)
+        {
+            // Load information about the function
+            var functionInfo = _functionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
+            var psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
+            Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager));
+        }
+
         /// <summary>
         /// Method to process a InvocationRequest.
         /// InvocationRequest messages are processed in parallel.
         /// </summary>
-        internal async Task ProcessInvocationRequest(StreamingMessage request)
+        private async Task ProcessInvocationRequestImpl(StreamingMessage request, AzFunctionInfo functionInfo, PowerShellManager psManager)
         {
-            PowerShellManager psManager = null;
             InvocationRequest invocationRequest = request.InvocationRequest;
-
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.InvocationResponse,
@@ -123,10 +129,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
             try
             {
-                // Load information about the function
-                var functionInfo = _functionLoader.GetFunctionInfo(invocationRequest.FunctionId);
-                psManager = await _powershellPool.CheckoutIdleWorker(request, functionInfo);
-
                 // Invoke the function and return a hashtable of out binding data
                 Hashtable results = functionInfo.Type == AzFunctionType.OrchestrationFunction
                     ? InvokeOrchestrationFunction(psManager, functionInfo, invocationRequest)
