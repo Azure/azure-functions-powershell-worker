@@ -201,7 +201,7 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
             $outStringResults = Write-TestObject | Out-String -Stream
             $ps.Streams.Information.Count | Should -BeExactly ($outStringResults.Count + 1)
 
-            $lastNonWhitespaceItem = $outStringResults.Count
+            $lastNonWhitespaceItem = $outStringResults.Count - 1
             while ([string]::IsNullOrWhiteSpace($outStringResults[$lastNonWhitespaceItem])) {
                 $lastNonWhitespaceItem--
             }
