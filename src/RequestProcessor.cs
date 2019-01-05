@@ -49,7 +49,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                         response = ProcessInvocationRequest(request);
                         break;
                     default:
-                        throw new InvalidOperationException($"Not supportted message type: {request.ContentCase}");
+                        throw new InvalidOperationException($"Unsupported message type: {request.ContentCase}");
                 }
 
                 if (response != null)
