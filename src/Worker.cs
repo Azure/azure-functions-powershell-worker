@@ -38,7 +38,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 StartStream = new StartStream() { WorkerId = arguments.WorkerId }
             };
 
-            await msgStream.WriteAsync(startedMessage);
+            msgStream.Write(startedMessage);
             await requestProcessor.ProcessRequestLoop();
         }
     }

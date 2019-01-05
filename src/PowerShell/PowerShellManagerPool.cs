@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     /// </summary>
     internal class PowerShellManagerPool
     {
-        private readonly int _upperBound = 25;
+        private readonly int _upperBound;
         private readonly MessagingStream _msgStream;
         private readonly BlockingCollection<PowerShellManager> _pool;
         private int _poolSize;
@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// </summary>
         internal PowerShellManagerPool(MessagingStream msgStream)
         {
-            string upperBound = Environment.GetEnvironmentVariable("InProcConcurrencyUpperBound");
+            string upperBound = Environment.GetEnvironmentVariable("PSWorkerInProcConcurrencyUpperBound");
             if (string.IsNullOrEmpty(upperBound) || !int.TryParse(upperBound, out _upperBound))
             {
                 _upperBound = 1;

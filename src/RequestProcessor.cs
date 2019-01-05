@@ -54,7 +54,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
                 if (response != null)
                 {
-                    await _msgStream.WriteAsync(response);
+                    _msgStream.Write(response);
                 }
             }
         }
@@ -147,7 +147,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         /// Implementation method to actual invoke the corresponding function.
         /// InvocationRequest messages are processed in parallel when there are multiple PowerShellManager instances in the pool.
         /// </summary>
-        private async Task ProcessInvocationRequestImpl(StreamingMessage request, AzFunctionInfo functionInfo, PowerShellManager psManager)
+        private void ProcessInvocationRequestImpl(StreamingMessage request, AzFunctionInfo functionInfo, PowerShellManager psManager)
         {
             InvocationRequest invocationRequest = request.InvocationRequest;
             StreamingMessage response = NewStreamingMessageTemplate(
@@ -175,7 +175,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 _powershellPool.ReclaimUsedWorker(psManager);
             }
 
-            await _msgStream.WriteAsync(response);
+            _msgStream.Write(response);
         }
 
         #region Helper_Methods

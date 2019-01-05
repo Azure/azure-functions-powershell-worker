@@ -38,7 +38,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             _invocationId = null;
         }
 
-        public async void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
+        public void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
         {
             if (isUserLog)
             {
@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     }
                 };
 
-                await _msgStream.WriteAsync(logMessage);
+                _msgStream.Write(logMessage);
             }
             else
             {
