@@ -21,16 +21,23 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         private readonly RpcLogger _logger;
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManagerPool _powershellPool;
+        private readonly string _managedModulePath;
 
         // Indicate whether the FunctionApp has been initialized.
         private bool _isFunctionAppInitialized;
 
-        internal RequestProcessor(MessagingStream msgStream)
+        internal RequestProcessor(RuntimeContext runtimeContext)
         {
-            _msgStream = msgStream;
-            _logger = new RpcLogger(msgStream);
+            if(runtimeContext == null)
+            {
+                throw new ArgumentNullException("runtimeContext");
+            }
+
+            _msgStream = runtimeContext.MsgStream;
+            _logger = new RpcLogger(runtimeContext.MsgStream);
             _powershellPool = new PowerShellManagerPool(_logger);
             _functionLoader = new FunctionLoader();
+            _managedModulePath = runtimeContext.ManagedModulePath;
         }
 
         internal async Task ProcessRequestLoop()
@@ -97,7 +104,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 // 'FunctionLoadRequest' comes in. Therefore, we run initialization here.
                 if (!_isFunctionAppInitialized)
                 {
-                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
+                    FunctionLoader.SetupRuntimePaths(functionLoadRequest.Metadata.Directory, _managedModulePath);
                     _powershellPool.Initialize();
                     _isFunctionAppInitialized = true;
                 }

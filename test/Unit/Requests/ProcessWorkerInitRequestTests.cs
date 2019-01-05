@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            var requestProcessor = new RequestProcessor(null);
+            var requestProcessor = new RequestProcessor(new RuntimeContext(null, string.Empty));
             StreamingMessage result = requestProcessor.ProcessWorkerInitRequest(
                 new StreamingMessage()
                 {

@@ -30,7 +30,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .WithNotParsed(err => Environment.Exit(1));
 
             var msgStream = new MessagingStream(arguments.Host, arguments.Port);
-            var requestProcessor = new RequestProcessor(msgStream);
+            var runtimeContext = new RuntimeContext(msgStream, arguments.ManagedModulePath);
+            var requestProcessor = new RequestProcessor(runtimeContext);
 
             // Send StartStream message
             var startedMessage = new StreamingMessage() {
@@ -59,5 +60,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         [Option("grpcMaxMessageLength", Required = true, HelpText = "gRPC Maximum message size.")]
         public int MaxMessageLength { get; set; }
+
+        // This property is currently marked as optional in order to maintain the backward compatibility with the host as the host does not pass this param yet.
+        [Option("managedModulePath", Required = false, HelpText = "Managed module path.")]
+        public string ManagedModulePath { get; set; }
     }
 }
