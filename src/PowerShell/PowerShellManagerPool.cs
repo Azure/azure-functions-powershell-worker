@@ -33,7 +33,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             string upperBound = Environment.GetEnvironmentVariable("InProcConcurrencyUpperBound");
             if (string.IsNullOrEmpty(upperBound) || !int.TryParse(upperBound, out _upperBound))
             {
-                _upperBound = 5;
+                _upperBound = 1;
             }
 
             _msgStream = msgStream;

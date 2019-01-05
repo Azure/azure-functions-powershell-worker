@@ -160,16 +160,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 // Gives access to additional Trigger Metadata if the user specifies TriggerMetadata
                 if(functionInfo.FuncParameters.Contains(AzFunctionInfo.TriggerMetadata))
                 {
-                    _logger.Log(LogLevel.Debug, "Parameter '-TriggerMetadata' found.");
                     _pwsh.AddParameter(AzFunctionInfo.TriggerMetadata, triggerMetadata);
                 }
 
-                Collection<object> pipelineItems = null;
-                using (ExecutionTimer.Start(_logger, "Execution of the user's function completed."))
-                {
-                    pipelineItems = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject")
-                                         .InvokeAndClearCommands<object>();
-                }
+                Collection<object> pipelineItems = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject")
+                                                        .InvokeAndClearCommands<object>();
 
                 var result = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Get-OutputBinding")
                                     .AddParameter("Purge", true)

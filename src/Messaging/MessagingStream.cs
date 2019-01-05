@@ -12,11 +12,10 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
 {
-    internal class MessagingStream : IDisposable
+    internal class MessagingStream
     {
         private SemaphoreSlim _writeSemaphore = new SemaphoreSlim(1, 1);
         private AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
-        private bool isDisposed;
 
         public MessagingStream(string host, int port)
         {
@@ -24,30 +23,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
             _call = new FunctionRpc.FunctionRpcClient(channel).EventStream();
         }
 
-        public void Dispose()
-        {
-            if (!isDisposed)
-            {
-                isDisposed = true;
-                _call.Dispose();
-            }
-        }
+        public StreamingMessage GetCurrentMessage() => _call.ResponseStream.Current;
 
-        public StreamingMessage GetCurrentMessage() =>
-            isDisposed ? null : _call.ResponseStream.Current;
-
-        public async Task<bool> MoveNext() =>
-            !isDisposed && await _call.ResponseStream.MoveNext(CancellationToken.None);
+        public async Task<bool> MoveNext() => await _call.ResponseStream.MoveNext(CancellationToken.None);
 
         public async Task WriteAsync(StreamingMessage message)
         {
-            if(isDisposed) return;
-
-            // Wait for the handle to be released because we can't have
-            // more than one message being sent at the same time
-            await _writeSemaphore.WaitAsync();
             try
             {
+                // Wait for the handle to be released because we can't have
+                // more than one message being sent at the same time
+                await _writeSemaphore.WaitAsync();
                 await _call.RequestStream.WriteAsync(message);
             }
             finally
