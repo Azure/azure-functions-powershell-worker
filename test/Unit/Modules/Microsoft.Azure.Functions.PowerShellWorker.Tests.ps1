@@ -200,8 +200,13 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
 
             $outStringResults = Write-TestObject | Out-String -Stream
             $ps.Streams.Information.Count | Should -BeExactly ($outStringResults.Count + 1)
-            $countWithoutTrailingNewLines = $outStringResults.Count - 2
-            for ($i = 0; $i -lt $countWithoutTrailingNewLines; $i++) {
+
+            $lastNonWhitespaceItem = $outStringResults.Count
+            while ([string]::IsNullOrWhiteSpace($outStringResults[$lastNonWhitespaceItem])) {
+                $lastNonWhitespaceItem--
+            }
+
+            for ($i = 0; $i -le $lastNonWhitespaceItem; $i++) {
                 $ps.Streams.Information[$i].MessageData | Should -BeExactly $outStringResults[$i]
                 $ps.Streams.Information[$i].Tags | Should -BeExactly "__PipelineObject__"
             }
