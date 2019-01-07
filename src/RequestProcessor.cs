@@ -111,7 +111,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
         /// <summary>
         /// Method to process a InvocationRequest.
-        /// This method checks out a worker from the pool, and then start the actual invocation in a threadpool thread.
+        /// This method checks out a worker from the pool, and then starts the actual invocation in a threadpool thread.
         /// </summary>
         internal StreamingMessage ProcessInvocationRequest(StreamingMessage request)
         {
