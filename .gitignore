@@ -17,6 +17,9 @@ obj/
 # Visual Studio IDE directory
 .vs/
 
+# VSCode directories that are not at the repository root
+/**/.vscode/
+
 # Project Rider IDE files
 .idea.powershell/
 

@@ -12,7 +12,7 @@ using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
-    internal class RpcLogger : ILogger, IDisposable
+    internal class RpcLogger : ILogger
     {
         private const string SystemLogPrefix = "LanguageWorkerConsoleLog";
         private readonly MessagingStream _msgStream;
@@ -20,26 +20,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         private string _invocationId;
         private string _requestId;
 
-        public RpcLogger(MessagingStream msgStream)
+        internal RpcLogger(MessagingStream msgStream)
         {
             _msgStream = msgStream;
             _systemLogMsg = new StringBuilder();
         }
 
-        public IDisposable BeginScope(string requestId, string invocationId)
+        public void SetContext(string requestId, string invocationId)
         {
             _requestId = requestId;
             _invocationId = invocationId;
-            return this;
         }
 
-        public void Dispose()
+        public void ResetContext()
         {
             _requestId = null;
             _invocationId = null;
         }
 
-        public async void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
+        public void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
         {
             if (isUserLog)
             {
@@ -56,7 +55,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     }
                 };
 
-                await _msgStream.WriteAsync(logMessage);
+                _msgStream.Write(logMessage);
             }
             else
             {

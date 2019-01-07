@@ -4,7 +4,12 @@
 //
 
 using System;
+using System.Collections.Concurrent;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
+using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
@@ -15,37 +20,80 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     /// </summary>
     internal class PowerShellManagerPool
     {
-        private readonly ILogger _logger;
-        // Today we don't really support the in-proc concurrency. We just hold an instance of PowerShellManager in this field.
-        private PowerShellManager _psManager;
+        private readonly int _upperBound;
+        private readonly MessagingStream _msgStream;
+        private readonly BlockingCollection<PowerShellManager> _pool;
+        private int _poolSize;
 
         /// <summary>
         /// Constructor of the pool.
         /// </summary>
-        internal PowerShellManagerPool(ILogger logger)
+        internal PowerShellManagerPool(MessagingStream msgStream)
         {
-            _logger = logger;
+            string upperBound = Environment.GetEnvironmentVariable("PSWorkerInProcConcurrencyUpperBound");
+            if (string.IsNullOrEmpty(upperBound) || !int.TryParse(upperBound, out _upperBound))
+            {
+                _upperBound = 1;
+            }
+
+            _msgStream = msgStream;
+            _pool = new BlockingCollection<PowerShellManager>(_upperBound);
         }
 
         /// <summary>
         /// Initialize the pool and populate it with PowerShellManager instances.
-        /// When it's time to really implement this pool, we probably should instantiate PowerShellManager instances in a lazy way.
-        /// Maybe start from size 1 and increase the number of workers as needed.
+        /// We instantiate PowerShellManager instances in a lazy way, starting from size 1 and increase the number of workers as needed.
         /// </summary>
-        internal void Initialize()
+        internal void Initialize(string requestId)
         {
-            _psManager = new PowerShellManager(_logger);
+            var logger = new RpcLogger(_msgStream);
+
+            try
+            {
+                logger.SetContext(requestId, invocationId: null);
+                _pool.Add(new PowerShellManager(logger));
+                _poolSize = 1;
+            }
+            finally
+            {
+                logger.ResetContext();
+            }
         }
 
         /// <summary>
-        /// Checkout an idle PowerShellManager instance.
-        /// When it's time to really implement this pool, this method is supposed to block when there is no idle instance available.
+        /// Checkout an idle PowerShellManager instance in a non-blocking asynchronous way.
         /// </summary>
-        internal PowerShellManager CheckoutIdleWorker(AzFunctionInfo functionInfo)
+        internal PowerShellManager CheckoutIdleWorker(StreamingMessage request, AzFunctionInfo functionInfo)
         {
+            PowerShellManager psManager = null;
+            string requestId = request.RequestId;
+            string invocationId = request.InvocationRequest?.InvocationId;
+
+            // If the pool has an idle one, just use it.
+            if (!_pool.TryTake(out psManager))
+            {
+                // The pool doesn't have an idle one.
+                if (_poolSize < _upperBound &&
+                    Interlocked.Increment(ref _poolSize) <= _upperBound)
+                {
+                    // If the pool hasn't reached its bounded capacity yet, then
+                    // we create a new item and return it.
+                    var logger = new RpcLogger(_msgStream);
+                    logger.SetContext(requestId, invocationId);
+                    psManager = new PowerShellManager(logger);
+                }
+                else
+                {
+                    // If the pool has reached its bounded capacity, then the thread
+                    // should be blocked until an idle one becomes available.
+                    psManager = _pool.Take();
+                }
+            }
+
             // Register the function with the Runspace before returning the idle PowerShellManager.
-            FunctionMetadata.RegisterFunctionMetadata(_psManager.InstanceId, functionInfo);
-            return _psManager;
+            FunctionMetadata.RegisterFunctionMetadata(psManager.InstanceId, functionInfo);
+            psManager.Logger.SetContext(requestId, invocationId);
+            return psManager;
         }
 
         /// <summary>
@@ -57,6 +105,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 // Unregister the Runspace before reclaiming the used PowerShellManager.
                 FunctionMetadata.UnregisterFunctionMetadata(psManager.InstanceId);
+                psManager.Logger.ResetContext();
+                _pool.Add(psManager);
             }
         }
     }
