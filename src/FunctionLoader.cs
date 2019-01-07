@@ -46,13 +46,27 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         }
 
         /// <summary>
+        /// Sets up paths to powershell runtime resources
+        /// </summary>
+        /// <param name="functionBaseDirectory"> Function base directory</param>
+        /// <param name="managedModulePath">Managed module path</param>
+        internal static void SetupRuntimePaths(string functionBaseDirectory, string managedModulePath)
+        {
+            SetupWellKnownPaths(functionBaseDirectory);
+
+            // Setup managed module path only after setting up well know paths.
+            // This is important for preserving the priority (override) of function app modules over managed modules.
+            TrySetupManagedModulePath(managedModulePath);
+        }
+
+        /// <summary>
         /// Setup the well known paths about the FunctionApp.
         /// This method is called only once during the code start.
         /// </summary>
-        internal static void SetupWellKnownPaths(FunctionLoadRequest request)
+        private static void SetupWellKnownPaths(string functionBaseDirectory)
         {
             // Resolve the FunctionApp root path
-            FunctionAppRootPath = Path.GetFullPath(Path.Join(request.Metadata.Directory, ".."));
+            FunctionAppRootPath = Path.GetFullPath(Path.Join(functionBaseDirectory, ".."));
             // Resolve module paths
             var appLevelModulesPath = Path.Join(FunctionAppRootPath, "Modules");
             var workerLevelModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
@@ -62,6 +76,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             var options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive };
             var profiles = Directory.EnumerateFiles(FunctionAppRootPath, "profile.ps1", options);
             FunctionAppProfilePath = profiles.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Validates and appends managed module path (if supplied) to PsModulePath
+        /// </summary>
+        /// <param name="managedModulePath">Managed module path</param>
+        private static void TrySetupManagedModulePath(string managedModulePath)
+        {
+            if (string.IsNullOrEmpty(managedModulePath))
+            {
+                return; // no-op : for case in which no managed module path is supplied.
+            }
+
+            if(!Directory.Exists(managedModulePath))
+            {
+                // If a path is supplied, it should be a valid path
+                throw new ArgumentException("Invalid managed module path: '{0}'", managedModulePath);
+            }
+
+            FunctionModulePath = $"{FunctionModulePath}{Path.PathSeparator}{managedModulePath}";
         }
     }
 }

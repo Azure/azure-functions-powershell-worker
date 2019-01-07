@@ -38,7 +38,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             };
 
             FunctionLoadRequest = new FunctionLoadRequest {FunctionId = "FunctionId", Metadata = RpcFunctionMetadata};
-            FunctionLoader.SetupWellKnownPaths(FunctionLoadRequest);
+            FunctionLoader.SetupRuntimePaths(FunctionLoadRequest.Metadata.Directory, managedModulePath: string.Empty);
         }
 
         // Have a single place to get a PowerShellManager for testing.
@@ -72,8 +72,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         private const string TestStringData = "Foo";
 
         private readonly ConsoleLogger _testLogger;
-        private readonly PowerShellManager _testManager;
         private readonly List<ParameterBinding> _testInputData;
+
+        private PowerShellManager _testManager;
 
         public PowerShellManagerTests()
         {
@@ -149,7 +150,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             string workerModulePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
             string funcAppModulePath = Path.Join(FunctionLoader.FunctionAppRootPath, "Modules");
             string expectedPath = $"{funcAppModulePath}{Path.PathSeparator}{workerModulePath}";
-            Assert.Equal(expectedPath, Environment.GetEnvironmentVariable("PSModulePath"));
+
+            // Due to other tests modifying PsModulePath, depending on the order of the test runs, 
+            // "PSModulePath" sometimes additionally contains managed module path as well. Hence, changing from Assert.Equal(...) to Assert.Contains(...)
+            Assert.Contains(expectedPath, Environment.GetEnvironmentVariable("PSModulePath"));
         }
 
         [Fact]
