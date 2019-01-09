@@ -49,7 +49,7 @@ function Install-Dotnet {
     [CmdletBinding()]
     param(
         [string]$Channel = 'release',
-        [string]$Version = '2.1.401'
+        [string]$Version = '2.2.102'
     )
 
     try {
