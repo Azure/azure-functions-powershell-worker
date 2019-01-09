@@ -50,11 +50,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Unit.PowerShell
             // create a temporary managed module directory
             Directory.CreateDirectory(validManagedModulePath);
 
-            FunctionLoader.SetupRuntimePaths(_functionDirectory, validManagedModulePath);
-            Assert.Contains(validManagedModulePath, FunctionLoader.FunctionModulePath);
-
-            // clean up temporary managed module directory
-            Directory.Delete(validManagedModulePath);
+            try
+            {
+                FunctionLoader.SetupRuntimePaths(_functionDirectory, validManagedModulePath);
+                Assert.Contains(validManagedModulePath, FunctionLoader.FunctionModulePath);
+            }
+            finally
+            {
+                // clean up temporary managed module directory
+                Directory.Delete(validManagedModulePath);
+            }
         }
 
         [Fact]
@@ -63,13 +68,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Unit.PowerShell
             var validManagedModulePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, this.GetRandomFolderName());
             Directory.CreateDirectory(validManagedModulePath);
 
-            FunctionLoader.SetupRuntimePaths(_functionDirectory, validManagedModulePath);
-            string funcAppModulePath = Path.Join(FunctionLoader.FunctionAppRootPath, "Modules");
-            string expectedPath = $"{funcAppModulePath}{Path.PathSeparator}{_workerModulePath}{Path.PathSeparator}{validManagedModulePath}";
+            try
+            {
+                FunctionLoader.SetupRuntimePaths(_functionDirectory, validManagedModulePath);
+                string funcAppModulePath = Path.Join(FunctionLoader.FunctionAppRootPath, "Modules");
+                string expectedPath = $"{funcAppModulePath}{Path.PathSeparator}{_workerModulePath}{Path.PathSeparator}{validManagedModulePath}";
 
-            Assert.Equal(expectedPath, FunctionLoader.FunctionModulePath);
-
-            Directory.Delete(validManagedModulePath);
+                Assert.Equal(expectedPath, FunctionLoader.FunctionModulePath);
+            }
+            finally
+            {
+                Directory.Delete(validManagedModulePath);
+            }
         }
 
         private string GetRandomFolderName()
