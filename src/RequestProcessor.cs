@@ -42,19 +42,17 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             _powershellPool = new PowerShellManagerPool(msgStream);
             _functionLoader = new FunctionLoader();
 
-            _writer = new StreamWriter(@"D:\local\test\stat.txt", append: true, Encoding.ASCII);
-            _writer.WriteLine("Request,InvRequest,InvDone,AveGetReqTime,AveInvTime,AveFetchFromPoolTime");
+            _writer = new StreamWriter(@"D:\home\stat.txt", append: true, Encoding.ASCII);
+            _writer.WriteLine("Request,InvRequest,InvDone,Response,AveGetReqTime,AveInvTime,AveFetchFromPoolTime,AveResponseTime");
         }
 
         internal async Task ProcessRequestLoop()
         {
-            Stopwatch watch = Stopwatch.StartNew();
+            Stopwatch watch = new Stopwatch();
             StreamingMessage request, response;
             while (await _msgStream.MoveNext())
             {
                 request = _msgStream.GetCurrentMessage();
-                watch.Stop();
-                _sumReadRequestTime += watch.ElapsedMilliseconds;
                 _requestCount++;
 
                 switch (request.ContentCase)
@@ -66,13 +64,23 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                         response = ProcessFunctionLoadRequest(request);
                         break;
                     case StreamingMessage.ContentOneofCase.InvocationRequest:
+
+                        if (watch.IsRunning)
+                        {
+                            // The main thread will be blocked on the message stream after starts up. We don't want to count that
+                            // blocking time in our data, so we start collecting data after finishing processing the first inv-req.
+                            watch.Stop();
+                            _sumReadRequestTime += watch.ElapsedMilliseconds;
+                        }
+
                         response = ProcessInvocationRequest(request);
 
                         if (_taskCount % 100 == 0)
                         {
-                            _writer.WriteLine($"{_requestCount},{_taskCount},{_taskRunCount},{(double)_sumReadRequestTime/_requestCount},{(double)_sumInvTime/_taskRunCount},{(double)_sumFetchFromPoolTime/_taskCount}");
+                            _writer.WriteLine($"{_requestCount},{_taskCount},{_taskRunCount},{_msgStream._responseCount},{(double)_sumReadRequestTime/_taskCount},{(double)_sumInvTime/_taskRunCount},{(double)_sumFetchFromPoolTime/_taskCount},{(double)_msgStream._sumResponseTime/_msgStream._responseCount}");
                             _writer.Flush();
                         }
+                        watch.Restart();
                         break;
                     default:
                         throw new InvalidOperationException($"Unsupported message type: {request.ContentCase}");
@@ -82,7 +90,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 {
                     _msgStream.Write(response);
                 }
-                watch.Restart();
             }
         }
 

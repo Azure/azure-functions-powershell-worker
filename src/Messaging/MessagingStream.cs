@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,6 +18,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
     {
         private readonly AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
         private readonly BlockingCollection<StreamingMessage> _msgQueue;
+
+        internal int _responseCount;
+        internal long _sumResponseTime;
+        private readonly Stopwatch _watch = new Stopwatch();
+        private bool _startCounting;
 
         internal MessagingStream(string host, int port)
         {
@@ -49,8 +55,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
         {
             while (true)
             {
+                if (_startCounting)
+                {
+                    _watch.Restart();
+                }
+
                 StreamingMessage msg = _msgQueue.Take();
                 await _call.RequestStream.WriteAsync(msg);
+
+                if (_startCounting)
+                {
+                    _watch.Stop();
+                    _sumResponseTime += _watch.ElapsedMilliseconds;
+                    _responseCount++;
+                }
+
+                if (!_startCounting)
+                {
+                    // Start collecting data only after sending the first inv-res message.
+                    // This method will be blocked on the message queue after worker starts, and we don't want to
+                    // count that blocking time in our collection.
+                    _startCounting = msg.InvocationResponse != null;
+                }
             }
         }
     }
