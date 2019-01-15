@@ -24,12 +24,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Unit.ManagedDependency
         }
 
         [Fact]
-        public async Task GetDependentLibrariesTest()
+        public async Task TestGetDependentLibrarie()
         {
             try
-            {
-                string directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string hostFilePath = Path.Combine(directoryName, @"Unit\Resources\host.json");
+            {             
+                string hostFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"Resources\host.json");
                 var result = await dependentLibraryProvider.GetDependentLibrariesAsync(hostFilePath);               
                 Assert.True(result != null && result.ManagedDependencies != null && result.ManagedDependencies.Any());
             }
