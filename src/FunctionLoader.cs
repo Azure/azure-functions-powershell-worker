@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using Microsoft.Azure.Functions.PowerShellWorker.ManagedDependency;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
@@ -57,7 +57,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             var appLevelModulesPath = Path.Join(FunctionAppRootPath, "Modules");
             var workerLevelModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
             FunctionModulePath = $"{appLevelModulesPath}{Path.PathSeparator}{workerLevelModulesPath}";
-
+            //If latest Az modules exist on VM append the path
+            FunctionModulePath = ManagedDependencyManager.AddAzModulesPath(FunctionAppRootPath, FunctionModulePath);
             // Resolve the FunctionApp profile path
             var options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive };
             var profiles = Directory.EnumerateFiles(FunctionAppRootPath, "profile.ps1", options);

@@ -1,0 +1,9 @@
+{
+  "version": "2.0",
+  "managedDependencies": [
+    {
+      "MajorVersion": "1",
+      "Name": "Az"
+    }
+  ]
+}
