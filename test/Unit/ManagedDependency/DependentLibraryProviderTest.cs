@@ -29,7 +29,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Unit.ManagedDependency
             try
             {
                 string directoryName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string hostFilePath = Path.Combine(directoryName, @"Unit\Resources\host1.json");
+                string hostFilePath = Path.Combine(directoryName, @"Unit\Resources\host.json");
                 var result = await dependentLibraryProvider.GetDependentLibrariesAsync(hostFilePath);               
                 Assert.True(result != null && result.ManagedDependencies != null && result.ManagedDependencies.Any());
             }
