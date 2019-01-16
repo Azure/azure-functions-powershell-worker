@@ -19,7 +19,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Unit.ManagedDependency
         {
             var hostJsonRootPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources");           
             var result = ManagedDependencyManager.AddAzModulesPath(hostJsonRootPath, hostJsonRootPath);
-            Assert.Equal(2, result.Split(';').Length);
+            Assert.Contains(LanguageConstants.LatestAzModulePath, result);
         }
     }
 }
