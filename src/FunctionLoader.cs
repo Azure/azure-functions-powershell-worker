@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     internal class FunctionLoader
     {
         private readonly Dictionary<string, AzFunctionInfo> _loadedFunctions = new Dictionary<string, AzFunctionInfo>();
-        private const string latestAzModulePath = @"D:\Program Files (x86)\ManagedDependencies\PowerShell\AzPSModules\1.0.0";
+        private const string _latestAzModulePath = @"D:\Program Files (x86)\ManagedDependencies\PowerShell\AzPSModules\1.0.0";
 
         internal static string FunctionAppRootPath { get; private set; }
         internal static string FunctionAppProfilePath { get; private set; }
@@ -58,24 +58,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             var appLevelModulesPath = Path.Join(FunctionAppRootPath, "Modules");
             var workerLevelModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
             FunctionModulePath = $"{appLevelModulesPath}{Path.PathSeparator}{workerLevelModulesPath}";
-            AddLatestAzModulesPath();
+            if (Platform.IsWindows)
+            {
+                FunctionModulePath = $"{FunctionModulePath}{Path.PathSeparator}{_latestAzModulePath}";
+            }
+
             // Resolve the FunctionApp profile path
             var options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive };
             var profiles = Directory.EnumerateFiles(FunctionAppRootPath, "profile.ps1", options);
             FunctionAppProfilePath = profiles.FirstOrDefault();
-        }
-
-        /// <summary>
-        /// Adds the latest AzModules path to FunctionModulePath
-        /// </summary>
-        private static void AddLatestAzModulesPath()
-        {
-            if (!string.IsNullOrWhiteSpace(FunctionModulePath)
-                && !string.IsNullOrWhiteSpace(latestAzModulePath)
-                && Platform.IsWindows)
-            {
-                FunctionModulePath = $"{FunctionModulePath}{Path.PathSeparator}{latestAzModulePath}";
-            }
         }
     }
 }
