@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using System.Management.Automation;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
@@ -71,7 +71,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private static void AddLatestAzModulesPath()
         {
             if (!string.IsNullOrWhiteSpace(FunctionModulePath)
-                && !string.IsNullOrWhiteSpace(latestAzModulePath))
+                && !string.IsNullOrWhiteSpace(latestAzModulePath)
+                && Platform.IsWindows)
             {
                 FunctionModulePath = $"{FunctionModulePath}{Path.PathSeparator}{latestAzModulePath}";
             }

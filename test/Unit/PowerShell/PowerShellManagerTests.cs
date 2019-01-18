@@ -37,7 +37,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            FunctionLoadRequest = new FunctionLoadRequest {FunctionId = "FunctionId", Metadata = RpcFunctionMetadata};
+            FunctionLoadRequest = new FunctionLoadRequest { FunctionId = "FunctionId", Metadata = RpcFunctionMetadata };
             FunctionLoader.SetupWellKnownPaths(FunctionLoadRequest);
         }
 
@@ -148,7 +148,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             string workerModulePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
             string funcAppModulePath = Path.Join(FunctionLoader.FunctionAppRootPath, "Modules");
-            string expectedPath = $"{funcAppModulePath}{Path.PathSeparator}{workerModulePath}";
+            string expectedPath = default(string);
+            if (Platform.IsWindows)
+            {
+                string latestAzModulePath = @"D:\Program Files (x86)\ManagedDependencies\PowerShell\AzPSModules\1.0.0";
+                expectedPath = $"{funcAppModulePath}{Path.PathSeparator}{workerModulePath}{Path.PathSeparator}{latestAzModulePath}";
+            }
+            else
+            {
+                expectedPath = $"{funcAppModulePath}{Path.PathSeparator}{workerModulePath}";
+            }
+
             Assert.Equal(expectedPath, Environment.GetEnvironmentVariable("PSModulePath"));
         }
 
