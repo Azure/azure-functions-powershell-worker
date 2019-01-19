@@ -53,12 +53,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             {
                 if (isScriptFilePsm1)
                 {
-                    throw new ArgumentException($"The 'entryPoint' property needs to be specified when 'scriptFile' points to a PowerShell module script file (.psm1).");
+                    throw new ArgumentException(PowerShellWorkerStrings.RequireEntryPointForScriptModule);
                 }
             }
             else if (!isScriptFilePsm1)
             {
-                throw new ArgumentException($"The 'entryPoint' property is supported only if 'scriptFile' points to a PowerShell module script file (.psm1).");
+                throw new ArgumentException(PowerShellWorkerStrings.InvalidEntryPointForScriptFile);
             }
 
             // Get the parameter names of the script or function.
@@ -99,7 +99,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 else
                 {
                     // PowerShell doesn't support the 'InOut' type binding
-                    throw new InvalidOperationException($"The binding '{bindingName}' is declared with 'InOut' direction, which is not supported by PowerShell functions.");
+                    throw new InvalidOperationException(string.Format(PowerShellWorkerStrings.InOutBindingNotSupported, bindingName));
                 }
             }
 
@@ -108,12 +108,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 StringBuilder stringBuilder = new StringBuilder();
                 foreach (string inputBindingName in inputsMissingFromParams)
                 {
-                    stringBuilder.AppendLine($"No parameter defined in the script or function for the input binding '{inputBindingName}'.");
+                    stringBuilder.AppendFormat(PowerShellWorkerStrings.MissingParameter, inputBindingName).AppendLine();
                 }
 
                 foreach (string param in parametersCopy.Keys)
                 {
-                    stringBuilder.AppendLine($"No input binding defined for the parameter '{param}' that is declared in the script or function.");
+                    stringBuilder.AppendFormat(PowerShellWorkerStrings.UnknownParameter, param).AppendLine();
                 }
 
                 string errorMsg = stringBuilder.ToString();
@@ -151,7 +151,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 }
 
                 string errorMsg = stringBuilder.ToString();
-                throw new ArgumentException($"The script file '{scriptFile}' has parsing errors:\n{errorMsg}");
+                throw new ArgumentException(string.Format(PowerShellWorkerStrings.FailToParseScript, scriptFile, errorMsg));
             }
 
             ReadOnlyCollection<ParameterAst> paramAsts = null;
@@ -173,8 +173,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 else
                 {
                     string errorMsg = asts.Count == 0
-                        ? $"Cannot find the function '{entryPoint}' defined in '{scriptFile}'"
-                        : $"More than one functions named '{entryPoint}' are found in '{scriptFile}'";
+                        ? string.Format(PowerShellWorkerStrings.CannotFindEntryPoint, entryPoint, scriptFile)
+                        : string.Format(PowerShellWorkerStrings.MultipleEntryPointFound, entryPoint, scriptFile);
                     throw new ArgumentException(errorMsg);
                 }
             }

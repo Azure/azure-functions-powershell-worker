@@ -49,7 +49,8 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                         response = ProcessInvocationRequest(request);
                         break;
                     default:
-                        throw new InvalidOperationException($"Unsupported message type: {request.ContentCase}");
+                        string errorMsg = string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase);
+                        throw new InvalidOperationException(errorMsg);
                 }
 
                 if (response != null)
@@ -212,7 +213,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         private Hashtable InvokeOrchestrationFunction(PowerShellManager psManager, AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
         {
-            throw new NotImplementedException("Durable function is not yet supported for PowerShell");
+            throw new NotImplementedException(PowerShellWorkerStrings.DurableFunctionNotSupported);
         }
 
         /// <summary>
