@@ -29,8 +29,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         internal readonly string FuncName;
         internal readonly string EntryPoint;
         internal readonly string ScriptPath;
-        internal readonly HashSet<string> FuncParameters;
         internal readonly AzFunctionType Type;
+        internal readonly ReadOnlyDictionary<string, PSScriptParamInfo> FuncParameters;
         internal readonly ReadOnlyDictionary<string, ReadOnlyBindingInfo> AllBindings;
         internal readonly ReadOnlyDictionary<string, ReadOnlyBindingInfo> InputBindings;
         internal readonly ReadOnlyDictionary<string, ReadOnlyBindingInfo> OutputBindings;
@@ -62,8 +62,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
 
             // Get the parameter names of the script or function.
-            FuncParameters = GetParameters(ScriptPath, EntryPoint);
-            var parametersCopy = new HashSet<string>(FuncParameters, StringComparer.OrdinalIgnoreCase);
+            var psScriptParams = GetParameters(ScriptPath, EntryPoint);
+            FuncParameters = new ReadOnlyDictionary<string, PSScriptParamInfo>(psScriptParams);
+
+            var parametersCopy = new Dictionary<string, PSScriptParamInfo>(psScriptParams, StringComparer.OrdinalIgnoreCase);
             parametersCopy.Remove(TriggerMetadata);
 
             var allBindings = new Dictionary<string, ReadOnlyBindingInfo>();
@@ -109,7 +111,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     stringBuilder.AppendLine($"No parameter defined in the script or function for the input binding '{inputBindingName}'.");
                 }
 
-                foreach (string param in parametersCopy)
+                foreach (string param in parametersCopy.Keys)
                 {
                     stringBuilder.AppendLine($"No input binding defined for the parameter '{param}' that is declared in the script or function.");
                 }
@@ -137,7 +139,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
         }
 
-        private HashSet<string> GetParameters(string scriptFile, string entryPoint)
+        private Dictionary<string, PSScriptParamInfo> GetParameters(string scriptFile, string entryPoint)
         {
             ScriptBlockAst sbAst = Parser.ParseFile(scriptFile, out _, out ParseError[] errors);
             if (errors != null && errors.Length > 0)
@@ -177,12 +179,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 }
             }
 
-            HashSet<string> parameters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var parameters = new Dictionary<string, PSScriptParamInfo>(StringComparer.OrdinalIgnoreCase);
             if (paramAsts != null)
             {
                 foreach (var paramAst in paramAsts)
                 {
-                    parameters.Add(paramAst.Name.VariablePath.UserPath);
+                    var psParamInfo = new PSScriptParamInfo(paramAst);
+                    parameters.Add(psParamInfo.ParamName, psParamInfo);
                 }
             }
 
@@ -199,6 +202,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         RegularFunction = 1,
         OrchestrationFunction = 2,
         ActivityFunction = 3
+    }
+
+    /// <summary>
+    /// Represent the metadata of a parameter declared in the PowerShell script.
+    /// </summary>
+    internal class PSScriptParamInfo
+    {
+        internal readonly string ParamName;
+        internal readonly Type ParamType;
+
+        internal PSScriptParamInfo(ParameterAst paramAst)
+        {
+            ParamName = paramAst.Name.VariablePath.UserPath;
+            ParamType = paramAst.StaticType;
+        }
     }
 
     /// <summary>

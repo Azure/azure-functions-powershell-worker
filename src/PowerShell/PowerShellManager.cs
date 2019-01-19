@@ -24,11 +24,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private readonly PowerShell _pwsh;
 
         /// <summary>
-        /// Gets the Runspace InstanceId.
-        /// </summary>
-        internal Guid InstanceId => _pwsh.Runspace.InstanceId;
-
-        /// <summary>
         /// Gets the associated logger.
         /// </summary>
         internal ILogger Logger => _logger;
@@ -151,14 +146,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 // Set arguments for each input binding parameter
                 foreach (ParameterBinding binding in inputData)
                 {
-                    if (functionInfo.FuncParameters.Contains(binding.Name))
+                    string bindingName = binding.Name;
+                    if (functionInfo.FuncParameters.TryGetValue(bindingName, out PSScriptParamInfo paramInfo))
                     {
-                        _pwsh.AddParameter(binding.Name, binding.Data.ToObject());
+                        var bindingInfo = functionInfo.InputBindings[bindingName];
+                        var valueToUse = Utils.TransformInBindingValueAsNeeded(paramInfo, bindingInfo, binding.Data.ToObject());
+                        _pwsh.AddParameter(bindingName, valueToUse);
                     }
                 }
 
                 // Gives access to additional Trigger Metadata if the user specifies TriggerMetadata
-                if(functionInfo.FuncParameters.Contains(AzFunctionInfo.TriggerMetadata))
+                if(functionInfo.FuncParameters.ContainsKey(AzFunctionInfo.TriggerMetadata))
                 {
                     _pwsh.AddParameter(AzFunctionInfo.TriggerMetadata, triggerMetadata);
                 }
@@ -166,9 +164,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 Collection<object> pipelineItems = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject")
                                                         .InvokeAndClearCommands<object>();
 
-                var result = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Get-OutputBinding")
-                                    .AddParameter("Purge", true)
-                                  .InvokeAndClearCommands<Hashtable>()[0];
+                Hashtable result = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Get-OutputBinding")
+                                            .AddParameter("Purge", true)
+                                        .InvokeAndClearCommands<Hashtable>()[0];
 
                 /*
                  * TODO: See GitHub issue #82. We are not settled on how to handle the Azure Functions concept of the $returns Output Binding

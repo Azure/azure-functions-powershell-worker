@@ -90,8 +90,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
             }
 
-            // Register the function with the Runspace before returning the idle PowerShellManager.
-            FunctionMetadata.RegisterFunctionMetadata(psManager.InstanceId, functionInfo);
             psManager.Logger.SetContext(requestId, invocationId);
             return psManager;
         }
@@ -103,8 +101,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if (psManager != null)
             {
-                // Unregister the Runspace before reclaiming the used PowerShellManager.
-                FunctionMetadata.UnregisterFunctionMetadata(psManager.InstanceId);
                 psManager.Logger.ResetContext();
                 _pool.Add(psManager);
             }

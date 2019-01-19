@@ -6,6 +6,5 @@
 ConvertFrom-StringData @'
 ###PSLOC
     OutputBindingAlreadySet=Output binding '{0}' is already set. To override the value, use -Force.
-    InvalidHttpOutputValue=The given value for the 'http' output binding '{0}' cannot be converted to the type 'HttpResponseContext'. The conversion failed with the following error: {1}
 ###PSLOC
 '@
