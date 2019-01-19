@@ -4,8 +4,6 @@
 #
 
 using namespace System.Management.Automation
-using namespace System.Management.Automation.Runspaces
-using namespace Microsoft.Azure.Functions.PowerShellWorker
 
 # This holds the current state of the output bindings.
 $script:_OutputBindings = @{}
