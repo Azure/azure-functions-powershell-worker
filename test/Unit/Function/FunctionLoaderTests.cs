@@ -63,8 +63,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(string.Empty, funcInfo.EntryPoint);
 
             Assert.Equal(2, funcInfo.FuncParameters.Count);
-            Assert.Contains("req", funcInfo.FuncParameters);
-            Assert.Contains("inputBlob", funcInfo.FuncParameters);
+            Assert.True(funcInfo.FuncParameters.ContainsKey("req"));
+            Assert.True(funcInfo.FuncParameters.ContainsKey("inputBlob"));
 
             Assert.Equal(3, funcInfo.AllBindings.Count);
             Assert.Equal(2, funcInfo.InputBindings.Count);
@@ -87,9 +87,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(string.Empty, funcInfo.EntryPoint);
 
             Assert.Equal(3, funcInfo.FuncParameters.Count);
-            Assert.Contains("req", funcInfo.FuncParameters);
-            Assert.Contains("inputBlob", funcInfo.FuncParameters);
-            Assert.Contains("TriggerMetadata", funcInfo.FuncParameters);
+            Assert.True(funcInfo.FuncParameters.ContainsKey("req"));
+            Assert.True(funcInfo.FuncParameters.ContainsKey("inputBlob"));
+            Assert.True(funcInfo.FuncParameters.ContainsKey("TriggerMetadata"));
 
             Assert.Equal(3, funcInfo.AllBindings.Count);
             Assert.Equal(2, funcInfo.InputBindings.Count);
@@ -112,8 +112,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(entryPointToUse, funcInfo.EntryPoint);
 
             Assert.Equal(2, funcInfo.FuncParameters.Count);
-            Assert.Contains("req", funcInfo.FuncParameters);
-            Assert.Contains("inputBlob", funcInfo.FuncParameters);
+            Assert.True(funcInfo.FuncParameters.ContainsKey("req"));
+            Assert.True(funcInfo.FuncParameters.ContainsKey("inputBlob"));
 
             Assert.Equal(3, funcInfo.AllBindings.Count);
             Assert.Equal(2, funcInfo.InputBindings.Count);
