@@ -4,8 +4,6 @@
 #
 
 using namespace System.Management.Automation
-using namespace System.Management.Automation.Runspaces
-using namespace Microsoft.Azure.Functions.PowerShellWorker
 
 # This holds the current state of the output bindings.
 $script:_OutputBindings = @{}
@@ -45,61 +43,27 @@ function Get-OutputBinding {
         [switch]
         $Purge
     )
+
     begin {
         $bindings = @{}
     }
+
     process {
-        $script:_OutputBindings.GetEnumerator() | Where-Object Name -Like $Name | ForEach-Object { $null = $bindings.Add($_.Name, $_.Value) }
+        foreach ($entry in $script:_OutputBindings.GetEnumerator()) {
+            $bindingName = $entry.Key
+            $bindingValue = $entry.Value
+
+            if ($bindingName -like $Name -and !$bindings.ContainsKey($bindingName)) {
+                $bindings.Add($bindingName, $bindingValue)
+            }
+        }
     }
+
     end {
         if($Purge.IsPresent) {
             $script:_OutputBindings.Clear()
         }
         return $bindings
-    }
-}
-
-# Helper private function that validates the output value and does necessary conversion.
-function Convert-OutputBindingValue {
-    param(
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Name,
-
-        [Parameter(Mandatory=$true)]
-        [object]
-        $Value
-    )
-
-    # Check if we can get the binding metadata of the current running function.
-    $funcMetadataType = "FunctionMetadata" -as [type]
-    if ($null -eq $funcMetadataType) {
-        return $Value
-    }
-
-    # Get the runspace where we are currently running in and then get all output bindings.
-    $bindingMap = $funcMetadataType::GetOutputBindingInfo([Runspace]::DefaultRunspace.InstanceId)
-    if ($null -eq $bindingMap) {
-        return $Value
-    }
-
-    # Get the binding information of given output binding name.
-    $bindingInfo = $bindingMap[$Name]
-    if ($bindingInfo.Type -ne "http") {
-        return $Value
-    }
-
-    # Nothing to do if the value is already a HttpResponseContext object.
-    if ($Value -as [HttpResponseContext]) {
-        return $Value
-    }
-
-    try {
-        return [LanguagePrimitives]::ConvertTo($Value, [HttpResponseContext])
-    } catch [PSInvalidCastException] {
-        $conversionMsg = $_.Exception.Message
-        $errorMsg = $LocalizedData.InvalidHttpOutputValue -f $Name, $conversionMsg
-        throw $errorMsg
     }
 }
 
@@ -119,7 +83,6 @@ function Push-KeyValueOutputBinding {
     )
 
     if (!$script:_OutputBindings.ContainsKey($Name) -or $Force.IsPresent) {
-        $Value = Convert-OutputBindingValue -Name $Name -Value $Value
         $script:_OutputBindings[$Name] = $Value
     } else {
         $errorMsg = $LocalizedData.OutputBindingAlreadySet -f $Name

@@ -246,18 +246,24 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                     // Set out binding data and return response to be sent back to host
                     foreach (KeyValuePair<string, ReadOnlyBindingInfo> binding in functionInfo.OutputBindings)
                     {
-                        // if one of the bindings is '$return' we need to set the ReturnValue
                         string outBindingName = binding.Key;
+                        ReadOnlyBindingInfo bindingInfo = binding.Value;
+
+                        object outValue = results[outBindingName];
+                        object transformedValue = Utils.TransformOutBindingValueAsNeeded(outBindingName, bindingInfo, outValue);
+                        TypedData dataToUse = transformedValue.ToTypedData(psManager);
+
+                        // if one of the bindings is '$return' we need to set the ReturnValue
                         if(string.Equals(outBindingName, AzFunctionInfo.DollarReturn, StringComparison.OrdinalIgnoreCase))
                         {
-                            response.ReturnValue = results[outBindingName].ToTypedData(psManager);
+                            response.ReturnValue = dataToUse;
                             continue;
                         }
 
                         ParameterBinding paramBinding = new ParameterBinding()
                         {
                             Name = outBindingName,
-                            Data = results[outBindingName].ToTypedData(psManager)
+                            Data = dataToUse
                         };
 
                         response.OutputData.Add(paramBinding);
@@ -268,7 +274,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 case AzFunctionType.ActivityFunction:
                     response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData(psManager);
                     break;
-                
+
                 default:
                     throw new InvalidOperationException("Unreachable code.");
             }
