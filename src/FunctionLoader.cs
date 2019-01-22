@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     internal class FunctionLoader
     {
         private readonly Dictionary<string, AzFunctionInfo> _loadedFunctions = new Dictionary<string, AzFunctionInfo>();
-        private const string _latestAzModulePath = @"D:\Program Files (x86)\ManagedDependencies\PowerShell\AzPSModules\1.0.0";
+        private const string LatestAzModulePath = @"D:\Program Files (x86)\ManagedDependencies\PowerShell\AzPSModules\1.0.0";
 
         internal static string FunctionAppRootPath { get; private set; }
         internal static string FunctionAppProfilePath { get; private set; }
@@ -60,7 +60,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             FunctionModulePath = $"{appLevelModulesPath}{Path.PathSeparator}{workerLevelModulesPath}";
             if (Platform.IsWindows)
             {
-                FunctionModulePath = $"{FunctionModulePath}{Path.PathSeparator}{_latestAzModulePath}";
+                FunctionModulePath = $"{FunctionModulePath}{Path.PathSeparator}{LatestAzModulePath}";
             }
 
             // Resolve the FunctionApp profile path
