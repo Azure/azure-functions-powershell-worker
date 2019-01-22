@@ -149,7 +149,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             string workerModulePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
             string funcAppModulePath = Path.Join(FunctionLoader.FunctionAppRootPath, "Modules");
             string expectedPath = $"{funcAppModulePath}{Path.PathSeparator}{workerModulePath}";
-            if (Platform.IsWindows)
+
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID"))
+               && Platform.IsWindows)
             {
                 string latestAzModulePath = @"D:\Program Files (x86)\ManagedDependencies\PowerShell\AzPSModules\1.0.0";
                 expectedPath = $"{funcAppModulePath}{Path.PathSeparator}{workerModulePath}{Path.PathSeparator}{latestAzModulePath}";

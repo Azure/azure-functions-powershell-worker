@@ -19,6 +19,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     {
         private readonly Dictionary<string, AzFunctionInfo> _loadedFunctions = new Dictionary<string, AzFunctionInfo>();
         private const string LatestAzModulePath = @"D:\Program Files (x86)\ManagedDependencies\PowerShell\AzPSModules\1.0.0";
+        private const string AzureWebsiteInstanceId = "WEBSITE_INSTANCE_ID";
 
         internal static string FunctionAppRootPath { get; private set; }
         internal static string FunctionAppProfilePath { get; private set; }
@@ -58,7 +59,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             var appLevelModulesPath = Path.Join(FunctionAppRootPath, "Modules");
             var workerLevelModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
             FunctionModulePath = $"{appLevelModulesPath}{Path.PathSeparator}{workerLevelModulesPath}";
-            if (Platform.IsWindows)
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(AzureWebsiteInstanceId))
+                && Platform.IsWindows)
             {
                 FunctionModulePath = $"{FunctionModulePath}{Path.PathSeparator}{LatestAzModulePath}";
             }
