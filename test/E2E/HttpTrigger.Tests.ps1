@@ -16,38 +16,59 @@ Describe 'HttpTrigger Tests' {
         Get-Job -Name FuncJob -ErrorAction SilentlyContinue | Stop-Job | Remove-Job
     }
 
-    It "Test basic HttpTrigger function - Ok - <FunctionName>" -TestCases @(
-        @{ 
-            FunctionName = 'TestBasicHttpTrigger'
-            ExpectedContent = 'Hello Atlas'
-        },
-        @{ 
-            FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
-            ExpectedContent = 'Hello Atlas'
-        },
-        @{
-            FunctionName = 'TestBasicHttpTriggerWithProfile'
-            ExpectedContent = 'PROFILE'
-        },
-        @{
-            FunctionName = 'TestHttpTriggerWithEntryPoint'
-            ExpectedContent = 'Hello Atlas'
-        },
-        @{
-            FunctionName = 'TestHttpTriggerWithEntryPointAndTriggerMetadata'
-            ExpectedContent = 'Hello Atlas'
-        },
-        @{
-            FunctionName = 'TestHttpTriggerWithEntryPointAndProfile'
-            ExpectedContent = 'PROFILE'
+    Context "Test basic HttpTrigger function - Ok" {
+        BeforeAll {
+            $testCases = @(
+                @{
+                    FunctionName = 'TestBasicHttpTrigger'
+                    ExpectedContent = 'Hello Atlas'
+                    Parameter = 'Name'
+                },
+                @{
+                    FunctionName = 'TestBasicHttpTriggerWithTriggerMetadata'
+                    ExpectedContent = 'Hello Atlas'
+                    Parameter = 'name'
+                },
+                @{
+                    FunctionName = 'TestBasicHttpTriggerWithProfile'
+                    ExpectedContent = 'PROFILE'
+                    Parameter = 'Name'
+                },
+                @{
+                    FunctionName = 'TestHttpTriggerWithEntryPoint'
+                    ExpectedContent = 'Hello Atlas'
+                    Parameter = 'name'
+                },
+                @{
+                    FunctionName = 'TestHttpTriggerWithEntryPointAndTriggerMetadata'
+                    ExpectedContent = 'Hello Atlas'
+                    Parameter = 'Name'
+                },
+                @{
+                    FunctionName = 'TestHttpTriggerWithEntryPointAndProfile'
+                    ExpectedContent = 'PROFILE'
+                    Parameter = 'name'
+                }
+            )
         }
-    ) {
-        param ($FunctionName, $ExpectedContent)
 
-        $res = Invoke-WebRequest "$FUNCTIONS_BASE_URL/api/$($FunctionName)?Name=Atlas"
-        
-        $res.StatusCode | Should -Be ([HttpStatusCode]::Accepted)
-        $res.Content | Should -Be $ExpectedContent
+        It "Http GET request - <FunctionName>" -TestCases $testCases {
+            param ($FunctionName, $ExpectedContent, $Parameter)
+
+            $res = Invoke-WebRequest "${FUNCTIONS_BASE_URL}/api/${FunctionName}?${Parameter}=Atlas"
+
+            $res.StatusCode | Should -Be ([HttpStatusCode]::Accepted)
+            $res.Content | Should -Be $ExpectedContent
+        }
+
+        It "Http POST request - <FunctionName>" -TestCases $testCases {
+            param ($FunctionName, $ExpectedContent, $Parameter)
+
+            $res = Invoke-WebRequest "${FUNCTIONS_BASE_URL}/api/${FunctionName}" -Body "{ `"$Parameter`" : `"Atlas`" }" -Method Post -ContentType "application/json"
+
+            $res.StatusCode | Should -Be ([HttpStatusCode]::Accepted)
+            $res.Content | Should -Be $ExpectedContent
+        }
     }
 
     It "Test basic HttpTrigger function - BadRequest - <FunctionName>" -TestCases @(
