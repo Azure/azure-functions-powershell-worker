@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 return funcInfo;
             }
 
-            throw new InvalidOperationException($"Function with the ID '{functionId}' was not loaded.");
+            throw new InvalidOperationException(string.Format(PowerShellWorkerStrings.FunctionNotLoaded, functionId));
         }
 
         /// <summary>

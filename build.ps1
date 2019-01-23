@@ -55,6 +55,9 @@ if(!$NoBuild.IsPresent) {
         throw "Cannot find the 'PSDepend' module. Please specify '-Bootstrap' to install build dependencies."
     }
 
+    # Generate C# files for resources
+    Start-ResGen
+
     # Generate csharp code from protobuf if needed
     New-gRPCAutoGenCode
 

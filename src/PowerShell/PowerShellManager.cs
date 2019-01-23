@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if (FunctionLoader.FunctionAppRootPath == null)
             {
-                throw new InvalidOperationException($"The FunctionApp root hasn't been resolved yet!");
+                throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
             }
 
             var initialSessionState = InitialSessionState.CreateDefault();
@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             Exception exception = null;
             if (profilePath == null)
             {
-                _logger.Log(LogLevel.Trace, $"No 'profile.ps1' is found at the FunctionApp root folder: {FunctionLoader.FunctionAppRootPath}");
+                _logger.Log(LogLevel.Trace, string.Format(PowerShellWorkerStrings.NoProfileFound, FunctionLoader.FunctionAppRootPath));
                 return;
             }
 
@@ -108,7 +108,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 if (_pwsh.HadErrors)
                 {
-                    string errorMsg = $"Fail to run profile.ps1. See logs for detailed errors. Profile location: {profilePath}";
+                    string errorMsg = string.Format(PowerShellWorkerStrings.FailToRunProfile, profilePath);
                     _logger.Log(LogLevel.Error, errorMsg, exception, isUserLog: true);
                 }
             }
