@@ -37,7 +37,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            FunctionLoadRequest = new FunctionLoadRequest {FunctionId = "FunctionId", Metadata = RpcFunctionMetadata};
+            FunctionLoadRequest = new FunctionLoadRequest { FunctionId = "FunctionId", Metadata = RpcFunctionMetadata };
             FunctionLoader.SetupWellKnownPaths(FunctionLoadRequest);
         }
 
