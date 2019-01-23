@@ -81,7 +81,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     }
                     catch (PSInvalidCastException ex)
                     {
-                        string errorMsg = $"The given value for the 'http' output binding '{bindingName}' cannot be converted to the type 'HttpResponseContext'. The conversion failed with the following error: {ex.Message}";
+                        string errorMsg = string.Format(PowerShellWorkerStrings.FailToConvertToHttpResponseContext, bindingName, ex.Message);
                         throw new InvalidOperationException(errorMsg);
                     }
 
