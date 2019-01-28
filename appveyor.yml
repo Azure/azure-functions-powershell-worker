@@ -26,6 +26,7 @@ build_script:
 
 test_script:
   - pwsh: ./build.ps1 -NoBuild -Test
+  - pwsh: ./test/E2E/Start-E2ETest.ps1
 
 on_finish:
   - pwsh: dir *.PowerShellWorker.*.nupkg -Recurse | % { Push-AppveyorArtifact $_.FullName -FileName $_.Name }
