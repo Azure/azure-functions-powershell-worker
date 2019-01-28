@@ -15,21 +15,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\Microsoft.Azure.Functions.PowerShellWorker.csproj" />
+    <ProjectReference Include="..\..\src\Microsoft.Azure.Functions.PowerShellWorker.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Unit\PowerShell\TestScripts\**\*">
+    <Content Include="PowerShell\TestScripts\**\*">
       <Link>TestScripts\PowerShell\%(RecursiveDir)\%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-    <Content Include="Unit\Function\TestScripts\**\*">
+    <Content Include="Function\TestScripts\**\*">
       <Link>TestScripts\Function\%(RecursiveDir)\%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-    <Content Include="Unit\xunit.runner.json">
+    <Content Include="xunit.runner.json">
       <Link>xunit.runner.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

@@ -87,7 +87,7 @@ if($Test.IsPresent) {
         throw "Cannot find the 'Pester' module. Please specify '-Bootstrap' to install build dependencies."
     }
 
-    dotnet test "$PSScriptRoot/test"
+    dotnet test "$PSScriptRoot/test/Unit"
     if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
 
     Invoke-Tests -Path "$PSScriptRoot/test/Unit/Modules" -OutputFile UnitTestsResults.xml
