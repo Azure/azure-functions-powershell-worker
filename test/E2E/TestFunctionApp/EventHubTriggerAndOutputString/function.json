@@ -1,0 +1,20 @@
+{
+  "bindings": [
+    {
+      "type": "eventHubTrigger",
+      "name": "eventHubMessages",
+      "direction": "in",
+      "eventHubName": "test-input-string-ps",
+      "connection": "AzureWebJobsEventHubSender",
+      "cardinality": "many",
+      "dataType": "string"
+    },
+    {
+      "type": "eventHub",
+      "name": "outEventHubMessage",
+      "eventHubName": "test-output-string-ps",
+      "connection": "AzureWebJobsEventHubSender",
+      "direction": "out"
+    }
+  ]
+}
