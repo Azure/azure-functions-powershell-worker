@@ -7,7 +7,7 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
 
     BeforeAll {
         # Move the .psd1 and .psm1 files to the publish folder so that the dlls can be found
-        $binFolder = Resolve-Path -Path "$PSScriptRoot/../../bin"
+        $binFolder = Resolve-Path -Path "$PSScriptRoot/../bin"
         $workerDll = Get-ChildItem -Path $binFolder -Filter "Microsoft.Azure.Functions.PowerShellWorker.dll" -Recurse | Select-Object -First 1
 
         $moduleFolder = Join-Path -Path $workerDll.Directory.FullName -ChildPath "Modules\Microsoft.Azure.Functions.PowerShellWorker"
