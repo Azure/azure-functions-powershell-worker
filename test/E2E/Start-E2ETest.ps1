@@ -1,3 +1,8 @@
+#	
+# Copyright (c) Microsoft. All rights reserved.	
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.	
+#
+
 $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 if ($IsWindows) {
     $FUNC_EXE_NAME = "func.exe"
@@ -41,7 +46,7 @@ $Env:Path = "$Env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
 $funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
 
 Write-Host "Installing extensions..."
-Push-Location "$PSScriptRoot\testFunctionApp"
+Push-Location "$PSScriptRoot\TestFunctionApp"
 
 if ($IsMacOS -or $IsLinux) {
     chmod +x $funcExePath
