@@ -65,7 +65,7 @@ if ($LASTEXITCODE -ne 0) { throw "Installing extensions failed." }
 Pop-Location
 
 Write-Host "Starting functions host..."
-$proc = start-process -NoNewWindow -PassThru -filepath $funcExePath -WorkingDirectory "$PSScriptRoot\testFunctionApp" -ArgumentList "host start" -RedirectStandardOutput "output.txt"
+$proc = start-process -NoNewWindow -PassThru -filepath $funcExePath -WorkingDirectory "$PSScriptRoot\TestFunctionApp" -ArgumentList "host start" -RedirectStandardOutput "output.txt"
 Start-Sleep -s 30
 
 Write-Host "Running E2E integration tests..." -ForegroundColor Green
