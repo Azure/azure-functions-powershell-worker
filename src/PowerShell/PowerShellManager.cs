@@ -190,18 +190,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
-        /// <summary>
-        /// Helper method to convert the result returned from a function to JSON.
-        /// </summary>
-        internal string ConvertToJson(object fromObj)
-        {
-            return _pwsh.AddCommand("Microsoft.PowerShell.Utility\\ConvertTo-Json")
-                            .AddParameter("InputObject", fromObj)
-                            .AddParameter("Depth", 3)
-                            .AddParameter("Compress", true)
-                        .InvokeAndClearCommands<string>()[0];
-        }
-
         private void ResetRunspace(string moduleName)
         {
             // Reset the runspace to the Initial Session State

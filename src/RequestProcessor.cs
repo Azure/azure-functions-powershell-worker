@@ -164,7 +164,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                     ? InvokeOrchestrationFunction(psManager, functionInfo, invocationRequest)
                     : InvokeSingleActivityFunction(psManager, functionInfo, invocationRequest);
 
-                BindOutputFromResult(psManager, response.InvocationResponse, functionInfo, results);
+                BindOutputFromResult(response.InvocationResponse, functionInfo, results);
             }
             catch (Exception e)
             {
@@ -239,7 +239,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Set the 'ReturnValue' and 'OutputData' based on the invocation results appropriately.
         /// </summary>
-        private void BindOutputFromResult(PowerShellManager psManager, InvocationResponse response, AzFunctionInfo functionInfo, Hashtable results)
+        private void BindOutputFromResult(InvocationResponse response, AzFunctionInfo functionInfo, Hashtable results)
         {
             switch (functionInfo.Type)
             {
@@ -252,7 +252,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
                         object outValue = results[outBindingName];
                         object transformedValue = Utils.TransformOutBindingValueAsNeeded(outBindingName, bindingInfo, outValue);
-                        TypedData dataToUse = transformedValue.ToTypedData(psManager);
+                        TypedData dataToUse = transformedValue.ToTypedData();
 
                         // if one of the bindings is '$return' we need to set the ReturnValue
                         if(string.Equals(outBindingName, AzFunctionInfo.DollarReturn, StringComparison.OrdinalIgnoreCase))
@@ -273,7 +273,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
                 case AzFunctionType.OrchestrationFunction:
                 case AzFunctionType.ActivityFunction:
-                    response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData(psManager);
+                    response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData();
                     break;
 
                 default:
