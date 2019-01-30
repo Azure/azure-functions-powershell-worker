@@ -20,16 +20,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
     public class TypeExtensionsTests
     {
-        private readonly ConsoleLogger _testLogger;
-        private readonly PowerShellManager _testManager;
-
-        public TypeExtensionsTests()
-        {
-            _testLogger = new ConsoleLogger();
-            _testManager = TestUtils.NewTestPowerShellManager(_testLogger);
-        }
-
         #region TypedDataToObject
+
         [Fact]
         public void TestTypedDataToObjectHttpRequestContextBasic()
         {
@@ -343,7 +335,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            Assert.Equal(expected, input.ToTypedData(null));
+            Assert.Equal(expected, input.ToTypedData());
         }
 
         [Fact]
@@ -366,7 +358,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            Assert.Equal(expected, input.ToTypedData(null));
+            Assert.Equal(expected, input.ToTypedData());
         }
 
         [Fact]
@@ -389,7 +381,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            Assert.Equal(expected, input.ToTypedData(null));
+            Assert.Equal(expected, input.ToTypedData());
         }
 
         [Fact]
@@ -412,7 +404,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            Assert.Equal(expected, input.ToTypedData(null));
+            Assert.Equal(expected, input.ToTypedData());
         }
 
         [Fact]
@@ -426,7 +418,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Int = data
             };
 
-            Assert.Equal(expected, input.ToTypedData(null));
+            Assert.Equal(expected, input.ToTypedData());
         }
 
         [Fact]
@@ -440,7 +432,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Double = data
             };
 
-            Assert.Equal(expected, input.ToTypedData(null));
+            Assert.Equal(expected, input.ToTypedData());
         }
 
         [Fact]
@@ -454,7 +446,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 String = data
             };
 
-            Assert.Equal(expected, input.ToTypedData(null));
+            Assert.Equal(expected, input.ToTypedData());
         }
 
         [Fact]
@@ -468,7 +460,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Bytes = ByteString.CopyFrom(data)
             };
 
-            Assert.Equal(expected, input.ToTypedData(null));
+            Assert.Equal(expected, input.ToTypedData());
         }
 
         [Fact]
@@ -483,7 +475,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     Stream = ByteString.FromStream(data)
                 };
 
-                Assert.Equal(expected, input.ToTypedData(null));
+                Assert.Equal(expected, input.ToTypedData());
             }
         }
 
@@ -498,7 +490,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Json = data
             };
 
-            Assert.Equal(expected, input.ToTypedData(null));
+            Assert.Equal(expected, input.ToTypedData());
         }
 
         [Fact]
@@ -512,7 +504,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Json = "{\"foo\":\"bar\"}"
             };
 
-            Assert.Equal(expected, input.ToTypedData(_testManager));
+            Assert.Equal(expected, input.ToTypedData());
         }
 
         [Fact]
@@ -526,7 +518,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Json = "{\"foo\":\"bar\"}"
             };
 
-            Assert.Equal(expected, input.ToTypedData(_testManager));
+            Assert.Equal(expected, input.ToTypedData());
         }
 
         [Fact]
@@ -541,7 +533,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     Json = "{\"foo\":\"bar\"}"
                 };
 
-                Assert.Equal(expected, input.ToTypedData(_testManager));
+                Assert.Equal(expected, input.ToTypedData());
             }
         }
 
@@ -551,7 +543,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var data = new byte[] { 12,23,34 };
             object input = PSObject.AsPSObject(data);
 
-            TypedData output = input.ToTypedData(_testManager);
+            TypedData output = input.ToTypedData();
 
             Assert.Equal(TypedData.DataOneofCase.Bytes, output.DataCase);
             Assert.Equal(3, output.Bytes.Length);
@@ -563,7 +555,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             using (var data = new MemoryStream(new byte[] { 12,23,34 }))
             {
                 object input = PSObject.AsPSObject(data);
-                TypedData output = input.ToTypedData(_testManager);
+                TypedData output = input.ToTypedData();
 
                 Assert.Equal(TypedData.DataOneofCase.Stream, output.DataCase);
                 Assert.Equal(3, output.Stream.Length);
@@ -574,7 +566,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         public void TestObjectToTypedData_PSObjectToString()
         {
             object input = PSObject.AsPSObject("Hello World");
-            TypedData output = input.ToTypedData(_testManager);
+            TypedData output = input.ToTypedData();
 
             Assert.Equal(TypedData.DataOneofCase.String, output.DataCase);
             Assert.Equal("Hello World", output.String);
