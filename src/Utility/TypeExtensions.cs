@@ -96,7 +96,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
         private static object ConvertFromJson(string json)
         {
-            object retObj = JsonObject.ConvertFromJson(json, returnHashtable: true, out _);
+            object retObj = JsonObject.ConvertFromJson(json, returnHashtable: true, error: out _);
+
+            if (retObj is PSObject psObj)
+            {
+                retObj = psObj.BaseObject;
+            }
 
             if (retObj is Hashtable hashtable)
             {
