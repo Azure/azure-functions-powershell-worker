@@ -1,6 +1,6 @@
-#
-# Copyright (c) Microsoft. All rights reserved.
-# Licensed under the MIT license. See LICENSE file in the project root for full license information.
+#	
+# Copyright (c) Microsoft. All rights reserved.	
+# Licensed under the MIT license. See LICENSE file in the project root for full license information.	
 #
 
 $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
@@ -40,21 +40,48 @@ Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/netcoreapp
 
 Write-Host "Staring Functions Host..."
 
-$Env:AzureWebJobsScriptRoot = "$PSScriptRoot/TestFunctionApp"
 $Env:FUNCTIONS_WORKER_RUNTIME = "powershell"
 $Env:AZURE_FUNCTIONS_ENVIRONMENT = "development"
 $Env:Path = "$Env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
 $funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
 
-Start-Job -Name FuncJob -ArgumentList $funcExePath -ScriptBlock {
-    Push-Location $Env:AzureWebJobsScriptRoot
+Write-Host "Installing extensions..."
+Push-Location "$PSScriptRoot\TestFunctionApp"
 
-    if ($IsMacOS -or $IsLinux) {
-        chmod +x $args[0]
-    }
-
-    & $args[0] host start
+if ($IsMacOS -or $IsLinux) {
+    chmod +x $funcExePath
 }
 
-Write-Host "Wait for Functions Host to start..."
-Start-Sleep -s 10
+& $funcExePath extensions install | ForEach-Object {    
+  if ($_ -match 'OK')    
+  { Write-Host $_ -f Green }    
+  elseif ($_ -match 'FAIL|ERROR')   
+  { Write-Host $_ -f Red }   
+  else    
+  { Write-Host $_ }    
+}
+
+if ($LASTEXITCODE -ne 0) { throw "Installing extensions failed." }
+Pop-Location
+
+Write-Host "Starting functions host..."
+$proc = start-process -NoNewWindow -PassThru -filepath $funcExePath -WorkingDirectory "$PSScriptRoot\TestFunctionApp" -ArgumentList "host start" -RedirectStandardOutput "output.txt"
+Start-Sleep -s 30
+
+Write-Host "Running E2E integration tests..." -ForegroundColor Green
+Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
+
+dotnet test "$PSScriptRoot/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E.csproj"
+if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
+
+Write-Host "-----------------------------------------------------------------------------" -ForegroundColor Green
+
+
+Write-Host "Closing process..."
+Stop-Process -Id $proc.Id -Erroraction Ignore 
+
+Write-Host "Host Logs:"
+$host_logs = Get-Content -Path "output.txt" -Raw
+Write-Host $host_logs
+
+Remove-Item -Path "output.txt" -ErrorAction SilentlyContinue

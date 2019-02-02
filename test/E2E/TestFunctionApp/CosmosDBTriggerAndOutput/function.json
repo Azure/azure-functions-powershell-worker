@@ -1,0 +1,23 @@
+{
+  "bindings": [
+    {
+      "type": "cosmosDBTrigger",
+      "name": "itemIn",
+      "direction": "in",
+      "leaseCollectionName": "leases",
+      "connectionStringSetting": "AzureWebJobsCosmosDBConnectionString",
+      "databaseName": "ItemDb",
+      "collectionName": "ItemCollectionIn",
+      "createLeaseCollectionIfNotExists": true
+    },
+    {
+      "type": "cosmosDB",
+      "name": "itemOut",
+      "direction": "out",
+      "leaseCollectionName": "leases",
+      "connectionStringSetting": "AzureWebJobsCosmosDBConnectionString",
+      "databaseName": "ItemDb",
+      "collectionName": "ItemCollectionOut"
+    }
+  ]
+}

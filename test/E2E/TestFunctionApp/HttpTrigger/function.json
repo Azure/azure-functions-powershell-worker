@@ -1,10 +1,8 @@
 {
   "disabled": false,
-  "scriptFile": "module.psm1",
-  "entryPoint": "Run",
   "bindings": [
     {
-      "authLevel": "function",
+      "authLevel": "anonymous",
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
