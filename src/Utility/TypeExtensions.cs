@@ -8,11 +8,11 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
-using System.Reflection;
 
 using Google.Protobuf;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
+using Microsoft.PowerShell.Commands;
 using Newtonsoft.Json.Linq;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
@@ -94,26 +94,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
         }
 
-        // PowerShell NuGet packages only have 'System.Management.Automation.dll' as the ref assembly, and thus types from other powershell assemblies
-        // cannot be used directly in an application that reference the PowerShell NuGet packages. This is tracked by PowerShell#8121.
-        // Here we need to use 'Microsoft.PowerShell.Commands.JsonObject' from 'Microsoft.PowerShell.Commands.Utility'. Due the above issue, we have to
-        // use reflection to call 'JsonObject.ConvertFromJson(...)'.
-        private static MethodInfo s_ConvertFromJson = null;
         private static object ConvertFromJson(string json)
         {
-            const string UtilityAssemblyFullName = "Microsoft.PowerShell.Commands.Utility, Version=6.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35";
+            object retObj = JsonObject.ConvertFromJson(json, returnHashtable: true, error: out _);
 
-            if (s_ConvertFromJson == null)
-            {
-                Assembly utilityAssembly = AppDomain.CurrentDomain.GetAssemblies().First(asm => asm.FullName == UtilityAssemblyFullName);
-                Type jsonObjectType = utilityAssembly.GetType("Microsoft.PowerShell.Commands.JsonObject");
-                s_ConvertFromJson = jsonObjectType.GetMethod(
-                    name: "ConvertFromJson",
-                    types: new Type[] { typeof(string), typeof(bool), typeof(ErrorRecord).MakeByRefType() },
-                    modifiers: null);
-            }
-
-            object retObj = s_ConvertFromJson.Invoke(null, new object[] { json, true, null });
             if (retObj is PSObject psObj)
             {
                 retObj = psObj.BaseObject;
@@ -136,6 +120,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             return retObj;
         }
 
+        private static string ConvertToJson(object fromObj)
+        {
+            var context = new JsonObject.ConvertToJsonContext(
+                maxDepth: 3,
+                enumsAsStrings: false,
+                compressOutput: true);
+
+            return JsonObject.ConvertToJson(fromObj, in context);
+        }
+
         internal static RpcException ToRpcException(this Exception exception)
         {
             return new RpcException
@@ -146,7 +140,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             };
         }
 
-        private static RpcHttp ToRpcHttp(this HttpResponseContext httpResponseContext, PowerShellManager psHelper)
+        private static RpcHttp ToRpcHttp(this HttpResponseContext httpResponseContext)
         {
             var rpcHttp = new RpcHttp
             {
@@ -155,7 +149,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
             if (httpResponseContext.Body != null)
             {
-                rpcHttp.Body = httpResponseContext.Body.ToTypedData(psHelper);
+                rpcHttp.Body = httpResponseContext.Body.ToTypedData();
             }
 
             rpcHttp.EnableContentNegotiation = httpResponseContext.EnableContentNegotiation;
@@ -178,7 +172,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             return rpcHttp;
         }
 
-        internal static TypedData ToTypedData(this object value, PowerShellManager psHelper)
+        internal static TypedData ToTypedData(this object value)
         {
             if (value is TypedData self)
             {
@@ -218,14 +212,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     typedData.Stream = ByteString.FromStream(s);
                     break;
                 case HttpResponseContext http:
-                    typedData.Http = http.ToRpcHttp(psHelper);
+                    typedData.Http = http.ToRpcHttp();
                     break;
                 case string str:
                     if (IsValidJson(str)) { typedData.Json = str; } else { typedData.String = str; }
                     break;
                 default:
-                    if (psHelper == null) { throw new ArgumentNullException(nameof(psHelper)); }
-                    typedData.Json = psHelper.ConvertToJson(originalValue);
+                    typedData.Json = ConvertToJson(originalValue);
                     break;
             }
             return typedData;
