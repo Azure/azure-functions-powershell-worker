@@ -3,6 +3,7 @@ Copyright (c) Microsoft. All rights reserved.
 Licensed under the MIT license. See LICENSE file in the project root for full license information.
 -->
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\PowerShellWorker.Common.props" />
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <NoBuild>true</NoBuild>
@@ -10,10 +11,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>NU5100;NU5123</NoWarn>
 
-    <BuildNumber Condition="$(APPVEYOR) != ''">$(APPVEYOR_BUILD_NUMBER)</BuildNumber>
-    <BuildNumber Condition="$(APPVEYOR) == ''">9999</BuildNumber>
-
     <NuspecFile>Microsoft.Azure.Functions.PowerShellWorker.nuspec</NuspecFile>
-    <NuspecProperties>configuration=$(Configuration);targetFramework=$(TargetFramework);BuildNumber=$(BuildNumber)</NuspecProperties>
+    <NuspecProperties>configuration=$(Configuration);targetFramework=$(TargetFramework);version=$(Version)</NuspecProperties>
   </PropertyGroup>
 </Project>
