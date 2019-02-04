@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <!--
-    Microsoft ResX Schema
-
+  <!-- 
+    Microsoft ResX Schema 
+    
     Version 2.0
-
-    The primary goals of this format is to allow a simple XML format
-    that is mostly human readable. The generation and parsing of the
-    various data types are done through the TypeConverter classes
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
     associated with the data types.
-
+    
     Example:
-
+    
     ... ado.net/XML headers & schema ...
     <resheader name="resmimetype">text/microsoft-resx</resheader>
     <resheader name="version">2.0</resheader>
@@ -26,41 +26,41 @@
         <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
         <comment>This is a comment</comment>
     </data>
-
-    There are any number of "resheader" rows that contain simple
+                
+    There are any number of "resheader" rows that contain simple 
     name/value pairs.
-
-    Each data row contains a name, and value. The row also contains a
-    type or mimetype. Type corresponds to a .NET class that support
-    text/value conversion through the TypeConverter architecture.
-    Classes that don't support this are serialized and stored with the
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
     mimetype set.
-
-    The mimetype is used for serialized objects, and tells the
-    ResXResourceReader how to depersist the object. This is currently not
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
     extensible. For a given mimetype the value must be set accordingly:
-
-    Note - application/x-microsoft.net.object.binary.base64 is the format
-    that the ResXResourceWriter will generate, however the reader can
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
     read any of the formats listed below.
-
+    
     mimetype: application/x-microsoft.net.object.binary.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
             : and then encoded with base64 encoding.
-
+    
     mimetype: application/x-microsoft.net.object.soap.base64
-    value   : The object must be serialized with
+    value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
 
     mimetype: application/x-microsoft.net.object.bytearray.base64
-    value   : The object must be serialized into a byte array
+    value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
-  <xsd:schema id="root" xmlns="" xmlns:xsd="https://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-    <xsd:import namespace="https://www.w3.org/XML/1998/namespace" />
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
     <xsd:element name="root" msdata:IsDataSet="true">
       <xsd:complexType>
         <xsd:choice maxOccurs="unbounded">
@@ -148,8 +148,8 @@
   <data name="FunctionAppRootNotResolved" xml:space="preserve">
     <value>The FunctionApp root hasn't been resolved yet!</value>
   </data>
-  <data name="NoProfileFound" xml:space="preserve">
-    <value>No 'profile.ps1' is found at the FunctionApp root folder: {0}.</value>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>No '{0}' is found at the FunctionApp root folder: {0}.</value>
   </data>
   <data name="FailToRunProfile" xml:space="preserve">
     <value>Fail to run profile.ps1. See logs for detailed errors. Profile location: {0}.</value>
@@ -162,5 +162,50 @@
   </data>
   <data name="FailToConvertToHttpResponseContext" xml:space="preserve">
     <value>The given value for the 'http' output binding '{0}' cannot be converted to the type 'HttpResponseContext'. The conversion failed with the following error: {1}</value>
+  </data>
+  <data name="CannotFindModuleVersion" xml:space="preserve">
+    <value>Cannot find a supported version for module '{0}' with major version '{0}'.</value>
+  </data>
+  <data name="CreateModuleDestinationPath" xml:space="preserve">
+    <value>Creating module destination path: {0}.</value>
+  </data>
+  <data name="FailedToInstallModule" xml:space="preserve">
+    <value>Fail to installed module '{0}' version '{1}'. See logs for detailed errors. </value>
+  </data>
+  <data name="FunctionAppDoesNotHaveDependentModulesToInstall" xml:space="preserve">
+    <value>Function App does have dependent modules to install.</value>
+  </data>
+  <data name="ModuleDestinationPathIsNullOrEmpty" xml:space="preserve">
+    <value>Module destination path is null or empty.</value>
+  </data>
+  <data name="FailedToGetModuleVersionInformation" xml:space="preserve">
+    <value>Failed to get version information for module '{0}'.</value>
+  </data>
+  <data name="DependencyPropertyIsNullOrEmpty" xml:space="preserve">
+    <value>Dependency '{0}' is null or empty.</value>
+  </data>
+  <data name="InstallFunctionAppDependentModules" xml:space="preserve">
+    <value>Installing function app dependent modules.</value>
+  </data>
+  <data name="ModuleHasBeenInstalled" xml:space="preserve">
+    <value>Module name '{0}' version '{0}' has been installed.</value>
+  </data>
+  <data name="ModuleIsAlreadyInstalled" xml:space="preserve">
+    <value>Module name '{0}' version '{1}' is already installed. </value>
+  </data>
+  <data name="ManagedDependencyNotSupported" xml:space="preserve">
+    <value>Managed dependency name '{0}' is not supported.</value>
+  </data>
+  <data name="InvalidPowerShellDataFile" xml:space="preserve">
+    <value>The PowerShell data file '{0}' is invalid since it cannot be evaluated into a Hashtable object.</value>
+  </data>
+  <data name="InvalidVersionFormat" xml:space="preserve">
+    <value>Version is not in the correct format. Please use the following notation: '{0}'</value>
+  </data>
+  <data name="FailedToInstallFuncAppDependencies" xml:space="preserve">
+    <value>Failed to install function app dependencies.</value>
+  </data>
+  <data name="InvalidModuleMajorVersion" xml:space="preserve">
+    <value>Invalid major version for module '{0}'. The maximum available major version is '{1}'.</value>
   </data>
 </root>

@@ -77,8 +77,24 @@ if(!$NoBuild.IsPresent) {
     Get-WebFile -Url 'https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Modules/Windows/Microsoft.PowerShell.Management/Microsoft.PowerShell.Management.psd1' `
         -OutFile "$PSScriptRoot/src/Modules/Microsoft.PowerShell.Management/Microsoft.PowerShell.Management.psd1" 
 
+    # Compile project
+    Write-Log "Compiling project..."
     dotnet publish -c $Configuration $PSScriptRoot
+    if ($LASTEXITCODE -ne 0) { throw "Build compilation failed." }
+
+    # Remove the fullCLR folder under Modules\PackageManagement (since it has the same content at the coreclr folder)
+    $packageManagementFullCLRFolderPath = (Get-Item "$PSScriptRoot/src/bin/$Configuration/*/Modules/PackageManagement/fullclr" -ErrorAction SilentlyContinue).FullName
+    if (Test-Path $packageManagementFullCLRFolderPath)
+    {
+        Write-Log "Deleting PackageManagement/fullclr folder..."
+        Remove-Item $packageManagementFullCLRFolderPath -Force -Recurse -ErrorAction Stop
+        Write-Log "    Completed."
+    }
+
+    # Create package
+    Write-Log "Creating package..."
     dotnet pack -c $Configuration "$PSScriptRoot/package"
+    if ($LASTEXITCODE -ne 0) { throw "Package creation failed." }
 }
 
 # Test step

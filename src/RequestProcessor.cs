@@ -6,12 +6,19 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Management.Automation;
 using System.Threading.Tasks;
-
+using Google.Protobuf.Collections;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
+using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+using NJsonSchema.Infrastructure;
+using ILogger = Microsoft.Azure.Functions.PowerShellWorker.Utility.ILogger;
+using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
 namespace  Microsoft.Azure.Functions.PowerShellWorker
 {
@@ -20,15 +27,20 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         private readonly FunctionLoader _functionLoader;
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManagerPool _powershellPool;
+        private readonly DependencyManager _dependencyManager;
 
         // Indicate whether the FunctionApp has been initialized.
         private bool _isFunctionAppInitialized;
+
+        // Central repository for acquiring PowerShell modules.
+        private const string Repository = "PSGallery";
 
         internal RequestProcessor(MessagingStream msgStream)
         {
             _msgStream = msgStream;
             _powershellPool = new PowerShellManagerPool(msgStream);
             _functionLoader = new FunctionLoader();
+            _dependencyManager = new DependencyManager();
         }
 
         internal async Task ProcessRequestLoop()
@@ -86,6 +98,24 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 out StatusResult status);
             response.FunctionLoadResponse.FunctionId = functionLoadRequest.FunctionId;
 
+            // If functionLoadRequest.DependencyDownloadRequest is enabled,
+            // process the function app dependencies defined in appRoot\Requirements.psd1
+            // These dependencies are installed once PowerShell has been initialized via save-module.
+            if ((functionLoadRequest.DependencyDownloadRequest?.Enabled == true) && !DependencyManager.FunctionAppDependenciesInstalled)
+            {
+                try
+                {
+                    _dependencyManager.SetFunctionAppDependencies(functionLoadRequest);
+                }
+                catch (Exception e)
+                {
+                    status.Status = StatusResult.Types.Status.Failure;
+                    status.Exception = e.ToRpcException();
+                    response.FunctionLoadResponse.IsDependencyDownloaded = false;
+                    return response;
+                }
+            }
+
             try
             {
                 // Ideally, the initialization should happen when processing 'WorkerInitRequest', however, the 'WorkerInitRequest'
@@ -94,8 +124,20 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 if (!_isFunctionAppInitialized)
                 {
                     FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
-                    _powershellPool.Initialize(request.RequestId);
+                    _powershellPool.Initialize(request.RequestId, InstallManagedDependencyModule);
                     _isFunctionAppInitialized = true;
+
+                    // Let the Host (runtime) know that we are done installing the function app dependencies.
+                    if ((functionLoadRequest.DependencyDownloadRequest?.Enabled == true) && !DependencyManager.FunctionAppDependenciesInstalled)
+                    {
+                        if (DependencyManager.Dependencies?.Count > 0)
+                        {
+                            response.FunctionLoadResponse.IsDependencyDownloaded = true;
+
+                            // Keep track of whether the function app dependencies have been installed.
+                            DependencyManager.FunctionAppDependenciesInstalled = true;
+                        }
+                    }
                 }
 
                 // Load the metadata of the function.
@@ -103,10 +145,17 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             }
             catch (Exception e)
             {
+                // If an exception is thrown while installing the function app dependencies,
+                // this will get wrapped in a DependencyInstallationException.
+                if (e is DependencyInstallationException)
+                {
+                    e = e.InnerException;
+                    response.FunctionLoadResponse.IsDependencyDownloaded = false;
+                }
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = e.ToRpcException();
+                return response;
             }
-
             return response;
         }
 
@@ -281,6 +330,214 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             }
         }
 
-        #endregion
+        /// <summary>
+        /// Installs managed dependencies modules specified in Requirements.psd1 for the function app.
+        /// If an exception is raised during installation, wrap it in a DependencyInstallationException.
+        /// This exception will get unwrapped in caller method.
+        /// </summary>
+        private void InstallManagedDependencyModule(System.Management.Automation.PowerShell pwsh, ILogger logger)
+        {
+            try
+            {
+                RunInstallManagedDependencyModule(pwsh, logger);
+            }
+            catch (Exception e)
+            {
+                var errorMsg = string.Format(PowerShellWorkerStrings.FailedToInstallFuncAppDependencies);
+                var dependencyInstallationException = new DependencyInstallationException(errorMsg, e);
+                throw dependencyInstallationException;
+            }
+        }
+
+        /// <summary>
+        /// Installs managed dependencies modules specified in Requirements.psd1 for the function app.
+        /// </summary>
+        private void RunInstallManagedDependencyModule(System.Management.Automation.PowerShell pwsh, ILogger logger)
+        {
+            if (DependencyManager.Dependencies == null || DependencyManager.Dependencies.Count == 0)
+            {
+                // If there are no dependencies to install, log and return.
+                logger.Log(LogLevel.Trace, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, isUserLog: true);
+                return;
+            }
+
+            // Install the dependencies
+            logger.Log(LogLevel.Trace, PowerShellWorkerStrings.InstallFunctionAppDependentModules, isUserLog: true);
+
+            foreach (var module in DependencyManager.Dependencies)
+            {
+                var moduleName = module.Name;
+                var path = module.Path;
+                var majorVersion = module.MajorVersion;
+
+                if (module.IsDownloadRequired)
+                {
+                    // Get the latest supported version for the given major version.
+                    var latestVersion = GetModuleLatestSupportedVersion(pwsh, logger, moduleName, majorVersion);
+
+                    if (string.IsNullOrEmpty(latestVersion))
+                    {
+                        // If a latest version was not found, error out.
+                        var errorMsg = string.Format(PowerShellWorkerStrings.CannotFindModuleVersion, moduleName, majorVersion);
+                        var argException = new ArgumentException(errorMsg);
+                        logger.Log(LogLevel.Error, errorMsg, argException, isUserLog: true);
+
+                        throw argException;
+                    }
+
+                    
+                    if (!DependencyManagementUtils.IsValidMajorVersion(majorVersion, latestVersion))
+                    {
+                        // The requested major version is greater than the latest major supported version.
+                        var errorMsg = string.Format(PowerShellWorkerStrings.InvalidModuleMajorVersion, moduleName, majorVersion);
+                        var argException = new ArgumentException(errorMsg);
+                        logger.Log(LogLevel.Error, errorMsg, argException, isUserLog: true);
+
+                        throw argException;
+                    }
+
+                    // Before installing the module, check to see if it is already installed at the given path.
+                    var moduleFolderPath = Path.Join(path, moduleName);
+                    if (Directory.Exists(moduleFolderPath))
+                    {
+                        // Make sure we have the latest supported version installed.
+                        if (DependencyManagementUtils.IsLatestVersion(moduleFolderPath, latestVersion))
+                        {
+                            // The latest version is already installed, log and return.
+                            var logMsg = string.Format(PowerShellWorkerStrings.ModuleIsAlreadyInstalled, moduleName, latestVersion);
+                            logger.Log(LogLevel.Trace, logMsg, isUserLog: true);
+                            return;
+                        }
+                    }
+
+                    // Save the module to the given path
+                    SaveModuleCommand(pwsh, logger, moduleName, latestVersion, path);
+
+                    // Add a DependencyInfo.json entry.
+                    // This file helps keep track of the module name and version that was installed.
+                    DependencyManagementUtils.NewDependencyInfoEntry(moduleName, latestVersion, path);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Downloads a PowerShell module from the PSGallery to the given path.
+        /// </summary>
+        internal void SaveModuleCommand(
+            System.Management.Automation.PowerShell pwsh,
+            ILogger logger,
+            string moduleName,
+            string version,
+            string path)
+        {
+            Exception exception = null;
+
+            // If the destination path does not exist, create it.
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            try
+            {
+                pwsh.AddCommand("PowerShellGet\\Save-Module")
+                    .AddParameter("Repository", Repository)
+                    .AddParameter("Name", moduleName)
+                    .AddParameter("RequiredVersion", version)
+                    .AddParameter("path", path)
+                    .AddParameter("Force", true)
+                    .AddParameter("ErrorAction", "Stop")
+                    .InvokeAndClearCommands();
+            }
+            catch (Exception e)
+            {
+                exception = e;
+                throw;
+            }
+            finally
+            {
+                if (pwsh.HadErrors)
+                {
+                    string errorMsg = string.Format(PowerShellWorkerStrings.FailedToInstallModule, moduleName, version);
+                    logger.Log(LogLevel.Error, errorMsg, exception, isUserLog: true);
+                }
+                else
+                {
+                    var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, version);
+                    logger.Log(LogLevel.Trace, message, isUserLog: true);
+                }
+
+                // Clean up
+                pwsh.AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
+                    .AddParameter("Name", "PackageManagement, PowerShellGet")
+                    .AddParameter("Force", true)
+                    .AddParameter("ErrorAction", "SilentlyContinue")
+                    .InvokeAndClearCommands();
+            }
+        }
+
+        /// <summary>
+        /// Return the latest PowerShell module version for the given module name and major version.
+        /// </summary>
+        internal string GetModuleLatestSupportedVersion(
+            System.Management.Automation.PowerShell pwsh,
+            ILogger logger,
+            string moduleName,
+            string majorVersion)
+        {
+            Exception exception = null;
+            Collection<PSObject> results;
+            try
+            {
+                results = pwsh.AddCommand("PowerShellGet\\Find-Module")
+                    .AddParameter("Repository", Repository)
+                    .AddParameter("Name", moduleName)
+                    .AddParameter("AllVersions", true)
+                    .AddParameter("ErrorAction", "Stop")
+                    .InvokeAndClearCommands<PSObject>();
+            }
+            catch (Exception e)
+            {
+                exception = e;
+                throw;
+            }
+            finally
+            {
+                if (pwsh.HadErrors)
+                {
+                    string errorMsg = string.Format(PowerShellWorkerStrings.FailedToGetModuleVersionInformation, moduleName);
+                    logger.Log(LogLevel.Error, errorMsg, exception, isUserLog: true);
+                }
+            }
+
+            bool foundLatestVersion = false;
+            var latestVersion = new Version("0.0");
+
+            if (results?.Count > 0)
+            {
+                // Iterate through the list of results and find the latest supported version
+                foreach (PSObject result in results)
+                {
+                    string versionValue = (string)result.Properties["version"].Value;
+                    var version = new Version(versionValue);
+
+                    var versionResult = version.CompareTo(latestVersion);
+                    if (versionResult > 0)
+                    {
+                        latestVersion = version;
+                        foundLatestVersion = true;
+                    }
+                }
+            }
+
+            if (!foundLatestVersion)
+            {
+                return null;
+            }
+
+            return latestVersion.ToString();
+        }
     }
+
+        #endregion
 }

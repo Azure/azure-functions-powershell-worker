@@ -11,6 +11,7 @@ package AzureFunctionsRpcMessages;
 
 import "google/protobuf/duration.proto";
 import "identity/ClaimsIdentityRpc.proto";
+import "ManagedDependency/Dependency.proto";
 
 // Interface exported by the server.
 service FunctionRpc {
@@ -202,6 +203,9 @@ message FunctionLoadRequest {
 
   // Metadata for the request
   RpcFunctionMetadata metadata = 2;
+
+  //Used to send the dependency download request to the language worker
+  Dependency dependency_download_request = 3;
 }
 
 // Worker tells host result of reload
@@ -212,6 +216,9 @@ message FunctionLoadResponse {
   // Result of load operation
   StatusResult result = 2;
   // TODO: return type expected?
+
+  // Result of load operation
+  bool is_dependency_downloaded = 3;
 }
 
 // Information on how a Function should be loaded and its bindings
