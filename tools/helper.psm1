@@ -99,11 +99,20 @@ function New-gRPCAutoGenCode
         $outputDir = "$RepoRoot/src/Messaging"
         Remove-Item "$outputDir/FunctionRpc*.cs" -Force -ErrorAction SilentlyContinue
 
-        & $Script:protoc_Path $Script:protobuf_file_Path --csharp_out $outputDir `
-                                                         --grpc_out=$outputDir `
-                                                         --plugin=protoc-gen-grpc=$Script:grpc_csharp_plugin_Path `
-                                                         --proto_path=$Script:protobuf_dir_Path `
-                                                         --proto_path=$Script:google_protobuf_tools_Path
+        & $Script:protoc_Path $Script:claimsIdentityRpc_proto_file_Path `
+            --csharp_out $outputDir `
+            --grpc_out=$outputDir `
+            --plugin=protoc-gen-grpc=$Script:grpc_csharp_plugin_Path `
+            --proto_path=$Script:identity_dir_Path `
+            --proto_path=$Script:google_protobuf_tools_Path
+
+        & $Script:protoc_Path $Script:functionRpc_proto_file_Path `
+            --csharp_out $outputDir `
+            --grpc_out=$outputDir `
+            --plugin=protoc-gen-grpc=$Script:grpc_csharp_plugin_Path `
+            --proto_path=$Script:protobuf_dir_Path `
+            --proto_path=$Script:google_protobuf_tools_Path
+
         if ($LASTEXITCODE -ne 0) {
             throw "Failed to generate the CSharp code for gRPC communication."
         }
@@ -164,7 +173,9 @@ function Resolve-ProtoBufToolPath
         }
 
         $Script:protobuf_dir_Path = "$RepoRoot/protobuf/src/proto"
-        $Script:protobuf_file_Path = "$Script:protobuf_dir_Path/FunctionRpc.proto"
+        $Script:functionRpc_proto_file_Path = "$Script:protobuf_dir_Path/FunctionRpc.proto"
+        $Script:identity_dir_Path = "$RepoRoot/protobuf/src/proto/identity"
+        $Script:claimsIdentityRpc_proto_file_Path = "$Script:identity_dir_Path/ClaimsIdentityRpc.proto"
     }
 }
 
