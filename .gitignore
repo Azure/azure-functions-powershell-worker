@@ -70,6 +70,7 @@ src/Modules
 protobuf/*
 FunctionRpc.cs
 FunctionRpcGrpc.cs
+ClaimsIdentityRpc.cs
 
 # pulled in for tests
 Azure.Functions.Cli
