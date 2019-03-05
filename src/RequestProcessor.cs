@@ -398,7 +398,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                         throw argException;
                     }
 
-                    
                     if (!DependencyManagementUtils.IsValidMajorVersion(majorVersion, latestVersion))
                     {
                         // The requested major version is greater than the latest major supported version.

@@ -90,8 +90,7 @@ function New-gRPCAutoGenCode
     )
 
     if ($Force -or -not (Test-Path "$RepoRoot/src/Messaging/FunctionRpc.cs") -or
-                   -not (Test-Path "$RepoRoot/src/Messaging/FunctionRpcGrpc.cs") -or 
-                   -not (Test-Path "$RepoRoot/src/Messaging/Dependency.cs"))
+                   -not (Test-Path "$RepoRoot/src/Messaging/FunctionRpcGrpc.cs"))
     {
         Write-Log "Generate the CSharp code for gRPC communication from protobuf"
 
