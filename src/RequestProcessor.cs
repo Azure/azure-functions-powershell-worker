@@ -12,6 +12,7 @@ using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
 namespace  Microsoft.Azure.Functions.PowerShellWorker
 {
@@ -24,33 +25,61 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         // Indicate whether the FunctionApp has been initialized.
         private bool _isFunctionAppInitialized;
 
+        private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
+            new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
+
         internal RequestProcessor(MessagingStream msgStream)
         {
             _msgStream = msgStream;
             _powershellPool = new PowerShellManagerPool(msgStream);
             _functionLoader = new FunctionLoader();
+            
+            // Host sends capabilities/init data to worker
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.WorkerInitRequest, ProcessWorkerInitRequest);
+
+            // Host sends terminate message to worker.
+            // Worker terminates if it can, otherwise host terminates after a grace period
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.WorkerTerminate, ProcessWorkerTerminateRequest);
+
+            // Add any worker relevant status to response
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.WorkerStatusRequest, ProcessWorkerStatusRequest);
+
+            // On file change event, host sends notification to worker
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.FileChangeEventRequest, ProcessFileChangeEventRequest);
+
+            // Host sends required metadata to worker to load function
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionLoadRequest, ProcessFunctionLoadRequest);
+            
+            // Host requests a given invocation
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.InvocationRequest, ProcessInvocationRequest);
+
+            // Host sends cancel message to attempt to cancel an invocation. 
+            // If an invocation is cancelled, host will receive an invocation response with status cancelled.
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.InvocationCancel, ProcessInvocationCancelRequest);
+
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadRequest, ProcessFunctionEnvironmentReloadRequest);
         }
 
         internal async Task ProcessRequestLoop()
         {
+            var logger = new RpcLogger(_msgStream);
+
             StreamingMessage request, response;
             while (await _msgStream.MoveNext())
             {
                 request = _msgStream.GetCurrentMessage();
-                switch (request.ContentCase)
+
+                if (_requestHandlers.TryGetValue(request.ContentCase, out Func<StreamingMessage, StreamingMessage> requestFunc))
                 {
-                    case StreamingMessage.ContentOneofCase.WorkerInitRequest:
-                        response = ProcessWorkerInitRequest(request);
-                        break;
-                    case StreamingMessage.ContentOneofCase.FunctionLoadRequest:
-                        response = ProcessFunctionLoadRequest(request);
-                        break;
-                    case StreamingMessage.ContentOneofCase.InvocationRequest:
-                        response = ProcessInvocationRequest(request);
-                        break;
-                    default:
-                        string errorMsg = string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase);
-                        throw new InvalidOperationException(errorMsg);
+                    response = requestFunc(request);
+                }
+                else
+                {
+                    logger.SetContext(request.RequestId, null);
+                    string errorMsg = string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase);
+                    logger.Log(LogLevel.Error, errorMsg, new InvalidOperationException(errorMsg));
+                    logger.ResetContext();
+                    continue;
                 }
 
                 if (response != null)
@@ -68,6 +97,26 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 out StatusResult status);
 
             return response;
+        }
+
+        internal StreamingMessage ProcessWorkerTerminateRequest(StreamingMessage request)
+        {
+            return null;
+        }
+
+        internal StreamingMessage ProcessWorkerStatusRequest(StreamingMessage request)
+        {
+            StreamingMessage response = NewStreamingMessageTemplate(
+                request.RequestId,
+                StreamingMessage.ContentOneofCase.WorkerStatusResponse,
+                out StatusResult status);
+
+            return response;
+        }
+
+        internal StreamingMessage ProcessFileChangeEventRequest(StreamingMessage request)
+        {
+            return null;
         }
 
         /// <summary>
@@ -177,6 +226,21 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             }
 
             _msgStream.Write(response);
+        }
+
+        internal StreamingMessage ProcessInvocationCancelRequest(StreamingMessage request)
+        {
+            return null;
+        }
+
+        internal StreamingMessage ProcessFunctionEnvironmentReloadRequest(StreamingMessage request)
+        {
+            StreamingMessage response = NewStreamingMessageTemplate(
+                request.RequestId,
+                StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse,
+                out StatusResult status);
+
+            return response;
         }
 
         #region Helper_Methods
