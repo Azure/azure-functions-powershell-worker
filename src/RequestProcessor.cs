@@ -106,6 +106,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
         internal StreamingMessage ProcessWorkerStatusRequest(StreamingMessage request)
         {
+            // WorkerStatusResponse type says that it is not used but this will create an empty one anyway to return to the host
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.WorkerStatusResponse,
@@ -259,11 +260,17 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 case StreamingMessage.ContentOneofCase.WorkerInitResponse:
                     response.WorkerInitResponse = new WorkerInitResponse() { Result = status };
                     break;
+                case StreamingMessage.ContentOneofCase.WorkerStatusResponse:
+                    response.WorkerStatusResponse = new WorkerStatusResponse();
+                    break;
                 case StreamingMessage.ContentOneofCase.FunctionLoadResponse:
                     response.FunctionLoadResponse = new FunctionLoadResponse() { Result = status };
                     break;
                 case StreamingMessage.ContentOneofCase.InvocationResponse:
                     response.InvocationResponse = new InvocationResponse() { Result = status };
+                    break;
+                case StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse:
+                    response.FunctionEnvironmentReloadResponse = new FunctionEnvironmentReloadResponse() { Result = status };
                     break;
                 default:
                     throw new InvalidOperationException("Unreachable code.");
