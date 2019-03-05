@@ -49,7 +49,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// Setup the well known paths about the FunctionApp.
         /// This method is called only once during the code start.
         /// </summary>
-        internal static void SetupWellKnownPaths(FunctionLoadRequest request)
+        internal static void SetupWellKnownPaths(
+            FunctionLoadRequest request,
+            string managedDependenciesPath = null)
         {
             // Resolve the FunctionApp root path
             FunctionAppRootPath = Path.GetFullPath(Path.Join(request.Metadata.Directory, ".."));
@@ -57,7 +59,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // Resolve module paths
             var appLevelModulesPath = Path.Join(FunctionAppRootPath, "Modules");
             var workerLevelModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
-            FunctionModulePath = $"{appLevelModulesPath}{Path.PathSeparator}{workerLevelModulesPath}";
+
+            // Add the managed dependencies folder path
+            if (!string.IsNullOrWhiteSpace(managedDependenciesPath))
+            {
+                FunctionModulePath = $"{managedDependenciesPath}{Path.PathSeparator}";
+            }
+
+            // Add app and worker level module paths
+            FunctionModulePath = $"{FunctionModulePath}{appLevelModulesPath}{Path.PathSeparator}{workerLevelModulesPath}";
 
             // Resolve the FunctionApp profile path
             var options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive };

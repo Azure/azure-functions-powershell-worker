@@ -98,10 +98,19 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 out StatusResult status);
             response.FunctionLoadResponse.FunctionId = functionLoadRequest.FunctionId;
 
-            // If functionLoadRequest.DependencyDownloadRequest is enabled,
-            // process the function app dependencies defined in appRoot\Requirements.psd1
-            // These dependencies are installed once PowerShell has been initialized via save-module.
-            if ((functionLoadRequest.DependencyDownloadRequest?.Enabled == true) && !DependencyManager.FunctionAppDependenciesInstalled)
+            // When a functionLoadRequest comes in, we check to see if a dependency download has failed in a previous call.
+            // If this is the case, mark this as a failed request and submit the exception to the Host (runtime).
+            if (_dependencyManager.DependencyDownloadError != null)
+            {
+                status.Status = StatusResult.Types.Status.Failure;
+                status.Exception = _dependencyManager.DependencyDownloadError.ToRpcException();
+                return response;
+            }
+
+            // If functionLoadRequest.ManagedDependencyEnabled is true,
+            // process the function app dependencies defined in functionAppRoot\Requirements.psd1.
+            // These dependencies are installed via Save-Module once PowerShell has been initialized.
+            if (functionLoadRequest.ManagedDependencyEnabled && !DependencyManager.FunctionAppDependenciesInstalled)
             {
                 try
                 {
@@ -109,9 +118,12 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 }
                 catch (Exception e)
                 {
+                    // If an exception takes place while setting the function app dependencies, save the exception
+                    // in _dependencyManager.DependencyDownloadError so we can use it in subsequent functionLoadRequests.
                     status.Status = StatusResult.Types.Status.Failure;
                     status.Exception = e.ToRpcException();
                     response.FunctionLoadResponse.IsDependencyDownloaded = false;
+                    _dependencyManager.DependencyDownloadError = e;
                     return response;
                 }
             }
@@ -123,12 +135,12 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 // 'FunctionLoadRequest' comes in. Therefore, we run initialization here.
                 if (!_isFunctionAppInitialized)
                 {
-                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
+                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest, DependencyManager.DependenciesPath);
                     _powershellPool.Initialize(request.RequestId, InstallManagedDependencyModule);
                     _isFunctionAppInitialized = true;
 
                     // Let the Host (runtime) know that we are done installing the function app dependencies.
-                    if ((functionLoadRequest.DependencyDownloadRequest?.Enabled == true) && !DependencyManager.FunctionAppDependenciesInstalled)
+                    if (functionLoadRequest.ManagedDependencyEnabled && !DependencyManager.FunctionAppDependenciesInstalled)
                     {
                         if (DependencyManager.Dependencies?.Count > 0)
                         {
@@ -151,6 +163,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 {
                     e = e.InnerException;
                     response.FunctionLoadResponse.IsDependencyDownloaded = false;
+                    _dependencyManager.DependencyDownloadError = e;
                 }
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = e.ToRpcException();
@@ -343,7 +356,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             }
             catch (Exception e)
             {
-                var errorMsg = string.Format(PowerShellWorkerStrings.FailedToInstallFuncAppDependencies);
+                var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies);
                 var dependencyInstallationException = new DependencyInstallationException(errorMsg, e);
                 throw dependencyInstallationException;
             }
@@ -362,7 +375,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             }
 
             // Install the dependencies
-            logger.Log(LogLevel.Trace, PowerShellWorkerStrings.InstallFunctionAppDependentModules, isUserLog: true);
+            logger.Log(LogLevel.Trace, PowerShellWorkerStrings.InstallingFunctionAppDependentModules, isUserLog: true);
 
             foreach (var module in DependencyManager.Dependencies)
             {
@@ -458,7 +471,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 if (pwsh.HadErrors)
                 {
-                    string errorMsg = string.Format(PowerShellWorkerStrings.FailedToInstallModule, moduleName, version);
+                    string errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallModule, moduleName, version);
                     logger.Log(LogLevel.Error, errorMsg, exception, isUserLog: true);
                 }
                 else
@@ -505,7 +518,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 if (pwsh.HadErrors)
                 {
-                    string errorMsg = string.Format(PowerShellWorkerStrings.FailedToGetModuleVersionInformation, moduleName);
+                    string errorMsg = string.Format(PowerShellWorkerStrings.FailToGetModuleVersionInformation, moduleName);
                     logger.Log(LogLevel.Error, errorMsg, exception, isUserLog: true);
                 }
             }

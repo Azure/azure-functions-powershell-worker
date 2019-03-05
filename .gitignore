@@ -71,7 +71,6 @@ protobuf/*
 FunctionRpc.cs
 FunctionRpcGrpc.cs
 ClaimsIdentityRpc.cs
-Dependency.cs
 
 # pulled in for tests
 Azure.Functions.Cli

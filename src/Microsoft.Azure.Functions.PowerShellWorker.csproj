@@ -35,8 +35,4 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Messaging\" />
-  </ItemGroup>
 </Project>

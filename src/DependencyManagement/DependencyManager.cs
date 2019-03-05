@@ -21,6 +21,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         // The list of dependent modules for the function app.
         internal static List<DependencyInfo> Dependencies { get; private set; }
 
+        // This is the location where the dependent modules will be installed.
+        internal static string DependenciesPath { get; private set; }
+
         // Keep track of whether the function app dependencies have been installed.
         internal static bool FunctionAppDependenciesInstalled { get; set; }
 
@@ -28,7 +31,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private const string RequirementsPsd1FileName = "Requirements.psd1";
 
         // The list of managed dependencies supported in Azure Functions.
-        internal static readonly List<string> SupportedManagedDependencies = new List<string>(){"Az"};
+        internal static readonly List<string> SupportedManagedDependencies = new List<string>() {"Az"};
+
+        // Environment variables to help figure out if we are running in Azure.
+        private const string AzureWebsiteInstanceId = "WEBSITE_INSTANCE_ID";
+        private const string HomeDriveName = "HOME";
+
+        // Managed Dependencies folder name.
+        private const string ManagedDependenciesFolderName = "ManagedDependencies";
+
+        // Holds the exception object if an error is encountered while downloading the function app dependencies.
+        internal Exception DependencyDownloadError { get; set; }
 
         internal DependencyManager()
         {
@@ -43,8 +56,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             // Resolve the FunctionApp root path.
             var functionAppRootPath = Path.GetFullPath(Path.Join(request.Metadata.Directory, ".."));
 
-            // Location where the dependent modules will be installed.
-            var modulesFolderPath = Path.Join(functionAppRootPath, "Modules");
+            // Resolve the managed dependencies folder path.
+            DependenciesPath = GetManagedDependenciesPath(functionAppRootPath);
 
             // Path to Requirements.psd1 file.
             var requirementsFilePath = Path.Join(functionAppRootPath, RequirementsPsd1FileName);
@@ -53,8 +66,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             Hashtable entries = ParsePowerShellDataFile(requirementsFilePath);
             foreach (DictionaryEntry entry in entries)
             {
-                var name = (string)entry.Key;
-                var version = (string)entry.Value;
+                var name = (string) entry.Key;
+                var version = (string) entry.Value;
 
                 // Validates that the module name.
                 ValidateModuleName(name);
@@ -63,7 +76,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 var majorVersion = GetMajorVersion(version);
 
                 // Create a DependencyInfo object and add it to the list of dependencies to install.
-                var dependencyInfo = new DependencyInfo(name, majorVersion, modulesFolderPath, true);
+                var dependencyInfo = new DependencyInfo(name, majorVersion, DependenciesPath, true);
                 Dependencies.Add(dependencyInfo);
             }
         }
@@ -115,21 +128,39 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 {
                     stringBuilder.AppendLine(error.Message);
                 }
+
                 string errorMsg = stringBuilder.ToString();
-                throw new ArgumentException(string.Format(PowerShellWorkerStrings.FailToParseScript, RequirementsPsd1FileName, errorMsg));
+                throw new ArgumentException(string.Format(PowerShellWorkerStrings.FailToParseScript,
+                    RequirementsPsd1FileName, errorMsg));
             }
 
             var hashtableAst = ast.Find(x => x is HashtableAst, false);
+            var hashtable = default(Hashtable);
+
+            bool throwException = false;
             try
             {
-                var hashtable = (Hashtable)hashtableAst?.SafeGetValue();
-                return hashtable;
+                hashtable = (Hashtable)hashtableAst?.SafeGetValue();
             }
             catch
             {
-                string errorMsg = string.Format(PowerShellWorkerStrings.InvalidPowerShellDataFile, RequirementsPsd1FileName);
+                throwException = true;
+            }
+
+            // Ensure that the hashtable is not null.
+            if (hashtable == null)
+            {
+                throwException = true;
+            }
+
+            if (throwException)
+            {
+                string errorMsg = string.Format(PowerShellWorkerStrings.InvalidPowerShellDataFile,
+                    RequirementsPsd1FileName);
                 throw new ArgumentException(errorMsg);
             }
+
+            return hashtable;
         }
 
         /// <summary>
@@ -162,6 +193,35 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 throw new ArgumentException(errorMessage);
             }
         }
+
+        /// <summary>
+        /// Gets the Managed Dependencies folder path.
+        /// If we are running in Azure, the path is HOME\ManagedDependencies.
+        /// Otherwise, the path is functionAppRoot\ManagedDependencies.
+        /// </summary>
+        internal string GetManagedDependenciesPath(string functionAppRoot)
+        {
+            var managedDependenciesFolderPath = default(string);
+
+            // If we are running in Azure use the 'HOME' path.
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(AzureWebsiteInstanceId)))
+            {
+                var homeDriveVariable = Environment.GetEnvironmentVariable(HomeDriveName);
+                if (string.IsNullOrWhiteSpace(homeDriveVariable))
+                {
+                    var errorMsg = String.Format(PowerShellWorkerStrings.FailToResolveHomeDirectory, HomeDriveName);
+                    throw new ArgumentException(errorMsg);
+                }
+
+                managedDependenciesFolderPath = Path.Join(homeDriveVariable, ManagedDependenciesFolderName);
+            }
+            else
+            {
+                // Otherwise, the ManagedDependencies folder is created under the function app root.
+                managedDependenciesFolderPath = Path.Join(functionAppRoot, ManagedDependenciesFolderName);
+            }
+
+            return managedDependenciesFolderPath;
+        }
     }
 }
-
