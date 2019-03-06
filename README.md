@@ -1,9 +1,15 @@
-![Azure Functions Logo](https://raw.githubusercontent.com/Azure/azure-functions-cli/master/src/Azure.Functions.Cli/npm/assets/azure-functions-logo-color-raster.png)
+![azure-functions-logo][]
 
 |Branch|Status|
 |---|---|
-|master|[![Build status](https://ci.appveyor.com/api/projects/status/5mqrok4j3l89cnvx/branch/master?svg=true)](https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=master)|
-|dev|[![Build status](https://ci.appveyor.com/api/projects/status/5mqrok4j3l89cnvx/branch/dev?svg=true)](https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=dev)|
+|master|[![master-build-status][]][master-build-site]|
+|dev|[![dev-build-status][]][dev-build-site]|
+
+[azure-functions-logo]: https://raw.githubusercontent.com/Azure/azure-functions-cli/master/src/Azure.Functions.Cli/npm/assets/azure-functions-logo-color-raster.png
+[master-build-status]: https://ci.appveyor.com/api/projects/status/github/Azure/azure-functions-powershell-worker?branch=master&svg=true
+[dev-build-status]: https://ci.appveyor.com/api/projects/status/github/Azure/azure-functions-powershell-worker?branch=dev&svg=true
+[master-build-site]: https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=master
+[dev-build-site]: https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=dev
 
 # Azure Functions PowerShell Language Worker
 
