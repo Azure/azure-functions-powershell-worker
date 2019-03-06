@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Management.Automation.Remoting;
 using System.Threading.Tasks;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
@@ -92,6 +93,16 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.WorkerInitResponse,
                 out StatusResult status);
+
+            // If the environment variable is set, spin up the custom named pipe server.
+            // This is typically used for debugging. It will throw a friendly exception if the
+            // pipe name is not a valid pipename.
+            string pipeName = Environment.GetEnvironmentVariable("PSWorkerCustomPipeName");
+            if (!string.IsNullOrEmpty(pipeName))
+            {
+                Console.WriteLine(string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
+                RemoteSessionNamedPipeServer.CreateCustomNamedPipeServer(pipeName);
+            }
 
             return response;
         }

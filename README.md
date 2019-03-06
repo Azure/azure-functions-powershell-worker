@@ -92,7 +92,7 @@ On macOS if you installed via `brew`
 
 Copy the result of the `publish` directory into a `powershell` folder under `workers`:
 ```powershell
-Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp2.1/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell"
+Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp2.2/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell"
 ```
 
 > NOTE: if the powershell folder already exists, you should delete it or debugging won't work.

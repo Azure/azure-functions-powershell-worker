@@ -163,4 +163,7 @@
   <data name="FailToConvertToHttpResponseContext" xml:space="preserve">
     <value>The given value for the 'http' output binding '{0}' cannot be converted to the type 'HttpResponseContext'. The conversion failed with the following error: {1}</value>
   </data>
+  <data name="SpecifiedCustomPipeName" xml:space="preserve">
+    <value>Custom pipe name specified. You can attach to the process by using vscode or by running `Enter-PSHostProcess -CustomPipeName {0}`</value>
+  </data>
 </root>
