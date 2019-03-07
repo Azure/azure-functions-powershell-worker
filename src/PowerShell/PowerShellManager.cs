@@ -89,8 +89,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             Exception exception = null;
             if (profilePath == null)
             {
-                var errorMsg = String.Format(PowerShellWorkerStrings.FileNotFound, ProfileFileName);
-                _logger.Log(LogLevel.Trace, string.Format(errorMsg, FunctionLoader.FunctionAppRootPath));
+                var errorMsg = String.Format(PowerShellWorkerStrings.FileNotFound, ProfileFileName, FunctionLoader.FunctionAppRootPath);
+                _logger.Log(LogLevel.Trace, errorMsg);
                 return;
             }
 

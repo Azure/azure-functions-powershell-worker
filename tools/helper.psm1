@@ -97,7 +97,6 @@ function New-gRPCAutoGenCode
         Resolve-ProtoBufToolPath
 
         $outputDir = "$RepoRoot/src/Messaging"
-        Remove-Item "$outputDir/Dependency.cs" -Force -ErrorAction SilentlyContinue
         Remove-Item "$outputDir/FunctionRpc*.cs" -Force -ErrorAction SilentlyContinue
 
         & $Script:protoc_Path $Script:claimsIdentityRpc_proto_file_Path `

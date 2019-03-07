@@ -6,7 +6,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Management.Automation;
 using System.Threading.Tasks;
@@ -20,7 +19,7 @@ using NJsonSchema.Infrastructure;
 using ILogger = Microsoft.Azure.Functions.PowerShellWorker.Utility.ILogger;
 using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
-namespace  Microsoft.Azure.Functions.PowerShellWorker
+namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     internal class RequestProcessor
     {
@@ -118,7 +117,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             try
             {
                 // If functionLoadRequest.ManagedDependencyEnabled is true,
-                // process the function app dependencies defined in functionAppRoot\Requirements.psd1.
+                // process the function app dependencies defined in functionAppRoot\requirements.psd1.
                 // These dependencies are installed via Save-Module once PowerShell has been initialized.
                 if (functionLoadRequest.ManagedDependencyEnabled && !DependencyManager.FunctionAppDependenciesInstalled)
                 {
@@ -159,8 +158,8 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = e.ToRpcException();
-                return response;
             }
+
             return response;
         }
 
@@ -241,8 +240,8 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         private StreamingMessage NewStreamingMessageTemplate(string requestId, StreamingMessage.ContentOneofCase msgType, out StatusResult status)
         {
             // Assume success. The state of the status object can be changed in the caller.
-            status = new StatusResult() { Status = StatusResult.Types.Status.Success };
-            var response = new StreamingMessage() { RequestId = requestId };
+            status = new StatusResult() {Status = StatusResult.Types.Status.Success};
+            var response = new StreamingMessage() {RequestId = requestId};
 
             switch (msgType)
             {
@@ -305,11 +304,13 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                         ReadOnlyBindingInfo bindingInfo = binding.Value;
 
                         object outValue = results[outBindingName];
-                        object transformedValue = Utils.TransformOutBindingValueAsNeeded(outBindingName, bindingInfo, outValue);
+                        object transformedValue =
+                            Utils.TransformOutBindingValueAsNeeded(outBindingName, bindingInfo, outValue);
                         TypedData dataToUse = transformedValue.ToTypedData();
 
                         // if one of the bindings is '$return' we need to set the ReturnValue
-                        if(string.Equals(outBindingName, AzFunctionInfo.DollarReturn, StringComparison.OrdinalIgnoreCase))
+                        if (string.Equals(outBindingName, AzFunctionInfo.DollarReturn,
+                            StringComparison.OrdinalIgnoreCase))
                         {
                             response.ReturnValue = dataToUse;
                             continue;
@@ -323,6 +324,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
                         response.OutputData.Add(paramBinding);
                     }
+
                     break;
 
                 case AzFunctionType.OrchestrationFunction:
@@ -377,7 +379,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 var majorVersion = module.MajorVersion;
 
                 // Get the latest supported version for the given major version.
-                var latestVersion = GetModuleLatestSupportedVersion(pwsh, logger, moduleName, majorVersion);
+                var latestVersion = DependencyManagementUtils.GetModuleLatestSupportedVersion(moduleName, majorVersion);
 
                 if (string.IsNullOrEmpty(latestVersion))
                 {
@@ -480,68 +482,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             }
         }
 
-        /// <summary>
-        /// Return the latest PowerShell module version for the given module name and major version.
-        /// </summary>
-        internal string GetModuleLatestSupportedVersion(
-            System.Management.Automation.PowerShell pwsh,
-            ILogger logger,
-            string moduleName,
-            string majorVersion)
-        {
-            Exception exception = null;
-            Collection<PSObject> results;
-            try
-            {
-                results = pwsh.AddCommand("PowerShellGet\\Find-Module")
-                    .AddParameter("Repository", Repository)
-                    .AddParameter("Name", moduleName)
-                    .AddParameter("AllVersions", true)
-                    .AddParameter("ErrorAction", "Stop")
-                    .InvokeAndClearCommands<PSObject>();
-            }
-            catch (Exception e)
-            {
-                exception = e;
-                throw;
-            }
-            finally
-            {
-                if (pwsh.HadErrors)
-                {
-                    string errorMsg = string.Format(PowerShellWorkerStrings.FailToGetModuleVersionInformation, moduleName);
-                    logger.Log(LogLevel.Error, errorMsg, exception, isUserLog: true);
-                }
-            }
-
-            bool foundLatestVersion = false;
-            var latestVersion = new Version("0.0");
-
-            if (results?.Count > 0)
-            {
-                // Iterate through the list of results and find the latest supported version
-                foreach (PSObject result in results)
-                {
-                    string versionValue = (string)result.Properties["version"].Value;
-                    var version = new Version(versionValue);
-
-                    var versionResult = version.CompareTo(latestVersion);
-                    if (versionResult > 0)
-                    {
-                        latestVersion = version;
-                        foundLatestVersion = true;
-                    }
-                }
-            }
-
-            if (!foundLatestVersion)
-            {
-                return null;
-            }
-
-            return latestVersion.ToString();
-        }
-    }
-
         #endregion
+    }
 }

@@ -22,4 +22,3 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         }
     }
 }
-

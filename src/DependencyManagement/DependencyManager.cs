@@ -9,7 +9,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -28,7 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         internal static bool FunctionAppDependenciesInstalled { get; set; }
 
         // Requirements.psd1 file name.
-        private const string RequirementsPsd1FileName = "Requirements.psd1";
+        private const string RequirementsPsd1FileName = "requirements.psd1";
 
         // The list of managed dependencies supported in Azure Functions.
         internal static readonly List<string> SupportedManagedDependencies = new List<string>() {"Az"};
@@ -57,11 +56,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             // Resolve the managed dependencies folder path.
             DependenciesPath = GetManagedDependenciesPath(functionAppRootPath);
 
-            // Path to Requirements.psd1 file.
-            var requirementsFilePath = Path.Join(functionAppRootPath, RequirementsPsd1FileName);
-
             // Parse and process Requirements.psd1.
-            Hashtable entries = ParsePowerShellDataFile(requirementsFilePath);
+            Hashtable entries = ParsePowerShellDataFile(functionAppRootPath, RequirementsPsd1FileName);
             foreach (DictionaryEntry entry in entries)
             {
                 var name = (string) entry.Key;
@@ -106,18 +102,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// Parses the given PowerShell (psd1) data file.
         /// Returns a Hashtable representing the key value pairs.
         /// </summary>
-
-        internal Hashtable ParsePowerShellDataFile(string filePath)
+        internal Hashtable ParsePowerShellDataFile(string functionAppRootPath, string fileName)
         {
+            // Path to Requirements.psd1 file.
+            var requirementsFilePath = Path.Join(functionAppRootPath, fileName);
+
             // Validate the file path.
-            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+            if (!File.Exists(requirementsFilePath))
             {
-                var errorMessage = String.Format(PowerShellWorkerStrings.FileNotFound, RequirementsPsd1FileName);
+                var errorMessage = String.Format(PowerShellWorkerStrings.FileNotFound, fileName, functionAppRootPath);
                 throw new ArgumentException(errorMessage);
             }
 
             // Try to parse the Requirements.psd1 file.
-            var ast = Parser.ParseFile(filePath, out _, out ParseError[] errors);
+            var ast = Parser.ParseFile(requirementsFilePath, out _, out ParseError[] errors);
 
             if (errors?.Length > 0)
             {

@@ -86,7 +86,7 @@ if(!$NoBuild.IsPresent) {
     $packageManagementFullCLRFolderPath = (Get-Item "$PSScriptRoot/src/bin/$Configuration/*/Modules/PackageManagement/1.1.7.0/fullclr" -ErrorAction SilentlyContinue).FullName
     if (![string]::IsNullOrWhiteSpace($packageManagementFullCLRFolderPath) -and (test-path $packageManagementFullCLRFolderPath))
     {
-        Write-Log "Deleting PackageManagement/fullclr folder..."
+        Write-Log "Deleting PackageManagement/1.1.7.0/fullclr folder..."
         Remove-Item $packageManagementFullCLRFolderPath -Force -Recurse -ErrorAction Stop
         Write-Log "    Completed."
     }
