@@ -10,14 +10,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         internal readonly string Name;
         internal readonly string MajorVersion;
         internal readonly string Path;
-        internal readonly bool IsDownloadRequired;
 
-        internal DependencyInfo(string name, string majorVersion, string path, bool isDownloadRequired)
+        internal DependencyInfo(string name, string majorVersion, string path)
         {
             Name = name;
             MajorVersion = majorVersion;
             Path = path;
-            IsDownloadRequired = isDownloadRequired;
         }
     }
 }

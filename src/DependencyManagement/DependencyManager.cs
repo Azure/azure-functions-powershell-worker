@@ -36,12 +36,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         // Environment variables to help figure out if we are running in Azure.
         private const string AzureWebsiteInstanceId = "WEBSITE_INSTANCE_ID";
         private const string HomeDriveName = "HOME";
+        private const string dataFolderName = "data";
 
         // Managed Dependencies folder name.
         private const string ManagedDependenciesFolderName = "ManagedDependencies";
-
-        // Holds the exception object if an error is encountered while downloading the function app dependencies.
-        internal Exception DependencyDownloadError { get; set; }
 
         internal DependencyManager()
         {
@@ -76,7 +74,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 var majorVersion = GetMajorVersion(version);
 
                 // Create a DependencyInfo object and add it to the list of dependencies to install.
-                var dependencyInfo = new DependencyInfo(name, majorVersion, DependenciesPath, true);
+                var dependencyInfo = new DependencyInfo(name, majorVersion, DependenciesPath);
                 Dependencies.Add(dependencyInfo);
             }
         }
@@ -196,7 +194,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         /// <summary>
         /// Gets the Managed Dependencies folder path.
-        /// If we are running in Azure, the path is HOME\ManagedDependencies.
+        /// If we are running in Azure, the path is HOME\data\ManagedDependencies.
         /// Otherwise, the path is functionAppRoot\ManagedDependencies.
         /// </summary>
         internal string GetManagedDependenciesPath(string functionAppRoot)
@@ -213,7 +211,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     throw new ArgumentException(errorMsg);
                 }
 
-                managedDependenciesFolderPath = Path.Join(homeDriveVariable, ManagedDependenciesFolderName);
+                managedDependenciesFolderPath = Path.Combine(homeDriveVariable, dataFolderName, ManagedDependenciesFolderName);
             }
             else
             {

@@ -82,9 +82,9 @@ if(!$NoBuild.IsPresent) {
     dotnet publish -c $Configuration $PSScriptRoot
     if ($LASTEXITCODE -ne 0) { throw "Build compilation failed." }
 
-    # Remove the fullCLR folder under Modules\PackageManagement (since it has the same content at the coreclr folder)
-    $packageManagementFullCLRFolderPath = (Get-Item "$PSScriptRoot/src/bin/$Configuration/*/Modules/PackageManagement/fullclr" -ErrorAction SilentlyContinue).FullName
-    if (Test-Path $packageManagementFullCLRFolderPath)
+    # Remove the fullCLR folder under PackageManagement (since it has the same content at the coreclr folder)
+    $packageManagementFullCLRFolderPath = (Get-Item "$PSScriptRoot/src/bin/$Configuration/*/Modules/PackageManagement/1.1.7.0/fullclr" -ErrorAction SilentlyContinue).FullName
+    if (![string]::IsNullOrWhiteSpace($packageManagementFullCLRFolderPath) -and (test-path $packageManagementFullCLRFolderPath))
     {
         Write-Log "Deleting PackageManagement/fullclr folder..."
         Remove-Item $packageManagementFullCLRFolderPath -Force -Recurse -ErrorAction Stop
