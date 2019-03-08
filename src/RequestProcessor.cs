@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Management.Automation.Remoting;
 using System.Threading.Tasks;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
@@ -19,6 +20,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
     internal class RequestProcessor
     {
         private readonly FunctionLoader _functionLoader;
+        private readonly RpcLogger _logger;
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManagerPool _powershellPool;
 
@@ -31,6 +33,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         internal RequestProcessor(MessagingStream msgStream)
         {
             _msgStream = msgStream;
+            _logger = new RpcLogger(_msgStream);
             _powershellPool = new PowerShellManagerPool(msgStream);
             _functionLoader = new FunctionLoader();
             
@@ -62,8 +65,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
         internal async Task ProcessRequestLoop()
         {
-            var logger = new RpcLogger(_msgStream);
-
             StreamingMessage request, response;
             while (await _msgStream.MoveNext())
             {
@@ -75,7 +76,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 }
                 else
                 {
-                    logger.Log(LogLevel.Error, string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
+                    _logger.Log(LogLevel.Error, string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
                     continue;
                 }
 
@@ -92,6 +93,16 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.WorkerInitResponse,
                 out StatusResult status);
+
+            // If the environment variable is set, spin up the custom named pipe server.
+            // This is typically used for debugging. It will throw a friendly exception if the
+            // pipe name is not a valid pipename.
+            string pipeName = Environment.GetEnvironmentVariable("PSWorkerCustomPipeName");
+            if (!string.IsNullOrEmpty(pipeName))
+            {
+                _logger.Log(LogLevel.Information, string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
+                RemoteSessionNamedPipeServer.CreateCustomNamedPipeServer(pipeName);
+            }
 
             return response;
         }
