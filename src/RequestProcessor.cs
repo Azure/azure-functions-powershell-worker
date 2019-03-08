@@ -65,8 +65,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
         internal async Task ProcessRequestLoop()
         {
-            var logger = new RpcLogger(_msgStream);
-
             StreamingMessage request, response;
             while (await _msgStream.MoveNext())
             {
@@ -78,7 +76,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 }
                 else
                 {
-                    logger.Log(LogLevel.Error, string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
+                    _logger.Log(LogLevel.Error, string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
                     continue;
                 }
 
@@ -102,15 +100,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             string pipeName = Environment.GetEnvironmentVariable("PSWorkerCustomPipeName");
             if (!string.IsNullOrEmpty(pipeName))
             {
-                try
-                {
-                    _logger.SetContext(request.RequestId, invocationId: null);
-                    _logger.Log(LogLevel.Information, string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
-                } 
-                finally
-                {
-                    _logger.ResetContext();
-                }
+                _logger.Log(LogLevel.Information, string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
                 RemoteSessionNamedPipeServer.CreateCustomNamedPipeServer(pipeName);
             }
 
