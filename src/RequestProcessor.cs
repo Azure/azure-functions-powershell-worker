@@ -75,10 +75,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 }
                 else
                 {
-                    logger.SetContext(request.RequestId, null);
-                    string errorMsg = string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase);
-                    logger.Log(LogLevel.Error, errorMsg, new InvalidOperationException(errorMsg));
-                    logger.ResetContext();
+                    logger.Log(LogLevel.Error, string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
                     continue;
                 }
 
