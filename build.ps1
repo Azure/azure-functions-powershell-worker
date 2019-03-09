@@ -42,7 +42,7 @@ if ($Bootstrap.IsPresent) {
 # Clean step
 if($Clean.IsPresent) {
     Push-Location $PSScriptRoot
-    git clean -fdx
+    git clean -fdX
     Pop-Location
 }
 
