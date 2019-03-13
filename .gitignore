@@ -68,9 +68,7 @@ src/Modules
 
 # protobuf
 protobuf/*
-FunctionRpc.cs
-FunctionRpcGrpc.cs
-ClaimsIdentityRpc.cs
+src/Messaging/gRPC
 
 # pulled in for tests
 Azure.Functions.Cli
