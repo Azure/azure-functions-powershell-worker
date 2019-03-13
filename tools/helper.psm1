@@ -89,24 +89,21 @@ function New-gRPCAutoGenCode
         [switch] $Force
     )
 
-    if ($Force -or -not (Test-Path "$RepoRoot/src/Messaging/FunctionRpc.cs") -or
-                   -not (Test-Path "$RepoRoot/src/Messaging/FunctionRpcGrpc.cs"))
+    if ($Force -or -not (Test-Path "$RepoRoot/src/Messaging/protobuf/FunctionRpc.cs") -or
+                   -not (Test-Path "$RepoRoot/src/Messaging/protobuf/FunctionRpcGrpc.cs"))
     {
         Write-Log "Generate the CSharp code for gRPC communication from protobuf"
 
         Resolve-ProtoBufToolPath
 
-        $outputDir = "$RepoRoot/src/Messaging"
-        Remove-Item "$outputDir/FunctionRpc*.cs" -Force -ErrorAction SilentlyContinue
+        $outputDir = "$RepoRoot/src/Messaging/protobuf"
+        Remove-Item $outputDir -Recurse -Force -ErrorAction SilentlyContinue
+        New-Item $outputDir -ItemType Directory -Force -ErrorAction Stop > $null
 
-        & $Script:protoc_Path $Script:claimsIdentityRpc_proto_file_Path `
-            --csharp_out $outputDir `
-            --grpc_out=$outputDir `
-            --plugin=protoc-gen-grpc=$Script:grpc_csharp_plugin_Path `
-            --proto_path=$Script:identity_dir_Path `
-            --proto_path=$Script:google_protobuf_tools_Path
+        $allProtoFiles = Get-ChildItem -Path $Script:protobuf_dir_Path -Filter "*.proto" -Recurse
+        $fileList = $allProtoFiles.FullName
 
-        & $Script:protoc_Path $Script:functionRpc_proto_file_Path `
+        & $Script:protoc_Path $fileList `
             --csharp_out $outputDir `
             --grpc_out=$outputDir `
             --plugin=protoc-gen-grpc=$Script:grpc_csharp_plugin_Path `
@@ -173,9 +170,6 @@ function Resolve-ProtoBufToolPath
         }
 
         $Script:protobuf_dir_Path = "$RepoRoot/protobuf/src/proto"
-        $Script:functionRpc_proto_file_Path = "$Script:protobuf_dir_Path/FunctionRpc.proto"
-        $Script:identity_dir_Path = "$RepoRoot/protobuf/src/proto/identity"
-        $Script:claimsIdentityRpc_proto_file_Path = "$Script:identity_dir_Path/ClaimsIdentityRpc.proto"
     }
 }
 
