@@ -89,14 +89,14 @@ function New-gRPCAutoGenCode
         [switch] $Force
     )
 
-    if ($Force -or -not (Test-Path "$RepoRoot/src/Messaging/gRPC/FunctionRpc.cs") -or
-                   -not (Test-Path "$RepoRoot/src/Messaging/gRPC/FunctionRpcGrpc.cs"))
+    if ($Force -or -not (Test-Path "$RepoRoot/src/Messaging/protobuff/FunctionRpc.cs") -or
+                   -not (Test-Path "$RepoRoot/src/Messaging/protobuff/FunctionRpcGrpc.cs"))
     {
         Write-Log "Generate the CSharp code for gRPC communication from protobuf"
 
         Resolve-ProtoBufToolPath
 
-        $outputDir = "$RepoRoot/src/Messaging/gRPC"
+        $outputDir = "$RepoRoot/src/Messaging/protobuff"
         Remove-Item $outputDir -Recurse -Force -ErrorAction SilentlyContinue
         New-Item $outputDir -ItemType Directory -Force -ErrorAction Stop > $null
 
