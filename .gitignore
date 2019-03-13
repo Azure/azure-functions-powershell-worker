@@ -68,7 +68,7 @@ src/Modules
 
 # protobuf
 protobuf/*
-src/Messaging/protobuff
+src/Messaging/protobuf
 
 # pulled in for tests
 Azure.Functions.Cli
