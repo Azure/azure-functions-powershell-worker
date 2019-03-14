@@ -24,6 +24,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private readonly PowerShell _pwsh;
 
         /// <summary>
+        /// Gets the Runspace InstanceId.
+        /// </summary>
+        internal Guid InstanceId => _pwsh.Runspace.InstanceId;
+
+        /// <summary>
         /// Gets the associated logger.
         /// </summary>
         internal ILogger Logger => _logger;

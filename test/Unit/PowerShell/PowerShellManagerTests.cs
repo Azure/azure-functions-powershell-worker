@@ -153,6 +153,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
+        public void RegisterAndUnregisterFunctionMetadataShouldWork()
+        {
+            string path = Path.Join(TestUtils.FunctionDirectory, "testBasicFunction.ps1");
+            var functionInfo = TestUtils.NewAzFunctionInfo(path, string.Empty);
+
+            Assert.Empty(FunctionMetadata.OutputBindingCache);
+            FunctionMetadata.RegisterFunctionMetadata(_testManager.InstanceId, functionInfo);
+            Assert.Single(FunctionMetadata.OutputBindingCache);
+            FunctionMetadata.UnregisterFunctionMetadata(_testManager.InstanceId);
+            Assert.Empty(FunctionMetadata.OutputBindingCache);
+        }
+
+        [Fact]
         public void ProfileShouldWork()
         {
             //initialize fresh log
