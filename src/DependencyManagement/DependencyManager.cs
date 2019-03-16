@@ -12,8 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using ILogger = Microsoft.Azure.Functions.PowerShellWorker.Utility.ILogger;
+using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
@@ -73,30 +72,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 // Resolve the FunctionApp root path.
                 var functionAppRootPath = Path.GetFullPath(Path.Join(request.Metadata.Directory, ".."));
 
-                // Resolve the managed dependencies folder path.
+                // Resolve the managed dependencies installation path.
                 DependenciesPath = GetManagedDependenciesPath(functionAppRootPath);
 
-                // Parse and process Requirements.psd1.
+                // Parse and process the function app dependencies defined in requirements.psd1.
                 Hashtable entries = ParsePowerShellDataFile(functionAppRootPath, RequirementsPsd1FileName);
                 foreach (DictionaryEntry entry in entries)
                 {
                     // A valid entry is of the form: 'ModuleName'='MajorVersion.*"
-                    var name = (string) entry.Key;
-                    var version = (string) entry.Value;
+                    string name = (string) entry.Key;
+                    string version = (string) entry.Value;
 
-                    // Validates that the module name.
+                    // Validates that the module name is a supported dependency.
                     ValidateModuleName(name);
 
-                    // Get the module major version.
-                    var majorVersion = GetMajorVersion(version);
-
-                    // Get the latest supported version for the given major version.
-                    var latestVersion = DependencyManagementUtils.GetModuleLatestSupportedVersion(name, majorVersion);
-
-                    // Validate the module properties.
+                    // Validate the module version.
+                    string majorVersion = GetMajorVersion(version);
+                    string latestVersion = DependencyManagementUtils.GetModuleLatestSupportedVersion(name, majorVersion);
                     ValidateModuleMajorVersion(name, majorVersion, latestVersion);
 
-                    // Before installing the module, check to see if it is already installed at the given path.
+                    // Before installing the module, check the path to see if it is already installed.
                     var moduleVersionFolderPath = Path.Combine(DependenciesPath, name, latestVersion);
                     if (!Directory.Exists(moduleVersionFolderPath))
                     {
@@ -115,8 +110,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 Dependencies.Clear();
 
                 var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
-                var dependencyInstallationException = new DependencyInstallationException(errorMsg, e);
-                throw dependencyInstallationException;
+                throw new DependencyInstallationException(errorMsg, e);
             }
         }
 
@@ -127,83 +121,74 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             try
             {
-                InstallManagedDependencyModule(pwsh, logger);
+                if (Dependencies.Count == 0)
+                {
+                    // If there are no dependencies to install, log and return.
+                    logger.Log(LogLevel.Trace, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, isUserLog: true);
+                    return;
+                }
+
+                if (!_shouldUpdateFunctionAppDependencies)
+                {
+                    // The function app already has the latest dependencies installed.
+                    logger.Log(LogLevel.Trace, PowerShellWorkerStrings.LatestFunctionAppDependenciesAlreadyInstalled, isUserLog: true);
+                    return;
+                }
+
+                // Install the function dependencies.
+                logger.Log(LogLevel.Trace, PowerShellWorkerStrings.InstallingFunctionAppDependentModules, isUserLog: true);
+
+                if (Directory.Exists(DependenciesPath))
+                {
+                    // Save-Module supports downloading side-by-size module versions. However, we only want to keep one version at the time.
+                    // If the ManagedDependencies folder exits, remove all its contents.
+                    DependencyManagementUtils.EmptyDirectory(DependenciesPath);
+                }
+                else
+                {
+                    // If the destination path does not exist, create it.
+                    Directory.CreateDirectory(DependenciesPath);
+                }
+
+                try
+                {
+                    foreach (DependencyInfo module in Dependencies)
+                    {
+                        string moduleName = module.Name;
+                        string latestVersion = module.LatestVersion;
+
+                        // Save the module to the given path
+                        pwsh.AddCommand("PowerShellGet\\Save-Module")
+                            .AddParameter("Repository", Repository)
+                            .AddParameter("Name", moduleName)
+                            .AddParameter("RequiredVersion", latestVersion)
+                            .AddParameter("Path", DependenciesPath)
+                            .AddParameter("Force", true)
+                            .AddParameter("ErrorAction", "Stop")
+                            .InvokeAndClearCommands();
+
+                        var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, latestVersion);
+                        logger.Log(LogLevel.Trace, message, isUserLog: true);
+                    }
+                }
+                finally
+                {
+                    // Clean up
+                    pwsh.AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
+                        .AddParameter("Name", "PackageManagement, PowerShellGet")
+                        .AddParameter("Force", true)
+                        .AddParameter("ErrorAction", "SilentlyContinue")
+                        .InvokeAndClearCommands();
+                }
             }
             catch (Exception e)
             {
                 var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
-                var dependencyInstallationException = new DependencyInstallationException(errorMsg, e);
-                throw dependencyInstallationException;
+                throw new DependencyInstallationException(errorMsg, e);
             }
         }
 
         #region Helper_Methods
-
-        /// <summary>
-        /// Installs managed dependencies modules specified in Requirements.psd1 for the function app.
-        /// </summary>
-        private void InstallManagedDependencyModule(PowerShell pwsh, ILogger logger)
-        {
-            if (Dependencies.Count == 0)
-            {
-                // If there are no dependencies to install, log and return.
-                logger.Log(LogLevel.Trace, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, isUserLog: true);
-                return;
-            }
-
-            if (!_shouldUpdateFunctionAppDependencies)
-            {
-                // The function app already has the latest dependencies installed.
-                logger.Log(LogLevel.Trace, PowerShellWorkerStrings.LatestFunctionAppDependenciesAlreadyInstalled, isUserLog: true);
-                return;
-            }
-
-            // Install the function dependencies.
-            logger.Log(LogLevel.Trace, PowerShellWorkerStrings.InstallingFunctionAppDependentModules, isUserLog: true);
-
-            if (Directory.Exists(DependenciesPath))
-            {
-                // Save-Module supports downloading side-by-size module versions. However, we only want to keep one version at the time.
-                // If the ManagedDependencies folder exits, remove all its contents.
-                DependencyManagementUtils.EmptyDirectory(DependenciesPath);
-            }
-            else
-            {
-                // If the destination path does not exist, create it.
-                Directory.CreateDirectory(DependenciesPath);
-            }
-
-            try
-            {
-                foreach (var module in Dependencies)
-                {
-                    var moduleName = module.Name;
-                    var latestVersion = module.LatestVersion;
-
-                    // Save the module to the given path
-                    pwsh.AddCommand("PowerShellGet\\Save-Module")
-                        .AddParameter("Repository", Repository)
-                        .AddParameter("Name", moduleName)
-                        .AddParameter("RequiredVersion", latestVersion)
-                        .AddParameter("Path", DependenciesPath)
-                        .AddParameter("Force", true)
-                        .AddParameter("ErrorAction", "Stop")
-                        .InvokeAndClearCommands();
-
-                    var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, latestVersion);
-                    logger.Log(LogLevel.Trace, message, isUserLog: true);
-                }
-            }
-            finally
-            {
-                // Clean up
-                pwsh.AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
-                    .AddParameter("Name", "PackageManagement, PowerShellGet")
-                    .AddParameter("Force", true)
-                    .AddParameter("ErrorAction", "SilentlyContinue")
-                    .InvokeAndClearCommands();
-            }
-        }
 
         /// <summary>
         /// Validates that the given major version is less or equal to the latest supported major version.
@@ -218,8 +203,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             {
                 // The requested major version is greater than the latest major supported version.
                 var errorMsg = string.Format(PowerShellWorkerStrings.InvalidModuleMajorVersion, moduleName, majorVersion);
-                var argException = new ArgumentException(errorMsg);
-                throw argException;
+                throw new ArgumentException(errorMsg);
             }
         }
 
@@ -252,17 +236,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// </summary>
         private Hashtable ParsePowerShellDataFile(string functionAppRootPath, string fileName)
         {
-            // Path to Requirements.psd1 file.
+            // Path to requirements.psd1 file.
             var requirementsFilePath = Path.Join(functionAppRootPath, fileName);
 
-            // Validate the file path.
             if (!File.Exists(requirementsFilePath))
             {
                 var errorMessage = String.Format(PowerShellWorkerStrings.FileNotFound, fileName, functionAppRootPath);
                 throw new ArgumentException(errorMessage);
             }
 
-            // Try to parse the Requirements.psd1 file.
+            // Try to parse the requirements.psd1 file.
             var ast = Parser.ParseFile(requirementsFilePath, out _, out ParseError[] errors);
 
             if (errors?.Length > 0)
@@ -274,33 +257,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 }
 
                 string errorMsg = stringBuilder.ToString();
-                throw new ArgumentException(string.Format(PowerShellWorkerStrings.FailToParseScript,
-                    RequirementsPsd1FileName, errorMsg));
+                throw new ArgumentException(string.Format(PowerShellWorkerStrings.FailToParseScript, RequirementsPsd1FileName, errorMsg));
             }
 
-            var hashtableAst = ast.Find(x => x is HashtableAst, false);
-            var hashtable = default(Hashtable);
+            Ast hashtableAst = ast.Find(x => x is HashtableAst, false);
+            Hashtable hashtable = hashtableAst?.SafeGetValue() as Hashtable;
 
-            bool throwException = false;
-            try
-            {
-                hashtable = (Hashtable)hashtableAst?.SafeGetValue();
-            }
-            catch
-            {
-                throwException = true;
-            }
-
-            // Ensure that the hashtable is not null.
             if (hashtable == null)
             {
-                throwException = true;
-            }
-
-            if (throwException)
-            {
-                string errorMsg = string.Format(PowerShellWorkerStrings.InvalidPowerShellDataFile,
-                    RequirementsPsd1FileName);
+                string errorMsg = string.Format(PowerShellWorkerStrings.InvalidPowerShellDataFile, RequirementsPsd1FileName);
                 throw new ArgumentException(errorMsg);
             }
 
@@ -344,9 +309,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// </summary>
         private string GetManagedDependenciesPath(string functionAppRoot)
         {
-            var managedDependenciesFolderPath = default(string);
+            string managedDependenciesFolderPath = null;
 
-            // If we are running in Azure use the 'HOME' path.
+            // If we are running in Azure use the 'HOME\Data' path.
             if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable(AzureWebsiteInstanceId)))
             {
                 var homeDriveVariable = Environment.GetEnvironmentVariable(HomeDriveName);

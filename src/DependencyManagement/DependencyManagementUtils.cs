@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Xml;
@@ -12,6 +13,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
     internal class DependencyManagementUtils
     {
+        // The PowerShellGallery uri to query for the latest module version.
+        private const string PowerShellGalleryFindPackagesByIdUri = "https://www.powershellgallery.com/api/v2/FindPackagesById()?id=";
+
         /// <summary>
         /// Deletes the contents at the given directory.
         /// </summary>
@@ -23,7 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 if (directoryInfo.Exists)
                 {
-                    var files = Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories);
+                    IEnumerable<string> files = Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories);
 
                     foreach (var file in files)
                     {
@@ -35,7 +39,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         fileInfo.Delete();
                     }
 
-                    foreach (var subDirectory in directoryInfo.GetDirectories())
+                    foreach (DirectoryInfo subDirectory in directoryInfo.GetDirectories())
                     {
                         subDirectory.Delete(true);
                     }
@@ -44,8 +48,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             catch (Exception)
             {
                 var errorMsg = string.Format(PowerShellWorkerStrings.FailToClenupModuleDestinationPath, path);
-                var invalidOperationException = new InvalidOperationException(errorMsg);
-                throw invalidOperationException;
+                throw new InvalidOperationException(errorMsg);
             }
         }
 
@@ -54,7 +57,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// </summary>
         internal static string GetModuleLatestSupportedVersion(string moduleName, string majorVersion)
         {
-            Uri address = new Uri("https://www.powershellgallery.com/api/v2/FindPackagesById()?id='" + moduleName + "'");
+            Uri address = new Uri(PowerShellGalleryFindPackagesByIdUri + "'" + moduleName + "'");
             int configuredRetries = 3;
             int noOfRetries = 1;
 
@@ -67,34 +70,37 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     HttpWebRequest request = WebRequest.Create(address) as HttpWebRequest;
                     using (HttpWebResponse response = request?.GetResponse() as HttpWebResponse)
                     {
-                        // Load up the XML response
-                        XmlDocument doc = new XmlDocument();
-                        using (XmlReader reader = XmlReader.Create(response?.GetResponseStream()))
+                        if (response != null)
                         {
-                            doc.Load(reader);
-                        }
-
-                        // Add the namespaces for the gallery xml content
-                        XmlNamespaceManager nsmgr = new XmlNamespaceManager(doc.NameTable);
-                        nsmgr.AddNamespace("ps", "http://www.w3.org/2005/Atom");
-                        nsmgr.AddNamespace("d", "http://schemas.microsoft.com/ado/2007/08/dataservices");
-                        nsmgr.AddNamespace("m", "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata");
-
-                        // Find the version information
-                        XmlNode root = doc.DocumentElement;
-                        var props = root.SelectNodes("//m:properties/d:Version", nsmgr);
-                        if (props != null && props.Count > 0)
-                        {
-                            for (int i = 0; i < props.Count; i++)
+                            // Load up the XML response
+                            XmlDocument doc = new XmlDocument();
+                            using (XmlReader reader = XmlReader.Create(response.GetResponseStream()))
                             {
-                                if (props[i].FirstChild.Value.StartsWith(majorVersion))
+                                doc.Load(reader);
+                            }
+
+                            // Add the namespaces for the gallery xml content
+                            XmlNamespaceManager nsmgr = new XmlNamespaceManager(doc.NameTable);
+                            nsmgr.AddNamespace("ps", "http://www.w3.org/2005/Atom");
+                            nsmgr.AddNamespace("d", "http://schemas.microsoft.com/ado/2007/08/dataservices");
+                            nsmgr.AddNamespace("m", "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata");
+
+                            // Find the version information
+                            XmlNode root = doc.DocumentElement;
+                            var props = root.SelectNodes("//m:properties/d:Version", nsmgr);
+                            if (props != null && props.Count > 0)
+                            {
+                                for (int i = 0; i < props.Count; i++)
                                 {
-                                    latestVersionForMajorVersion = props[i].FirstChild.Value;
+                                    if (props[i].FirstChild.Value.StartsWith(majorVersion))
+                                    {
+                                        latestVersionForMajorVersion = props[i].FirstChild.Value;
+                                    }
                                 }
                             }
+                            break;
                         }
                     }
-                    break;
                 }
                 catch (Exception ex)
                 {
