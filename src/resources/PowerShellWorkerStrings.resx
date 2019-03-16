@@ -148,8 +148,8 @@
   <data name="FunctionAppRootNotResolved" xml:space="preserve">
     <value>The FunctionApp root hasn't been resolved yet!</value>
   </data>
-  <data name="NoProfileFound" xml:space="preserve">
-    <value>No 'profile.ps1' is found at the FunctionApp root folder: {0}.</value>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>No '{0}' is found at the FunctionApp root folder: {1}.</value>
   </data>
   <data name="FailToRunProfile" xml:space="preserve">
     <value>Fail to run profile.ps1. See logs for detailed errors. Profile location: {0}.</value>
@@ -165,5 +165,44 @@
   </data>
   <data name="SpecifiedCustomPipeName" xml:space="preserve">
     <value>Custom pipe name specified. You can attach to the process by using vscode or by running `Enter-PSHostProcess -CustomPipeName {0}`</value>
+  </data>
+    <data name="CannotFindModuleVersion" xml:space="preserve">
+    <value>Cannot find a supported version for module '{0}' with major version '{0}'.</value>
+  </data>
+  <data name="FunctionAppDoesNotHaveDependentModulesToInstall" xml:space="preserve">
+    <value>Function App does have dependent modules to install.</value>
+  </data>
+  <data name="DependencyPropertyIsNullOrEmpty" xml:space="preserve">
+    <value>Dependency '{0}' is null or empty.</value>
+  </data>
+  <data name="ModuleHasBeenInstalled" xml:space="preserve">
+    <value>Module name '{0}' version '{0}' has been installed.</value>
+  </data>
+  <data name="LatestFunctionAppDependenciesAlreadyInstalled" xml:space="preserve">
+    <value>Function app has the latest dependencies already installed.</value>
+  </data>
+  <data name="ManagedDependencyNotSupported" xml:space="preserve">
+    <value>Managed dependency name '{0}' is not supported.</value>
+  </data>
+  <data name="InvalidPowerShellDataFile" xml:space="preserve">
+    <value>The PowerShell data file '{0}' is invalid since it cannot be evaluated into a Hashtable object.</value>
+  </data>
+  <data name="InvalidVersionFormat" xml:space="preserve">
+    <value>Version is not in the correct format. Please use the following notation: '{0}'</value>
+  </data>
+  <data name="InvalidModuleMajorVersion" xml:space="preserve">
+    <value>Invalid major version for module '{0}'. The maximum available major version is '{1}'.</value>
+  </data>
+  <data name="FailToInstallFuncAppDependencies" xml:space="preserve">
+    <value>Fail to install function app dependencies. Error: '{0}'</value>
+  </data>
+  <data name="FailToResolveHomeDirectory" xml:space="preserve">
+    <value>Fail to resolve '{0}' path in App Service.</value>
+  </data>
+  <data name="InstallingFunctionAppDependentModules" xml:space="preserve">
+    <value>Installing function app dependent modules.</value>
+  </data>
+  <data name="FailToClenupModuleDestinationPath" xml:space="preserve">
+    <value>Failed to clean up module destination path '{0}'</value>
   </data>
 </root>

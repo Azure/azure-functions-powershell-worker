@@ -45,7 +45,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             addMethod.Invoke(null, new object[] { "HttpRequestContext", typeof(HttpRequestContext) });
         }
 
-        internal PowerShellManager(ILogger logger)
+        internal PowerShellManager(ILogger logger, Action<PowerShell, ILogger> initAction = null)
         {
             if (FunctionLoader.FunctionAppRootPath == null)
             {
@@ -77,6 +77,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Verbose.DataAdding += streamHandler.VerboseDataAdding;
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
 
+            // Install function app dependent modules
+            initAction?.Invoke(_pwsh, logger);
+
             // Initialize the Runspace
             InvokeProfile(FunctionLoader.FunctionAppProfilePath);
         }
@@ -89,7 +92,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             Exception exception = null;
             if (profilePath == null)
             {
-                _logger.Log(LogLevel.Trace, string.Format(PowerShellWorkerStrings.NoProfileFound, FunctionLoader.FunctionAppRootPath));
+                _logger.Log(LogLevel.Trace, string.Format(PowerShellWorkerStrings.FileNotFound, "profile.ps1", FunctionLoader.FunctionAppRootPath));
                 return;
             }
 

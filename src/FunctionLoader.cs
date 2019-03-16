@@ -7,8 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Management.Automation;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
@@ -18,8 +18,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     internal class FunctionLoader
     {
         private readonly Dictionary<string, AzFunctionInfo> _loadedFunctions = new Dictionary<string, AzFunctionInfo>();
-        private const string LatestAzModulePath = @"D:\Program Files (x86)\ManagedDependencies\PowerShell\AzPSModules\1.0.0";
-        private const string AzureWebsiteInstanceId = "WEBSITE_INSTANCE_ID";
 
         internal static string FunctionAppRootPath { get; private set; }
         internal static string FunctionAppProfilePath { get; private set; }
@@ -55,14 +53,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             // Resolve the FunctionApp root path
             FunctionAppRootPath = Path.GetFullPath(Path.Join(request.Metadata.Directory, ".."));
+
             // Resolve module paths
             var appLevelModulesPath = Path.Join(FunctionAppRootPath, "Modules");
             var workerLevelModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
             FunctionModulePath = $"{appLevelModulesPath}{Path.PathSeparator}{workerLevelModulesPath}";
-            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(AzureWebsiteInstanceId))
-                && Platform.IsWindows)
+
+            // Add the managed dependencies folder path
+            if (DependencyManager.DependenciesPath != null)
             {
-                FunctionModulePath = $"{FunctionModulePath}{Path.PathSeparator}{LatestAzModulePath}";
+                FunctionModulePath = $"{DependencyManager.DependenciesPath}{Path.PathSeparator}{FunctionModulePath}";
             }
 
             // Resolve the FunctionApp profile path
