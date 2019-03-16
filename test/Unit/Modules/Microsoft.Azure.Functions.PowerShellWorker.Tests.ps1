@@ -6,6 +6,45 @@
 Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
 
     BeforeAll {
+
+        ## Create the type 'FunctionMetadata' for our test
+        $code = @'
+namespace Microsoft.Azure.Functions.PowerShellWorker
+{
+    using System;
+    using System.Collections;
+
+    public class FunctionMetadata
+    {
+        public static Hashtable GetOutputBindingInfo(Guid guid)
+        {
+            var hash = new Hashtable(StringComparer.OrdinalIgnoreCase);
+            var bi1 = new BindingInfo() { Type = "http", Direction = "out" };
+            hash.Add("response", bi1);
+            var bi2 = new BindingInfo() { Type = "queue", Direction = "out" };
+            hash.Add("queue", bi2);
+
+            var bi3 = new BindingInfo() { Type = "new", Direction = "out" };
+            hash.Add("Foo", bi3);
+            hash.Add("Bar", bi3);
+            hash.Add("Food", bi3);
+
+            return hash;
+        }
+    }
+
+    public class BindingInfo
+    {
+        public string Type;
+        public string Direction;
+    }
+}
+'@
+        $type = "Microsoft.Azure.Functions.PowerShellWorker.FunctionMetadata" -as [Type]
+        if ($null -eq $type) {
+            Add-Type -TypeDefinition $code
+        }
+
         # Move the .psd1 and .psm1 files to the publish folder so that the dlls can be found
         $binFolder = Resolve-Path -Path "$PSScriptRoot/../bin"
         $workerDll = Get-ChildItem -Path $binFolder -Filter "Microsoft.Azure.Functions.PowerShellWorker.dll" -Recurse | Select-Object -First 1
@@ -34,9 +73,20 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
 
             # Check to make sure every key exists in the other and that the values are the same
             foreach ($key in $h1.Keys) {
-                if (!$h2.ContainsKey($key) -or $h1[$key] -ne $h2[$key]) {
+                if (!$h2.ContainsKey($key)) {
                     return $false
                 }
+                if ($h1[$key] -eq $h2[$key]) {
+                    continue
+                }
+                if ($h1[$key] -is [System.Collections.Generic.List[object]] -and $h2[$key] -is [object[]]) {
+                    $s1 = $h1[$key] -join ","
+                    $s2 = $h2[$key] -join ","
+                    if ($s1 -eq $s2) {
+                        continue
+                    }
+                }
+                return $false
             }
             return $true
         }
@@ -49,63 +99,92 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
         }
 
         It 'Can add a value via parameters' {
-            $Key = 'Test'
-            $Value = 5
+            $Key = 'queue'
 
-            Push-OutputBinding -Name $Key -Value $Value
+            ## The first item added to 'queue' is the value itself
+            Push-OutputBinding -Name $Key -Value 5
+            $result = Get-OutputBinding
+            $result[$Key] | Should -BeExactly 5
+
+            ## The second item added to 'queue' will make it a list
+            Push-OutputBinding -Name $Key -Value 6
+            $result = Get-OutputBinding
+            $result[$Key] -is [System.Collections.Generic.List[object]] | Should -BeTrue
+            $result[$Key][0] | Should -BeExactly 5
+            $result[$Key][1] | Should -BeExactly 6
+
+            ## The array added to 'queue' will get unraveled
+            Push-OutputBinding -Name $Key -Value @(7, 8)
             $result = Get-OutputBinding -Purge
-            $result[$Key] | Should -BeExactly $Value
+
+            $result[$Key] -is [System.Collections.Generic.List[object]] | Should -BeTrue
+            $result[$Key][0] | Should -BeExactly 5
+            $result[$Key][1] | Should -BeExactly 6
+            $result[$Key][2] | Should -BeExactly 7
+            $result[$Key][3] | Should -BeExactly 8
+
+            ## The array gets unraveled and added to a list
+            Push-OutputBinding -Name $Key -Value @(1, 2)
+            $result = Get-OutputBinding -Purge
+            $result[$Key] -is [System.Collections.Generic.List[object]] | Should -BeTrue
+            $result[$Key][0] | Should -BeExactly 1
+            $result[$Key][1] | Should -BeExactly 2
         }
 
-        It 'Can add a value via pipeline - <Description>' -TestCases @(
-        @{
-            InputData = @{ Foo = 1; Bar = 'Baz'}
-            Expected = @{ Foo = 1; Bar = 'Baz'}
-            Description = 'ValueFromPipeline'
-        },
-        @{
-            InputData = @([PSCustomObject]@{ Name = 'Foo'; Value = 5 }, [PSCustomObject]@{ Name = 'Bar'; Value = 'Baz' })
-            Expected = @{ Foo = 5; Bar = 'Baz'}
-            Description = 'ValueFromPipelineByPropertyName'
-        }) -Test {
-            param (
-                [object] $InputData,
-                [hashtable] $Expected,
-                [string] $Description
-            )
-
-            $InputData | Push-OutputBinding
+        It 'Can add a value via pipeline' {
+            'Baz' | Push-OutputBinding -Name response
+            'item1', 'item2', 'item3' | Push-OutputBinding -Name queue
+            $expected = @{ response = 'Baz'; queue = @('item1', 'item2', 'item3') }
             $result = Get-OutputBinding -Purge
-            IsEqualHashtable $result $Expected | Should -BeTrue `
+            IsEqualHashtable $result $expected | Should -BeTrue `
                 -Because 'The hashtables should be identical'
         }
 
         It 'Throws if you attempt to overwrite an Output binding' {
             try {
-                Push-OutputBinding Foo 5
-                { Push-OutputBinding Foo 6} | Should -Throw
+                Push-OutputBinding response 'res'
+                { Push-OutputBinding response 'baz' } | Should -Throw
             } finally {
                 Get-OutputBinding -Purge > $null
             }
         }
 
-        It 'Can overwrite values if "-Force" is specified' {
-            Push-OutputBinding Foo 5
-            $result = Get-OutputBinding -Purge
-            IsEqualHashtable @{Foo = 5} $result | Should -BeTrue `
+        It 'Throw if you use a non-existent output binding name' {
+            { Push-OutputBinding nonexist 'baz' } | Should -Throw
+        }
+
+        It 'Can overwrite values if "-Clobber" is specified' {
+            Push-OutputBinding response 5
+            $result = Get-OutputBinding
+            IsEqualHashtable @{response = 5} $result | Should -BeTrue `
                 -Because 'The hashtables should be identical'
 
-            Push-OutputBinding Foo 6 -Force
+            Push-OutputBinding response 6 -Clobber
             $result = Get-OutputBinding -Purge
-            IsEqualHashtable @{Foo = 6} $result | Should -BeTrue `
-                -Because '-Force should let you overwrite the output binding'
+            IsEqualHashtable @{response = 6} $result | Should -BeTrue `
+                -Because '-Clobber should let you overwrite the output binding'
+
+            Push-OutputBinding 'queue' 1
+            $result = Get-OutputBinding
+            $result['queue'] | Should -BeExactly 1
+
+            Push-OutputBinding 'queue' 2 -Clobber
+            $result = Get-OutputBinding
+            $result['queue'] | Should -BeExactly 2
+
+            Push-OutputBinding 'queue' @(3, 4) -Clobber
+            $result = Get-OutputBinding -Purge
+            $result['queue'] -is [System.Collections.Generic.List[object]] | Should -BeTrue
+            $result['queue'][0] | Should -BeExactly 3
+            $result['queue'][1] | Should -BeExactly 4
         }
     }
 
     Context 'Get-OutputBinding tests' {
         BeforeAll {
-            $inputData = @{ Foo = 1; Bar = 'Baz'; Food = 'apple'}
-            $inputData | Push-OutputBinding
+            Push-OutputBinding -Name Foo -Value 1
+            Push-OutputBinding -Name Bar -Value 'Baz'
+            Push-OutputBinding -Name Food -Value 'apple'
         }
 
         AfterAll {
@@ -145,6 +224,7 @@ Describe 'Azure Functions PowerShell Langauge Worker Helper Module Tests' {
         }
 
         It 'Can use the "-Purge" flag to clear the Output bindings' {
+            $inputData = @{ Foo = 1; Bar = 'Baz'; Food = 'apple'}
             $result = Get-OutputBinding -Purge
             IsEqualHashtable $result $inputData | Should -BeTrue `
                 -Because 'The full hashtable should be returned'
