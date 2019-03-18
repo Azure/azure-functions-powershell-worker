@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
+using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
@@ -23,6 +24,11 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         private readonly RpcLogger _logger;
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManagerPool _powershellPool;
+        private readonly DependencyManager _dependencyManager;
+
+        // Holds the exception if an issue is encountered while installing the function app dependencies
+        // or while initializing PowerShell.
+        private Exception _initTerminatingError;
 
         // Indicate whether the FunctionApp has been initialized.
         private bool _isFunctionAppInitialized;
@@ -36,7 +42,8 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             _logger = new RpcLogger(_msgStream);
             _powershellPool = new PowerShellManagerPool(msgStream);
             _functionLoader = new FunctionLoader();
-            
+            _dependencyManager = new DependencyManager();
+
             // Host sends capabilities/init data to worker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.WorkerInitRequest, ProcessWorkerInitRequest);
 
@@ -144,18 +151,40 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 out StatusResult status);
             response.FunctionLoadResponse.FunctionId = functionLoadRequest.FunctionId;
 
+            // When a functionLoadRequest comes in, we check to see if a dependency download has failed in a previous call
+            // or if PowerShell could not be initialized. If this is the case, mark this as a failed request
+            // and submit the exception to the Host (runtime).
+            if (_initTerminatingError != null)
+            {
+                status.Status = StatusResult.Types.Status.Failure;
+                status.Exception = _initTerminatingError.ToRpcException();
+                return response;
+            }
+
+            // Ideally, the initialization should happen when processing 'WorkerInitRequest', however, the 'WorkerInitRequest'
+            // message doesn't provide information about the FunctionApp. That information is not available until the first
+            // 'FunctionLoadRequest' comes in. Therefore, we run initialization here.
+            if (!_isFunctionAppInitialized)
+            {
+                try
+                {
+                    _isFunctionAppInitialized = true;
+                    InitializeForFunctionApp(request, response);
+                }
+                catch (Exception e)
+                {
+                    // Failure that happens during this step is terminating and we will need to return a failure response to
+                    // all subsequent 'FunctionLoadRequest'. Cache the exception so we can reuse it in future calls.
+                    _initTerminatingError = e;
+
+                    status.Status = StatusResult.Types.Status.Failure;
+                    status.Exception = e.ToRpcException();
+                    return response;
+                }
+            }
+
             try
             {
-                // Ideally, the initialization should happen when processing 'WorkerInitRequest', however, the 'WorkerInitRequest'
-                // message doesn't provide the file path of the FunctionApp. That information is not available until the first
-                // 'FunctionLoadRequest' comes in. Therefore, we run initialization here.
-                if (!_isFunctionAppInitialized)
-                {
-                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
-                    _powershellPool.Initialize(request.RequestId);
-                    _isFunctionAppInitialized = true;
-                }
-
                 // Load the metadata of the function.
                 _functionLoader.LoadFunction(functionLoadRequest);
             }
@@ -253,6 +282,36 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         }
 
         #region Helper_Methods
+
+        /// <summary>
+        /// Initialize the worker based on the FunctionApp that the worker will deal with.
+        /// </summary>
+        private void InitializeForFunctionApp(StreamingMessage request, StreamingMessage response)
+        {
+            var functionLoadRequest = request.FunctionLoadRequest;
+
+            // If 'ManagedDependencyEnabled' is true, process the function app dependencies as defined in FunctionAppRoot\requirements.psd1.
+            // These dependencies will be installed via 'Save-Module' when the first PowerShellManager instance is being created.
+            if (functionLoadRequest.ManagedDependencyEnabled)
+            {
+                _dependencyManager.Initialize(functionLoadRequest);
+            }
+
+            // Setup the FunctionApp root path and module path.
+            FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
+
+            // Constructing the first PowerShellManager instance for the Pool.
+            if (DependencyManager.Dependencies.Count > 0)
+            {
+                // Do extra work to install the specified dependencies.
+                _powershellPool.Initialize(request.RequestId, _dependencyManager.InstallFunctionAppDependencies);
+                response.FunctionLoadResponse.IsDependencyDownloaded = true;
+            }
+            else
+            {
+                _powershellPool.Initialize(request.RequestId);
+            }
+        }
 
         /// <summary>
         /// Create an object of 'StreamingMessage' as a template, for further update.

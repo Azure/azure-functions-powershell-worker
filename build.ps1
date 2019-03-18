@@ -71,6 +71,10 @@ if(!$NoBuild.IsPresent) {
 
     Invoke-PSDepend -Path $requirements -Force
 
+    Write-Log "Deleting fullclr folder from PackageManagement module if the folder exists ..."
+    Get-Item "$PSScriptRoot/src/Modules/PackageManagement/1.1.7.0/fullclr" -ErrorAction SilentlyContinue |
+        Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
     # TODO: Remove this once the SDK properly bundles modules
     Get-WebFile -Url 'https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Modules/Windows/Microsoft.PowerShell.Utility/Microsoft.PowerShell.Utility.psd1' `
         -OutFile "$PSScriptRoot/src/Modules/Microsoft.PowerShell.Utility/Microsoft.PowerShell.Utility.psd1"

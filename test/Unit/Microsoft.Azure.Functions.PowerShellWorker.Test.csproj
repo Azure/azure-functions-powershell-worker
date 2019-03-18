@@ -29,6 +29,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+    <Content Include="DependencyManagement\TestScripts\**\*">
+      <Link>TestScripts\DependencyManagement\%(RecursiveDir)\%(FileName)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
     <Content Include="xunit.runner.json">
       <Link>xunit.runner.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
