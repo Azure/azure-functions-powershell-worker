@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// </summary>
         internal static string GetModuleLatestSupportedVersion(string moduleName, string majorVersion)
         {
-            Uri address = new Uri(PowerShellGalleryFindPackagesByIdUri + "'" + moduleName + "'");
+            Uri address = new Uri($"{PowerShellGalleryFindPackagesByIdUri}'{moduleName}'");
             int configuredRetries = 3;
             int noOfRetries = 1;
 

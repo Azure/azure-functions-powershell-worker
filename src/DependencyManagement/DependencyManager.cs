@@ -59,7 +59,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         /// <summary>
         /// Initializes the dependency manger and performs the following:
-        /// - Parse functionAppRoo\requirements.psd1 file and create a list of dependencies to install.
+        /// - Parse functionAppRoot\requirements.psd1 file and create a list of dependencies to install.
         /// - Set the DependenciesPath which gets used in 'SetupWellKnownPaths'.
         /// - Determines if the dependency module needs to be installed by checking the latest available version
         ///   in the PSGallery and the destination path (to see if it is already installed).
@@ -196,7 +196,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private void ValidateModuleMajorVersion(string moduleName, string majorVersion, string latestVersion)
         {
             // A Version object cannot be created with a single digit so add a '.0' to it.
-            var requestedVersion = new Version(majorVersion + ".0");
+            var requestedVersion = new Version($"{majorVersion}.0");
             var latestSupportedVersion = new Version(latestVersion);
 
             if (requestedVersion.Major > latestSupportedVersion.Major)
@@ -215,14 +215,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             if (string.IsNullOrEmpty(version))
             {
-                var errorMessage = String.Format(PowerShellWorkerStrings.DependencyPropertyIsNullOrEmpty, "version");
+                var errorMessage = string.Format(PowerShellWorkerStrings.DependencyPropertyIsNullOrEmpty, "version");
                 throw new ArgumentException(errorMessage);
             }
 
             // Validate that version is in the correct format: 'MajorVersion.*'
             if (!IsValidVersionFormat(version))
             {
-                var errorMessage = String.Format(PowerShellWorkerStrings.InvalidVersionFormat, "MajorVersion.*");
+                var errorMessage = string.Format(PowerShellWorkerStrings.InvalidVersionFormat, "MajorVersion.*");
                 throw new ArgumentException(errorMessage);
             }
 
@@ -241,7 +241,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
             if (!File.Exists(requirementsFilePath))
             {
-                var errorMessage = String.Format(PowerShellWorkerStrings.FileNotFound, fileName, functionAppRootPath);
+                var errorMessage = string.Format(PowerShellWorkerStrings.FileNotFound, fileName, functionAppRootPath);
                 throw new ArgumentException(errorMessage);
             }
 
@@ -290,14 +290,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             // Validate the name property.
             if (string.IsNullOrEmpty(name))
             {
-                var errorMessage = String.Format(PowerShellWorkerStrings.DependencyPropertyIsNullOrEmpty, "name");
+                var errorMessage = string.Format(PowerShellWorkerStrings.DependencyPropertyIsNullOrEmpty, "name");
                 throw new ArgumentException(errorMessage);
             }
 
             // If this is not a supported module, error out.
             if (!SupportedManagedDependencies.Contains(name, StringComparer.OrdinalIgnoreCase))
             {
-                var errorMessage = String.Format(PowerShellWorkerStrings.ManagedDependencyNotSupported, name);
+                var errorMessage = string.Format(PowerShellWorkerStrings.ManagedDependencyNotSupported, name);
                 throw new ArgumentException(errorMessage);
             }
         }
@@ -317,7 +317,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 var homeDriveVariable = Environment.GetEnvironmentVariable(HomeDriveName);
                 if (string.IsNullOrEmpty(homeDriveVariable))
                 {
-                    var errorMsg = String.Format(PowerShellWorkerStrings.FailToResolveHomeDirectory, HomeDriveName);
+                    var errorMsg = string.Format(PowerShellWorkerStrings.FailToResolveHomeDirectory, HomeDriveName);
                     throw new ArgumentException(errorMsg);
                 }
 
