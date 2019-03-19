@@ -59,11 +59,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
             else
             {
-                SystemLog(message, _systemLogMsg, _requestId, _invocationId);
+                WriteSystemLog(message, _systemLogMsg, _requestId, _invocationId);
             }
         }
 
-        private static void SystemLog(string message, StringBuilder stringBuilder, string requestId, string invocationId)
+        private static void WriteSystemLog(string message, StringBuilder stringBuilder, string requestId, string invocationId)
         {
             stringBuilder = stringBuilder ?? new StringBuilder();
 
@@ -86,7 +86,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
         internal static void WriteSystemLog(string message)
         {
-            SystemLog(message, stringBuilder: null, requestId: null, invocationId: null);
+            WriteSystemLog(message, stringBuilder: null, requestId: null, invocationId: null);
         }
     }
 }
