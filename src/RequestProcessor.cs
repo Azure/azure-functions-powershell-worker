@@ -21,7 +21,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
     internal class RequestProcessor
     {
         private readonly FunctionLoader _functionLoader;
-        private readonly RpcLogger _logger;
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManagerPool _powershellPool;
         private readonly DependencyManager _dependencyManager;
@@ -39,7 +38,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         internal RequestProcessor(MessagingStream msgStream)
         {
             _msgStream = msgStream;
-            _logger = new RpcLogger(_msgStream);
             _powershellPool = new PowerShellManagerPool(msgStream);
             _functionLoader = new FunctionLoader();
             _dependencyManager = new DependencyManager();
@@ -83,7 +81,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 }
                 else
                 {
-                    _logger.Log(LogLevel.Error, string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
+                    RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
                     continue;
                 }
 
@@ -107,7 +105,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             string pipeName = Environment.GetEnvironmentVariable("PSWorkerCustomPipeName");
             if (!string.IsNullOrEmpty(pipeName))
             {
-                _logger.Log(LogLevel.Information, string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
+                RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
                 RemoteSessionNamedPipeServer.CreateCustomNamedPipeServer(pipeName);
             }
 

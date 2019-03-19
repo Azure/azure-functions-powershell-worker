@@ -92,7 +92,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             Exception exception = null;
             if (profilePath == null)
             {
-                _logger.Log(LogLevel.Trace, string.Format(PowerShellWorkerStrings.FileNotFound, "profile.ps1", FunctionLoader.FunctionAppRootPath));
+                RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.FileNotFound, "profile.ps1", FunctionLoader.FunctionAppRootPath));
                 return;
             }
 

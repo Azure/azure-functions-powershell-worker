@@ -205,4 +205,10 @@
   <data name="FailToClenupModuleDestinationPath" xml:space="preserve">
     <value>Failed to clean up module destination path '{0}'</value>
   </data>
+  <data name="LogConcurrencyUpperBound" xml:space="preserve">
+    <value>The enforced concurrency level (pool size limit) is '{0}'.</value>
+  </data>
+  <data name="LogNewPowerShellManagerCreated" xml:space="preserve">
+    <value>A new PowerShell manager instance is added to the pool. Current pool size '{0}'.</value>
+  </data>
 </root>
