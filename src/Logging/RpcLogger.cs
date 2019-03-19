@@ -59,22 +59,34 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
             else
             {
-                // For system logs, we log to stdio with a prefix of LanguageWorkerConsoleLog.
-                // These are picked up by the Functions Host
-                _systemLogMsg.Append(SystemLogPrefix).AppendLine("System Log: {");
-                if (!string.IsNullOrEmpty(_requestId))
-                {
-                    _systemLogMsg.AppendLine($"  Request-Id: {_requestId}");
-                }
-                if (!string.IsNullOrEmpty(_invocationId))
-                {
-                    _systemLogMsg.AppendLine($"  Invocation-Id: {_invocationId}");
-                }
-                _systemLogMsg.AppendLine($"  Log-Message: {message}").AppendLine("}");
-
-                Console.WriteLine(_systemLogMsg.ToString());
-                _systemLogMsg.Clear();
+                WriteSystemLog(message, _systemLogMsg, _requestId, _invocationId);
             }
+        }
+
+        private static void WriteSystemLog(string message, StringBuilder stringBuilder, string requestId, string invocationId)
+        {
+            stringBuilder = stringBuilder ?? new StringBuilder();
+
+            // For system logs, we log to stdio with a prefix of LanguageWorkerConsoleLog.
+            // These are picked up by the Functions Host
+            stringBuilder.Append(SystemLogPrefix).AppendLine("System Log: {");
+            if (!string.IsNullOrEmpty(requestId))
+            {
+                stringBuilder.AppendLine($"  Request-Id: {requestId}");
+            }
+            if (!string.IsNullOrEmpty(invocationId))
+            {
+                stringBuilder.AppendLine($"  Invocation-Id: {invocationId}");
+            }
+            stringBuilder.AppendLine($"  Log-Message: {message}").AppendLine("}");
+
+            Console.WriteLine(stringBuilder.ToString());
+            stringBuilder.Clear();
+        }
+
+        internal static void WriteSystemLog(string message)
+        {
+            WriteSystemLog(message, stringBuilder: null, requestId: null, invocationId: null);
         }
     }
 }
