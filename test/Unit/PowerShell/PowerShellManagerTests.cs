@@ -97,26 +97,42 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         public void InvokeBasicFunctionWorks()
         {
             string path = Path.Join(TestUtils.FunctionDirectory, "testBasicFunction.ps1");
-
             var functionInfo = TestUtils.NewAzFunctionInfo(path, string.Empty);
-            Hashtable result = _testManager.InvokeFunction(functionInfo, null, _testInputData);
 
-            Assert.Equal(TestStringData, result[TestUtils.TestOutputBindingName]);
+            try
+            {
+                FunctionMetadata.RegisterFunctionMetadata(_testManager.InstanceId, functionInfo);
+                Hashtable result = _testManager.InvokeFunction(functionInfo, null, _testInputData);
+
+                Assert.Equal(TestStringData, result[TestUtils.TestOutputBindingName]);
+            }
+            finally
+            {
+                FunctionMetadata.UnregisterFunctionMetadata(_testManager.InstanceId);
+            }
         }
 
         [Fact]
         public void InvokeBasicFunctionWithTriggerMetadataWorks()
         {
             string path = Path.Join(TestUtils.FunctionDirectory, "testBasicFunctionWithTriggerMetadata.ps1");
+            var functionInfo = TestUtils.NewAzFunctionInfo(path, string.Empty);
             Hashtable triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase)
             {
                 { TestUtils.TestInputBindingName, TestStringData }
             };
 
-            var functionInfo = TestUtils.NewAzFunctionInfo(path, string.Empty);
-            Hashtable result = _testManager.InvokeFunction(functionInfo, triggerMetadata, _testInputData);
+            try
+            {
+                FunctionMetadata.RegisterFunctionMetadata(_testManager.InstanceId, functionInfo);
+                Hashtable result = _testManager.InvokeFunction(functionInfo, triggerMetadata, _testInputData);
 
-            Assert.Equal(TestStringData, result[TestUtils.TestOutputBindingName]);
+                Assert.Equal(TestStringData, result[TestUtils.TestOutputBindingName]);
+            }
+            finally
+            {
+                FunctionMetadata.UnregisterFunctionMetadata(_testManager.InstanceId);
+            }
         }
 
         [Fact]
@@ -124,9 +140,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             string path = Path.Join(TestUtils.FunctionDirectory, "testFunctionWithEntryPoint.psm1");
             var functionInfo = TestUtils.NewAzFunctionInfo(path, "Run");
-            Hashtable result = _testManager.InvokeFunction(functionInfo, null, _testInputData);
 
-            Assert.Equal(TestStringData, result[TestUtils.TestOutputBindingName]);
+            try
+            {
+                FunctionMetadata.RegisterFunctionMetadata(_testManager.InstanceId, functionInfo);
+                Hashtable result = _testManager.InvokeFunction(functionInfo, null, _testInputData);
+
+                Assert.Equal(TestStringData, result[TestUtils.TestOutputBindingName]);
+            }
+            finally
+            {
+                FunctionMetadata.UnregisterFunctionMetadata(_testManager.InstanceId);
+            }
         }
 
         [Fact]
@@ -135,12 +160,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             string path = Path.Join(TestUtils.FunctionDirectory, "testFunctionCleanup.ps1");
             var functionInfo = TestUtils.NewAzFunctionInfo(path, string.Empty);
 
-            Hashtable result1 = _testManager.InvokeFunction(functionInfo, null, _testInputData);
-            Assert.Equal("is not set", result1[TestUtils.TestOutputBindingName]);
+            try
+            {
+                FunctionMetadata.RegisterFunctionMetadata(_testManager.InstanceId, functionInfo);
 
-            // the value should not change if the variable table is properly cleaned up.
-            Hashtable result2 = _testManager.InvokeFunction(functionInfo, null, _testInputData);
-            Assert.Equal("is not set", result2[TestUtils.TestOutputBindingName]);
+                Hashtable result1 = _testManager.InvokeFunction(functionInfo, null, _testInputData);
+                Assert.Equal("is not set", result1[TestUtils.TestOutputBindingName]);
+
+                // the value should not change if the variable table is properly cleaned up.
+                Hashtable result2 = _testManager.InvokeFunction(functionInfo, null, _testInputData);
+                Assert.Equal("is not set", result2[TestUtils.TestOutputBindingName]);
+            }
+            finally
+            {
+                FunctionMetadata.UnregisterFunctionMetadata(_testManager.InstanceId);
+            }
         }
 
         [Fact]

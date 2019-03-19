@@ -4,15 +4,25 @@
 #
 
 using namespace System.Management.Automation
+using namespace System.Management.Automation.Runspaces
+using namespace Microsoft.Azure.Functions.PowerShellWorker
 
 # This holds the current state of the output bindings.
 $script:_OutputBindings = @{}
+$script:_FuncMetadataType = "FunctionMetadata" -as [type]
+$script:_RunningInPSWorker = $null -ne $script:_FuncMetadataType
 # These variables hold the ScriptBlock and CmdletInfo objects for constructing a SteppablePipeline of 'Out-String | Write-Information'.
 $script:outStringCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.PowerShell.Utility\Out-String", [CommandTypes]::Cmdlet)
 $script:writeInfoCmd = $ExecutionContext.InvokeCommand.GetCommand("Microsoft.PowerShell.Utility\Write-Information", [CommandTypes]::Cmdlet)
 $script:tracingSb = { & $script:outStringCmd -Stream | & $script:writeInfoCmd -Tags "__PipelineObject__" }
 # This loads the resource strings.
 Import-LocalizedData LocalizedData -FileName PowerShellWorker.Resource.psd1
+
+# Enum that defines different behaviors when collecting output data
+enum DataCollectingBehavior {
+    Singleton
+    Collection
+}
 
 <#
 .SYNOPSIS
@@ -67,27 +77,125 @@ function Get-OutputBinding {
     }
 }
 
-# Helper private function that sets an OutputBinding.
-function Push-KeyValueOutputBinding {
-    param (
-        [Parameter(Mandatory=$true)]
-        [string]
-        $Name,
-
-        [Parameter(Mandatory=$true)]
-        [object]
-        $Value,
-
-        [switch]
-        $Force
+# Helper private function that resolve the name to the corresponding binding information.
+function Get-BindingInfo
+{
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Name
     )
 
-    if (!$script:_OutputBindings.ContainsKey($Name) -or $Force.IsPresent) {
-        $script:_OutputBindings[$Name] = $Value
-    } else {
-        $errorMsg = $LocalizedData.OutputBindingAlreadySet -f $Name
-        throw $errorMsg
+    if ($script:_RunningInPSWorker)
+    {
+        $instanceId = [Runspace]::DefaultRunspace.InstanceId
+        $bindingMap = $script:_FuncMetadataType::GetOutputBindingInfo($instanceId)
+
+        # If the instance id doesn't get us back a binding map, then we are not running in one of the PS worker's default Runspace(s).
+        # This could happen when a custom Runspace is created in the function script, and 'Push-OutputBinding' is called in that Runspace.
+        if ($null -eq $bindingMap)
+        {
+            throw $LocalizedData.DontPushOutputOutsideWorkerRunspace
+        }
+
+        $bindingInfo = $bindingMap[$Name]
+        if ($null -eq $bindingInfo)
+        {
+            $errorMsg = $LocalizedData.BindingNameNotExist -f $Name
+            throw $errorMsg
+        }
+
+        return $bindingInfo
     }
+}
+
+# Helper private function that maps an output binding to a data collecting behavior.
+function Get-DataCollectingBehavior
+{
+    param($BindingInfo)
+
+    # binding info not available
+    if ($null -eq $BindingInfo)
+    {
+        return [DataCollectingBehavior]::Singleton
+    }
+
+    switch ($BindingInfo.Type)
+    {
+        "http" { return [DataCollectingBehavior]::Singleton }
+        "blob" { return [DataCollectingBehavior]::Singleton }
+
+        "sendGrid" { return [DataCollectingBehavior]::Singleton }
+        "onedrive" { return [DataCollectingBehavior]::Singleton }
+        "outlook"  { return [DataCollectingBehavior]::Singleton }
+        "notificationHub" { return [DataCollectingBehavior]::Singleton }
+
+        "excel"    { return [DataCollectingBehavior]::Collection }
+        "table"    { return [DataCollectingBehavior]::Collection }
+        "queue"    { return [DataCollectingBehavior]::Collection }
+        "eventHub" { return [DataCollectingBehavior]::Collection }
+        "documentDB"  { return [DataCollectingBehavior]::Collection }
+        "mobileTable" { return [DataCollectingBehavior]::Collection }
+        "serviceBus"  { return [DataCollectingBehavior]::Collection }
+        "signalR"   { return [DataCollectingBehavior]::Collection }
+        "twilioSms" { return [DataCollectingBehavior]::Collection }
+        "graphWebhookSubscription" { return [DataCollectingBehavior]::Collection }
+
+        # Be conservative on new output bindings
+        default { return [DataCollectingBehavior]::Singleton }
+    }
+}
+
+<#
+.SYNOPSIS
+    Combine the new data with the existing data for a output binding with 'Collection' behavior.
+    Here is what this command do:
+    - when there is no existing data
+      - if the new data is considered enumerable by PowerShell,
+        then all its elements get added to a List<object>, and that list is returned.
+      - otherwise, the new data is returned intact.
+
+    - when there is existing data
+      - if the existing data is a singleton, then a List<object> is created and the existing data
+        is added to the list.
+      - otherwise, the existing data is already a List<object>
+      - Then, depending on whether the new data is enumerable or not, its elements or itself will also be added to the list.
+      - That list is returned.
+#>
+function Merge-Collection
+{
+    param($OldData, $NewData)
+
+    $isNewDataEnumerable = [LanguagePrimitives]::IsObjectEnumerable($NewData)
+
+    if ($null -eq $OldData -and -not $isNewDataEnumerable)
+    {
+        return $NewData
+    }
+
+    $list = $OldData -as [System.Collections.Generic.List[object]]
+    if ($null -eq $list)
+    {
+        $list = [System.Collections.Generic.List[object]]::new()
+        if ($null -ne $OldData)
+        {
+            $list.Add($OldData)
+        }
+    }
+
+    if ($isNewDataEnumerable)
+    {
+        foreach ($item in $NewData)
+        {
+            $list.Add($item)
+        }
+    }
+    else
+    {
+        $list.Add($NewData)
+    }
+
+    return ,$list
 }
 
 <#
@@ -107,45 +215,95 @@ function Push-KeyValueOutputBinding {
 .PARAMETER Force
     (Optional) If specified, will force the value to be set for a specified output binding.
 #>
-function Push-OutputBinding {
+function Push-OutputBinding
+{
     [CmdletBinding()]
     param (
-        [Parameter(
-            Mandatory=$true,
-            ParameterSetName="NameValue",
-            Position=0,
-            ValueFromPipelineByPropertyName=$true)]
-        [string]
-        $Name,
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string] $Name,
 
-        [Parameter(
-            Mandatory=$true,
-            ParameterSetName="NameValue",
-            Position=1,
-            ValueFromPipelineByPropertyName=$true)]
-        [object]
-        $Value,
+        [Parameter(Mandatory = $true, Position = 1, ValueFromPipeline = $true)]
+        [object] $Value,
 
-        [Parameter(
-            Mandatory=$true,
-            ParameterSetName="InputObject",
-            Position=0,
-            ValueFromPipeline=$true)]
-        [hashtable]
-        $InputObject,
-
-        [switch]
-        $Force
+        [switch] $Clobber
     )
-    process {
-        switch ($PSCmdlet.ParameterSetName) {
-            NameValue {
-                Push-KeyValueOutputBinding -Name $Name -Value $Value -Force:$Force.IsPresent
-            }
-            InputObject {
-                $InputObject.GetEnumerator() | ForEach-Object {
-                    Push-KeyValueOutputBinding -Name $_.Name -Value $_.Value -Force:$Force.IsPresent
+
+    Begin
+    {
+        $bindingInfo = Get-BindingInfo -Name $Name
+        $behavior = Get-DataCollectingBehavior -BindingInfo $bindingInfo
+    }
+
+    process
+    {
+        $bindingType = "Unknown"
+        if ($null -ne $bindingInfo)
+        {
+            $bindingType = $bindingInfo.Type
+        }
+
+        if (-not $script:_OutputBindings.ContainsKey($Name))
+        {
+            switch ($behavior)
+            {
+                ([DataCollectingBehavior]::Singleton)
+                {
+                    $script:_OutputBindings[$Name] = $Value
+                    return
                 }
+
+                ([DataCollectingBehavior]::Collection)
+                {
+                    $newValue = Merge-Collection -OldData $null -NewData $Value
+                    $script:_OutputBindings[$Name] = $newValue
+                    return
+                }
+
+                default
+                {
+                    $errorMsg = $LocalizedData.UnrecognizedBehavior -f $behavior
+                    throw $errorMsg
+                }
+            }
+        }
+
+        ## Key already exists in _OutputBindings
+        switch ($behavior)
+        {
+            ([DataCollectingBehavior]::Singleton)
+            {
+                if ($Clobber.IsPresent)
+                {
+                    $script:_OutputBindings[$Name] = $Value
+                    return
+                }
+                else
+                {
+                    $errorMsg = $LocalizedData.OutputBindingAlreadySet -f $Name, $bindingType
+                    throw $errorMsg
+                }
+            }
+
+            ([DataCollectingBehavior]::Collection)
+            {
+                if ($Clobber.IsPresent)
+                {
+                    $newValue = Merge-Collection -OldData $null -NewData $Value
+                }
+                else
+                {
+                    $oldValue = $script:_OutputBindings[$Name]
+                    $newValue = Merge-Collection -OldData $oldValue -NewData $Value
+                }
+
+                $script:_OutputBindings[$Name] = $newValue
+                return
+            }
+
+            default
+            {
+                $errorMsg = $LocalizedData.UnrecognizedBehavior -f $behavior
+                throw $errorMsg
             }
         }
     }
