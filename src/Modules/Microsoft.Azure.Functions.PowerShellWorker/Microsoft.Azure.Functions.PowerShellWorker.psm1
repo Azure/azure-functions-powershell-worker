@@ -20,7 +20,7 @@ Import-LocalizedData LocalizedData -FileName PowerShellWorker.Resource.psd1
 
 # Enum that defines different behaviors when collecting output data
 enum DataCollectingBehavior {
-    Scalar
+    Singleton
     Collection
 }
 
@@ -117,18 +117,18 @@ function Get-DataCollectingBehavior
     # binding info not available
     if ($null -eq $BindingInfo)
     {
-        return [DataCollectingBehavior]::Scalar
+        return [DataCollectingBehavior]::Singleton
     }
 
     switch ($BindingInfo.Type)
     {
-        "http" { return [DataCollectingBehavior]::Scalar }
-        "blob" { return [DataCollectingBehavior]::Scalar }
+        "http" { return [DataCollectingBehavior]::Singleton }
+        "blob" { return [DataCollectingBehavior]::Singleton }
 
-        "sendGrid" { return [DataCollectingBehavior]::Scalar }
-        "onedrive" { return [DataCollectingBehavior]::Scalar }
-        "outlook"  { return [DataCollectingBehavior]::Scalar }
-        "notificationHub" { return [DataCollectingBehavior]::Scalar }
+        "sendGrid" { return [DataCollectingBehavior]::Singleton }
+        "onedrive" { return [DataCollectingBehavior]::Singleton }
+        "outlook"  { return [DataCollectingBehavior]::Singleton }
+        "notificationHub" { return [DataCollectingBehavior]::Singleton }
 
         "excel"    { return [DataCollectingBehavior]::Collection }
         "table"    { return [DataCollectingBehavior]::Collection }
@@ -142,7 +142,7 @@ function Get-DataCollectingBehavior
         "graphWebhookSubscription" { return [DataCollectingBehavior]::Collection }
 
         # Be conservative on new output bindings
-        default { return [DataCollectingBehavior]::Scalar }
+        default { return [DataCollectingBehavior]::Singleton }
     }
 }
 
@@ -156,7 +156,7 @@ function Get-DataCollectingBehavior
       - otherwise, the new data is returned intact.
 
     - when there is existing data
-      - if the existing data is a scalar, then a List<object> is created and the existing data
+      - if the existing data is a singleton, then a List<object> is created and the existing data
         is added to the list.
       - otherwise, the existing data is already a List<object>
       - Then, depending on whether the new data is enumerable or not, its elements or itself will also be added to the list.
@@ -236,7 +236,7 @@ function Push-OutputBinding
 
     process
     {
-        $bindingType = "UnKnown"
+        $bindingType = "Unknown"
         if ($null -ne $bindingInfo)
         {
             $bindingType = $bindingInfo.Type
@@ -246,7 +246,7 @@ function Push-OutputBinding
         {
             switch ($behavior)
             {
-                ([DataCollectingBehavior]::Scalar)
+                ([DataCollectingBehavior]::Singleton)
                 {
                     $script:_OutputBindings[$Name] = $Value
                     return
@@ -270,7 +270,7 @@ function Push-OutputBinding
         ## Key already exists in _OutputBindings
         switch ($behavior)
         {
-            ([DataCollectingBehavior]::Scalar)
+            ([DataCollectingBehavior]::Singleton)
             {
                 if ($Clobber.IsPresent)
                 {
