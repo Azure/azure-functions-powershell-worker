@@ -178,17 +178,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
-        public void ProfileDoesNotExist()
-        {
-            //initialize fresh log
-            _testLogger.FullLog.Clear();
-            _testManager.InvokeProfile(null);
-
-            Assert.Single(_testLogger.FullLog);
-            Assert.Matches("Trace: No 'profile.ps1' is found at the FunctionApp root folder: ", _testLogger.FullLog[0]);
-        }
-
-        [Fact]
         public void ProfileWithTerminatingError()
         {
             //initialize fresh log
