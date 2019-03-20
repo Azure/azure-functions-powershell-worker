@@ -83,7 +83,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     logger.SetContext(requestId, invocationId);
                     psManager = new PowerShellManager(logger);
 
-                    RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.LogNewPowerShellManagerCreated, _poolSize));
+                    RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.LogNewPowerShellManagerCreated, _poolSize.ToString()));
                 }
                 else
                 {
