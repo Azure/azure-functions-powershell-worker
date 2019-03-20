@@ -7,11 +7,17 @@ using System;
 using System.IO;
 using System.Management.Automation;
 using System.Text;
+using Microsoft.PowerShell.Commands;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     internal class Utils
     {
+        internal static CmdletInfo ImportModuleCmdletInfo = new CmdletInfo("Import-Module", typeof(ImportModuleCommand));
+        internal static CmdletInfo RemoveModuleCmdletInfo = new CmdletInfo("Remove-Module", typeof(RemoveModuleCommand));
+        internal static CmdletInfo GetJobCmdletInfo = new CmdletInfo("Get-Job", typeof(GetJobCommand));
+        internal static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
+
         /// <summary>
         /// Helper method to do additional transformation on the input value based on the type constraints specified in the script.
         /// </summary>

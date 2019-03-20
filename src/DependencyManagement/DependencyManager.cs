@@ -174,7 +174,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 finally
                 {
                     // Clean up
-                    pwsh.AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
+                    pwsh.AddCommand(Utils.RemoveModuleCmdletInfo)
                         .AddParameter("Name", "PackageManagement, PowerShellGet")
                         .AddParameter("Force", true)
                         .AddParameter("ErrorAction", "SilentlyContinue")

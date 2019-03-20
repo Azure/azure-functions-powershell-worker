@@ -99,10 +99,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             try
             {
                 // Import-Module on a .ps1 file will evaluate the script in the global scope.
-                _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
                         .AddParameter("Name", profilePath)
                         .AddParameter("PassThru", true)
-                     .AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
+                     .AddCommand(Utils.RemoveModuleCmdletInfo)
                         .AddParameter("Force", true)
                         .AddParameter("ErrorAction", "SilentlyContinue")
                      .InvokeAndClearCommands();
@@ -144,7 +144,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 {
                     // If an entry point is defined, we import the script module.
                     moduleName = Path.GetFileNameWithoutExtension(scriptPath);
-                    _pwsh.AddCommand("Microsoft.PowerShell.Core\\Import-Module")
+                    _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
                             .AddParameter("Name", scriptPath)
                          .InvokeAndClearCommands();
 
@@ -206,12 +206,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             if (!string.IsNullOrEmpty(moduleName))
             {
                 // If the function had an entry point, this will remove the module that was loaded
-                _pwsh.AddCommand("Microsoft.PowerShell.Core\\Remove-Module")
+                _pwsh.AddCommand(Utils.RemoveModuleCmdletInfo)
                         .AddParameter("Name", moduleName)
                         .AddParameter("Force", true)
                         .AddParameter("ErrorAction", "SilentlyContinue")
                      .InvokeAndClearCommands();
             }
+
+            // Clean up jobs started during the function execution.
+            _pwsh.AddCommand(Utils.GetJobCmdletInfo)
+                 .AddCommand(Utils.RemoveJobCmdletInfo)
+                    .AddParameter("Force", true)
+                    .AddParameter("ErrorAction", "SilentlyContinue")
+                 .InvokeAndClearCommands();
         }
     }
 }
