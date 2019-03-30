@@ -40,6 +40,8 @@ enum DataCollectingBehavior {
     Gets the hashtable of output bindings that match the wildcard.
 .PARAMETER Name
     The name of the output binding you want to get. Supports wildcards.
+.PARAMETER Purge
+    Clear all stored output binding values.
 .OUTPUTS
     The hashtable of binding names to their respective value.
 #>
@@ -202,17 +204,55 @@ function Merge-Collection
 .SYNOPSIS
     Sets the value for the specified output binding.
 .DESCRIPTION
-    Sets the value for the specified output binding.
+    When running in the Functions runtime, this cmdlet is aware of the output bindings
+    defined for the function that is invoking this cmdlet. Hence, it's able to decide
+    whether an output binding accepts singleton value only or a collection of values.
+
+    For example, the HTTP output binding only accepts one response object, while the
+    queue output binding can accept one or multiple queue messages.
+
+    With this knowledge, the 'Push-OutputBinding' cmdlet acts differently based on the
+    value specified for '-Name':
+
+    - If the specified name cannot be resolved to a valid output binding, then an error
+      will be thrown;
+
+    - If the output binding corresponding to that name accepts a collection of values,
+      then it's allowed to call 'Push-OutputBinding' with the same name repeatedly in
+      the function script to push multiple values;
+
+    - If the output binding corresponding to that name only accepts a singleton value,
+      then the second time calling 'Push-OutputBinding' with that name will result in
+      an error, with detailed message about why it failed.
 .EXAMPLE
-    PS > Push-OutputBinding -Name res -Value "my output"
-    The output binding of "res" will have the value of "my output"
+    PS > Push-OutputBinding -Name response -Value "output #1"
+    The output binding of "response" will have the value of "output #1"
+.EXAMPLE
+    PS > Push-OutputBinding -Name response -Value "output #2"
+    The output binding is 'http', which accepts a singleton value only.
+    So an error will be thrown from this second run.
+.EXAMPLE
+    PS > Push-OutputBinding -Name response -Value "output #3" -Clobber
+    The output binding is 'http', which accepts a singleton value only.
+    But you can use '-Clobber' to override the old value.
+    The output binding of "response" will now have the value of "output #3"
+.EXAMPLE
+    PS > Push-OutputBinding -Name outQueue -Value "output #1"
+    The output binding of "outQueue" will have the value of "output #1"
+.EXAMPLE
+    PS > Push-OutputBinding -Name outQueue -Value "output #2"
+    The output binding is 'queue', which accepts multiple output values.
+    The output binding of "outQueue" will now have a list with 2 items: "output #1", "output #2"
+.EXAMPLE
+    PS > Push-OutputBinding -Name outQueue -Value @("output #3", "output #4")
+    When the value is a collection, the collection will be unrolled and elements of the collection
+    will be added to the list. The output binding of "outQueue" will now have a list with 4 items:
+    "output #1", "output #2", "output #3", "output #4".
 .PARAMETER Name
     The name of the output binding you want to set.
 .PARAMETER Value
     The value of the output binding you want to set.
-.PARAMETER InputObject
-    The hashtable that contains the output binding names to their respective value.
-.PARAMETER Force
+.PARAMETER Clobber
     (Optional) If specified, will force the value to be set for a specified output binding.
 #>
 function Push-OutputBinding
