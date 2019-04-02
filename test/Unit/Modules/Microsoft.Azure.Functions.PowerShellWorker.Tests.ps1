@@ -131,6 +131,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             $result[$Key][1] | Should -BeExactly 2
         }
 
+        It 'Can add value with binding name that differs in case' {
+            Push-OutputBinding -Name RESPONSE -Value 'UpperCase'
+            Push-OutputBinding -Name QUeue -Value 'MixedCase'
+
+            $result = Get-OutputBinding -Purge
+            $result["response"] | Should -BeExactly 'UpperCase'
+            $result["queue"] | Should -BeExactly 'MixedCase'
+        }
+
         It 'Can add a value via pipeline' {
             'Baz' | Push-OutputBinding -Name response
             'item1', 'item2', 'item3' | Push-OutputBinding -Name queue

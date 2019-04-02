@@ -68,9 +68,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             var parametersCopy = new Dictionary<string, PSScriptParamInfo>(psScriptParams, StringComparer.OrdinalIgnoreCase);
             parametersCopy.Remove(TriggerMetadata);
 
-            var allBindings = new Dictionary<string, ReadOnlyBindingInfo>();
-            var inputBindings = new Dictionary<string, ReadOnlyBindingInfo>();
-            var outputBindings = new Dictionary<string, ReadOnlyBindingInfo>();
+            var allBindings = new Dictionary<string, ReadOnlyBindingInfo>(StringComparer.OrdinalIgnoreCase);
+            var inputBindings = new Dictionary<string, ReadOnlyBindingInfo>(StringComparer.OrdinalIgnoreCase);
+            var outputBindings = new Dictionary<string, ReadOnlyBindingInfo>(StringComparer.OrdinalIgnoreCase);
 
             var inputsMissingFromParams = new List<string>();
             foreach (var binding in metadata.Bindings)
