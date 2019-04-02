@@ -37,6 +37,10 @@ if ($Bootstrap.IsPresent) {
         Write-Log -Warning "Module 'Pester' is missing. Installing 'Pester' ..."
         Install-Module -Name Pester -Scope CurrentUser -Force
     }
+    if (-not (Get-Module -Name platyPS -ListAvailable)) {
+        Write-Log -Warning "Module 'platyPS' is missing. Installing 'platyPS' ..."
+        Install-Module -Name platyPS -Scope CurrentUser -Force
+    }
 }
 
 # Clean step
@@ -95,4 +99,18 @@ if($Test.IsPresent) {
     if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
 
     Invoke-Tests -Path "$PSScriptRoot/test/Unit/Modules" -OutputFile UnitTestsResults.xml
+
+    if (-not (Get-Module -Name platyPS -ListAvailable)) {
+        throw "Cannot find the 'platyPS' module. Please specify '-Bootstrap' to install build dependencies."
+    }
+    elseif (-not (Get-Command -Name git -CommandType Application)) {
+        throw "Cannot find 'git'. Please make sure it's in the 'PATH'."
+    }
+
+    # Cmdlet help docs should be up-to-date
+    Update-MarkdownHelp -Path ./docs/cmdlets
+    $diff = git diff ./docs/cmdlets
+    if ($diff) {
+        throw "Cmdlet help docs are not up-to-date, run Update-MarkdownHelp.`n$diff`n"
+    }
 }
