@@ -109,18 +109,20 @@ if($Test.IsPresent) {
         throw "Cannot find 'git'. Please make sure it's in the 'PATH'."
     }
 
-    # Cmdlet help docs should be up-to-date
-
+    # Cmdlet help docs should be up-to-date.
     # PlatyPS needs the module to be imported.
     Import-Module -Force (Join-Path $PSScriptRoot src Modules Microsoft.Azure.Functions.PowerShellWorker)
     try {
+        # Update the help and diff the result.
         $docsPath = Join-Path $PSScriptRoot docs cmdlets
         Update-MarkdownHelp -Path $docsPath
         $diff = git diff $docsPath
         if ($diff) {
             throw "Cmdlet help docs are not up-to-date, run Update-MarkdownHelp.`n$diff`n"
         }
+        Write-Host "Help is up-to-date."
     } finally {
+        # Clean up.
         Remove-Module Microsoft.Azure.Functions.PowerShellWorker -Force
     }
 }
