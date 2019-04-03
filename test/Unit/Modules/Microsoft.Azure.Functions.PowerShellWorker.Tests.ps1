@@ -136,8 +136,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             Push-OutputBinding -Name QUeue -Value 'MixedCase'
 
             $result = Get-OutputBinding -Purge
-            $result["RESPONSE"] | Should -BeExactly 'UpperCase'
-            $result["queue"] | Should -BeExactly 'MixedCase'
+            if ($IsWindows) {
+                $result["response"] | Should -BeExactly 'UpperCase'
+                $result["queue"] | Should -BeExactly 'MixedCase'
+            } else {
+                # Hashtable on Ubuntu 18.04 server is case-sensitive.
+                # It's fixed in 6.2, but the 'pwsh' used in AppVeyor is not 6.2
+                $result["RESPONSE"] | Should -BeExactly 'UpperCase'
+                $result["QUeue"] | Should -BeExactly 'MixedCase'
+            }
         }
 
         It 'Can add a value via pipeline' {
