@@ -22,6 +22,8 @@ param(
     $Configuration = "Debug"
 )
 
+#Requires -Version 6.0
+
 Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
 
 # Bootstrap step
@@ -108,9 +110,17 @@ if($Test.IsPresent) {
     }
 
     # Cmdlet help docs should be up-to-date
-    Update-MarkdownHelp -Path ./docs/cmdlets
-    $diff = git diff ./docs/cmdlets
-    if ($diff) {
-        throw "Cmdlet help docs are not up-to-date, run Update-MarkdownHelp.`n$diff`n"
+
+    # PlatyPS needs the module to be imported.
+    Import-Module -Force (Join-Path $PSScriptRoot src Modules Microsoft.Azure.Functions.PowerShellWorker)
+    try {
+        $docsPath = Join-Path $PSScriptRoot docs cmdlets
+        Update-MarkdownHelp -Path $docsPath
+        $diff = git diff $docsPath
+        if ($diff) {
+            throw "Cmdlet help docs are not up-to-date, run Update-MarkdownHelp.`n$diff`n"
+        }
+    } finally {
+        Remove-Module Microsoft.Azure.Functions.PowerShellWorker -Force
     }
 }
