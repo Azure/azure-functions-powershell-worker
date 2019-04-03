@@ -49,6 +49,7 @@ function Get-OutputBinding {
     [CmdletBinding()]
     param(
         [Parameter(ValueFromPipeline = $True, ValueFromPipelineByPropertyName = $True)]
+        [SupportsWildcards()]
         [string[]]
         $Name = '*',
 
