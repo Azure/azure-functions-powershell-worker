@@ -136,7 +136,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             Push-OutputBinding -Name QUeue -Value 'MixedCase'
 
             $result = Get-OutputBinding -Purge
-            $result["response"] | Should -BeExactly 'UpperCase'
+            $result["RESPONSE"] | Should -BeExactly 'UpperCase'
             $result["queue"] | Should -BeExactly 'MixedCase'
         }
 
