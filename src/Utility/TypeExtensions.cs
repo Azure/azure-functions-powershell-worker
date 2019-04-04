@@ -86,7 +86,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 case TypedData.DataOneofCase.Stream:
                     return data.Stream.ToByteArray();
                 case TypedData.DataOneofCase.String:
-                    return data.String;
+                    string str = data.String;
+                    return IsValidJson(str) ? ConvertFromJson(str) : str;
                 case TypedData.DataOneofCase.None:
                     return null;
                 default:
