@@ -139,6 +139,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
+        public void TestTypedDataToObjectStringAsJson()
+        {
+            var data = "{\"Foo\":\"Bar\"}";
+
+            var input = new TypedData { String = data };
+            var expected = JsonConvert.DeserializeObject<Hashtable>(data);
+            var actual = (Hashtable)input.ToObject();
+            Assert.Equal((string)expected["Foo"], (string)actual["Foo"]);
+        }
+
+        [Fact]
         public void TestTypedDataToObjectInt()
         {
             long data = 2;
