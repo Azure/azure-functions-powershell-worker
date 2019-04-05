@@ -357,15 +357,37 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         private Hashtable InvokeSingleActivityFunction(PowerShellManager psManager, AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
         {
+            const string InvocationId = "InvocationId";
+            const string FunctionDirectory = "FunctionDirectory";
+            const string FunctionName = "FunctionName";
+
             // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
-            var triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase);
-            foreach (var dataItem in invocationRequest.TriggerMetadata)
+            Hashtable triggerMetadata = null;
+
+            if (functionInfo.HasTriggerMetadataParam)
             {
-                // MapField<K, V> is case-sensitive, but powershell is case-insensitive,
-                // so for keys differ only in casing, the first wins.
-                if (!triggerMetadata.ContainsKey(dataItem.Key))
+                triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase);
+                foreach (var dataItem in invocationRequest.TriggerMetadata)
                 {
-                    triggerMetadata.Add(dataItem.Key, dataItem.Value.ToObject());
+                    // MapField<K, V> is case-sensitive, but powershell is case-insensitive,
+                    // so for keys differ only in casing, the first wins.
+                    if (!triggerMetadata.ContainsKey(dataItem.Key))
+                    {
+                        triggerMetadata.Add(dataItem.Key, dataItem.Value.ToObject());
+                    }
+                }
+
+                if (!triggerMetadata.ContainsKey(InvocationId))
+                {
+                    triggerMetadata.Add(InvocationId, invocationRequest.InvocationId);
+                }
+                if (!triggerMetadata.ContainsKey(FunctionDirectory))
+                {
+                    triggerMetadata.Add(FunctionDirectory, functionInfo.FuncDirectory);
+                }
+                if (!triggerMetadata.ContainsKey(FunctionName))
+                {
+                    triggerMetadata.Add(FunctionName, functionInfo.FuncName);
                 }
             }
 

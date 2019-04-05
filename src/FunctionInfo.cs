@@ -25,6 +25,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         internal const string TriggerMetadata = "TriggerMetadata";
         internal const string DollarReturn = "$return";
 
+        internal readonly bool HasTriggerMetadataParam;
         internal readonly string FuncDirectory;
         internal readonly string FuncName;
         internal readonly string EntryPoint;
@@ -66,7 +67,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             FuncParameters = new ReadOnlyDictionary<string, PSScriptParamInfo>(psScriptParams);
 
             var parametersCopy = new Dictionary<string, PSScriptParamInfo>(psScriptParams, StringComparer.OrdinalIgnoreCase);
-            parametersCopy.Remove(TriggerMetadata);
+            HasTriggerMetadataParam = parametersCopy.Remove(TriggerMetadata);
 
             var allBindings = new Dictionary<string, ReadOnlyBindingInfo>(StringComparer.OrdinalIgnoreCase);
             var inputBindings = new Dictionary<string, ReadOnlyBindingInfo>(StringComparer.OrdinalIgnoreCase);
