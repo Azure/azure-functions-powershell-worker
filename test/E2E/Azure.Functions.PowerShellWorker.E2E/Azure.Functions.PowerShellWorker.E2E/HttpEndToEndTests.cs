@@ -14,6 +14,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         [InlineData("HttpTrigger", "?name=John&lastName=Doe", HttpStatusCode.OK, "Hello John")]
         [InlineData("HttpTriggerThrows", "", HttpStatusCode.InternalServerError, "")]
         [InlineData("HttpTrigger", "", HttpStatusCode.BadRequest, "Please pass a name on the query string or in the request body")]
+        [InlineData("HttpTriggerWithMetadata", "?name=Test", HttpStatusCode.OK, "HttpTriggerWithMetadata True False")]
         public async Task HttpTriggerTests(string functionName, string queryString, HttpStatusCode expectedStatusCode, string expectedMessage)
         {
             // TODO: Verify exception on 500 after https://github.com/Azure/azure-functions-host/issues/3589

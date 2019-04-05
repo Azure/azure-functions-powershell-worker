@@ -164,7 +164,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
 
                 // Gives access to additional Trigger Metadata if the user specifies TriggerMetadata
-                if(functionInfo.FuncParameters.ContainsKey(AzFunctionInfo.TriggerMetadata))
+                if(functionInfo.HasTriggerMetadataParam)
                 {
                     _pwsh.AddParameter(AzFunctionInfo.TriggerMetadata, triggerMetadata);
                 }
