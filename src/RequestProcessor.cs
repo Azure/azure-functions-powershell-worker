@@ -208,7 +208,15 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 functionInfo = _functionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
                 psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
-                Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager));
+
+                if (_powershellPool.UpperBound == 1)
+                {
+                    ProcessInvocationRequestImpl(request, functionInfo, psManager);
+                }
+                else
+                {
+                    Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager));
+                }
             }
             catch (Exception e)
             {

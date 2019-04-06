@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
 
             var initialSessionState = InitialSessionState.CreateDefault();
-            initialSessionState.ThreadOptions = PSThreadOptions.ReuseThread;
+            initialSessionState.ThreadOptions = PSThreadOptions.UseCurrentThread;
             initialSessionState.EnvironmentVariables.Add(
                 new SessionStateVariableEntry("PSModulePath", FunctionLoader.FunctionModulePath, null));
 

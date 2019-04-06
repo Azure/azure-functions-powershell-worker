@@ -4,7 +4,6 @@
 //
 
 using System;
-using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,15 +15,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
     internal class MessagingStream
     {
         private readonly AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
-        private readonly BlockingCollection<StreamingMessage> _msgQueue;
+        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
 
         internal MessagingStream(string host, int port)
         {
             Channel channel = new Channel(host, port, ChannelCredentials.Insecure);
             _call = new FunctionRpc.FunctionRpcClient(channel).EventStream();
-
-            _msgQueue = new BlockingCollection<StreamingMessage>();
-            Task.Run(WriteImplAsync);
         }
 
         /// <summary>
@@ -38,19 +34,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
         internal async Task<bool> MoveNext() => await _call.ResponseStream.MoveNext(CancellationToken.None);
 
         /// <summary>
-        /// Write the outgoing message to the buffer.
+        /// Write the outgoing message.
         /// </summary>
-        internal void Write(StreamingMessage message) => _msgQueue.Add(message);
+        internal void Write(StreamingMessage message) => WriteImplAsync(message).ConfigureAwait(false);
 
         /// <summary>
         /// Take a message from the buffer and write to the gRPC channel.
         /// </summary>
-        private async Task WriteImplAsync()
+        private async Task WriteImplAsync(StreamingMessage message)
         {
-            while (true)
+            try
             {
-                StreamingMessage msg = _msgQueue.Take();
-                await _call.RequestStream.WriteAsync(msg);
+                await _semaphoreSlim.WaitAsync();
+                await _call.RequestStream.WriteAsync(message);
+            }
+            finally
+            {
+                _semaphoreSlim.Release();
             }
         }
     }
