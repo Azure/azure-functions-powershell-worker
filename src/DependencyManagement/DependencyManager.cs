@@ -45,6 +45,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         // Central repository for acquiring PowerShell modules.
         private const string Repository = "PSGallery";
 
+        // AzureFunctions folder name.
+        private const string AzureFunctionsFolderName = "AzureFunctions";
+
         // Managed Dependencies folder name.
         private const string ManagedDependenciesFolderName = "ManagedDependencies";
 
@@ -305,9 +308,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// <summary>
         /// Gets the Managed Dependencies folder path.
         /// If we are running in Azure, the path is HOME\data\ManagedDependencies.
-        /// Otherwise, the path is functionAppRoot\ManagedDependencies.
+        /// Otherwise, the path is LocalApplicationData\AzureFunctions\FunctionAppName\ManagedDependencies.
         /// </summary>
-        private string GetManagedDependenciesPath(string functionAppRoot)
+        private string GetManagedDependenciesPath(string functionAppRootPath)
         {
             string managedDependenciesFolderPath = null;
 
@@ -325,8 +328,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
             else
             {
-                // Otherwise, the ManagedDependencies folder is created under the function app root.
-                managedDependenciesFolderPath = Path.Join(functionAppRoot, ManagedDependenciesFolderName);
+                // Otherwise, the ManagedDependencies folder is created under LocalApplicationData\AzureFunctions\FunctionAppName\ManagedDependencies.
+                string functionAppName = Path.GetFileName(functionAppRootPath);
+                string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify);
+                managedDependenciesFolderPath = Path.Combine(appDataFolder, AzureFunctionsFolderName, functionAppName, ManagedDependenciesFolderName);
             }
 
             return managedDependenciesFolderPath;

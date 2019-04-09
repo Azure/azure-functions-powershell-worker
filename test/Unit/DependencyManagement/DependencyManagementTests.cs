@@ -16,6 +16,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         private readonly string _dependencyManagementDirectory;
         private readonly string _functionId;
         private const string ManagedDependenciesFolderName = "ManagedDependencies";
+        private const string AzureFunctionsFolderName = "AzureFunctions";
 
         public DependencyManagementTests()
         {
@@ -42,6 +43,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             return functionLoadRequest;
         }
 
+        private string GetManagedDependenciesPath(string functionAppRootPath)
+        {
+            string functionAppName = Path.GetFileName(functionAppRootPath);
+            string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify);
+            string managedDependenciesFolderPath = Path.Combine(appDataFolder, AzureFunctionsFolderName, functionAppName, ManagedDependenciesFolderName);
+            return managedDependenciesFolderPath;
+        }
+
         private void TestCaseCleanup()
         {
             // We run a test case clean up to reset DependencyManager.Dependencies and DependencyManager.DependenciesPath
@@ -66,10 +75,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 // Test case setup.
                 var requirementsDirectoryName = "BasicRequirements";
-                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName,
-                    "FunctionDirectory");
-                var managedDependenciesFolderPath = Path.Combine(_dependencyManagementDirectory,
-                    requirementsDirectoryName, ManagedDependenciesFolderName);
+                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
+                var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
+                var managedDependenciesFolderPath = GetManagedDependenciesPath(functionAppRoot);
+
                 var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
@@ -97,10 +106,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 // Test case setup.
                 var requirementsDirectoryName = "EmptyHashtableRequirement";
-                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName,
-                    "FunctionDirectory");
-                var managedDependenciesFolderPath = Path.Combine(_dependencyManagementDirectory,
-                    requirementsDirectoryName, ManagedDependenciesFolderName);
+                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName,"FunctionDirectory");
+                var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
+                var managedDependenciesFolderPath = GetManagedDependenciesPath(functionAppRoot);
                 var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
