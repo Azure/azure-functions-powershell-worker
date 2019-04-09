@@ -25,6 +25,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private readonly BlockingCollection<PowerShellManager> _pool;
         private int _poolSize;
 
+        /// <summary>
+        /// Gets the concurrency upper bound.
+        /// </summary>
         internal int UpperBound => _upperBound;
 
         /// <summary>

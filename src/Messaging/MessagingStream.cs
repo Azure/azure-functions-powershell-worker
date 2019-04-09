@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
     internal class MessagingStream
     {
         private readonly AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
-        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(initialCount: 1, maxCount: 1);
 
         internal MessagingStream(string host, int port)
         {
