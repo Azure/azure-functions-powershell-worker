@@ -208,7 +208,19 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             {
                 functionInfo = _functionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
                 psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
-                Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager));
+
+                if (_powershellPool.UpperBound == 1)
+                {
+                    // When the concurrency upper bound is 1, we can handle only one invocation at a time anyways,
+                    // so it's better to just do it on the current thread to reduce the required synchronization.
+                    ProcessInvocationRequestImpl(request, functionInfo, psManager);
+                }
+                else
+                {
+                    // When the concurrency upper bound is more than 1, we have to handle the invocation in a worker
+                    // thread, so multiple invocations can make progress at the same time, even though by time-sharing.
+                    Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager));
+                }
             }
             catch (Exception e)
             {

@@ -26,6 +26,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private int _poolSize;
 
         /// <summary>
+        /// Gets the concurrency upper bound.
+        /// </summary>
+        internal int UpperBound => _upperBound;
+
+        /// <summary>
         /// Constructor of the pool.
         /// </summary>
         internal PowerShellManagerPool(MessagingStream msgStream)
