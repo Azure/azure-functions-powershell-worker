@@ -115,7 +115,7 @@ if($Test.IsPresent) {
     try {
         # Update the help and diff the result.
         $docsPath = Join-Path $PSScriptRoot docs cmdlets
-        Update-MarkdownHelp -Path $docsPath
+        $null = Update-MarkdownHelp -Path $docsPath
         $diff = git diff $docsPath
         if ($diff) {
             throw "Cmdlet help docs are not up-to-date, run Update-MarkdownHelp.`n$diff`n"
