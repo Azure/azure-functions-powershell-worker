@@ -52,13 +52,10 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             _functionLoader = new FunctionLoader();
             _dependencyManager = new DependencyManager();
             _eventManager = new ScriptEventManager();
-            _inboundWorkerEvents = _eventManager.OfType<InboundEvent>()
-                .ObserveOn(NewThreadScheduler.Default)
-                .Where(msg => msg.WorkerId == _workerId);
             _workerId = workerId;
-
-            _eventSubscriptions.Add(_inboundWorkerEvents
+           _eventManager.OfType<InboundEvent>()
                 .ObserveOn(NewThreadScheduler.Default)
+                .Where(msg => msg.WorkerId == _workerId)
                 .Subscribe((msg) => InboundEventHandler(msg)));
 
             // Host sends capabilities/init data to worker
