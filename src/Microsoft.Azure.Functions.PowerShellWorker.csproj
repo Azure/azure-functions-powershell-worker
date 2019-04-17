@@ -25,6 +25,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="CommandLineParser" Version="2.3.0" />
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />
+    <PackageReference Include="System.Reactive" Version="4.1.5" />
   </ItemGroup>
 
   <ItemGroup>

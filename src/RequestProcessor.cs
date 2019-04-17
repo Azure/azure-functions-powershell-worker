@@ -15,6 +15,9 @@ using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+using System.Reactive.Linq;
+using System.Reactive.Concurrency;
+using System.Collections.Concurrent;
 
 namespace  Microsoft.Azure.Functions.PowerShellWorker
 {
@@ -32,15 +35,31 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         // Indicate whether the FunctionApp has been initialized.
         private bool _isFunctionAppInitialized;
 
+        private IScriptEventManager _eventManager;
+        private IObservable<InboundEvent> _inboundWorkerEvents;
+        IDictionary<string, IDisposable> _outboundEventSubscriptions = new Dictionary<string, IDisposable>();
+        private List<IDisposable> _eventSubscriptions = new List<IDisposable>();
+        private string _workerId;
+        private BlockingCollection<StreamingMessage> _blockingCollectionQueue = new BlockingCollection<StreamingMessage>();
+
         private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
             new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
 
-        internal RequestProcessor(MessagingStream msgStream)
+        internal RequestProcessor(MessagingStream msgStream, string workerId)
         {
             _msgStream = msgStream;
             _powershellPool = new PowerShellManagerPool(msgStream);
             _functionLoader = new FunctionLoader();
             _dependencyManager = new DependencyManager();
+            _eventManager = new ScriptEventManager();
+            _inboundWorkerEvents = _eventManager.OfType<InboundEvent>()
+                .ObserveOn(NewThreadScheduler.Default)
+                .Where(msg => msg.WorkerId == _workerId);
+            _workerId = workerId;
+
+            _eventSubscriptions.Add(_inboundWorkerEvents
+                .ObserveOn(NewThreadScheduler.Default)
+                .Subscribe((msg) => InboundEventHandler(msg)));
 
             // Host sends capabilities/init data to worker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.WorkerInitRequest, ProcessWorkerInitRequest);
@@ -68,27 +87,33 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadRequest, ProcessFunctionEnvironmentReloadRequest);
         }
 
+        internal void InboundEventHandler(InboundEvent serverMessage)
+        {
+            StreamingMessage response = null;
+            StreamingMessage request = serverMessage.Message;
+            if (_requestHandlers.TryGetValue(request.ContentCase, out Func<StreamingMessage, StreamingMessage> requestFunc))
+            {
+                response = requestFunc(request);
+            }
+            else
+            {
+                RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
+            }
+
+            if (response != null)
+            {
+                _blockingCollectionQueue.Add(response);
+                _msgStream.Write(response);
+            }
+        }
+
         internal async Task ProcessRequestLoop()
         {
-            StreamingMessage request, response;
+            StreamingMessage request;
             while (await _msgStream.MoveNext())
             {
                 request = _msgStream.GetCurrentMessage();
-
-                if (_requestHandlers.TryGetValue(request.ContentCase, out Func<StreamingMessage, StreamingMessage> requestFunc))
-                {
-                    response = requestFunc(request);
-                }
-                else
-                {
-                    RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
-                    continue;
-                }
-
-                if (response != null)
-                {
-                    _msgStream.Write(response);
-                }
+                _eventManager.Publish(new InboundEvent(_workerId, request));
             }
         }
 
