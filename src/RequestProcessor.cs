@@ -36,11 +36,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         private bool _isFunctionAppInitialized;
 
         private IScriptEventManager _eventManager;
-        private IObservable<InboundEvent> _inboundWorkerEvents;
-        IDictionary<string, IDisposable> _outboundEventSubscriptions = new Dictionary<string, IDisposable>();
-        private List<IDisposable> _eventSubscriptions = new List<IDisposable>();
         private string _workerId;
-        private BlockingCollection<StreamingMessage> _blockingCollectionQueue = new BlockingCollection<StreamingMessage>();
 
         private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
             new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
@@ -56,7 +52,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
            _eventManager.OfType<InboundEvent>()
                 .ObserveOn(NewThreadScheduler.Default)
                 .Where(msg => msg.WorkerId == _workerId)
-                .Subscribe((msg) => InboundEventHandler(msg)));
+                .Subscribe((msg) => InboundEventHandler(msg));
 
             // Host sends capabilities/init data to worker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.WorkerInitRequest, ProcessWorkerInitRequest);
@@ -99,8 +95,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
             if (response != null)
             {
-                _blockingCollectionQueue.Add(response);
-                _msgStream.Write(response);
+                _msgStream.AddToBlockingQueue(response);
             }
         }
 
@@ -295,7 +290,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 _powershellPool.ReclaimUsedWorker(psManager);
             }
 
-            _msgStream.Write(response);
+            _msgStream.AddToBlockingQueue(response);
         }
 
         internal StreamingMessage ProcessInvocationCancelRequest(StreamingMessage request)

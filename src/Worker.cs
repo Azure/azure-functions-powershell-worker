@@ -11,6 +11,7 @@ using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+using System.Threading;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
@@ -28,7 +29,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             Parser.Default.ParseArguments<WorkerArguments>(args)
                 .WithParsed(ops => arguments = ops)
                 .WithNotParsed(err => Environment.Exit(1));
-
             var msgStream = new MessagingStream(arguments.Host, arguments.Port);
             var requestProcessor = new RequestProcessor(msgStream, arguments.WorkerId);
 
@@ -37,9 +37,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 RequestId = arguments.RequestId,
                 StartStream = new StartStream() { WorkerId = arguments.WorkerId }
             };
-
-            msgStream.Write(startedMessage);
-            await requestProcessor.ProcessRequestLoop();
+            await msgStream.Write(startedMessage);
+            var writerTask = msgStream.Write();
+            var readerTask = requestProcessor.ProcessRequestLoop();
+            await Task.WhenAll(writerTask, readerTask);
         }
     }
 

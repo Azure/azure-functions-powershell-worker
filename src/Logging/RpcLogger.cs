@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     }
                 };
 
-                _msgStream.Write(logMessage);
+                _msgStream.AddToBlockingQueue(logMessage);
             }
             else
             {

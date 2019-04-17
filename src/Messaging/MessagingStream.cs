@@ -40,14 +40,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
         internal async Task<bool> MoveNext() => await _call.ResponseStream.MoveNext(CancellationToken.None);
 
         /// <summary>
-        /// Write the outgoing message.
-        /// </summary>
-        internal void Write(StreamingMessage message) => WriteImplAsync(message).ConfigureAwait(false);
-
-        /// <summary>
         /// Take a message from the buffer and write to the gRPC channel.
         /// </summary>
-        private async Task WriteImplAsync(StreamingMessage message)
+        internal Task Write()
         {
             var consumer = Task.Run(async () =>
             {
@@ -56,7 +51,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
                     await _call.RequestStream.WriteAsync(rpcWriteMsg);
                 }
             });
-            await consumer;
+            return consumer;
+        }
+
+        internal Task Write(StreamingMessage msg)
+        {
+           return _call.RequestStream.WriteAsync(msg);
         }
     }
 }
