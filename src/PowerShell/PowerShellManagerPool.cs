@@ -69,7 +69,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Checkout an idle PowerShellManager instance in a non-blocking asynchronous way.
         /// </summary>
-        internal PowerShellManager CheckoutIdleWorker(StreamingMessage request, AzFunctionInfo functionInfo)
+        internal PowerShellManager CheckoutIdleWorker(StreamingMessage request)
         {
             PowerShellManager psManager = null;
             string requestId = request.RequestId;
@@ -98,8 +98,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
             }
 
-            // Register the function with the Runspace before returning the idle PowerShellManager.
-            FunctionMetadata.RegisterFunctionMetadata(psManager.InstanceId, functionInfo);
             psManager.Logger.SetContext(requestId, invocationId);
             return psManager;
         }

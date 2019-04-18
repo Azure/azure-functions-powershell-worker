@@ -17,6 +17,7 @@ using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
+    using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
     using System.Management.Automation;
     using System.Management.Automation.Language;
 
@@ -60,6 +61,44 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             Dependencies = new List<DependencyInfo>();
         }
 
+        internal void ProcessDependencies(
+            MessagingStream msgStream,
+            PowerShellManagerPool powershellPool,
+            StreamingMessage request,
+            FunctionLoader functionLoader)
+        {
+            PowerShellManager psManager = null;
+            StreamingMessage response = new StreamingMessage { RequestId = request.RequestId };
+            var status = new StatusResult { Status = StatusResult.Types.Status.Success };
+
+            try
+            {
+                var functionLoadRequest = request.FunctionLoadRequest;
+                // If 'ManagedDependencyEnabled' is true, process the function app dependencies as defined in FunctionAppRoot\requirements.psd1.
+                // These dependencies will be installed via 'Save-Module' when the first PowerShellManager instance is being created.
+                if (functionLoadRequest.ManagedDependencyEnabled)
+                {
+                    Initialize(functionLoadRequest);
+                }
+
+                psManager = powershellPool.CheckoutIdleWorker(request);
+                InstallFunctionAppDependencies(psManager.PowerShellInstance, psManager.Logger);
+                response.FunctionLoadResponse.IsDependencyDownloaded = true;
+                functionLoader.LoadFunction(functionLoadRequest);
+            }
+            catch (Exception e)
+            {
+                status.Status = StatusResult.Types.Status.Failure;
+                status.Exception = e.ToRpcException();
+            }
+            finally
+            {
+                powershellPool.ReclaimUsedWorker(psManager);
+                response.FunctionLoadResponse = new FunctionLoadResponse() { Result = status };
+                msgStream.Write(response);
+            }
+        }
+
         /// <summary>
         /// Initializes the dependency manger and performs the following:
         /// - Parse functionAppRoot\requirements.psd1 file and create a list of dependencies to install.
@@ -83,8 +122,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 foreach (DictionaryEntry entry in entries)
                 {
                     // A valid entry is of the form: 'ModuleName'='MajorVersion.*"
-                    string name = (string) entry.Key;
-                    string version = (string) entry.Value;
+                    string name = (string)entry.Key;
+                    string version = (string)entry.Value;
 
                     // Validates that the module name is a supported dependency.
                     ValidateModuleName(name);

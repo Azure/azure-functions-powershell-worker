@@ -33,6 +33,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// </summary>
         internal ILogger Logger => _logger;
 
+        /// <summary>
+        /// Gets the associated PowerShell instance
+        /// </summary>
+        internal PowerShell PowerShellInstance => _pwsh;
+
         static PowerShellManager()
         {
             // Set the type accelerators for 'HttpResponseContext' and 'HttpResponseContext'.
@@ -76,9 +81,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Progress.DataAdding += streamHandler.ProgressDataAdding;
             _pwsh.Streams.Verbose.DataAdding += streamHandler.VerboseDataAdding;
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
-
-            // Install function app dependent modules
-            initAction?.Invoke(_pwsh, logger);
 
             // Initialize the Runspace
             InvokeProfile(FunctionLoader.FunctionAppProfilePath);
