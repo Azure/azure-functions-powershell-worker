@@ -20,6 +20,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
     using System.Management.Automation;
     using System.Management.Automation.Language;
+    using System.Management.Automation.Runspaces;
+    using System.Threading;
 
     internal class DependencyManager
     {
@@ -28,6 +30,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         // This is the location where the dependent modules will be installed.
         internal static string DependenciesPath { get; private set; }
+
+        internal Exception DependencyError { get => _dependencyError; }
 
         // Az module name.
         private const string AzModuleName = "Az";
@@ -52,6 +56,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         // Managed Dependencies folder name.
         private const string ManagedDependenciesFolderName = "ManagedDependencies";
 
+        private volatile Exception _dependencyError;
+
         // This flag is used to figure out if we need to install/reinstall all the function app dependencies.
         // If we do, we use it to clean up the module destination path.
         private bool _shouldUpdateFunctionAppDependencies;
@@ -63,39 +69,44 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         internal void ProcessDependencies(
             MessagingStream msgStream,
-            PowerShellManagerPool powershellPool,
-            StreamingMessage request,
-            FunctionLoader functionLoader)
+            StreamingMessage request)
         {
-            PowerShellManager psManager = null;
-            StreamingMessage response = new StreamingMessage { RequestId = request.RequestId };
-            var status = new StatusResult { Status = StatusResult.Types.Status.Success };
-
             try
             {
+                _dependencyError = null;
                 var functionLoadRequest = request.FunctionLoadRequest;
-                // If 'ManagedDependencyEnabled' is true, process the function app dependencies as defined in FunctionAppRoot\requirements.psd1.
-                // These dependencies will be installed via 'Save-Module' when the first PowerShellManager instance is being created.
                 if (functionLoadRequest.ManagedDependencyEnabled)
                 {
                     Initialize(functionLoadRequest);
                 }
 
-                psManager = powershellPool.CheckoutIdleWorker(request);
-                InstallFunctionAppDependencies(psManager.PowerShellInstance, psManager.Logger);
-                response.FunctionLoadResponse.IsDependencyDownloaded = true;
-                functionLoader.LoadFunction(functionLoadRequest);
+                if (_shouldUpdateFunctionAppDependencies)
+                {
+                    var initialSessionState = InitialSessionState.CreateDefault();
+                    initialSessionState.ThreadOptions = PSThreadOptions.UseCurrentThread;
+                    // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
+                    if (Platform.IsWindows)
+                    {
+                        initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+                    }
+
+                    using (PowerShell PowerShellInstance = PowerShell.Create(initialSessionState))
+                    {
+                        RequestProcessor.IsDependencyDownloadInProgress = true;
+                        var rpcLogger = new RpcLogger(msgStream);
+                        rpcLogger.SetContext(request.RequestId, null);
+                        InstallFunctionAppDependencies(PowerShellInstance, rpcLogger);
+                        RequestProcessor.IsDependencyDownloadInProgress = false;
+                    }
+                }
             }
             catch (Exception e)
             {
-                status.Status = StatusResult.Types.Status.Failure;
-                status.Exception = e.ToRpcException();
+                _dependencyError = e;
             }
             finally
             {
-                powershellPool.ReclaimUsedWorker(psManager);
-                response.FunctionLoadResponse = new FunctionLoadResponse() { Result = status };
-                msgStream.Write(response);
+                RequestProcessor.IsDependencyDownloadInProgress = false;
             }
         }
 

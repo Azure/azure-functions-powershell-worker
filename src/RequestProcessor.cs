@@ -35,6 +35,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
             new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
 
+        internal static volatile bool IsDependencyDownloadInProgress;
         private volatile Task _dependencyDownloadTask;
 
         internal RequestProcessor(MessagingStream msgStream)
@@ -185,11 +186,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             try
             {
-                // Load the metadata of the function.
-                if (!functionLoadRequest.ManagedDependencyEnabled)
-                {
-                    _functionLoader.LoadFunction(functionLoadRequest);
-                }
+                _functionLoader.LoadFunction(functionLoadRequest);
             }
             catch (Exception e)
             {
@@ -212,21 +209,30 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             try
             {
                 functionInfo = _functionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
-                psManager = _powershellPool.CheckoutIdleWorker(request);
+                psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
 
                 if (_dependencyDownloadTask != null
                     && ((_dependencyDownloadTask.Status != TaskStatus.Canceled)
                     || _dependencyDownloadTask.Status != TaskStatus.Faulted
                     || _dependencyDownloadTask.Status != TaskStatus.RanToCompletion))
                 {
-                    string logMessage = "Managed dependency download is in progress, function execution will continue in approx. a minute";
-                    psManager.Logger.Log(LogLevel.Information, logMessage, null, true);
-                    psManager.Logger.Log(LogLevel.Information, logMessage, null);
+                    psManager.Logger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null, true);
+                    psManager.Logger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null);
                     _dependencyDownloadTask.Wait();
                 }
 
-                // Register the function with the Runspace PowerShellManager.
-                FunctionMetadata.RegisterFunctionMetadata(psManager.InstanceId, functionInfo);
+                if (_dependencyManager?.DependencyError != null)
+                {
+                    StreamingMessage response = NewStreamingMessageTemplate(request.RequestId,
+                        StreamingMessage.ContentOneofCase.InvocationResponse,
+                        out StatusResult status);
+                    status.Status = StatusResult.Types.Status.Failure;
+                    status.Exception = _dependencyManager.DependencyError.ToRpcException();
+                    response.InvocationResponse.InvocationId = request.InvocationRequest.InvocationId;
+                    return response;
+                }
+
+                //ProcessInvocationRequestImpl(request, functionInfo, psManager);
                 if (_powershellPool.UpperBound == 1)
                 {
                     // When the concurrency upper bound is 1, we can handle only one invocation at a time anyways,
@@ -243,7 +249,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             catch (Exception e)
             {
                 _powershellPool.ReclaimUsedWorker(psManager);
-
                 StreamingMessage response = NewStreamingMessageTemplate(
                     request.RequestId,
                     StreamingMessage.ContentOneofCase.InvocationResponse,
@@ -252,7 +257,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 response.InvocationResponse.InvocationId = request.InvocationRequest.InvocationId;
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = e.ToRpcException();
-
                 return response;
             }
 
@@ -319,12 +323,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             var functionLoadRequest = request.FunctionLoadRequest;
             // Setup the FunctionApp root path and module path.
             FunctionLoader.SetupWellKnownPaths(request.FunctionLoadRequest);
-            _powershellPool.Initialize(request.RequestId);
-
             if (functionLoadRequest.ManagedDependencyEnabled)
             {
                 //Start dependency download on a separate thread
-                _dependencyDownloadTask = Task.Run(() => _dependencyManager.ProcessDependencies(_msgStream, _powershellPool, request, _functionLoader)).ContinueWith((task) =>
+                _dependencyDownloadTask = Task.Run(() => _dependencyManager.ProcessDependencies(_msgStream, request)).ContinueWith((task) =>
                 {
                     _dependencyDownloadTask = null;
                 });

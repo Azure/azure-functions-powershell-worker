@@ -50,14 +50,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// Initialize the pool and populate it with PowerShellManager instances.
         /// We instantiate PowerShellManager instances in a lazy way, starting from size 1 and increase the number of workers as needed.
         /// </summary>
-        internal void Initialize(string requestId, Action<PowerShell, ILogger> initAction = null)
+        internal void Initialize(string requestId)
         {
             var logger = new RpcLogger(_msgStream);
 
             try
             {
                 logger.SetContext(requestId, invocationId: null);
-                _pool.Add(new PowerShellManager(logger, initAction));
+                _pool.Add(new PowerShellManager(logger));
                 _poolSize = 1;
             }
             finally
@@ -69,7 +69,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Checkout an idle PowerShellManager instance in a non-blocking asynchronous way.
         /// </summary>
-        internal PowerShellManager CheckoutIdleWorker(StreamingMessage request)
+        internal PowerShellManager CheckoutIdleWorker(StreamingMessage request, AzFunctionInfo functionInfo)
         {
             PowerShellManager psManager = null;
             string requestId = request.RequestId;
@@ -98,6 +98,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
             }
 
+            // Register the function with the Runspace PowerShellManager.
+            FunctionMetadata.RegisterFunctionMetadata(psManager.InstanceId, functionInfo);
             psManager.Logger.SetContext(requestId, invocationId);
             return psManager;
         }

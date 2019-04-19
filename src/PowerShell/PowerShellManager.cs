@@ -50,7 +50,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             addMethod.Invoke(null, new object[] { "HttpRequestContext", typeof(HttpRequestContext) });
         }
 
-        internal PowerShellManager(ILogger logger, Action<PowerShell, ILogger> initAction = null)
+        internal PowerShellManager(ILogger logger)
         {
             if (FunctionLoader.FunctionAppRootPath == null)
             {

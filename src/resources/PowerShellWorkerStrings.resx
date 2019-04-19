@@ -211,4 +211,7 @@
   <data name="LogNewPowerShellManagerCreated" xml:space="preserve">
     <value>A new PowerShell manager instance is added to the pool. Current pool size '{0}'.</value>
   </data>
+  <data name="DependencyDownloadInProgress" xml:space="preserve">
+    <value>Managed dependency download is in progress, function execution will continue when it's done.</value>
+  </data>
 </root>
