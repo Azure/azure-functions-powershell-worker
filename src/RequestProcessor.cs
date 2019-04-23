@@ -213,7 +213,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, request.InvocationRequest?.InvocationId);
                     rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null, true);
-                    rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null);
                     _dependencyManager.DependencyDownloadTask.Wait();
                 }
 
@@ -328,7 +327,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // Setup the FunctionApp root path and module path.
             FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
             _dependencyManager.ProcessDependencyDownload(_msgStream, request);
-            _powershellPool.Initialize(request.RequestId);
         }
 
         /// <summary>
