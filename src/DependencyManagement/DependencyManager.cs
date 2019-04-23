@@ -21,6 +21,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     using System.Management.Automation;
     using System.Management.Automation.Language;
     using System.Management.Automation.Runspaces;
+    using System.Threading.Tasks;
 
     internal class DependencyManager
     {
@@ -31,6 +32,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         internal static string DependenciesPath { get; private set; }
 
         internal Exception DependencyError { get => _dependencyError; }
+
+        //The dependency download task
+        internal Task DependencyDownloadTask { get => _dependencyDownloadTask; }
 
         // Az module name.
         private const string AzModuleName = "Az";
@@ -61,12 +65,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         // If we do, we use it to clean up the module destination path.
         private bool _shouldUpdateFunctionAppDependencies;
 
+        private volatile Task _dependencyDownloadTask;
+
         internal DependencyManager()
         {
             Dependencies = new List<DependencyInfo>();
         }
 
-        internal void ProcessDependencies(
+        internal void ProcessDependencyDownload(MessagingStream msgStream, StreamingMessage request)
+        {
+            if (request.FunctionLoadRequest.ManagedDependencyEnabled)
+            {
+                //Start dependency download on a separate thread
+                _dependencyDownloadTask = Task.Run(() => ProcessDependencies(msgStream, request)).ContinueWith((task) =>
+                {
+                    _dependencyDownloadTask = null;
+                });
+            }
+        }
+
+        private void ProcessDependencies(
             MessagingStream msgStream,
             StreamingMessage request)
         {

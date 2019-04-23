@@ -35,8 +35,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
             new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
 
-        private volatile Task _dependencyDownloadTask;
-
         internal RequestProcessor(MessagingStream msgStream)
         {
             _msgStream = msgStream;
@@ -207,16 +205,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             try
             {
-                if (_dependencyDownloadTask != null
-                    && ((_dependencyDownloadTask.Status != TaskStatus.Canceled)
-                    || _dependencyDownloadTask.Status != TaskStatus.Faulted
-                    || _dependencyDownloadTask.Status != TaskStatus.RanToCompletion))
+                if (_dependencyManager.DependencyDownloadTask != null
+                    && ((_dependencyManager.DependencyDownloadTask.Status != TaskStatus.Canceled)
+                    || _dependencyManager.DependencyDownloadTask.Status != TaskStatus.Faulted
+                    || _dependencyManager.DependencyDownloadTask.Status != TaskStatus.RanToCompletion))
                 {
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, request.InvocationRequest?.InvocationId);
                     rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null, true);
                     rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null);
-                    _dependencyDownloadTask.Wait();
+                    _dependencyManager.DependencyDownloadTask.Wait();
                 }
 
                 if (_dependencyManager.DependencyError != null)
@@ -322,22 +320,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private void InitializeForFunctionApp(StreamingMessage request, StreamingMessage response)
         {
             var functionLoadRequest = request.FunctionLoadRequest;
-
             if (functionLoadRequest.ManagedDependencyEnabled)
             {
                 _dependencyManager.Initialize(functionLoadRequest);
             }
 
             // Setup the FunctionApp root path and module path.
-            FunctionLoader.SetupWellKnownPaths(request.FunctionLoadRequest);
-            if (functionLoadRequest.ManagedDependencyEnabled)
-            {
-                //Start dependency download on a separate thread
-                _dependencyDownloadTask = Task.Run(() => _dependencyManager.ProcessDependencies(_msgStream, request)).ContinueWith((task) =>
-                {
-                    _dependencyDownloadTask = null;
-                });
-            }
+            FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
+            _dependencyManager.ProcessDependencyDownload(_msgStream, request);
+            _powershellPool.Initialize(request.RequestId);
         }
 
         /// <summary>
