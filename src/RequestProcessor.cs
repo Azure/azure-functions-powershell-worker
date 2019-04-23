@@ -208,20 +208,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             try
             {
-                functionInfo = _functionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
-                psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
-
                 if (_dependencyDownloadTask != null
                     && ((_dependencyDownloadTask.Status != TaskStatus.Canceled)
                     || _dependencyDownloadTask.Status != TaskStatus.Faulted
                     || _dependencyDownloadTask.Status != TaskStatus.RanToCompletion))
                 {
-                    psManager.Logger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null, true);
-                    psManager.Logger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null);
+                    var rpcLogger = new RpcLogger(_msgStream);
+                    rpcLogger.SetContext(request.RequestId, request.InvocationRequest?.InvocationId);
+                    rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null, true);
+                    rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null);
                     _dependencyDownloadTask.Wait();
                 }
 
-                if (_dependencyManager?.DependencyError != null)
+                if (_dependencyManager.DependencyError != null)
                 {
                     StreamingMessage response = NewStreamingMessageTemplate(request.RequestId,
                         StreamingMessage.ContentOneofCase.InvocationResponse,
@@ -231,6 +230,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     response.InvocationResponse.InvocationId = request.InvocationRequest.InvocationId;
                     return response;
                 }
+
+                functionInfo = _functionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
+                psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
 
                 //ProcessInvocationRequestImpl(request, functionInfo, psManager);
                 if (_powershellPool.UpperBound == 1)
@@ -321,6 +323,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private void InitializeForFunctionApp(StreamingMessage request, StreamingMessage response)
         {
             var functionLoadRequest = request.FunctionLoadRequest;
+
+            if (functionLoadRequest.ManagedDependencyEnabled)
+            {
+                _dependencyManager.Initialize(functionLoadRequest);
+            }
+
             // Setup the FunctionApp root path and module path.
             FunctionLoader.SetupWellKnownPaths(request.FunctionLoadRequest);
             if (functionLoadRequest.ManagedDependencyEnabled)

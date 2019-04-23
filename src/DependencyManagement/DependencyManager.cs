@@ -74,30 +74,29 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             try
             {
                 _dependencyError = null;
-                var functionLoadRequest = request.FunctionLoadRequest;
-                if (functionLoadRequest.ManagedDependencyEnabled)
+                var rpcLogger = new RpcLogger(msgStream);
+                rpcLogger.SetContext(request.RequestId, null);
+                if (!_shouldUpdateFunctionAppDependencies)
                 {
-                    Initialize(functionLoadRequest);
+                    // The function app already has the latest dependencies installed.
+                    rpcLogger.Log(LogLevel.Trace, PowerShellWorkerStrings.LatestFunctionAppDependenciesAlreadyInstalled, isUserLog: true);
+                    return;
                 }
 
-                if (_shouldUpdateFunctionAppDependencies)
+                var initialSessionState = InitialSessionState.CreateDefault();
+                initialSessionState.ThreadOptions = PSThreadOptions.UseCurrentThread;
+                initialSessionState.EnvironmentVariables.Add(new SessionStateVariableEntry("PSModulePath", FunctionLoader.FunctionModulePath, null));
+                // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
+                if (Platform.IsWindows)
                 {
-                    var initialSessionState = InitialSessionState.CreateDefault();
-                    initialSessionState.ThreadOptions = PSThreadOptions.UseCurrentThread;
-                    // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
-                    if (Platform.IsWindows)
-                    {
-                        initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
-                    }
+                    initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+                }
 
-                    using (PowerShell PowerShellInstance = PowerShell.Create(initialSessionState))
-                    {
-                        RequestProcessor.IsDependencyDownloadInProgress = true;
-                        var rpcLogger = new RpcLogger(msgStream);
-                        rpcLogger.SetContext(request.RequestId, null);
-                        InstallFunctionAppDependencies(PowerShellInstance, rpcLogger);
-                        RequestProcessor.IsDependencyDownloadInProgress = false;
-                    }
+                using (PowerShell PowerShellInstance = PowerShell.Create(initialSessionState))
+                {
+                    RequestProcessor.IsDependencyDownloadInProgress = true;
+                    InstallFunctionAppDependencies(PowerShellInstance, rpcLogger);
+                    RequestProcessor.IsDependencyDownloadInProgress = false;
                 }
             }
             catch (Exception e)
