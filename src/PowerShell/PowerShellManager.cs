@@ -33,11 +33,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// </summary>
         internal ILogger Logger => _logger;
 
-        /// <summary>
-        /// Gets the associated PowerShell instance
-        /// </summary>
-        internal PowerShell PowerShellInstance => _pwsh;
-
         static PowerShellManager()
         {
             // Set the type accelerators for 'HttpResponseContext' and 'HttpResponseContext'.

@@ -35,7 +35,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
             new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
 
-        internal static volatile bool IsDependencyDownloadInProgress;
         private volatile Task _dependencyDownloadTask;
 
         internal RequestProcessor(MessagingStream msgStream)

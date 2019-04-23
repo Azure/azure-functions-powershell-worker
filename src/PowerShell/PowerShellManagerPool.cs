@@ -98,7 +98,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
             }
 
-            // Register the function with the Runspace PowerShellManager.
+            // Register the function with the Runspace before returning the idle PowerShellManager.
             FunctionMetadata.RegisterFunctionMetadata(psManager.InstanceId, functionInfo);
             psManager.Logger.SetContext(requestId, invocationId);
             return psManager;

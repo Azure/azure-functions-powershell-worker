@@ -14,14 +14,13 @@ using System.Linq;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
-    using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
     using System.Management.Automation;
     using System.Management.Automation.Language;
     using System.Management.Automation.Runspaces;
-    using System.Threading;
 
     internal class DependencyManager
     {
@@ -94,18 +93,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 using (PowerShell PowerShellInstance = PowerShell.Create(initialSessionState))
                 {
-                    RequestProcessor.IsDependencyDownloadInProgress = true;
                     InstallFunctionAppDependencies(PowerShellInstance, rpcLogger);
-                    RequestProcessor.IsDependencyDownloadInProgress = false;
                 }
             }
             catch (Exception e)
             {
                 _dependencyError = e;
-            }
-            finally
-            {
-                RequestProcessor.IsDependencyDownloadInProgress = false;
             }
         }
 
