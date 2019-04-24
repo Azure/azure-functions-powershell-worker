@@ -72,34 +72,50 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             Dependencies = new List<DependencyInfo>();
         }
 
+        /// <summary>
+        /// Processes the dependency download request
+        /// </summary>
+        /// <param name="msgStream">The protobuf messaging stream</param>
+        /// <param name="request">The StreamingMessage request for function load</param>
         internal void ProcessDependencyDownload(MessagingStream msgStream, StreamingMessage request)
         {
             if (request.FunctionLoadRequest.ManagedDependencyEnabled)
             {
-                //Start dependency download on a separate thread
-                _dependencyDownloadTask = Task.Run(() => ProcessDependencies(msgStream, request)).ContinueWith((task) =>
-                {
-                    _dependencyDownloadTask = null;
-                });
-            }
-        }
-
-        private void ProcessDependencies(
-            MessagingStream msgStream,
-            StreamingMessage request)
-        {
-            try
-            {
-                _dependencyError = null;
                 var rpcLogger = new RpcLogger(msgStream);
                 rpcLogger.SetContext(request.RequestId, null);
                 if (!_shouldUpdateFunctionAppDependencies)
                 {
                     // The function app already has the latest dependencies installed.
-                    rpcLogger.Log(LogLevel.Trace, PowerShellWorkerStrings.LatestFunctionAppDependenciesAlreadyInstalled, isUserLog: true);
+                    rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.LatestFunctionAppDependenciesAlreadyInstalled, isUserLog: true);
                     return;
                 }
 
+                //Start dependency download on a separate thread
+                _dependencyDownloadTask = Task.Run(() => ProcessDependencies(msgStream, request, rpcLogger));
+            }
+        }
+
+        /// <summary>
+        /// Waits for the dependency download task to finish 
+        /// and sets it's reference to null to be picked for cleanup by next run of GC
+        /// </summary>
+        internal void DownloadDependencyAndWait()
+        {
+            if (_dependencyDownloadTask != null)
+            {
+                _dependencyDownloadTask.Wait();
+                _dependencyDownloadTask = null;
+            }
+        }
+
+        private void ProcessDependencies(
+            MessagingStream msgStream,
+            StreamingMessage request,
+            RpcLogger rpcLogger)
+        {
+            try
+            {
+                _dependencyError = null;
                 var initialSessionState = InitialSessionState.CreateDefault();
                 initialSessionState.ThreadOptions = PSThreadOptions.UseCurrentThread;
                 initialSessionState.EnvironmentVariables.Add(new SessionStateVariableEntry("PSModulePath", FunctionLoader.FunctionModulePath, null));
