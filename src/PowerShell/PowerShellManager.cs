@@ -45,7 +45,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             addMethod.Invoke(null, new object[] { "HttpRequestContext", typeof(HttpRequestContext) });
         }
 
-        internal PowerShellManager(ILogger logger, Action<PowerShell, ILogger> initAction = null)
+        internal PowerShellManager(ILogger logger)
         {
             if (FunctionLoader.FunctionAppRootPath == null)
             {
@@ -76,9 +76,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Progress.DataAdding += streamHandler.ProgressDataAdding;
             _pwsh.Streams.Verbose.DataAdding += streamHandler.VerboseDataAdding;
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
-
-            // Install function app dependent modules
-            initAction?.Invoke(_pwsh, logger);
 
             // Initialize the Runspace
             InvokeProfile(FunctionLoader.FunctionAppProfilePath);

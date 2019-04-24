@@ -14,11 +14,14 @@ using System.Linq;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
     using System.Management.Automation;
     using System.Management.Automation.Language;
+    using System.Management.Automation.Runspaces;
+    using System.Threading.Tasks;
 
     internal class DependencyManager
     {
@@ -27,6 +30,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         // This is the location where the dependent modules will be installed.
         internal static string DependenciesPath { get; private set; }
+
+        internal Exception DependencyError => _dependencyError;
+
+        //The dependency download task
+        internal Task DependencyDownloadTask => _dependencyDownloadTask;
 
         // Az module name.
         private const string AzModuleName = "Az";
@@ -51,6 +59,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         // Managed Dependencies folder name.
         private const string ManagedDependenciesFolderName = "ManagedDependencies";
 
+        //Set when any error occurs while downloading dependencies
+        private Exception _dependencyError;
+
+        //Dependency download task
+        private Task _dependencyDownloadTask;
+
         // This flag is used to figure out if we need to install/reinstall all the function app dependencies.
         // If we do, we use it to clean up the module destination path.
         private bool _shouldUpdateFunctionAppDependencies;
@@ -58,6 +72,74 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         internal DependencyManager()
         {
             Dependencies = new List<DependencyInfo>();
+        }
+
+        /// <summary>
+        /// Processes the dependency download request
+        /// </summary>
+        /// <param name="msgStream">The protobuf messaging stream</param>
+        /// <param name="request">The StreamingMessage request for function load</param>
+        internal void ProcessDependencyDownload(MessagingStream msgStream, StreamingMessage request)
+        {
+            if (request.FunctionLoadRequest.ManagedDependencyEnabled)
+            {
+                var rpcLogger = new RpcLogger(msgStream);
+                rpcLogger.SetContext(request.RequestId, null);
+                if (Dependencies.Count == 0)
+                {
+                    // If there are no dependencies to install, log and return.
+                    rpcLogger.Log(LogLevel.Trace, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, isUserLog: true);
+                    return;
+                }
+
+                if (!_shouldUpdateFunctionAppDependencies)
+                {
+                    // The function app already has the latest dependencies installed.
+                    rpcLogger.Log(LogLevel.Trace, PowerShellWorkerStrings.LatestFunctionAppDependenciesAlreadyInstalled, isUserLog: true);
+                    return;
+                }
+
+                //Start dependency download on a separate thread
+                _dependencyDownloadTask = Task.Run(() => ProcessDependencies(rpcLogger));
+            }
+        }
+
+        /// <summary>
+        /// Waits for the dependency download task to finish 
+        /// and sets it's reference to null to be picked for cleanup by next run of GC
+        /// </summary>
+        internal void WaitOnDependencyDownload()
+        {
+            if (_dependencyDownloadTask != null)
+            {
+                _dependencyDownloadTask.Wait();
+                _dependencyDownloadTask = null;
+            }
+        }
+
+        private void ProcessDependencies(RpcLogger rpcLogger)
+        {
+            try
+            {
+                _dependencyError = null;
+                var initialSessionState = InitialSessionState.CreateDefault();
+                initialSessionState.ThreadOptions = PSThreadOptions.UseCurrentThread;
+                initialSessionState.EnvironmentVariables.Add(new SessionStateVariableEntry("PSModulePath", FunctionLoader.FunctionModulePath, null));
+                // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
+                if (Platform.IsWindows)
+                {
+                    initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+                }
+
+                using (PowerShell powerShellInstance = PowerShell.Create(initialSessionState))
+                {
+                    InstallFunctionAppDependencies(powerShellInstance, rpcLogger);
+                }
+            }
+            catch (Exception e)
+            {
+                _dependencyError = e;
+            }
         }
 
         /// <summary>
@@ -83,8 +165,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 foreach (DictionaryEntry entry in entries)
                 {
                     // A valid entry is of the form: 'ModuleName'='MajorVersion.*"
-                    string name = (string) entry.Key;
-                    string version = (string) entry.Value;
+                    string name = (string)entry.Key;
+                    string version = (string)entry.Value;
 
                     // Validates that the module name is a supported dependency.
                     ValidateModuleName(name);
@@ -124,20 +206,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             try
             {
-                if (Dependencies.Count == 0)
-                {
-                    // If there are no dependencies to install, log and return.
-                    logger.Log(LogLevel.Trace, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, isUserLog: true);
-                    return;
-                }
-
-                if (!_shouldUpdateFunctionAppDependencies)
-                {
-                    // The function app already has the latest dependencies installed.
-                    logger.Log(LogLevel.Trace, PowerShellWorkerStrings.LatestFunctionAppDependenciesAlreadyInstalled, isUserLog: true);
-                    return;
-                }
-
                 // Install the function dependencies.
                 logger.Log(LogLevel.Trace, PowerShellWorkerStrings.InstallingFunctionAppDependentModules, isUserLog: true);
 

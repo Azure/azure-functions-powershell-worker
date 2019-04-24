@@ -16,7 +16,7 @@ using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
-namespace  Microsoft.Azure.Functions.PowerShellWorker
+namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     internal class RequestProcessor
     {
@@ -57,7 +57,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
             // Host sends required metadata to worker to load function
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionLoadRequest, ProcessFunctionLoadRequest);
-            
+
             // Host requests a given invocation
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.InvocationRequest, ProcessInvocationRequest);
 
@@ -167,7 +167,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                 try
                 {
                     _isFunctionAppInitialized = true;
-                    InitializeForFunctionApp(request, response);
+                    InitializeForFunctionApp(request);
                 }
                 catch (Exception e)
                 {
@@ -183,7 +183,6 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
             try
             {
-                // Load the metadata of the function.
                 _functionLoader.LoadFunction(functionLoadRequest);
             }
             catch (Exception e)
@@ -206,6 +205,28 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
             try
             {
+                if (_dependencyManager.DependencyDownloadTask != null
+                    && (_dependencyManager.DependencyDownloadTask.Status != TaskStatus.Canceled
+                    || _dependencyManager.DependencyDownloadTask.Status != TaskStatus.Faulted
+                    || _dependencyManager.DependencyDownloadTask.Status != TaskStatus.RanToCompletion))
+                {
+                    var rpcLogger = new RpcLogger(_msgStream);
+                    rpcLogger.SetContext(request.RequestId, request.InvocationRequest?.InvocationId);
+                    rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, isUserLog: true);
+                    _dependencyManager.WaitOnDependencyDownload();
+                }
+
+                if (_dependencyManager.DependencyError != null)
+                {
+                    StreamingMessage response = NewStreamingMessageTemplate(request.RequestId,
+                        StreamingMessage.ContentOneofCase.InvocationResponse,
+                        out StatusResult status);
+                    status.Status = StatusResult.Types.Status.Failure;
+                    status.Exception = _dependencyManager.DependencyError.ToRpcException();
+                    response.InvocationResponse.InvocationId = request.InvocationRequest.InvocationId;
+                    return response;
+                }
+
                 functionInfo = _functionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
                 psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
 
@@ -296,12 +317,9 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Initialize the worker based on the FunctionApp that the worker will deal with.
         /// </summary>
-        private void InitializeForFunctionApp(StreamingMessage request, StreamingMessage response)
+        private void InitializeForFunctionApp(StreamingMessage request)
         {
             var functionLoadRequest = request.FunctionLoadRequest;
-
-            // If 'ManagedDependencyEnabled' is true, process the function app dependencies as defined in FunctionAppRoot\requirements.psd1.
-            // These dependencies will be installed via 'Save-Module' when the first PowerShellManager instance is being created.
             if (functionLoadRequest.ManagedDependencyEnabled)
             {
                 _dependencyManager.Initialize(functionLoadRequest);
@@ -309,18 +327,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
 
             // Setup the FunctionApp root path and module path.
             FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
-
-            // Constructing the first PowerShellManager instance for the Pool.
-            if (DependencyManager.Dependencies.Count > 0)
-            {
-                // Do extra work to install the specified dependencies.
-                _powershellPool.Initialize(request.RequestId, _dependencyManager.InstallFunctionAppDependencies);
-                response.FunctionLoadResponse.IsDependencyDownloaded = true;
-            }
-            else
-            {
-                _powershellPool.Initialize(request.RequestId);
-            }
+            _dependencyManager.ProcessDependencyDownload(_msgStream, request);
         }
 
         /// <summary>
@@ -425,7 +432,7 @@ namespace  Microsoft.Azure.Functions.PowerShellWorker
                         TypedData dataToUse = transformedValue.ToTypedData();
 
                         // if one of the bindings is '$return' we need to set the ReturnValue
-                        if(string.Equals(outBindingName, AzFunctionInfo.DollarReturn, StringComparison.OrdinalIgnoreCase))
+                        if (string.Equals(outBindingName, AzFunctionInfo.DollarReturn, StringComparison.OrdinalIgnoreCase))
                         {
                             response.ReturnValue = dataToUse;
                             continue;
