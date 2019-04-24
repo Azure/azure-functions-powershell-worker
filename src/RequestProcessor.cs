@@ -212,7 +212,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 {
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, request.InvocationRequest?.InvocationId);
-                    rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null, isUserLog: true);
+                    rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, isUserLog: true);
                     _dependencyManager.WaitOnDependencyDownload();
                 }
 
@@ -245,7 +245,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
             catch (Exception e)
             {
-                _powershellPool.ReclaimUsedWorker(psManager);
                 StreamingMessage response = NewStreamingMessageTemplate(
                     request.RequestId,
                     StreamingMessage.ContentOneofCase.InvocationResponse,
@@ -286,10 +285,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             {
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = e.ToRpcException();
-            }
-            finally
-            {
-                _powershellPool.ReclaimUsedWorker(psManager);
             }
 
             _msgStream.Write(response);
