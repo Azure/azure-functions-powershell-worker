@@ -206,13 +206,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             try
             {
                 if (_dependencyManager.DependencyDownloadTask != null
-                    && ((_dependencyManager.DependencyDownloadTask.Status != TaskStatus.Canceled)
+                    && (_dependencyManager.DependencyDownloadTask.Status != TaskStatus.Canceled
                     || _dependencyManager.DependencyDownloadTask.Status != TaskStatus.Faulted
                     || _dependencyManager.DependencyDownloadTask.Status != TaskStatus.RanToCompletion))
                 {
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, request.InvocationRequest?.InvocationId);
-                    rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null, true);
+                    rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null, isUserLog: true);
                     _dependencyManager.WaitOnDependencyDownload();
                 }
 
@@ -230,7 +230,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 functionInfo = _functionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
                 psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
 
-                //ProcessInvocationRequestImpl(request, functionInfo, psManager);
                 if (_powershellPool.UpperBound == 1)
                 {
                     // When the concurrency upper bound is 1, we can handle only one invocation at a time anyways,
