@@ -167,7 +167,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 try
                 {
                     _isFunctionAppInitialized = true;
-                    InitializeForFunctionApp(request, response);
+                    InitializeForFunctionApp(request);
                 }
                 catch (Exception e)
                 {
@@ -245,6 +245,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
             catch (Exception e)
             {
+                _powershellPool.ReclaimUsedWorker(psManager);
+
                 StreamingMessage response = NewStreamingMessageTemplate(
                     request.RequestId,
                     StreamingMessage.ContentOneofCase.InvocationResponse,
@@ -253,6 +255,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 response.InvocationResponse.InvocationId = request.InvocationRequest.InvocationId;
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = e.ToRpcException();
+
                 return response;
             }
 
@@ -286,6 +289,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = e.ToRpcException();
             }
+            finally
+            {
+                _powershellPool.ReclaimUsedWorker(psManager);
+            }
 
             _msgStream.Write(response);
         }
@@ -310,7 +317,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Initialize the worker based on the FunctionApp that the worker will deal with.
         /// </summary>
-        private void InitializeForFunctionApp(StreamingMessage request, StreamingMessage response)
+        private void InitializeForFunctionApp(StreamingMessage request)
         {
             var functionLoadRequest = request.FunctionLoadRequest;
             if (functionLoadRequest.ManagedDependencyEnabled)
