@@ -213,7 +213,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, request.InvocationRequest?.InvocationId);
                     rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, null, true);
-                    _dependencyManager.DownloadDependencyAndWait();
+                    _dependencyManager.WaitOnDependencyDownload();
                 }
 
                 if (_dependencyManager.DependencyError != null)

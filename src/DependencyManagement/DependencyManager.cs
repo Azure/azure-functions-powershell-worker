@@ -99,7 +99,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// Waits for the dependency download task to finish 
         /// and sets it's reference to null to be picked for cleanup by next run of GC
         /// </summary>
-        internal void DownloadDependencyAndWait()
+        internal void WaitOnDependencyDownload()
         {
             if (_dependencyDownloadTask != null)
             {
