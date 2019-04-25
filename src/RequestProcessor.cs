@@ -25,8 +25,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private readonly PowerShellManagerPool _powershellPool;
         private readonly DependencyManager _dependencyManager;
 
-        // Holds the exception if an issue is encountered while installing the function app dependencies
-        // or while initializing PowerShell.
+        // Holds the exception if an issue is encountered while processing the function app dependencies.
         private Exception _initTerminatingError;
 
         // Indicate whether the FunctionApp has been initialized.
@@ -167,7 +166,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 try
                 {
                     _isFunctionAppInitialized = true;
-                    InitializeForFunctionApp(request);
+                    _dependencyManager.Initialize(functionLoadRequest);
+
+                    // Setup the FunctionApp root path and module path.
+                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
+                    _dependencyManager.ProcessDependencyDownload(_msgStream, request);
                 }
                 catch (Exception e)
                 {
@@ -200,15 +203,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         internal StreamingMessage ProcessInvocationRequest(StreamingMessage request)
         {
-            AzFunctionInfo functionInfo = null;
-            PowerShellManager psManager = null;
+            Exception error = null;
 
             try
             {
-                if (_dependencyManager.DependencyDownloadTask != null
-                    && (_dependencyManager.DependencyDownloadTask.Status != TaskStatus.Canceled
-                    || _dependencyManager.DependencyDownloadTask.Status != TaskStatus.Faulted
-                    || _dependencyManager.DependencyDownloadTask.Status != TaskStatus.RanToCompletion))
+                if (_dependencyManager.DependencyDownloadTask != null &&
+                    !_dependencyManager.DependencyDownloadTask.IsCompleted)
                 {
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, request.InvocationRequest?.InvocationId);
@@ -218,35 +218,34 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                 if (_dependencyManager.DependencyError != null)
                 {
-                    StreamingMessage response = NewStreamingMessageTemplate(request.RequestId,
-                        StreamingMessage.ContentOneofCase.InvocationResponse,
-                        out StatusResult status);
-                    status.Status = StatusResult.Types.Status.Failure;
-                    status.Exception = _dependencyManager.DependencyError.ToRpcException();
-                    response.InvocationResponse.InvocationId = request.InvocationRequest.InvocationId;
-                    return response;
-                }
-
-                functionInfo = _functionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
-                psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
-
-                if (_powershellPool.UpperBound == 1)
-                {
-                    // When the concurrency upper bound is 1, we can handle only one invocation at a time anyways,
-                    // so it's better to just do it on the current thread to reduce the required synchronization.
-                    ProcessInvocationRequestImpl(request, functionInfo, psManager);
+                    error = _dependencyManager.DependencyError;
                 }
                 else
                 {
-                    // When the concurrency upper bound is more than 1, we have to handle the invocation in a worker
-                    // thread, so multiple invocations can make progress at the same time, even though by time-sharing.
-                    Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager));
+                    AzFunctionInfo functionInfo = _functionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
+                    PowerShellManager psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
+
+                    if (_powershellPool.UpperBound == 1)
+                    {
+                        // When the concurrency upper bound is 1, we can handle only one invocation at a time anyways,
+                        // so it's better to just do it on the current thread to reduce the required synchronization.
+                        ProcessInvocationRequestImpl(request, functionInfo, psManager);
+                    }
+                    else
+                    {
+                        // When the concurrency upper bound is more than 1, we have to handle the invocation in a worker
+                        // thread, so multiple invocations can make progress at the same time, even though by time-sharing.
+                        Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager));
+                    }
                 }
             }
             catch (Exception e)
             {
-                _powershellPool.ReclaimUsedWorker(psManager);
+                error = e;
+            }
 
+            if (error != null)
+            {
                 StreamingMessage response = NewStreamingMessageTemplate(
                     request.RequestId,
                     StreamingMessage.ContentOneofCase.InvocationResponse,
@@ -254,7 +253,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                 response.InvocationResponse.InvocationId = request.InvocationRequest.InvocationId;
                 status.Status = StatusResult.Types.Status.Failure;
-                status.Exception = e.ToRpcException();
+                status.Exception = error.ToRpcException();
 
                 return response;
             }
@@ -313,22 +312,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         }
 
         #region Helper_Methods
-
-        /// <summary>
-        /// Initialize the worker based on the FunctionApp that the worker will deal with.
-        /// </summary>
-        private void InitializeForFunctionApp(StreamingMessage request)
-        {
-            var functionLoadRequest = request.FunctionLoadRequest;
-            if (functionLoadRequest.ManagedDependencyEnabled)
-            {
-                _dependencyManager.Initialize(functionLoadRequest);
-            }
-
-            // Setup the FunctionApp root path and module path.
-            FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
-            _dependencyManager.ProcessDependencyDownload(_msgStream, request);
-        }
 
         /// <summary>
         /// Create an object of 'StreamingMessage' as a template, for further update.

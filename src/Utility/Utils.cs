@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 using System.Text;
 using Microsoft.PowerShell.Commands;
 
@@ -17,6 +18,34 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         internal static CmdletInfo RemoveModuleCmdletInfo = new CmdletInfo("Remove-Module", typeof(RemoveModuleCommand));
         internal static CmdletInfo GetJobCmdletInfo = new CmdletInfo("Get-Job", typeof(GetJobCommand));
         internal static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
+
+        private static InitialSessionState s_initialSessionState = null;
+
+        internal static InitialSessionState GetInitialSessionState()
+        {
+            if (s_initialSessionState == null)
+            {
+                var iss = InitialSessionState.CreateDefault();
+                iss.ThreadOptions = PSThreadOptions.UseCurrentThread;
+                iss.EnvironmentVariables.Add(
+                    new SessionStateVariableEntry(
+                        "PSModulePath",
+                        FunctionLoader.FunctionModulePath,
+                        description: null));
+
+                // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
+                if(Platform.IsWindows)
+                {
+                    // This sets the execution policy on Windows to Unrestricted which is required to run the user's function scripts on
+                    // Windows client versions. This is needed if a user is testing their function locally with the func CLI.
+                    iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+                }
+
+                s_initialSessionState = iss;
+            }
+
+            return s_initialSessionState;
+        }
 
         /// <summary>
         /// Helper method to do additional transformation on the input value based on the type constraints specified in the script.
