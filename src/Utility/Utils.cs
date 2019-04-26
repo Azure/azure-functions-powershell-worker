@@ -15,12 +15,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     internal class Utils
     {
-        internal static CmdletInfo ImportModuleCmdletInfo = new CmdletInfo("Import-Module", typeof(ImportModuleCommand));
-        internal static CmdletInfo RemoveModuleCmdletInfo = new CmdletInfo("Remove-Module", typeof(RemoveModuleCommand));
-        internal static CmdletInfo GetJobCmdletInfo = new CmdletInfo("Get-Job", typeof(GetJobCommand));
-        internal static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
+        internal readonly static CmdletInfo ImportModuleCmdletInfo = new CmdletInfo("Import-Module", typeof(ImportModuleCommand));
+        internal readonly static CmdletInfo RemoveModuleCmdletInfo = new CmdletInfo("Remove-Module", typeof(RemoveModuleCommand));
+        internal readonly static CmdletInfo GetJobCmdletInfo = new CmdletInfo("Get-Job", typeof(GetJobCommand));
+        internal readonly static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
 
-        internal static Lazy<InitialSessionState> SingletonISS
+        internal readonly static Lazy<InitialSessionState> SingletonISS
             = new Lazy<InitialSessionState>(NewInitialSessionState, LazyThreadSafetyMode.PublicationOnly);
 
         private static InitialSessionState NewInitialSessionState()
