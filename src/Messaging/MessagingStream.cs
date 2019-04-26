@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,7 +16,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
     internal class MessagingStream
     {
         private readonly AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
-        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(initialCount: 1, maxCount: 1);
+        private BlockingCollection<StreamingMessage> _blockingCollectionQueue = new BlockingCollection<StreamingMessage>();
 
         internal MessagingStream(string host, int port)
         {
@@ -28,30 +29,34 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
         /// </summary>
         internal StreamingMessage GetCurrentMessage() => _call.ResponseStream.Current;
 
+        internal void AddToBlockingQueue(StreamingMessage streamingMessage)
+        {
+            _blockingCollectionQueue.Add(streamingMessage);
+        }
+
         /// <summary>
         /// Move to the next message.
         /// </summary>
         internal async Task<bool> MoveNext() => await _call.ResponseStream.MoveNext(CancellationToken.None);
 
         /// <summary>
-        /// Write the outgoing message.
-        /// </summary>
-        internal void Write(StreamingMessage message) => WriteImplAsync(message).ConfigureAwait(false);
-
-        /// <summary>
         /// Take a message from the buffer and write to the gRPC channel.
         /// </summary>
-        private async Task WriteImplAsync(StreamingMessage message)
+        internal Task Write()
         {
-            try
+            var consumer = Task.Run(async () =>
             {
-                await _semaphoreSlim.WaitAsync();
-                await _call.RequestStream.WriteAsync(message);
-            }
-            finally
-            {
-                _semaphoreSlim.Release();
-            }
+                foreach (var rpcWriteMsg in _blockingCollectionQueue.GetConsumingEnumerable())
+                {
+                    await _call.RequestStream.WriteAsync(rpcWriteMsg);
+                }
+            });
+            return consumer;
+        }
+
+        internal Task Write(StreamingMessage msg)
+        {
+           return _call.RequestStream.WriteAsync(msg);
         }
     }
 }

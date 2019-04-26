@@ -15,6 +15,9 @@ using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+using System.Reactive.Linq;
+using System.Reactive.Concurrency;
+using System.Collections.Concurrent;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
@@ -32,15 +35,24 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         // Indicate whether the FunctionApp has been initialized.
         private bool _isFunctionAppInitialized;
 
-        private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
-            new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
+        private IScriptEventManager _eventManager;
+        private string _workerId;
 
-        internal RequestProcessor(MessagingStream msgStream)
+        private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, Task<StreamingMessage>>> _requestHandlers =
+            new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, Task<StreamingMessage>>>();
+
+        internal RequestProcessor(MessagingStream msgStream, string workerId)
         {
             _msgStream = msgStream;
             _powershellPool = new PowerShellManagerPool(msgStream);
             _functionLoader = new FunctionLoader();
             _dependencyManager = new DependencyManager();
+            _eventManager = new ScriptEventManager();
+            _workerId = workerId;
+           _eventManager.OfType<InboundEvent>()
+                .ObserveOn(NewThreadScheduler.Default)
+                .Where(msg => msg.WorkerId == _workerId)
+                .Subscribe((msg) => InboundEventHandler(msg));
 
             // Host sends capabilities/init data to worker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.WorkerInitRequest, ProcessWorkerInitRequest);
@@ -68,31 +80,36 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadRequest, ProcessFunctionEnvironmentReloadRequest);
         }
 
-        internal async Task ProcessRequestLoop()
+        internal async void InboundEventHandler(InboundEvent serverMessage)
         {
-            StreamingMessage request, response;
-            while (await _msgStream.MoveNext())
+            StreamingMessage response = null;
+            StreamingMessage request = serverMessage.Message;
+            if (_requestHandlers.TryGetValue(request.ContentCase, out Func<StreamingMessage, Task<StreamingMessage>> requestFunc))
             {
-                request = _msgStream.GetCurrentMessage();
+                response = await requestFunc(request);
+            }
+            else
+            {
+                RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
+            }
 
-                if (_requestHandlers.TryGetValue(request.ContentCase, out Func<StreamingMessage, StreamingMessage> requestFunc))
-                {
-                    response = requestFunc(request);
-                }
-                else
-                {
-                    RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
-                    continue;
-                }
-
-                if (response != null)
-                {
-                    _msgStream.Write(response);
-                }
+            if (response != null)
+            {
+                _msgStream.AddToBlockingQueue(response);
             }
         }
 
-        internal StreamingMessage ProcessWorkerInitRequest(StreamingMessage request)
+        internal async Task ProcessRequestLoop()
+        {
+            StreamingMessage request;
+            while (await _msgStream.MoveNext())
+            {
+                request = _msgStream.GetCurrentMessage();
+                _eventManager.Publish(new InboundEvent(_workerId, request));
+            }
+        }
+
+        internal Task<StreamingMessage> ProcessWorkerInitRequest(StreamingMessage request)
         {
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
@@ -109,15 +126,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 RemoteSessionNamedPipeServer.CreateCustomNamedPipeServer(pipeName);
             }
 
-            return response;
+            return Task.FromResult(response);
         }
 
-        internal StreamingMessage ProcessWorkerTerminateRequest(StreamingMessage request)
+        internal Task<StreamingMessage> ProcessWorkerTerminateRequest(StreamingMessage request)
         {
             return null;
         }
 
-        internal StreamingMessage ProcessWorkerStatusRequest(StreamingMessage request)
+        internal Task<StreamingMessage> ProcessWorkerStatusRequest(StreamingMessage request)
         {
             // WorkerStatusResponse type says that it is not used but this will create an empty one anyway to return to the host
             StreamingMessage response = NewStreamingMessageTemplate(
@@ -125,10 +142,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 StreamingMessage.ContentOneofCase.WorkerStatusResponse,
                 out StatusResult status);
 
-            return response;
+            return Task.FromResult(response);
         }
 
-        internal StreamingMessage ProcessFileChangeEventRequest(StreamingMessage request)
+        internal Task<StreamingMessage> ProcessFileChangeEventRequest(StreamingMessage request)
         {
             return null;
         }
@@ -139,7 +156,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// concurrently as a FunctionApp doesn't include a lot functions in general. Having this step sequential
         /// will make the Runspace-level initialization easier and more predictable.
         /// </summary>
-        internal StreamingMessage ProcessFunctionLoadRequest(StreamingMessage request)
+        internal Task<StreamingMessage> ProcessFunctionLoadRequest(StreamingMessage request)
         {
             FunctionLoadRequest functionLoadRequest = request.FunctionLoadRequest;
 
@@ -156,7 +173,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             {
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = _initTerminatingError.ToRpcException();
-                return response;
+                return Task.FromResult(response);
             }
 
             // Ideally, the initialization should happen when processing 'WorkerInitRequest', however, the 'WorkerInitRequest'
@@ -177,7 +194,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                     status.Status = StatusResult.Types.Status.Failure;
                     status.Exception = e.ToRpcException();
-                    return response;
+                    return Task.FromResult(response);
                 }
             }
 
@@ -191,14 +208,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 status.Exception = e.ToRpcException();
             }
 
-            return response;
+            return Task.FromResult(response);
         }
 
         /// <summary>
         /// Method to process a InvocationRequest.
         /// This method checks out a worker from the pool, and then starts the actual invocation in a threadpool thread.
         /// </summary>
-        internal StreamingMessage ProcessInvocationRequest(StreamingMessage request)
+        internal Task<StreamingMessage> ProcessInvocationRequest(StreamingMessage request)
         {
             AzFunctionInfo functionInfo = null;
             PowerShellManager psManager = null;
@@ -229,19 +246,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                 functionInfo = _functionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
                 psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
-
-                if (_powershellPool.UpperBound == 1)
-                {
-                    // When the concurrency upper bound is 1, we can handle only one invocation at a time anyways,
-                    // so it's better to just do it on the current thread to reduce the required synchronization.
-                    ProcessInvocationRequestImpl(request, functionInfo, psManager);
-                }
-                else
-                {
-                    // When the concurrency upper bound is more than 1, we have to handle the invocation in a worker
-                    // thread, so multiple invocations can make progress at the same time, even though by time-sharing.
-                    Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager));
-                }
+                return ProcessInvocationRequestImpl(request, functionInfo, psManager);
             }
             catch (Exception e)
             {
@@ -256,17 +261,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = e.ToRpcException();
 
-                return response;
+                return Task.FromResult(response);
             }
-
-            return null;
         }
 
         /// <summary>
         /// Implementation method to actual invoke the corresponding function.
         /// InvocationRequest messages are processed in parallel when there are multiple PowerShellManager instances in the pool.
         /// </summary>
-        private void ProcessInvocationRequestImpl(StreamingMessage request, AzFunctionInfo functionInfo, PowerShellManager psManager)
+        private async Task<StreamingMessage> ProcessInvocationRequestImpl(StreamingMessage request, AzFunctionInfo functionInfo, PowerShellManager psManager)
         {
             InvocationRequest invocationRequest = request.InvocationRequest;
             StreamingMessage response = NewStreamingMessageTemplate(
@@ -279,8 +282,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             {
                 // Invoke the function and return a hashtable of out binding data
                 Hashtable results = functionInfo.Type == AzFunctionType.OrchestrationFunction
-                    ? InvokeOrchestrationFunction(psManager, functionInfo, invocationRequest)
-                    : InvokeSingleActivityFunction(psManager, functionInfo, invocationRequest);
+                    ? await InvokeOrchestrationFunction(psManager, functionInfo, invocationRequest)
+                    : await InvokeSingleActivityFunction(psManager, functionInfo, invocationRequest);
 
                 BindOutputFromResult(response.InvocationResponse, functionInfo, results);
             }
@@ -294,22 +297,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 _powershellPool.ReclaimUsedWorker(psManager);
             }
 
-            _msgStream.Write(response);
+            return response;
         }
 
-        internal StreamingMessage ProcessInvocationCancelRequest(StreamingMessage request)
+        internal Task<StreamingMessage> ProcessInvocationCancelRequest(StreamingMessage request)
         {
             return null;
         }
 
-        internal StreamingMessage ProcessFunctionEnvironmentReloadRequest(StreamingMessage request)
+        internal Task<StreamingMessage> ProcessFunctionEnvironmentReloadRequest(StreamingMessage request)
         {
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse,
                 out StatusResult status);
 
-            return response;
+            return Task.FromResult(response);
         }
 
         #region Helper_Methods
@@ -366,7 +369,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Invoke an orchestration function.
         /// </summary>
-        private Hashtable InvokeOrchestrationFunction(PowerShellManager psManager, AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
+        private Task<Hashtable> InvokeOrchestrationFunction(PowerShellManager psManager, AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
         {
             throw new NotImplementedException(PowerShellWorkerStrings.DurableFunctionNotSupported);
         }
@@ -374,7 +377,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Invoke a regular function or an activity function.
         /// </summary>
-        private Hashtable InvokeSingleActivityFunction(PowerShellManager psManager, AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
+        private Task<Hashtable> InvokeSingleActivityFunction(PowerShellManager psManager, AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
         {
             const string InvocationId = "InvocationId";
             const string FunctionDirectory = "FunctionDirectory";
@@ -410,7 +413,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 }
             }
 
-            return psManager.InvokeFunction(functionInfo, triggerMetadata, invocationRequest.InputData);
+            return Task.FromResult(psManager.InvokeFunction(functionInfo, triggerMetadata, invocationRequest.InputData));
         }
 
         /// <summary>
