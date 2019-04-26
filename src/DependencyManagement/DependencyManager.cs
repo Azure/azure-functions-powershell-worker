@@ -122,7 +122,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             try
             {
                 _dependencyError = null;
-                using (PowerShell pwsh = PowerShell.Create(Utils.GetInitialSessionState()))
+                using (PowerShell pwsh = PowerShell.Create(Utils.SingletonISS.Value))
                 {
                     InstallFunctionAppDependencies(pwsh, rpcLogger);
                 }

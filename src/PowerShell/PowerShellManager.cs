@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
 
             _logger = logger;
-            _pwsh = PowerShell.Create(Utils.GetInitialSessionState());
+            _pwsh = PowerShell.Create(Utils.SingletonISS.Value);
 
             // Setup Stream event listeners
             var streamHandler = new StreamHandler(logger);

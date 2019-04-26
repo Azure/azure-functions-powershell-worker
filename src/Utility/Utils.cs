@@ -8,6 +8,7 @@ using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.Text;
+using System.Threading;
 using Microsoft.PowerShell.Commands;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
@@ -19,32 +20,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         internal static CmdletInfo GetJobCmdletInfo = new CmdletInfo("Get-Job", typeof(GetJobCommand));
         internal static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
 
-        private static InitialSessionState s_initialSessionState = null;
+        internal static Lazy<InitialSessionState> SingletonISS
+            = new Lazy<InitialSessionState>(NewInitialSessionState, LazyThreadSafetyMode.PublicationOnly);
 
-        internal static InitialSessionState GetInitialSessionState()
+        private static InitialSessionState NewInitialSessionState()
         {
-            if (s_initialSessionState == null)
+            var iss = InitialSessionState.CreateDefault();
+            iss.ThreadOptions = PSThreadOptions.UseCurrentThread;
+            iss.EnvironmentVariables.Add(
+                new SessionStateVariableEntry(
+                    "PSModulePath",
+                    FunctionLoader.FunctionModulePath,
+                    description: null));
+
+            // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
+            if(Platform.IsWindows)
             {
-                var iss = InitialSessionState.CreateDefault();
-                iss.ThreadOptions = PSThreadOptions.UseCurrentThread;
-                iss.EnvironmentVariables.Add(
-                    new SessionStateVariableEntry(
-                        "PSModulePath",
-                        FunctionLoader.FunctionModulePath,
-                        description: null));
-
-                // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
-                if(Platform.IsWindows)
-                {
-                    // This sets the execution policy on Windows to Unrestricted which is required to run the user's function scripts on
-                    // Windows client versions. This is needed if a user is testing their function locally with the func CLI.
-                    iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
-                }
-
-                s_initialSessionState = iss;
+                // This sets the execution policy on Windows to Unrestricted which is required to run the user's function scripts on
+                // Windows client versions. This is needed if a user is testing their function locally with the func CLI.
+                iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
             }
 
-            return s_initialSessionState;
+            return iss;
         }
 
         /// <summary>
