@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using System;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,17 +10,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
-using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
+using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
     using System.Management.Automation;
     using System.Management.Automation.Language;
     using System.Management.Automation.Runspaces;
-    using System.Threading.Tasks;
 
     internal class DependencyManager
     {
@@ -122,18 +122,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             try
             {
                 _dependencyError = null;
-                var initialSessionState = InitialSessionState.CreateDefault();
-                initialSessionState.ThreadOptions = PSThreadOptions.UseCurrentThread;
-                initialSessionState.EnvironmentVariables.Add(new SessionStateVariableEntry("PSModulePath", FunctionLoader.FunctionModulePath, null));
-                // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
-                if (Platform.IsWindows)
+                using (PowerShell pwsh = PowerShell.Create(Utils.SingletonISS.Value))
                 {
-                    initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
-                }
-
-                using (PowerShell powerShellInstance = PowerShell.Create(initialSessionState))
-                {
-                    InstallFunctionAppDependencies(powerShellInstance, rpcLogger);
+                    InstallFunctionAppDependencies(pwsh, rpcLogger);
                 }
             }
             catch (Exception e)
@@ -152,6 +143,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// </summary>
         internal void Initialize(FunctionLoadRequest request)
         {
+            if (!request.ManagedDependencyEnabled)
+            {
+                return;
+            }
+
             try
             {
                 // Resolve the FunctionApp root path.

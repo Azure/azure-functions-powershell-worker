@@ -52,21 +52,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
             }
 
-            var initialSessionState = InitialSessionState.CreateDefault();
-            initialSessionState.ThreadOptions = PSThreadOptions.UseCurrentThread;
-            initialSessionState.EnvironmentVariables.Add(
-                new SessionStateVariableEntry("PSModulePath", FunctionLoader.FunctionModulePath, null));
-
-            // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
-            if(Platform.IsWindows)
-            {
-                // This sets the execution policy on Windows to Unrestricted which is required to run the user's function scripts on
-                // Windows client versions. This is needed if a user is testing their function locally with the func CLI
-                initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
-            }
-
             _logger = logger;
-            _pwsh = PowerShell.Create(initialSessionState);
+            _pwsh = PowerShell.Create(Utils.SingletonISS.Value);
 
             // Setup Stream event listeners
             var streamHandler = new StreamHandler(logger);
