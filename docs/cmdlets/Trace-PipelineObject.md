@@ -1,5 +1,5 @@
 ---
-external help file: Microsoft.Azure.Functions.PowerShellWorker-help.xml
+external help file: Microsoft.Azure.Functions.PowerShellWorker.dll-Help.xml
 Module Name: Microsoft.Azure.Functions.PowerShellWorker
 online version:
 schema: 2.0.0
@@ -13,7 +13,7 @@ Writes the formatted output of the pipeline object to the information stream bef
 ## SYNTAX
 
 ```
-Trace-PipelineObject [-InputObject] <Object> [<CommonParameters>]
+Trace-PipelineObject -InputObject <Object> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -40,7 +40,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
-Position: 1
+Position: Named
 Default value: None
 Accept pipeline input: True (ByValue)
 Accept wildcard characters: False

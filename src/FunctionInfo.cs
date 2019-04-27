@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Management.Automation;
 using System.Management.Automation.Language;
 using System.Text;
 
@@ -30,7 +31,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         internal readonly string FuncName;
         internal readonly string EntryPoint;
         internal readonly string ScriptPath;
+        internal readonly string DeployedPSFuncName;
         internal readonly AzFunctionType Type;
+        internal readonly ScriptBlock FuncScriptBlock;
         internal readonly ReadOnlyDictionary<string, PSScriptParamInfo> FuncParameters;
         internal readonly ReadOnlyDictionary<string, ReadOnlyBindingInfo> AllBindings;
         internal readonly ReadOnlyDictionary<string, ReadOnlyBindingInfo> InputBindings;
@@ -50,7 +53,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // Support 'entryPoint' only if 'scriptFile' is a .psm1 file;
             // Support .psm1 'scriptFile' only if 'entryPoint' is specified.
             bool isScriptFilePsm1 = ScriptPath.EndsWith(".psm1", StringComparison.OrdinalIgnoreCase);
-            if (string.IsNullOrEmpty(EntryPoint))
+            bool entryPointNotDefined = string.IsNullOrEmpty(EntryPoint);
+            if (entryPointNotDefined)
             {
                 if (isScriptFilePsm1)
                 {
@@ -63,7 +67,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
 
             // Get the parameter names of the script or function.
-            var psScriptParams = GetParameters(ScriptPath, EntryPoint);
+            var psScriptParams = GetParameters(ScriptPath, EntryPoint, out ScriptBlockAst scriptAst);
             FuncParameters = new ReadOnlyDictionary<string, PSScriptParamInfo>(psScriptParams);
 
             var parametersCopy = new Dictionary<string, PSScriptParamInfo>(psScriptParams, StringComparer.OrdinalIgnoreCase);
@@ -121,6 +125,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 throw new InvalidOperationException(errorMsg);
             }
 
+            if (entryPointNotDefined && scriptAst.ScriptRequirements == null)
+            {
+                // If the function script is a '.ps1' file that doesn't have '#requires' defined,
+                // then we get the script block and will deploy it as a PowerShell function in the
+                // global scope of each Runspace, so as to avoid hitting the disk every invocation.
+                FuncScriptBlock = scriptAst.GetScriptBlock();
+                DeployedPSFuncName = $"_{FuncName}_";
+            }
+
             AllBindings = new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(allBindings);
             InputBindings = new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(inputBindings);
             OutputBindings = new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(outputBindings);
@@ -140,9 +153,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
         }
 
-        private Dictionary<string, PSScriptParamInfo> GetParameters(string scriptFile, string entryPoint)
+        private Dictionary<string, PSScriptParamInfo> GetParameters(string scriptFile, string entryPoint, out ScriptBlockAst scriptAst)
         {
-            ScriptBlockAst sbAst = Parser.ParseFile(scriptFile, out _, out ParseError[] errors);
+            scriptAst = Parser.ParseFile(scriptFile, out _, out ParseError[] errors);
             if (errors != null && errors.Length > 0)
             {
                 var stringBuilder = new StringBuilder(15);
@@ -158,11 +171,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             ReadOnlyCollection<ParameterAst> paramAsts = null;
             if (string.IsNullOrEmpty(entryPoint))
             {
-                paramAsts = sbAst.ParamBlock?.Parameters;
+                paramAsts = scriptAst.ParamBlock?.Parameters;
             }
             else
             {
-                var asts = sbAst.FindAll(
+                var asts = scriptAst.FindAll(
                     ast => ast is FunctionDefinitionAst func && entryPoint.Equals(func.Name, StringComparison.OrdinalIgnoreCase),
                     searchNestedScriptBlocks: false).ToList();
 

@@ -3,6 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System.Collections;
 using System.Collections.ObjectModel;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
@@ -24,11 +25,38 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
+        public static void InvokeAndClearCommands(this PowerShell pwsh, IEnumerable input)
+        {
+            try
+            {
+                pwsh.Invoke(input);
+            }
+            finally
+            {
+                pwsh.Streams.ClearStreams();
+                pwsh.Commands.Clear();
+            }
+        }
+
         public static Collection<T> InvokeAndClearCommands<T>(this PowerShell pwsh)
         {
             try
             {
                 var result = pwsh.Invoke<T>();
+                return result;
+            }
+            finally
+            {
+                pwsh.Streams.ClearStreams();
+                pwsh.Commands.Clear();
+            }
+        }
+
+        public static Collection<T> InvokeAndClearCommands<T>(this PowerShell pwsh, IEnumerable input)
+        {
+            try
+            {
+                var result = pwsh.Invoke<T>(input);
                 return result;
             }
             finally

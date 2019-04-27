@@ -6,13 +6,13 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'Microsoft.Azure.Functions.PowerShellWorker.psm1'
+RootModule = 'Microsoft.Azure.Functions.PowerShellWorker.dll'
 
 # Version number of this module.
 ModuleVersion = '0.1.0'
 
 # Supported PSEditions
-CompatiblePSEditions = @('Desktop', 'Core')
+CompatiblePSEditions = @('Core')
 
 # ID used to uniquely identify this module
 GUID = 'f0149ba6-bd6f-4dbd-afe5-2a95bd755d6c'
@@ -30,7 +30,7 @@ Copyright = '(c) Microsoft Corporation. All rights reserved.'
 Description = 'The module used in an Azure Functions environment for setting and retrieving Output Bindings.'
 
 # Minimum version of the PowerShell engine required by this module
-PowerShellVersion = '5.1'
+PowerShellVersion = '6.2'
 
 # Modules that must be imported into the global environment prior to importing this module
 RequiredModules = @()
@@ -51,10 +51,10 @@ FormatsToProcess = @()
 NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @('Push-OutputBinding', 'Get-OutputBinding', 'Trace-PipelineObject')
+FunctionsToExport = @()
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = @()
+CmdletsToExport = @('Push-OutputBinding', 'Get-OutputBinding', 'Trace-PipelineObject')
 
 # Variables to export from this module
 VariablesToExport = @()

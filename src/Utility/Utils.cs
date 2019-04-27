@@ -20,6 +20,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         internal readonly static CmdletInfo RemoveModuleCmdletInfo = new CmdletInfo("Remove-Module", typeof(RemoveModuleCommand));
         internal readonly static CmdletInfo GetJobCmdletInfo = new CmdletInfo("Get-Job", typeof(GetJobCommand));
         internal readonly static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
+        internal readonly static CmdletInfo OutStringCmdletInfo = new CmdletInfo("Out-String", typeof(OutStringCommand));
+        internal readonly static CmdletInfo WriteInformationCmdletInfo = new CmdletInfo("Write-Information", typeof(WriteInformationCommand));
+
+        internal readonly static object BoxedTrue = (object)true;
+        internal readonly static object BoxedFalse = (object)false;
 
         private static InitialSessionState s_iss;
 

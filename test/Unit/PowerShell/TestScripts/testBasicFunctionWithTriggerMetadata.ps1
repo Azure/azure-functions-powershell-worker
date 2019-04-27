@@ -7,5 +7,7 @@ param ($Req, $TriggerMetadata)
 
 # Used for logging tests
 Write-Verbose "a log"
+$cmdName = $MyInvocation.MyCommand.Name
 
-Push-OutputBinding -Name res -Value $TriggerMetadata.Req
+$result = "{0},{1}" -f $TriggerMetadata.Req, $cmdName
+Push-OutputBinding -Name res -Value $result
