@@ -172,8 +172,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
                     _dependencyManager.ProcessDependencyDownload(_msgStream, request);
 
-                    // Initialize the first runspace so that the debugger has something to attach to.
-                    // Upon the first invocation and completion of the dependencyDownload, the profile.ps1 will be run in the runspace.
+                    // Create the first Runspace so that the debugger has the target to attach to.
+                    // The further initialization of the Runspace (e.g. invoking profile.ps1) is delayed until
+                    // the first invocation and completion of the dependency download.
                     _powershellPool.Initialize(request.RequestId);
                 }
                 catch (Exception e)

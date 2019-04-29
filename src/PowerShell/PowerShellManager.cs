@@ -72,6 +72,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
+        /// <summary>
+        /// Extra initialization of the Runspace.
+        /// </summary>
         internal void Initialize()
         {
             if (!_runspaceInited)
