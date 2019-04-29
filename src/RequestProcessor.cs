@@ -174,7 +174,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                     // Initialize the first runspace so that the debugger has something to attach to.
                     // Upon the first invocation and completion of the dependencyDownload, the profile.ps1 will be run in the runspace.
-                    _powershellPool.Initialize(request.RequestId, skipProfile: true);
+                    _powershellPool.Initialize(request.RequestId);
                 }
                 catch (Exception e)
                 {

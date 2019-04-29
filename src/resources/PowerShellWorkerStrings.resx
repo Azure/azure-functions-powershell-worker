@@ -154,9 +154,6 @@
   <data name="FailToRunProfile" xml:space="preserve">
     <value>Fail to run profile.ps1. See logs for detailed errors. Profile location: {0}.</value>
   </data>
-  <data name="DeferringProfileToFirstExecution" xml:space="preserve">
-    <value>Deferring profile execution until first function invocation. This allows dependency management time to install all the dependencies.</value>
-  </data>
   <data name="UnsupportedMessage" xml:space="preserve">
     <value>Unsupported message type: {0}.</value>
   </data>

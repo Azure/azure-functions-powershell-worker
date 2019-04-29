@@ -43,9 +43,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         // Have a single place to get a PowerShellManager for testing.
         // This is to guarantee that the well known paths are setup before calling the constructor of PowerShellManager.
-        internal static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger, bool skipProfile = false)
+        internal static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger, bool delayInit = false)
         {
-            return new PowerShellManager(logger, skipProfile);
+            return new PowerShellManager(logger, delayInit);
         }
 
         internal static AzFunctionInfo NewAzFunctionInfo(string scriptFile, string entryPoint)
@@ -212,17 +212,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
-        public void ProfileShouldNotRunIfSkipped()
-        {
-            //initialize fresh log
-            _testLogger.FullLog.Clear();
-            TestUtils.NewTestPowerShellManager(_testLogger, skipProfile: true);
-
-            Assert.Single(_testLogger.FullLog);
-            Assert.Equal("Trace: Deferring profile execution until first function invocation. This allows dependency management time to install all the dependencies.", _testLogger.FullLog[0]);
-        }
-
-        [Fact]
         public void ProfileWithTerminatingError()
         {
             //initialize fresh log
@@ -245,6 +234,27 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(2, _testLogger.FullLog.Count);
             Assert.Equal("Error: ERROR: help me!", _testLogger.FullLog[0]);
             Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", _testLogger.FullLog[1]);
+        }
+
+        [Fact]
+        public void PSManagerCtorRunsProfileByDefault()
+        {
+            //initialize fresh log
+            _testLogger.FullLog.Clear();
+            TestUtils.NewTestPowerShellManager(_testLogger);
+
+            Assert.Single(_testLogger.FullLog);
+            Assert.Equal($"Trace: No 'profile.ps1' is found at the FunctionApp root folder: {FunctionLoader.FunctionAppRootPath}.", _testLogger.FullLog[0]);
+        }
+
+        [Fact]
+        public void PSManagerCtorDoesNotRunProfileIfDelayInit()
+        {
+            //initialize fresh log
+            _testLogger.FullLog.Clear();
+            TestUtils.NewTestPowerShellManager(_testLogger, delayInit: true);
+
+            Assert.Empty(_testLogger.FullLog);
         }
     }
 }

@@ -22,7 +22,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     {
         private readonly ILogger _logger;
         private readonly PowerShell _pwsh;
-        private bool shouldInvokeProfile;
+        private bool _runspaceInited;
 
         /// <summary>
         /// Gets the Runspace InstanceId.
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             addMethod.Invoke(null, new object[] { "HttpRequestContext", typeof(HttpRequestContext) });
         }
 
-        internal PowerShellManager(ILogger logger, bool skipProfile = false)
+        internal PowerShellManager(ILogger logger, bool delayInit = false)
         {
             if (FunctionLoader.FunctionAppRootPath == null)
             {
@@ -66,23 +66,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
 
             // Initialize the Runspace
-            if(!skipProfile)
+            if (!delayInit)
             {
-                InvokeProfile();
+                Initialize();
             }
-            else
-            {
-                _logger.Log(LogLevel.Trace, PowerShellWorkerStrings.DeferringProfileToFirstExecution);
-            }
-            shouldInvokeProfile = skipProfile;
         }
 
-        /// <summary>
-        /// This method invokes the FunctionApp's profile.ps1.
-        /// </summary>
-        internal void InvokeProfile()
+        internal void Initialize()
         {
-            InvokeProfile(FunctionLoader.FunctionAppProfilePath);
+            if (!_runspaceInited)
+            {
+                InvokeProfile(FunctionLoader.FunctionAppProfilePath);
+                _runspaceInited = true;
+            }
         }
 
         /// <summary>
@@ -93,7 +89,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             Exception exception = null;
             if (profilePath == null)
             {
-                RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.FileNotFound, "profile.ps1", FunctionLoader.FunctionAppRootPath));
+                string noProfileMsg = string.Format(PowerShellWorkerStrings.FileNotFound, "profile.ps1", FunctionLoader.FunctionAppRootPath);
+                _logger.Log(LogLevel.Trace, noProfileMsg);
                 return;
             }
 
@@ -137,12 +134,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             try
             {
-                if (shouldInvokeProfile)
-                {
-                    InvokeProfile();
-                    shouldInvokeProfile = false;
-                }
-
                 if (string.IsNullOrEmpty(entryPoint))
                 {
                     _pwsh.AddCommand(scriptPath);
