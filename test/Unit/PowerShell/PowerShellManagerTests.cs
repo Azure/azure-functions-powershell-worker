@@ -43,9 +43,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         // Have a single place to get a PowerShellManager for testing.
         // This is to guarantee that the well known paths are setup before calling the constructor of PowerShellManager.
-        internal static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger)
+        internal static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger, bool skipProfile = false)
         {
-            return new PowerShellManager(logger);
+            return new PowerShellManager(logger, skipProfile);
         }
 
         internal static AzFunctionInfo NewAzFunctionInfo(string scriptFile, string entryPoint)
@@ -209,6 +209,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             Assert.Single(_testLogger.FullLog);
             Assert.Equal("Information: INFORMATION: Hello PROFILE", _testLogger.FullLog[0]);
+        }
+
+        [Fact]
+        public void ProfileShouldNotRunIfSkipped()
+        {
+            //initialize fresh log
+            _testLogger.FullLog.Clear();
+            TestUtils.NewTestPowerShellManager(_testLogger, skipProfile: true);
+
+            Assert.Single(_testLogger.FullLog);
+            Assert.Equal("Trace: Deferring profile execution until first function invocation. This allows dependency management time to install all the dependencies.", _testLogger.FullLog[0]);
         }
 
         [Fact]

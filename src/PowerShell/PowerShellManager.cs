@@ -22,6 +22,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     {
         private readonly ILogger _logger;
         private readonly PowerShell _pwsh;
+        private bool shouldInvokeProfile;
 
         /// <summary>
         /// Gets the Runspace InstanceId.
@@ -45,7 +46,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             addMethod.Invoke(null, new object[] { "HttpRequestContext", typeof(HttpRequestContext) });
         }
 
-        internal PowerShellManager(ILogger logger)
+        internal PowerShellManager(ILogger logger, bool skipProfile = false)
         {
             if (FunctionLoader.FunctionAppRootPath == null)
             {
@@ -65,6 +66,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
 
             // Initialize the Runspace
+            if(!skipProfile)
+            {
+                InvokeProfile();
+            }
+            else
+            {
+                _logger.Log(LogLevel.Trace, PowerShellWorkerStrings.DeferringProfileToFirstExecution);
+            }
+            shouldInvokeProfile = skipProfile;
+        }
+
+        /// <summary>
+        /// This method invokes the FunctionApp's profile.ps1.
+        /// </summary>
+        internal void InvokeProfile()
+        {
             InvokeProfile(FunctionLoader.FunctionAppProfilePath);
         }
 
@@ -120,6 +137,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             try
             {
+                if (shouldInvokeProfile)
+                {
+                    InvokeProfile();
+                    shouldInvokeProfile = false;
+                }
+
                 if (string.IsNullOrEmpty(entryPoint))
                 {
                     _pwsh.AddCommand(scriptPath);
