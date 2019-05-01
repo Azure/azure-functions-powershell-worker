@@ -52,18 +52,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// </summary>
         internal void Initialize(string requestId)
         {
-            var logger = new RpcLogger(_msgStream);
-
-            try
-            {
-                logger.SetContext(requestId, invocationId: null);
-                _pool.Add(new PowerShellManager(logger, delayInit: true));
-                _poolSize = 1;
-            }
-            finally
-            {
-                logger.ResetContext();
-            }
+            _pool.Add(new PowerShellManager(new RpcLogger(_msgStream), delayInit: true));
+            _poolSize = 1;
         }
 
         /// <summary>
@@ -98,11 +88,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
             }
 
+            // Finish the initialization if not yet.
+            // This applies only to the very first PowerShellManager instance, whose initialization was deferred.
+            psManager.Initialize();
+
             // Register the function with the Runspace before returning the idle PowerShellManager.
             FunctionMetadata.RegisterFunctionMetadata(psManager.InstanceId, functionInfo);
             psManager.Logger.SetContext(requestId, invocationId);
 
-            psManager.Initialize();
             return psManager;
         }
 
