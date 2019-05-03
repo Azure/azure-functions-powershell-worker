@@ -79,7 +79,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// </summary>
         /// <param name="msgStream">The protobuf messaging stream</param>
         /// <param name="request">The StreamingMessage request for function load</param>
-        internal void ProcessDependencyDownload(MessagingStream msgStream, StreamingMessage request)
+        /// <param name="pwsh">The PowerShell instance used to download modules</param>
+        internal void ProcessDependencyDownload(MessagingStream msgStream, StreamingMessage request, PowerShell pwsh)
         {
             if (request.FunctionLoadRequest.ManagedDependencyEnabled)
             {
@@ -100,7 +101,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 }
 
                 //Start dependency download on a separate thread
-                _dependencyDownloadTask = Task.Run(() => ProcessDependencies(rpcLogger));
+                _dependencyDownloadTask = Task.Run(() => InstallFunctionAppDependencies(pwsh, rpcLogger));
             }
         }
 
@@ -114,22 +115,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             {
                 _dependencyDownloadTask.Wait();
                 _dependencyDownloadTask = null;
-            }
-        }
-
-        private void ProcessDependencies(RpcLogger rpcLogger)
-        {
-            try
-            {
-                _dependencyError = null;
-                using (PowerShell pwsh = PowerShell.Create(Utils.SingletonISS.Value))
-                {
-                    InstallFunctionAppDependencies(pwsh, rpcLogger);
-                }
-            }
-            catch (Exception e)
-            {
-                _dependencyError = e;
             }
         }
 
@@ -251,7 +236,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             catch (Exception e)
             {
                 var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
-                throw new DependencyInstallationException(errorMsg, e);
+                _dependencyError = new DependencyInstallationException(errorMsg, e);
             }
         }
 

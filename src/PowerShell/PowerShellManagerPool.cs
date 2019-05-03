@@ -50,9 +50,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// Initialize the pool and populate it with PowerShellManager instances.
         /// We instantiate PowerShellManager instances in a lazy way, starting from size 1 and increase the number of workers as needed.
         /// </summary>
-        internal void Initialize()
+        internal void Initialize(PowerShell pwsh)
         {
-            _pool.Add(new PowerShellManager(new RpcLogger(_msgStream), delayInit: true));
+            var logger = new RpcLogger(_msgStream);
+            var psManager = new PowerShellManager(logger, pwsh);
+            _pool.Add(psManager);
             _poolSize = 1;
         }
 

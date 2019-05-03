@@ -7,13 +7,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Management.Automation;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
+using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Xunit;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
+    using System.Management.Automation;
+
     internal class TestUtils
     {
         internal const string TestInputBindingName = "req";
@@ -43,9 +45,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         // Have a single place to get a PowerShellManager for testing.
         // This is to guarantee that the well known paths are setup before calling the constructor of PowerShellManager.
-        internal static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger, bool delayInit = false)
+        internal static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger, PowerShell pwsh = null)
         {
-            return new PowerShellManager(logger, delayInit);
+            return pwsh != null ? new PowerShellManager(logger, pwsh) : new PowerShellManager(logger);
         }
 
         internal static AzFunctionInfo NewAzFunctionInfo(string scriptFile, string entryPoint)
@@ -252,7 +254,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             //initialize fresh log
             _testLogger.FullLog.Clear();
-            TestUtils.NewTestPowerShellManager(_testLogger, delayInit: true);
+            TestUtils.NewTestPowerShellManager(_testLogger, Utils.NewPwshInstance());
 
             Assert.Empty(_testLogger.FullLog);
         }

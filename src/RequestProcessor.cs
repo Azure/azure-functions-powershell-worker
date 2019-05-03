@@ -170,12 +170,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                     // Setup the FunctionApp root path and module path.
                     FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
-                    _dependencyManager.ProcessDependencyDownload(_msgStream, request);
 
-                    // Create the first Runspace so that the debugger has the target to attach to.
-                    // The further initialization of the Runspace (e.g. invoking profile.ps1) is delayed until
-                    // the first invocation and completion of the dependency download.
-                    _powershellPool.Initialize();
+                    // Create the very first Runspace so the debugger has the target to attach to.
+                    // This PowerShell instance is shared by the first PowerShellManager instance created in the pool,
+                    // and the dependency manager (used to download dependent modules if needed).
+                    var pwsh = Utils.NewPwshInstance();
+                    _powershellPool.Initialize(pwsh);
+
+                    // Start the download asynchronously if needed.
+                    _dependencyManager.ProcessDependencyDownload(_msgStream, request, pwsh);
                 }
                 catch (Exception e)
                 {

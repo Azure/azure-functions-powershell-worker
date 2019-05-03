@@ -5,14 +5,15 @@
 
 using System;
 using System.IO;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 using System.Text;
 using System.Threading;
 using Microsoft.PowerShell.Commands;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
+    using System.Management.Automation;
+    using System.Management.Automation.Runspaces;
+
     internal class Utils
     {
         internal readonly static CmdletInfo ImportModuleCmdletInfo = new CmdletInfo("Import-Module", typeof(ImportModuleCommand));
@@ -20,28 +21,50 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         internal readonly static CmdletInfo GetJobCmdletInfo = new CmdletInfo("Get-Job", typeof(GetJobCommand));
         internal readonly static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
 
-        internal readonly static Lazy<InitialSessionState> SingletonISS
-            = new Lazy<InitialSessionState>(NewInitialSessionState, LazyThreadSafetyMode.PublicationOnly);
-
-        private static InitialSessionState NewInitialSessionState()
+        private static InitialSessionState s_iss;
+        private static InitialSessionState SingletonISS
         {
-            var iss = InitialSessionState.CreateDefault();
-            iss.ThreadOptions = PSThreadOptions.UseCurrentThread;
-            iss.EnvironmentVariables.Add(
-                new SessionStateVariableEntry(
-                    "PSModulePath",
-                    FunctionLoader.FunctionModulePath,
-                    description: null));
-
-            // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
-            if(Platform.IsWindows)
+            get
             {
-                // This sets the execution policy on Windows to Unrestricted which is required to run the user's function scripts on
-                // Windows client versions. This is needed if a user is testing their function locally with the func CLI.
-                iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
-            }
+                if (s_iss != null)
+                {
+                    return s_iss;
+                }
 
-            return iss;
+                if (FunctionLoader.FunctionAppRootPath == null)
+                {
+                    throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
+                }
+
+                s_iss = InitialSessionState.CreateDefault();
+                s_iss.ThreadOptions = PSThreadOptions.UseCurrentThread;
+                s_iss.EnvironmentVariables.Add(
+                    new SessionStateVariableEntry(
+                        "PSModulePath",
+                        FunctionLoader.FunctionModulePath,
+                        description: null));
+
+                // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
+                if(Platform.IsWindows)
+                {
+                    // This sets the execution policy on Windows to Unrestricted which is required to run the user's function scripts on
+                    // Windows client versions. This is needed if a user is testing their function locally with the func CLI.
+                    s_iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+                }
+
+                return s_iss;
+            }
+        }
+
+        /// <summary>
+        /// Create a new PowerShell instance using our singleton InitialSessionState instance.
+        /// </summary>
+        internal static PowerShell NewPwshInstance()
+        {
+            var pwsh = PowerShell.Create(SingletonISS);
+            pwsh.Runspace.Name = "PowerShellManager";
+
+            return pwsh;
         }
 
         /// <summary>
