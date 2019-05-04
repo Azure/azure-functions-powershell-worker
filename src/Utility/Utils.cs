@@ -22,15 +22,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         internal readonly static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
 
         private static InitialSessionState s_iss;
-        private static InitialSessionState SingletonISS
-        {
-            get
-            {
-                if (s_iss != null)
-                {
-                    return s_iss;
-                }
 
+        /// <summary>
+        /// Create a new PowerShell instance using our singleton InitialSessionState instance.
+        /// </summary>
+        internal static PowerShell NewPwshInstance()
+        {
+            if (s_iss == null)
+            {
                 if (FunctionLoader.FunctionAppRootPath == null)
                 {
                     throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
@@ -51,20 +50,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     // Windows client versions. This is needed if a user is testing their function locally with the func CLI.
                     s_iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
                 }
-
-                return s_iss;
             }
-        }
 
-        /// <summary>
-        /// Create a new PowerShell instance using our singleton InitialSessionState instance.
-        /// </summary>
-        internal static PowerShell NewPwshInstance()
-        {
-            var pwsh = PowerShell.Create(SingletonISS);
-            pwsh.Runspace.Name = "PowerShellManager";
-
-            return pwsh;
+            return PowerShell.Create(s_iss);
         }
 
         /// <summary>

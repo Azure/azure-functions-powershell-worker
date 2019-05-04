@@ -71,18 +71,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             if (!_pool.TryTake(out psManager))
             {
                 // The pool doesn't have an idle one.
-                if (_poolSize < _upperBound &&
-                    Interlocked.Increment(ref _poolSize) <= _upperBound)
+                if (_poolSize < _upperBound)
                 {
-                    // If the pool hasn't reached its bounded capacity yet, then
-                    // we create a new item and return it.
-                    var logger = new RpcLogger(_msgStream);
-                    logger.SetContext(requestId, invocationId);
-                    psManager = new PowerShellManager(logger);
+                    int id = Interlocked.Increment(ref _poolSize);
+                    if (id <= _upperBound)
+                    {
+                        // If the pool hasn't reached its bounded capacity yet, then
+                        // we create a new item and return it.
+                        var logger = new RpcLogger(_msgStream);
+                        logger.SetContext(requestId, invocationId);
+                        psManager = new PowerShellManager(logger, id);
 
-                    RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.LogNewPowerShellManagerCreated, _poolSize.ToString()));
+                        RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.LogNewPowerShellManagerCreated, id.ToString()));
+                    }
                 }
-                else
+
+                if (psManager == null)
                 {
                     // If the pool has reached its bounded capacity, then the thread
                     // should be blocked until an idle one becomes available.

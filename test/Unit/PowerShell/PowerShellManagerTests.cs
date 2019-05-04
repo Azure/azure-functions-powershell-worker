@@ -47,7 +47,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         // This is to guarantee that the well known paths are setup before calling the constructor of PowerShellManager.
         internal static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger, PowerShell pwsh = null)
         {
-            return pwsh != null ? new PowerShellManager(logger, pwsh) : new PowerShellManager(logger);
+            return pwsh != null ? new PowerShellManager(logger, pwsh) : new PowerShellManager(logger, id: 2);
         }
 
         internal static AzFunctionInfo NewAzFunctionInfo(string scriptFile, string entryPoint)

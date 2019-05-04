@@ -47,6 +47,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         }
 
         /// <summary>
+        /// Constructor for setting the basic fields.
+        /// </summary>
+        private PowerShellManager(ILogger logger, PowerShell pwsh, int id)
+        {
+            _logger = logger;
+            _pwsh = pwsh;
+            _pwsh.Runspace.Name = $"PowerShellManager{id}";
+        }
+
+        /// <summary>
         /// Create a PowerShellManager instance but defer the Initialization.
         /// </summary>
         /// <remarks>
@@ -55,16 +65,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// the dependent modules are downloaded and all Az functions are loaded.
         /// </remarks>
         internal PowerShellManager(ILogger logger, PowerShell pwsh)
+            : this(logger, pwsh, id: 1)
         {
-            _logger = logger;
-            _pwsh = pwsh;
         }
 
         /// <summary>
         /// Create a PowerShellManager instance and initialize it.
         /// </summary>
-        internal PowerShellManager(ILogger logger) 
-            : this(logger, Utils.NewPwshInstance())
+        internal PowerShellManager(ILogger logger, int id)
+            : this(logger, Utils.NewPwshInstance(), id)
         {
             // Initialize the Runspace
             Initialize();
