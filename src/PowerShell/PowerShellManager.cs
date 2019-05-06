@@ -22,6 +22,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     {
         private readonly ILogger _logger;
         private readonly PowerShell _pwsh;
+        private bool _runspaceInited;
 
         /// <summary>
         /// Gets the Runspace InstanceId.
@@ -45,27 +46,64 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             addMethod.Invoke(null, new object[] { "HttpRequestContext", typeof(HttpRequestContext) });
         }
 
-        internal PowerShellManager(ILogger logger)
+        /// <summary>
+        /// Constructor for setting the basic fields.
+        /// </summary>
+        private PowerShellManager(ILogger logger, PowerShell pwsh, int id)
         {
-            if (FunctionLoader.FunctionAppRootPath == null)
-            {
-                throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
-            }
-
             _logger = logger;
-            _pwsh = PowerShell.Create(Utils.SingletonISS.Value);
+            _pwsh = pwsh;
+            _pwsh.Runspace.Name = $"PowerShellManager{id}";
+        }
 
-            // Setup Stream event listeners
-            var streamHandler = new StreamHandler(logger);
+        /// <summary>
+        /// Create a PowerShellManager instance but defer the Initialization.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is only for creating the very first PowerShellManager instance.
+        /// The initialization work is deferred until all prerequisites are ready, such as
+        /// the dependent modules are downloaded and all Az functions are loaded.
+        /// </remarks>
+        internal PowerShellManager(ILogger logger, PowerShell pwsh)
+            : this(logger, pwsh, id: 1)
+        {
+        }
+
+        /// <summary>
+        /// Create a PowerShellManager instance and initialize it.
+        /// </summary>
+        internal PowerShellManager(ILogger logger, int id)
+            : this(logger, Utils.NewPwshInstance(), id)
+        {
+            // Initialize the Runspace
+            Initialize();
+        }
+
+        /// <summary>
+        /// Extra initialization of the Runspace.
+        /// </summary>
+        internal void Initialize()
+        {
+            if (!_runspaceInited)
+            {
+                RegisterStreamEvents();
+                InvokeProfile(FunctionLoader.FunctionAppProfilePath);
+                _runspaceInited = true;
+            }
+        }
+
+        /// <summary>
+        /// Setup Stream event listeners.
+        /// </summary>
+        private void RegisterStreamEvents()
+        {
+            var streamHandler = new StreamHandler(_logger);
             _pwsh.Streams.Debug.DataAdding += streamHandler.DebugDataAdding;
             _pwsh.Streams.Error.DataAdding += streamHandler.ErrorDataAdding;
             _pwsh.Streams.Information.DataAdding += streamHandler.InformationDataAdding;
             _pwsh.Streams.Progress.DataAdding += streamHandler.ProgressDataAdding;
             _pwsh.Streams.Verbose.DataAdding += streamHandler.VerboseDataAdding;
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
-
-            // Initialize the Runspace
-            InvokeProfile(FunctionLoader.FunctionAppProfilePath);
         }
 
         /// <summary>
@@ -76,7 +114,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             Exception exception = null;
             if (profilePath == null)
             {
-                RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.FileNotFound, "profile.ps1", FunctionLoader.FunctionAppRootPath));
+                string noProfileMsg = string.Format(PowerShellWorkerStrings.FileNotFound, "profile.ps1", FunctionLoader.FunctionAppRootPath);
+                _logger.Log(LogLevel.Trace, noProfileMsg);
                 return;
             }
 
