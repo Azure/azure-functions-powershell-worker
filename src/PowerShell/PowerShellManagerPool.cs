@@ -47,7 +47,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         }
 
         /// <summary>
-        /// Initialize the pool and populate it with PowerShellManager instances.
+        /// Populate the pool with the very first PowerShellManager instance.
         /// We instantiate PowerShellManager instances in a lazy way, starting from size 1 and increase the number of workers as needed.
         /// </summary>
         internal void Initialize(PowerShell pwsh)
