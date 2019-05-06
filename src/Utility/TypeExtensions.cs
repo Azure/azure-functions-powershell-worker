@@ -58,7 +58,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
             if (rpcHttp.RawBody != null)
             {
-                httpRequestContext.RawBody = rpcHttp.RawBody.ToObject();
+                object rawBody = rpcHttp.RawBody.DataCase == TypedData.DataOneofCase.String
+                    ? rpcHttp.RawBody.String
+                    : rpcHttp.RawBody.ToObject();
+
+                httpRequestContext.RawBody = rawBody;
             }
 
             return httpRequestContext;

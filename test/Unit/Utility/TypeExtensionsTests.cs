@@ -90,6 +90,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var method = "Get";
             var url = "https://example.com";
             var data = "Hello World";
+            var rawData = "{\"Foo\":\"Bar\"}";
 
             var input = new TypedData
             {
@@ -103,7 +104,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     },
                     RawBody = new TypedData
                     {
-                        String = data
+                        String = rawData
                     }
                 }
             };
@@ -121,7 +122,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(httpRequestContext.Method, method);
             Assert.Equal(httpRequestContext.Url, url);
             Assert.Equal(httpRequestContext.Body, data);
-            Assert.Equal(httpRequestContext.RawBody, data);
+            Assert.Equal(httpRequestContext.RawBody, rawData);
             Assert.Empty(httpRequestContext.Headers);
             Assert.Empty(httpRequestContext.Params);
             Assert.Empty(httpRequestContext.Query);
