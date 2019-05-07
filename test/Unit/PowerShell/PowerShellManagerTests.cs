@@ -308,30 +308,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             // Clear log stream
             s_testLogger.FullLog.Clear();
-            NewTestPowerShellManager(s_testLogger, delayInit: true);
+            NewTestPowerShellManager(s_testLogger, Utils.NewPwshInstance());
 
             Assert.Empty(s_testLogger.FullLog);
-        }
-
-        [Fact]
-        public void PSManagerCtorRunsProfileByDefault()
-        {
-            //initialize fresh log
-            _testLogger.FullLog.Clear();
-            TestUtils.NewTestPowerShellManager(_testLogger);
-
-            Assert.Single(_testLogger.FullLog);
-            Assert.Equal($"Trace: No 'profile.ps1' is found at the FunctionApp root folder: {FunctionLoader.FunctionAppRootPath}.", _testLogger.FullLog[0]);
-        }
-
-        [Fact]
-        public void PSManagerCtorDoesNotRunProfileIfDelayInit()
-        {
-            //initialize fresh log
-            _testLogger.FullLog.Clear();
-            TestUtils.NewTestPowerShellManager(_testLogger, Utils.NewPwshInstance());
-
-            Assert.Empty(_testLogger.FullLog);
         }
     }
 }

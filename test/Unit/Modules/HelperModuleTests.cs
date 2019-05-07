@@ -50,7 +50,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             var funcLoadReq = new FunctionLoadRequest { FunctionId = "FunctionId", Metadata = rpcFuncMetadata };
             FunctionLoader.SetupWellKnownPaths(funcLoadReq);
-            s_pwsh = PowerShell.Create(Utils.SingletonISS.Value);
+            s_pwsh = Utils.NewPwshInstance();
             s_funcInfo = new AzFunctionInfo(rpcFuncMetadata);
         }
 
