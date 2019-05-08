@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -25,7 +26,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         internal readonly static object BoxedTrue = (object)true;
         internal readonly static object BoxedFalse = (object)false;
 
+        private const string VariableDriveRoot = @"Variable:\";
         private static InitialSessionState s_iss;
+        private static HashSet<string> s_globalVariables;
 
         /// <summary>
         /// Create a new PowerShell instance using our singleton InitialSessionState instance.
@@ -56,7 +59,68 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 }
             }
 
-            return PowerShell.Create(s_iss);
+            var pwsh = PowerShell.Create(s_iss);
+            if (s_globalVariables == null)
+            {
+                // Get the names of the built-in global variables
+                var globalVars = (ICollection<PSVariable>)pwsh.Runspace.SessionStateProxy.InvokeProvider.Item.Get(VariableDriveRoot)[0];
+                s_globalVariables = new HashSet<string>(globalVars.Count, StringComparer.OrdinalIgnoreCase);
+                foreach (PSVariable var in globalVars)
+                {
+                    s_globalVariables.Add(var.Name);
+                }
+            }
+
+            return pwsh;
+        }
+
+        /// <summary>
+        /// Clean up the global variables added by the function invocation.
+        /// </summary>
+        internal static void CleanupGlobalVariables(PowerShell pwsh)
+        {
+            List<string> varsToRemove = null;
+            var globalVars = (ICollection<PSVariable>)pwsh.Runspace.SessionStateProxy.InvokeProvider.Item.Get(VariableDriveRoot)[0];
+
+            foreach (PSVariable var in globalVars)
+            {
+                if (s_globalVariables.Contains(var.Name))
+                {
+                    // The variable is one of the built-in global variables.
+                    continue;
+                }
+
+                if (var.Options.HasFlag(ScopedItemOptions.Constant))
+                {
+                    // We cannot remove a constant variable, so leave it as is.
+                    continue;
+                }
+
+                if (var.Module != null)
+                {
+                    // The variable is exposed by a module. We don't remove modules, so leave it as is.
+                    continue;
+                }
+
+                if (varsToRemove == null)
+                {
+                    // Create a list only if it's needed.
+                    varsToRemove = new List<string>();
+                }
+
+                // Add the variable path.
+                varsToRemove.Add($"{VariableDriveRoot}{var.Name}");
+            }
+
+            if (varsToRemove != null)
+            {
+                // Remove the global variable added by the function invocation.
+                pwsh.Runspace.SessionStateProxy.InvokeProvider.Item.Remove(
+                    varsToRemove.ToArray(),
+                    recurse: true,
+                    force: true,
+                    literalPath: true);
+            }
         }
 
         /// <summary>

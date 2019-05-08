@@ -269,14 +269,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                      .InvokeAndClearCommands(jobs);
             }
 
-            // TODO: We need to clean up new global variables generated from the invocation.
+            // We need to clean up new global variables generated from the invocation.
             // After turning 'run.ps1' to PowerShell function, if '$script:<var-name>' is used, that variable
             // will be made a global variable because there is no script scope from the file.
             //
-            // But 'ResetRunspaceState' does more than needed -- reset the current path, reset the debugger,
-            // create new event manager and transaction manager. We should only remove the new global variables,
-            // and does nothing else.
-            _pwsh.Runspace.ResetRunspaceState();
+            // We don't use 'ResetRunspaceState' because it does more than needed:
+            //  - reset the current path;
+            //  - reset the debugger (this causes breakpoints not work properly);
+            //  - create new event manager and transaction manager;
+            // We should only remove the new global variables and does nothing else.
+            Utils.CleanupGlobalVariables(_pwsh);
         }
     }
 }
