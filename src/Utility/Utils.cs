@@ -63,7 +63,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             if (s_globalVariables == null)
             {
                 // Get the names of the built-in global variables
-                var globalVars = (ICollection<PSVariable>)pwsh.Runspace.SessionStateProxy.InvokeProvider.Item.Get(VariableDriveRoot)[0];
+                ICollection<PSVariable> globalVars = GetGlobalVariables(pwsh);
                 s_globalVariables = new HashSet<string>(globalVars.Count, StringComparer.OrdinalIgnoreCase);
                 foreach (PSVariable var in globalVars)
                 {
@@ -80,27 +80,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         internal static void CleanupGlobalVariables(PowerShell pwsh)
         {
             List<string> varsToRemove = null;
-            var globalVars = (ICollection<PSVariable>)pwsh.Runspace.SessionStateProxy.InvokeProvider.Item.Get(VariableDriveRoot)[0];
+            ICollection<PSVariable> globalVars = GetGlobalVariables(pwsh);
 
             foreach (PSVariable var in globalVars)
             {
-                if (s_globalVariables.Contains(var.Name))
-                {
-                    // The variable is one of the built-in global variables.
-                    continue;
-                }
+                // The variable is one of the built-in global variables.
+                if (s_globalVariables.Contains(var.Name)) { continue; }
 
-                if (var.Options.HasFlag(ScopedItemOptions.Constant))
-                {
-                    // We cannot remove a constant variable, so leave it as is.
-                    continue;
-                }
+                // We cannot remove a constant variable, so leave it as is.
+                if (var.Options.HasFlag(ScopedItemOptions.Constant)) { continue; }
 
-                if (var.Module != null)
-                {
-                    // The variable is exposed by a module. We don't remove modules, so leave it as is.
-                    continue;
-                }
+                // The variable is exposed by a module. We don't remove modules, so leave it as is.
+                if (var.Module != null) { continue; }
+
+                // The variable is not a regular PSVariable.
+                // It's likely not created by the user, so leave it as is.
+                if (var.GetType() != typeof(PSVariable)) { continue; }
 
                 if (varsToRemove == null)
                 {
@@ -121,6 +116,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     force: true,
                     literalPath: true);
             }
+        }
+
+        private static ICollection<PSVariable> GetGlobalVariables(PowerShell pwsh)
+        {
+            PSObject item = pwsh.Runspace.SessionStateProxy.InvokeProvider.Item.Get(VariableDriveRoot)[0];
+            return (ICollection<PSVariable>)item.BaseObject;
         }
 
         /// <summary>
