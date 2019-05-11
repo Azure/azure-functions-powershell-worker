@@ -64,7 +64,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             {
                 // Get the names of the built-in global variables
                 ICollection<PSVariable> globalVars = GetGlobalVariables(pwsh);
-                s_globalVariables = new HashSet<string>(globalVars.Count, StringComparer.OrdinalIgnoreCase)
+                s_globalVariables = new HashSet<string>(globalVars.Count + 3, StringComparer.OrdinalIgnoreCase)
                 {
                     // These 3 variables are not in the built-in variables in a fresh Runspace,
                     // but they show up after we evaluate the 'profile.ps1' in the global scope.

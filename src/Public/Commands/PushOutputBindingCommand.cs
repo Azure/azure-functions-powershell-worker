@@ -142,7 +142,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
                     break;
 
                 case DataCollectingBehavior.Collection:
-                    
                     object oldValue = Clobber.IsPresent ? null : _outputBindings[Name];
                     object newValue = MergeCollection(oldData: oldValue, newData: Value);
                     _outputBindings[Name] = newValue;
@@ -224,7 +223,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
 
         /// <summary>
         /// Combine the new data with the existing data for a output binding with 'Collection' behavior.
-        /// Here is what this command do:
+        /// Here is what this command does:
         /// - when there is no existing data
         ///   - if the new data is considered enumerable by PowerShell,
         ///     then all its elements get added to a List[object], and that list is returned.
