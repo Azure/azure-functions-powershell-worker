@@ -13,7 +13,7 @@ Gets the hashtable of the output bindings set so far.
 ## SYNTAX
 
 ```
-Get-OutputBinding [-Name <String>] [-Purge] [<CommonParameters>]
+Get-OutputBinding [[-Name] <String>] [-Purge] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -54,10 +54,10 @@ Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: Named
+Position: 0
 Default value: *
 Accept pipeline input: True (ByPropertyName, ByValue)
-Accept wildcard characters: True
+Accept wildcard characters: False
 ```
 
 ### -Purge

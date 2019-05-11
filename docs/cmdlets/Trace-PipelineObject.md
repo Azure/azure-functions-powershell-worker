@@ -13,7 +13,7 @@ Writes the formatted output of the pipeline object to the information stream bef
 ## SYNTAX
 
 ```
-Trace-PipelineObject -InputObject <Object> [<CommonParameters>]
+Trace-PipelineObject [-InputObject] <Object> [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -40,7 +40,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
-Position: Named
+Position: 0
 Default value: None
 Accept pipeline input: True (ByValue)
 Accept wildcard characters: False

@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
         /// <summary>
         /// The name of the output binding you want to get. Supports wildcards.
         /// </summary>
-        [Parameter(ValueFromPipeline = true, ValueFromPipelineByPropertyName = true)]
+        [Parameter(Position = 0, ValueFromPipeline = true, ValueFromPipelineByPropertyName = true)]
         [SupportsWildcards]
         [ValidateNotNullOrEmpty]
         public string Name { get; set; } = "*";

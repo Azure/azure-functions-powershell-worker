@@ -122,6 +122,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
+        public void InvokeFunctionWithSpecialVariableWorks()
+        {
+            string path = Path.Join(s_funcDirectory, "testBasicFunctionSpecialVariables.ps1");
+            var (functionInfo, testManager) = PrepareFunction(path, string.Empty);
+
+            try
+            {
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                Hashtable result = testManager.InvokeFunction(functionInfo, null, s_testInputData);
+
+                // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
+                Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(testManager.InstanceId);
+                Assert.Empty(outputBindings);
+
+                // A PowerShell function should be created fro the Az function.
+                string expectedResult = $"{s_funcDirectory},{path},{functionInfo.DeployedPSFuncName}";
+                Assert.Equal(expectedResult, result[TestOutputBindingName]);
+            }
+            finally
+            {
+                FunctionMetadata.UnregisterFunctionMetadata(testManager.InstanceId);
+            }
+        }
+
+        [Fact]
         public void InvokeBasicFunctionWithRequiresWorks()
         {
             string path = Path.Join(s_funcDirectory, "testBasicFunctionWithRequires.ps1");
