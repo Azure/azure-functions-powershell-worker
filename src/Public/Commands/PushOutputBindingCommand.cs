@@ -120,7 +120,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
                 }
             }
 
-            // Key already exists in _OutputBindings
+            // Key already exists in _outputBindings
             switch (_behavior)
             {
                 case DataCollectingBehavior.Singleton:

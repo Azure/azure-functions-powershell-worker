@@ -39,7 +39,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 EntryPoint = string.Empty,
                 Bindings =
                 {
-                    { "req" , new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "httpTrigger" } },
+                    { "req" ,     new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "httpTrigger" } },
                     { Response,   new BindingInfo { Direction = BindingInfo.Types.Direction.Out, Type = "http" } },
                     { Queue,      new BindingInfo { Direction = BindingInfo.Types.Direction.Out, Type = "queue" } },
                     { Foo,        new BindingInfo { Direction = BindingInfo.Types.Direction.Out, Type = "new" } },
