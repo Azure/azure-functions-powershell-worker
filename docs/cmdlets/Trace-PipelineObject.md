@@ -1,5 +1,5 @@
 ---
-external help file: Microsoft.Azure.Functions.PowerShellWorker-help.xml
+external help file: Microsoft.Azure.Functions.PowerShellWorker.dll-Help.xml
 Module Name: Microsoft.Azure.Functions.PowerShellWorker
 online version:
 schema: 2.0.0
@@ -40,7 +40,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
-Position: 1
+Position: 0
 Default value: None
 Accept pipeline input: True (ByValue)
 Accept wildcard characters: False

@@ -15,9 +15,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     /// <summary>
     /// FunctionLoader holds metadata of functions.
     /// </summary>
-    internal class FunctionLoader
+    internal static class FunctionLoader
     {
-        private readonly Dictionary<string, AzFunctionInfo> _loadedFunctions = new Dictionary<string, AzFunctionInfo>();
+        private static readonly Dictionary<string, AzFunctionInfo> LoadedFunctions = new Dictionary<string, AzFunctionInfo>();
 
         internal static string FunctionAppRootPath { get; private set; }
         internal static string FunctionAppProfilePath { get; private set; }
@@ -26,9 +26,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Query for function metadata can happen in parallel.
         /// </summary>
-        internal AzFunctionInfo GetFunctionInfo(string functionId)
+        internal static AzFunctionInfo GetFunctionInfo(string functionId)
         {
-            if (_loadedFunctions.TryGetValue(functionId, out AzFunctionInfo funcInfo))
+            if (LoadedFunctions.TryGetValue(functionId, out AzFunctionInfo funcInfo))
             {
                 return funcInfo;
             }
@@ -40,9 +40,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// This method runs once per 'FunctionLoadRequest' during the code start of the worker.
         /// It will always run synchronously because we process 'FunctionLoadRequest' synchronously.
         /// </summary>
-        internal void LoadFunction(FunctionLoadRequest request)
+        internal static void LoadFunction(FunctionLoadRequest request)
         {
-            _loadedFunctions.Add(request.FunctionId, new AzFunctionInfo(request.Metadata));
+            LoadedFunctions.Add(request.FunctionId, new AzFunctionInfo(request.Metadata));
+        }
+
+        /// <summary>
+        /// Get all loaded functions.
+        /// </summary>
+        internal static IEnumerable<AzFunctionInfo> GetLoadedFunctions()
+        {
+            return LoadedFunctions.Values;
+        }
+
+        /// <summary>
+        /// Clear all loaded functions.
+        /// </summary>
+        internal static void ClearLoadedFunctions()
+        {
+            LoadedFunctions.Clear();
         }
 
         /// <summary>

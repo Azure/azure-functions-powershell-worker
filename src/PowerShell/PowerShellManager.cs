@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Reflection;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -20,6 +21,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
     internal class PowerShellManager
     {
+        private const BindingFlags NonPublicInstance = BindingFlags.NonPublic | BindingFlags.Instance;
+
+        private readonly static object[] s_argumentsGetJobs = new object[] { null, false, false, null };
+        private readonly static MethodInfo s_methodGetJobs = typeof(JobManager).GetMethod(
+            "GetJobs",
+            NonPublicInstance,
+            binder: null,
+            callConvention: CallingConventions.Any,
+            new Type[] { typeof(Cmdlet), typeof(bool), typeof(bool), typeof(string[]) },
+            modifiers: null);
+
         private readonly ILogger _logger;
         private readonly PowerShell _pwsh;
         private bool _runspaceInited;
@@ -86,8 +98,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if (!_runspaceInited)
             {
+                // Register stream events
                 RegisterStreamEvents();
+                // Deploy functions from the function App
+                DeployAzFunctionToRunspace();
+                // Run the profile.ps1
                 InvokeProfile(FunctionLoader.FunctionAppProfilePath);
+
                 _runspaceInited = true;
             }
         }
@@ -104,6 +121,27 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             _pwsh.Streams.Progress.DataAdding += streamHandler.ProgressDataAdding;
             _pwsh.Streams.Verbose.DataAdding += streamHandler.VerboseDataAdding;
             _pwsh.Streams.Warning.DataAdding += streamHandler.WarningDataAdding;
+        }
+
+        /// <summary>
+        /// Create the PowerShell function that is equivalent to the 'scriptFile' when possible.
+        /// </summary>
+        private void DeployAzFunctionToRunspace()
+        {
+            foreach (AzFunctionInfo functionInfo in FunctionLoader.GetLoadedFunctions())
+            {
+                if (functionInfo.FuncScriptBlock != null)
+                {
+                    // Create PS constant function for the Az function.
+                    // Constant function cannot be changed or removed, it stays till the session ends.
+                    _pwsh.AddCommand("New-Item")
+                            .AddParameter("Path", @"Function:\")
+                            .AddParameter("Name", functionInfo.DeployedPSFuncName)
+                            .AddParameter("Value", functionInfo.FuncScriptBlock)
+                            .AddParameter("Options", "Constant")
+                         .InvokeAndClearCommands();
+                }
+            }
         }
 
         /// <summary>
@@ -124,9 +162,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 // Import-Module on a .ps1 file will evaluate the script in the global scope.
                 _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
                         .AddParameter("Name", profilePath)
-                        .AddParameter("PassThru", true)
+                        .AddParameter("PassThru", Utils.BoxedTrue)
                      .AddCommand(Utils.RemoveModuleCmdletInfo)
-                        .AddParameter("Force", true)
+                        .AddParameter("Force", Utils.BoxedTrue)
                         .AddParameter("ErrorAction", "SilentlyContinue")
                      .InvokeAndClearCommands();
             }
@@ -155,18 +193,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             string scriptPath = functionInfo.ScriptPath;
             string entryPoint = functionInfo.EntryPoint;
-            string moduleName = null;
 
             try
             {
                 if (string.IsNullOrEmpty(entryPoint))
                 {
-                    _pwsh.AddCommand(scriptPath);
+                    _pwsh.AddCommand(functionInfo.DeployedPSFuncName ?? scriptPath);
                 }
                 else
                 {
                     // If an entry point is defined, we import the script module.
-                    moduleName = Path.GetFileNameWithoutExtension(scriptPath);
                     _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
                             .AddParameter("Name", scriptPath)
                          .InvokeAndClearCommands();
@@ -195,9 +231,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 Collection<object> pipelineItems = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject")
                                                         .InvokeAndClearCommands<object>();
 
-                Hashtable result = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Get-OutputBinding")
-                                            .AddParameter("Purge", true)
-                                        .InvokeAndClearCommands<Hashtable>()[0];
+                Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
+                Hashtable result = new Hashtable(outputBindings, StringComparer.OrdinalIgnoreCase);
+                outputBindings.Clear();
 
                 /*
                  * TODO: See GitHub issue #82. We are not settled on how to handle the Azure Functions concept of the $returns Output Binding
@@ -217,31 +253,32 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
             finally
             {
-                ResetRunspace(moduleName);
+                ResetRunspace();
             }
         }
 
-        private void ResetRunspace(string moduleName)
+        private void ResetRunspace()
         {
-            // Reset the runspace to the Initial Session State
-            _pwsh.Runspace.ResetRunspaceState();
-
-            if (!string.IsNullOrEmpty(moduleName))
+            var jobs = (List<Job2>)s_methodGetJobs.Invoke(_pwsh.Runspace.JobManager, s_argumentsGetJobs);
+            if (jobs != null && jobs.Count > 0)
             {
-                // If the function had an entry point, this will remove the module that was loaded
-                _pwsh.AddCommand(Utils.RemoveModuleCmdletInfo)
-                        .AddParameter("Name", moduleName)
-                        .AddParameter("Force", true)
+                // Clean up jobs started during the function execution.
+                _pwsh.AddCommand(Utils.RemoveJobCmdletInfo)
+                        .AddParameter("Force", Utils.BoxedTrue)
                         .AddParameter("ErrorAction", "SilentlyContinue")
-                     .InvokeAndClearCommands();
+                     .InvokeAndClearCommands(jobs);
             }
 
-            // Clean up jobs started during the function execution.
-            _pwsh.AddCommand(Utils.GetJobCmdletInfo)
-                 .AddCommand(Utils.RemoveJobCmdletInfo)
-                    .AddParameter("Force", true)
-                    .AddParameter("ErrorAction", "SilentlyContinue")
-                 .InvokeAndClearCommands();
+            // We need to clean up new global variables generated from the invocation.
+            // After turning 'run.ps1' to PowerShell function, if '$script:<var-name>' is used, that variable
+            // will be made a global variable because there is no script scope from the file.
+            //
+            // We don't use 'ResetRunspaceState' because it does more than needed:
+            //  - reset the current path;
+            //  - reset the debugger (this causes breakpoints not work properly);
+            //  - create new event manager and transaction manager;
+            // We should only remove the new global variables and does nothing else.
+            Utils.CleanupGlobalVariables(_pwsh);
         }
     }
 }

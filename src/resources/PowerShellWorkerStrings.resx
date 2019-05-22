@@ -214,4 +214,16 @@
   <data name="DependencyDownloadInProgress" xml:space="preserve">
     <value>Managed dependency download is in progress, function execution will continue when it's done.</value>
   </data>
+  <data name="OutputBindingAlreadySet" xml:space="preserve">
+    <value>The output binding '{0}' is already set with a value. The type of the output binding is '{1}'. It only accepts one message/record/file per a Function invocation. To override the value, use '-Clobber'.</value>
+  </data>
+  <data name="DontPushOutputOutsideWorkerRunspace" xml:space="preserve">
+    <value>'Push-OutputBinding' should only be used in the PowerShell Language Worker's default Runspace(s). Do not use it in a custom Runsapce created during the function execution because the pushed values cannot be collected.</value>
+  </data>
+  <data name="BindingNameNotExist" xml:space="preserve">
+    <value>The specified name '{0}' cannot be resolved to a valid output binding of this function.</value>
+  </data>
+  <data name="UnrecognizedBehavior" xml:space="preserve">
+    <value>Unrecognized data collecting behavior '{0}'.</value>
+  </data>
 </root>

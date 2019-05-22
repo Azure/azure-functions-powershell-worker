@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 
@@ -14,8 +15,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     /// </summary>
     public static class FunctionMetadata
     {
-        internal static ConcurrentDictionary<Guid, ReadOnlyDictionary<string, ReadOnlyBindingInfo>> OutputBindingCache
+        private static ConcurrentDictionary<Guid, ReadOnlyDictionary<string, ReadOnlyBindingInfo>> OutputBindingCache
             = new ConcurrentDictionary<Guid, ReadOnlyDictionary<string, ReadOnlyBindingInfo>>();
+        private static ConcurrentDictionary<Guid, Hashtable> OutputBindingValues = new ConcurrentDictionary<Guid, Hashtable>();
+
+        private static Func<Guid, Hashtable> s_delegate = key => new Hashtable(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// Get the binding metadata for the given Runspace instance id.
@@ -25,6 +29,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             ReadOnlyDictionary<string, ReadOnlyBindingInfo> outputBindings = null;
             OutputBindingCache.TryGetValue(runspaceInstanceId, out outputBindings);
             return outputBindings;
+        }
+
+        /// <summary>
+        /// Get the Hashtable that is holding the output binding values for the given Runspace.
+        /// </summary>
+        internal static Hashtable GetOutputBindingHashtable(Guid runspaceInstanceId)
+        {
+            return OutputBindingValues.GetOrAdd(runspaceInstanceId, s_delegate);
         }
 
         /// <summary>

@@ -4,5 +4,8 @@
 #
 
 function Run($Req) {
-    Push-OutputBinding -Name res -Value $Req
+    $cmdName = $MyInvocation.MyCommand.Name
+
+    $result = "{0},{1}" -f $Req, $cmdName
+    Push-OutputBinding -Name res -Value $result
 }

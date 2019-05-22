@@ -1,5 +1,5 @@
 ---
-external help file: Microsoft.Azure.Functions.PowerShellWorker-help.xml
+external help file: Microsoft.Azure.Functions.PowerShellWorker.dll-Help.xml
 Module Name: Microsoft.Azure.Functions.PowerShellWorker
 online version:
 schema: 2.0.0
@@ -13,7 +13,7 @@ Gets the hashtable of the output bindings set so far.
 ## SYNTAX
 
 ```
-Get-OutputBinding [[-Name] <String[]>] [-Purge] [<CommonParameters>]
+Get-OutputBinding [[-Name] <String>] [-Purge] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -49,12 +49,12 @@ The name of the output binding you want to get.
 Supports wildcards.
 
 ```yaml
-Type: String[]
+Type: String
 Parameter Sets: (All)
 Aliases:
 
 Required: False
-Position: 1
+Position: 0
 Default value: *
 Accept pipeline input: True (ByPropertyName, ByValue)
 Accept wildcard characters: True

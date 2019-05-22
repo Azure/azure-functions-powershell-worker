@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -18,10 +19,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
     {
         internal readonly static CmdletInfo ImportModuleCmdletInfo = new CmdletInfo("Import-Module", typeof(ImportModuleCommand));
         internal readonly static CmdletInfo RemoveModuleCmdletInfo = new CmdletInfo("Remove-Module", typeof(RemoveModuleCommand));
-        internal readonly static CmdletInfo GetJobCmdletInfo = new CmdletInfo("Get-Job", typeof(GetJobCommand));
         internal readonly static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
+        internal readonly static CmdletInfo OutStringCmdletInfo = new CmdletInfo("Out-String", typeof(OutStringCommand));
+        internal readonly static CmdletInfo WriteInformationCmdletInfo = new CmdletInfo("Write-Information", typeof(WriteInformationCommand));
 
+        internal readonly static object BoxedTrue = (object)true;
+        internal readonly static object BoxedFalse = (object)false;
+
+        private const string VariableDriveRoot = @"Variable:\";
         private static InitialSessionState s_iss;
+        private static HashSet<string> s_globalVariables;
 
         /// <summary>
         /// Create a new PowerShell instance using our singleton InitialSessionState instance.
@@ -52,7 +59,75 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 }
             }
 
-            return PowerShell.Create(s_iss);
+            var pwsh = PowerShell.Create(s_iss);
+            if (s_globalVariables == null)
+            {
+                // Get the names of the built-in global variables
+                ICollection<PSVariable> globalVars = GetGlobalVariables(pwsh);
+                s_globalVariables = new HashSet<string>(globalVars.Count + 3, StringComparer.OrdinalIgnoreCase)
+                {
+                    // These 3 variables are not in the built-in variables in a fresh Runspace,
+                    // but they show up after we evaluate the 'profile.ps1' in the global scope.
+                    "PSScriptRoot", "PSCommandPath", "MyInvocation"
+                };
+
+                foreach (PSVariable var in globalVars)
+                {
+                    s_globalVariables.Add(var.Name);
+                }
+            }
+
+            return pwsh;
+        }
+
+        /// <summary>
+        /// Clean up the global variables added by the function invocation.
+        /// </summary>
+        internal static void CleanupGlobalVariables(PowerShell pwsh)
+        {
+            List<string> varsToRemove = null;
+            ICollection<PSVariable> globalVars = GetGlobalVariables(pwsh);
+
+            foreach (PSVariable var in globalVars)
+            {
+                // The variable is one of the built-in global variables.
+                if (s_globalVariables.Contains(var.Name)) { continue; }
+
+                // We cannot remove a constant variable, so leave it as is.
+                if (var.Options.HasFlag(ScopedItemOptions.Constant)) { continue; }
+
+                // The variable is exposed by a module. We don't remove modules, so leave it as is.
+                if (var.Module != null) { continue; }
+
+                // The variable is not a regular PSVariable.
+                // It's likely not created by the user, so leave it as is.
+                if (var.GetType() != typeof(PSVariable)) { continue; }
+
+                if (varsToRemove == null)
+                {
+                    // Create a list only if it's needed.
+                    varsToRemove = new List<string>();
+                }
+
+                // Add the variable path.
+                varsToRemove.Add($"{VariableDriveRoot}{var.Name}");
+            }
+
+            if (varsToRemove != null)
+            {
+                // Remove the global variable added by the function invocation.
+                pwsh.Runspace.SessionStateProxy.InvokeProvider.Item.Remove(
+                    varsToRemove.ToArray(),
+                    recurse: true,
+                    force: true,
+                    literalPath: true);
+            }
+        }
+
+        private static ICollection<PSVariable> GetGlobalVariables(PowerShell pwsh)
+        {
+            PSObject item = pwsh.Runspace.SessionStateProxy.InvokeProvider.Item.Get(VariableDriveRoot)[0];
+            return (ICollection<PSVariable>)item.BaseObject;
         }
 
         /// <summary>

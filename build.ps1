@@ -35,10 +35,6 @@ if ($Bootstrap.IsPresent) {
         Write-Log -Warning "Module 'PSDepend' is missing. Installing 'PSDepend' ..."
         Install-Module -Name PSDepend -Scope CurrentUser -Force
     }
-    if (-not (Get-Module -Name Pester -ListAvailable)) {
-        Write-Log -Warning "Module 'Pester' is missing. Installing 'Pester' ..."
-        Install-Module -Name Pester -Scope CurrentUser -Force
-    }
     if (-not (Get-Module -Name platyPS -ListAvailable)) {
         Write-Log -Warning "Module 'platyPS' is missing. Installing 'platyPS' ..."
         Install-Module -Name platyPS -Scope CurrentUser -Force
@@ -93,36 +89,6 @@ if(!$NoBuild.IsPresent) {
 
 # Test step
 if($Test.IsPresent) {
-    if (-not (Get-Module -Name Pester -ListAvailable)) {
-        throw "Cannot find the 'Pester' module. Please specify '-Bootstrap' to install build dependencies."
-    }
-
     dotnet test "$PSScriptRoot/test/Unit"
     if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
-
-    Invoke-Tests -Path "$PSScriptRoot/test/Unit/Modules" -OutputFile UnitTestsResults.xml
-
-    if (-not (Get-Module -Name platyPS -ListAvailable)) {
-        throw "Cannot find the 'platyPS' module. Please specify '-Bootstrap' to install build dependencies."
-    }
-    elseif (-not (Get-Command -Name git -CommandType Application)) {
-        throw "Cannot find 'git'. Please make sure it's in the 'PATH'."
-    }
-
-    # Cmdlet help docs should be up-to-date.
-    # PlatyPS needs the module to be imported.
-    Import-Module -Force (Join-Path $PSScriptRoot src Modules Microsoft.Azure.Functions.PowerShellWorker)
-    try {
-        # Update the help and diff the result.
-        $docsPath = Join-Path $PSScriptRoot docs cmdlets
-        $null = Update-MarkdownHelp -Path $docsPath
-        $diff = git diff $docsPath
-        if ($diff) {
-            throw "Cmdlet help docs are not up-to-date, run Update-MarkdownHelp.`n$diff`n"
-        }
-        Write-Host "Help is up-to-date."
-    } finally {
-        # Clean up.
-        Remove-Module Microsoft.Azure.Functions.PowerShellWorker -Force
-    }
 }

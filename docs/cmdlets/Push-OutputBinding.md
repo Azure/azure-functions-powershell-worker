@@ -1,5 +1,5 @@
 ---
-external help file: Microsoft.Azure.Functions.PowerShellWorker-help.xml
+external help file: Microsoft.Azure.Functions.PowerShellWorker.dll-Help.xml
 Module Name: Microsoft.Azure.Functions.PowerShellWorker
 online version:
 schema: 2.0.0
@@ -92,6 +92,21 @@ The output binding of "outQueue" will now have a list with 4 items:
 
 ## PARAMETERS
 
+### -Clobber
+(Optional) If specified, will force the value to be set for a specified output binding.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
 ### -Name
 The name of the output binding you want to set.
 
@@ -101,7 +116,7 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
-Position: 1
+Position: 0
 Default value: None
 Accept pipeline input: False
 Accept wildcard characters: False
@@ -116,24 +131,9 @@ Parameter Sets: (All)
 Aliases:
 
 Required: True
-Position: 2
+Position: 1
 Default value: None
 Accept pipeline input: True (ByValue)
-Accept wildcard characters: False
-```
-
-### -Clobber
-(Optional) If specified, will force the value to be set for a specified output binding.
-
-```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: False
-Accept pipeline input: False
 Accept wildcard characters: False
 ```
 

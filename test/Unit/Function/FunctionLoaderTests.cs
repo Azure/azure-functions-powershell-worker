@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
-    public class FunctionLoaderTests
+    public class FunctionLoaderTests : IDisposable
     {
         private readonly string _functionDirectory;
         private readonly FunctionLoadRequest _functionLoadRequest;
@@ -47,6 +47,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             return functionLoadRequest;
         }
 
+        public void Dispose()
+        {
+            FunctionLoader.ClearLoadedFunctions();
+        }
+
         [Fact]
         public void TestFunctionLoaderGetFunc()
         {
@@ -54,13 +59,37 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var entryPointToUse = string.Empty;
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
-            var functionLoader = new FunctionLoader();
-            functionLoader.LoadFunction(functionLoadRequest);
-
-            var funcInfo = functionLoader.GetFunctionInfo(functionLoadRequest.FunctionId);
+            FunctionLoader.LoadFunction(functionLoadRequest);
+            var funcInfo = FunctionLoader.GetFunctionInfo(functionLoadRequest.FunctionId);
 
             Assert.Equal(scriptFileToUse, funcInfo.ScriptPath);
             Assert.Equal(string.Empty, funcInfo.EntryPoint);
+
+            Assert.NotNull(funcInfo.FuncScriptBlock);
+
+            Assert.Equal(2, funcInfo.FuncParameters.Count);
+            Assert.True(funcInfo.FuncParameters.ContainsKey("req"));
+            Assert.True(funcInfo.FuncParameters.ContainsKey("inputBlob"));
+
+            Assert.Equal(3, funcInfo.AllBindings.Count);
+            Assert.Equal(2, funcInfo.InputBindings.Count);
+            Assert.Single(funcInfo.OutputBindings);
+        }
+
+        [Fact]
+        public void TestFunctionLoaderGetFuncWithRequires()
+        {
+            var scriptFileToUse = Path.Join(_functionDirectory, "FuncWithRequires.ps1");
+            var entryPointToUse = string.Empty;
+            var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
+
+            FunctionLoader.LoadFunction(functionLoadRequest);
+            var funcInfo = FunctionLoader.GetFunctionInfo(functionLoadRequest.FunctionId);
+
+            Assert.Equal(scriptFileToUse, funcInfo.ScriptPath);
+            Assert.Equal(string.Empty, funcInfo.EntryPoint);
+
+            Assert.Null(funcInfo.FuncScriptBlock);
 
             Assert.Equal(2, funcInfo.FuncParameters.Count);
             Assert.True(funcInfo.FuncParameters.ContainsKey("req"));
@@ -78,13 +107,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var entryPointToUse = string.Empty;
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
-            var functionLoader = new FunctionLoader();
-            functionLoader.LoadFunction(functionLoadRequest);
-
-            var funcInfo = functionLoader.GetFunctionInfo(functionLoadRequest.FunctionId);
+            FunctionLoader.LoadFunction(functionLoadRequest);
+            var funcInfo = FunctionLoader.GetFunctionInfo(functionLoadRequest.FunctionId);
 
             Assert.Equal(scriptFileToUse, funcInfo.ScriptPath);
             Assert.Equal(string.Empty, funcInfo.EntryPoint);
+
+            Assert.NotNull(funcInfo.FuncScriptBlock);
 
             Assert.Equal(3, funcInfo.FuncParameters.Count);
             Assert.True(funcInfo.FuncParameters.ContainsKey("req"));
@@ -103,13 +132,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var entryPointToUse = "Run";
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
-            var functionLoader = new FunctionLoader();
-            functionLoader.LoadFunction(functionLoadRequest);
-
-            var funcInfo = functionLoader.GetFunctionInfo(functionLoadRequest.FunctionId);
+            FunctionLoader.LoadFunction(functionLoadRequest);
+            var funcInfo = FunctionLoader.GetFunctionInfo(functionLoadRequest.FunctionId);
 
             Assert.Equal(scriptFileToUse, funcInfo.ScriptPath);
             Assert.Equal(entryPointToUse, funcInfo.EntryPoint);
+
+            Assert.Null(funcInfo.FuncScriptBlock);
 
             Assert.Equal(2, funcInfo.FuncParameters.Count);
             Assert.True(funcInfo.FuncParameters.ContainsKey("req"));
@@ -128,7 +157,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
             var exception = Assert.Throws<ArgumentException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("entryPoint", exception.Message);
             Assert.Contains("(.psm1)", exception.Message);
         }
@@ -141,7 +170,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
             var exception = Assert.Throws<ArgumentException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("entryPoint", exception.Message);
             Assert.Contains("(.psm1)", exception.Message);
         }
@@ -154,7 +183,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
             var exception = Assert.Throws<ArgumentException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("parsing errors", exception.Message);
         }
 
@@ -166,7 +195,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
             var exception = Assert.Throws<ArgumentException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("CallMe", exception.Message);
             Assert.Contains("FuncWithEntryPoint.psm1", exception.Message);
         }
@@ -179,7 +208,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
             var exception = Assert.Throws<ArgumentException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("Run", exception.Message);
             Assert.Contains("FuncWithMultiEntryPoints.psm1", exception.Message);
         }
@@ -195,7 +224,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
 
             var exception = Assert.Throws<InvalidOperationException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("inputTable", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
@@ -211,7 +240,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
 
             var exception = Assert.Throws<InvalidOperationException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("inputTable", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
@@ -227,7 +256,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
 
             var exception = Assert.Throws<InvalidOperationException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("inputTable", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
@@ -243,7 +272,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             functionLoadRequest.Metadata.Bindings.Remove("inputBlob");
 
             var exception = Assert.Throws<InvalidOperationException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("inputTable", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
@@ -258,7 +287,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             functionLoadRequest.Metadata.Bindings.Add("inoutBinding", new BindingInfo { Direction = BindingInfo.Types.Direction.Inout, Type = "queue" });
 
             var exception = Assert.Throws<InvalidOperationException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("inoutBinding", exception.Message);
             Assert.Contains("InOut", exception.Message);
         }
@@ -271,7 +300,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
             var exception = Assert.Throws<InvalidOperationException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("req", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
@@ -284,7 +313,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
             var exception = Assert.Throws<InvalidOperationException>(
-                () => new FunctionLoader().LoadFunction(functionLoadRequest));
+                () => FunctionLoader.LoadFunction(functionLoadRequest));
             Assert.Contains("req", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
