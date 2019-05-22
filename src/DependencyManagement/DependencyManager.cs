@@ -69,6 +69,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         // If we do, we use it to clean up the module destination path.
         private bool _shouldUpdateFunctionAppDependencies;
 
+        // Maximum number of tries for retry logic when installing function app dependencies.
+        private const int MaxNumberOfTries = 3;
+
         internal DependencyManager()
         {
             Dependencies = new List<DependencyInfo>();
@@ -185,58 +188,86 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// </summary>
         internal void InstallFunctionAppDependencies(PowerShell pwsh, ILogger logger)
         {
-            try
+            // Install the function dependencies.
+            logger.Log(LogLevel.Trace, PowerShellWorkerStrings.InstallingFunctionAppDependentModules, isUserLog: true);
+
+            if (Directory.Exists(DependenciesPath))
             {
-                // Install the function dependencies.
-                logger.Log(LogLevel.Trace, PowerShellWorkerStrings.InstallingFunctionAppDependentModules, isUserLog: true);
-
-                if (Directory.Exists(DependenciesPath))
-                {
-                    // Save-Module supports downloading side-by-size module versions. However, we only want to keep one version at the time.
-                    // If the ManagedDependencies folder exits, remove all its contents.
-                    DependencyManagementUtils.EmptyDirectory(DependenciesPath);
-                }
-                else
-                {
-                    // If the destination path does not exist, create it.
-                    Directory.CreateDirectory(DependenciesPath);
-                }
-
+                // Save-Module supports downloading side-by-size module versions. However, we only want to keep one version at the time.
+                // If the ManagedDependencies folder exits, remove all its contents.
+                DependencyManagementUtils.EmptyDirectory(DependenciesPath);
+            }
+            else
+            {
+                // If the destination path does not exist, create it.
+                // If the user does not have write access to the path, an exception will be raised.
                 try
                 {
-                    foreach (DependencyInfo module in Dependencies)
-                    {
-                        string moduleName = module.Name;
-                        string latestVersion = module.LatestVersion;
-
-                        // Save the module to the given path
-                        pwsh.AddCommand("PowerShellGet\\Save-Module")
-                            .AddParameter("Repository", Repository)
-                            .AddParameter("Name", moduleName)
-                            .AddParameter("RequiredVersion", latestVersion)
-                            .AddParameter("Path", DependenciesPath)
-                            .AddParameter("Force", Utils.BoxedTrue)
-                            .AddParameter("ErrorAction", "Stop")
-                            .InvokeAndClearCommands();
-
-                        var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, latestVersion);
-                        logger.Log(LogLevel.Trace, message, isUserLog: true);
-                    }
+                    Directory.CreateDirectory(DependenciesPath);
                 }
-                finally
+                catch (Exception e)
                 {
-                    // Clean up
-                    pwsh.AddCommand(Utils.RemoveModuleCmdletInfo)
-                        .AddParameter("Name", "PackageManagement, PowerShellGet")
-                        .AddParameter("Force", Utils.BoxedTrue)
-                        .AddParameter("ErrorAction", "SilentlyContinue")
-                        .InvokeAndClearCommands();
+                    var message = string.Format(PowerShellWorkerStrings.FailToCreateFunctionAppDependenciesDestinationPath, DependenciesPath, e.Message);
+                    logger.Log(LogLevel.Trace, message, isUserLog: true);
                 }
             }
-            catch (Exception e)
+
+            try
             {
-                var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
-                _dependencyError = new DependencyInstallationException(errorMsg, e);
+                foreach (DependencyInfo module in Dependencies)
+                {
+                    string moduleName = module.Name;
+                    string latestVersion = module.LatestVersion;
+
+                    int tries = 1;
+
+                    while (true)
+                    {
+                        try
+                        {
+                            // Save the module to the given path
+                            pwsh.AddCommand("PowerShellGet\\Save-Module")
+                                .AddParameter("Repository", Repository)
+                                .AddParameter("Name", moduleName)
+                                .AddParameter("RequiredVersion", latestVersion)
+                                .AddParameter("Path", DependenciesPath)
+                                .AddParameter("Force", Utils.BoxedTrue)
+                                .AddParameter("ErrorAction", "Stop")
+                                .InvokeAndClearCommands();
+
+                            var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, latestVersion);
+                            logger.Log(LogLevel.Trace, message, isUserLog: true);
+
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            if (tries >= MaxNumberOfTries)
+                            {
+                                var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
+                                _dependencyError = new DependencyInstallationException(errorMsg, e);
+
+                                throw _dependencyError;
+                            }
+
+                            // Update the retry counter
+                            tries++;
+                        }
+
+                        // Wait for 2^(tries-1) seconds between retries. In this case, it would be 1, 2, and 4 seconds, respectively.
+                        double waitTimeInSeconds = Math.Pow(2, tries - 1);
+                        TimeSpan.FromSeconds(waitTimeInSeconds);
+                    }
+                }
+            }
+            finally
+            {
+                // Clean up
+                pwsh.AddCommand(Utils.RemoveModuleCmdletInfo)
+                    .AddParameter("Name", "PackageManagement, PowerShellGet")
+                    .AddParameter("Force", Utils.BoxedTrue)
+                    .AddParameter("ErrorAction", "SilentlyContinue")
+                    .InvokeAndClearCommands();
             }
         }
 
