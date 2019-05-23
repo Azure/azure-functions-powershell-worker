@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
@@ -249,14 +250,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                                 throw _dependencyError;
                             }
-
-                            // Update the retry counter
-                            tries++;
+                            else
+                            {
+                                var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependency, moduleName, latestVersion, e.Message);
+                                logger.Log(LogLevel.Error, errorMsg, isUserLog: true);
+                            }
                         }
 
                         // Wait for 2^(tries-1) seconds between retries. In this case, it would be 1, 2, and 4 seconds, respectively.
-                        double waitTimeInSeconds = Math.Pow(2, tries - 1);
-                        TimeSpan.FromSeconds(waitTimeInSeconds);
+                        var waitTimeSpan = TimeSpan.FromSeconds(Math.Pow(2, tries - 1));
+                        Thread.Sleep(waitTimeSpan);
+
+                        // Update the retry counter
+                        tries++;
                     }
                 }
             }
