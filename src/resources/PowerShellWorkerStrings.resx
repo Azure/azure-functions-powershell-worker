@@ -170,7 +170,7 @@
     <value>Cannot find a supported version for module '{0}' with major version '{0}'.</value>
   </data>
   <data name="FunctionAppDoesNotHaveDependentModulesToInstall" xml:space="preserve">
-    <value>Function App does have dependent modules to install.</value>
+    <value>FunctionApp does have dependent modules to install.</value>
   </data>
   <data name="DependencyPropertyIsNullOrEmpty" xml:space="preserve">
     <value>Dependency '{0}' is null or empty.</value>
@@ -179,7 +179,7 @@
     <value>Module name '{0}' version '{0}' has been installed.</value>
   </data>
   <data name="LatestFunctionAppDependenciesAlreadyInstalled" xml:space="preserve">
-    <value>Function app has the latest dependencies already installed.</value>
+    <value>FunctionApp has the latest dependencies already installed.</value>
   </data>
   <data name="ManagedDependencyNotSupported" xml:space="preserve">
     <value>Managed dependency name '{0}' is not supported.</value>
@@ -194,16 +194,16 @@
     <value>Invalid major version for module '{0}'. The maximum available major version is '{1}'.</value>
   </data>
   <data name="FailToInstallFuncAppDependencies" xml:space="preserve">
-    <value>Fail to install function app dependencies. Restarting the app may resolve the error. Error: '{0}'</value>
+    <value>Fail to install FunctionApp dependencies. For more information, please see error logs. Restarting the app may resolve the error. Error: '{0}'</value>
   </data>
   <data name="FailToResolveHomeDirectory" xml:space="preserve">
     <value>Fail to resolve '{0}' path in App Service.</value>
   </data>
   <data name="InstallingFunctionAppDependentModules" xml:space="preserve">
-    <value>Installing function app dependent modules.</value>
+    <value>Installing FunctionApp dependent modules.</value>
   </data>
   <data name="FailToClenupModuleDestinationPath" xml:space="preserve">
-    <value>Failed to clean up module destination path '{0}'</value>
+    <value>Fail to clean up module destination path '{0}'</value>
   </data>
   <data name="LogConcurrencyUpperBound" xml:space="preserve">
     <value>The enforced concurrency level (pool size limit) is '{0}'.</value>
@@ -225,5 +225,11 @@
   </data>
   <data name="UnrecognizedBehavior" xml:space="preserve">
     <value>Unrecognized data collecting behavior '{0}'.</value>
+  </data>
+  <data name="FailToCreateFunctionAppDependenciesDestinationPath" xml:space="preserve">
+    <value>Fail to create FunctionApp dependencies destination path '{0}'. Please make sure you have write access to this location. Error '{1}''. </value>
+  </data>
+    <data name="FailToInstallFuncAppDependency" xml:space="preserve">
+    <value>Fail to install FunctionApp dependent module '{0}' version '{1}'. Error: '{2}''. </value>
   </data>
 </root>
