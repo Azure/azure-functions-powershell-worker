@@ -53,6 +53,34 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         }
 
         /// <summary>
+        /// Sets/prepares the destination path where the function app dependencies will be installed.
+        /// </summary>
+        internal static void SetDependenciesDestinationPath(string path)
+        {
+            // Save-Module supports downloading side-by-size module versions. However, we only want to keep one version at the time.
+            // If the ManagedDependencies folder exits, remove all its contents.
+            if (Directory.Exists(path))
+            {
+                EmptyDirectory(path);
+            }
+            else
+            {
+                // If the destination path does not exist, create it.
+                // If the user does not have write access to the path, an exception will be raised.
+                try
+                {
+                    Directory.CreateDirectory(path);
+                }
+                catch (Exception e)
+                {
+                    var errorMsg = string.Format(PowerShellWorkerStrings.FailToCreateFunctionAppDependenciesDestinationPath, path, e.Message);
+                    throw new InvalidOperationException(errorMsg);
+                }
+            }
+        }
+
+
+        /// <summary>
         /// Returns the latest module version from the PSGallery for the given module name and major version.
         /// </summary>
         internal static string GetModuleLatestSupportedVersion(string moduleName, string majorVersion)
