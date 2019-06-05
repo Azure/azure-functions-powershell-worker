@@ -74,7 +74,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Gets or sets the ContentType of the Http response.
         /// </summary>
-        public string ContentType { get; set; } = "text/plain";
+        public string ContentType { get; set; }
 
         /// <summary>
         /// Gets or sets the EnableContentNegotiation of the Http response.
