@@ -420,16 +420,53 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
-        public void TestObjectToTypedData_WhenBodyIsJson_AddsApplicationJsonContentTypeHeader()
+        public void TestObjectToTypedData_WhenBodyIsJsonAndNoContentType_AddsApplicationJsonContentTypeHeader()
         {
             var input = new HttpResponseContext
             {
-                Body = new TypedData { Json = "{}" }
+                Body = new TypedData { Json = "{\"Hello\":\"World\"}" }
             };
 
-            var typedData = input.ToTypedData();
+            Assert.Equal("application/json", input.ToTypedData().Http.Headers["content-type"]);
+        }
 
-            Assert.Equal("application/json", typedData.Http.Headers["content-type"]);
+        [Fact]
+        public void TestObjectToTypedData_WhenBodyIsJsonAndContentTypeIsSpecified_AddsSpecifiedContentTypeHeader()
+        {
+            var input = new HttpResponseContext
+            {
+                Body = new TypedData { Json = "{\"Hello\":\"World\"}" },
+                ContentType = "text/plain"
+            };
+
+            Assert.Equal("text/plain", input.ToTypedData().Http.Headers["content-type"]);
+        }
+
+        [Fact]
+        public void TestObjectToTypedData_WhenBodyIsNotJsonAndNoContentType_AddsTextPlainContentTypeHeader()
+        {
+            var input = new HttpResponseContext
+            {
+                // Even though the content looks like Json,
+                // the intent is to respond with a string.
+                Body = new TypedData { String = "{\"Hello\":\"World\"}" }
+            };
+
+            Assert.Equal("text/plain", input.ToTypedData().Http.Headers["content-type"]);
+        }
+
+        [Fact]
+        public void TestObjectToTypedData_WhenBodyIsNotJsonAndContentTypeIsSpecified_AddsSpecifiedContentTypeHeader()
+        {
+            var input = new HttpResponseContext
+            {
+                // Even though the content looks like Json,
+                // the intent is to respond with a string.
+                Body = new TypedData { String = "{\"Hello\":\"World\"}" },
+                ContentType = "text/html"
+            };
+
+            Assert.Equal("text/html", input.ToTypedData().Http.Headers["content-type"]);
         }
 
         [Fact]
