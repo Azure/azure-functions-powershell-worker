@@ -171,7 +171,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             // Allow the user to set content-type in the Headers
             if (!rpcHttp.Headers.ContainsKey("content-type"))
             {
-                var contentType = httpResponseContext.ContentType ?? "text/plain";
+                var contentType = httpResponseContext.ContentType ??
+                    (rpcHttp.Body.DataCase == TypedData.DataOneofCase.Json
+                        ? "application/json"
+                        : "text/plain");
+
                 rpcHttp.Headers.Add("content-type", contentType);
             }
 
