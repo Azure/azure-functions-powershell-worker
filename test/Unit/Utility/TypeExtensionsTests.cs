@@ -420,6 +420,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
+        public void TestObjectToTypedData_WhenBodyIsJson_AddsApplicationJsonContentTypeHeader()
+        {
+            var input = new HttpResponseContext
+            {
+                Body = new TypedData { Json = "{}" }
+            };
+
+            var typedData = input.ToTypedData();
+
+            Assert.Equal("application/json", typedData.Http.Headers["content-type"]);
+        }
+
+        [Fact]
         public void TestObjectToTypedDataInt()
         {
             var data = 1;
