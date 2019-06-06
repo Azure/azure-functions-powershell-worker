@@ -11,18 +11,27 @@ using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
-    public class DependencyManagementTests
+    using System.Management.Automation;
+
+    public class DependencyManagementTests : IDisposable
     {
         private readonly string _dependencyManagementDirectory;
         private readonly string _functionId;
         private const string ManagedDependenciesFolderName = "ManagedDependencies";
         private const string AzureFunctionsFolderName = "AzureFunctions";
+        private readonly ConsoleLogger _testLogger;
 
         public DependencyManagementTests()
         {
             _dependencyManagementDirectory = Path.Combine(
                 AppDomain.CurrentDomain.BaseDirectory, "TestScripts", "DependencyManagement");
             _functionId = Guid.NewGuid().ToString();
+            _testLogger = new ConsoleLogger();
+        }
+
+        public void Dispose()
+        {
+            _testLogger.FullLog.Clear();
         }
 
         private FunctionLoadRequest GetFuncLoadRequest(string functionAppRoot, bool managedDependencyEnabled)
@@ -106,7 +115,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 // Test case setup.
                 var requirementsDirectoryName = "EmptyHashtableRequirement";
-                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName,"FunctionDirectory");
+                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
                 var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
                 var managedDependenciesFolderPath = GetManagedDependenciesPath(functionAppRoot);
                 var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
@@ -176,6 +185,133 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 () => new DependencyManager().Initialize(functionLoadRequest));
             Assert.Contains("No 'requirements.psd1'", exception.Message);
             Assert.Contains("is found at the FunctionApp root folder", exception.Message);
+        }
+
+        [Fact]
+        public void TestManagedDependencySuccessfulModuleDownload()
+        {
+            string filePath = null;
+            try
+            {
+                // Test case setup.
+                var requirementsDirectoryName = "BasicRequirements";
+                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName,
+                    "FunctionDirectory");
+                var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
+                var managedDependenciesFolderPath = GetManagedDependenciesPath(functionAppRoot);
+                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
+
+                // Create DependencyManager and process the requirements.psd1 file at the function app root.
+                var dependencyManager = new TestDependencyManager();
+                dependencyManager.Initialize(functionLoadRequest);
+
+                // Install the function app dependencies.
+                dependencyManager.InstallFunctionAppDependencies(null, _testLogger);
+
+                // Here we will get two logs: one that says that we are installing the dependencies, and one for a successful download.
+                bool correctLogCount = (_testLogger.FullLog.Count == 2);
+                Assert.True(correctLogCount);
+
+                // The first log should say "Installing FunctionApp dependent modules."
+                Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, _testLogger.FullLog[0]);
+
+                // In the overwritten RunSaveModuleCommand method, we write a text file with module name and version.
+                // Read the file content of the generated file.
+                filePath = Path.Join(DependencyManager.DependenciesPath, dependencyManager.TestFileName);
+                string fileContent = File.ReadAllText(filePath);
+
+                // After running save module, we write a log with the module name and version.
+                // This should match was is written in the log.
+                Assert.Contains(fileContent, _testLogger.FullLog[1]);
+
+                // Lastly, DependencyError should be null since the module was downloaded successfully.
+                Assert.Null(dependencyManager.DependencyError);
+            }
+            finally
+            {
+                TestCaseCleanup();
+                if (filePath != null && File.Exists(filePath))
+                {
+                    try { File.Delete(filePath); } catch { }
+                }
+             }
+        }
+
+        [Fact]
+        public void TestManagedDependencyRetryLogic()
+        {
+            try
+            {
+                // Test case setup
+                var requirementsDirectoryName = "BasicRequirements";
+                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
+                var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
+                var managedDependenciesFolderPath = GetManagedDependenciesPath(functionAppRoot);
+
+                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
+
+                // Create DependencyManager and process the requirements.psd1 file at the function app root.
+                var dependencyManager = new TestDependencyManager();
+                dependencyManager.Initialize(functionLoadRequest);
+
+                // Set the dependencyManager to throw in the RunSaveModuleCommand call.
+                dependencyManager.ShouldThrow = true;
+
+                // Validate retry logic.
+                dependencyManager.InstallFunctionAppDependencies(null, _testLogger);
+
+                // Here we will get four logs: one that says that we are installing the
+                // dependencies, and three for failing to install the module.
+                bool correctLogCount = (_testLogger.FullLog.Count == 4);
+                Assert.True(correctLogCount);
+
+                // The first log should say "Installing FunctionApp dependent modules."
+                Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, _testLogger.FullLog[0]);
+
+                // The subsequent logs should contain the following:
+                for (int index = 1; index < _testLogger.FullLog.Count; index++)
+                {
+                    Assert.Contains("Fail to install module", _testLogger.FullLog[index]);
+                }
+
+                // Lastly, DependencyError should get set after unsuccessfully  retyring 3 times.
+                Assert.NotNull(dependencyManager.DependencyError);
+                Assert.Contains("Fail to install FunctionApp dependencies. Error:", dependencyManager.DependencyError.Message);
+            }
+            finally
+            {
+                TestCaseCleanup();
+            }
+        }
+    }
+
+    internal class TestDependencyManager : DependencyManager
+    {
+        public bool ShouldThrow { get; set; }
+
+        public string TestFileName { get; set; } = "ModuleInstalled.txt";
+
+        internal TestDependencyManager()
+        {
+        }
+
+        protected override void RunSaveModuleCommand(PowerShell pwsh, string repository, string moduleName, string version, string path)
+        {
+            if (ShouldThrow)
+            {
+                var errorMsg = $"Fail to install module '{moduleName}' version '{version}'";
+                throw new InvalidOperationException(errorMsg);
+            }
+
+            // Write a text file to the given path with the information of the module that was downloaded.
+            var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, version);
+            var filePath = Path.Join(path, TestFileName);
+            File.WriteAllText(filePath, message);
+        }
+
+        protected override void RemoveSaveModuleModules(PowerShell pwsh)
+        {
+            return;
         }
     }
 }
