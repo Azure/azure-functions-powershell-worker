@@ -60,10 +60,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         // Managed Dependencies folder name.
         private const string ManagedDependenciesFolderName = "ManagedDependencies";
 
-        //Set when any error occurs while downloading dependencies
+        // Set when any error occurs while downloading dependencies
         private Exception _dependencyError;
 
-        //Dependency download task
+        // Dependency download task
         private Task _dependencyDownloadTask;
 
         // This flag is used to figure out if we need to install/reinstall all the function app dependencies.
@@ -72,6 +72,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         // Maximum number of tries for retry logic when installing function app dependencies.
         private const int MaxNumberOfTries = 3;
+
+        // Save-Module cmdlet name
+        private const string SaveModuleCmdletName = "PowerShellGet\\Save-Module";
 
         internal DependencyManager()
         {
@@ -192,25 +195,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             // Install the function dependencies.
             logger.Log(LogLevel.Trace, PowerShellWorkerStrings.InstallingFunctionAppDependentModules, isUserLog: true);
 
-            if (Directory.Exists(DependenciesPath))
+            try
             {
-                // Save-Module supports downloading side-by-size module versions. However, we only want to keep one version at the time.
-                // If the ManagedDependencies folder exits, remove all its contents.
-                DependencyManagementUtils.EmptyDirectory(DependenciesPath);
+                SetDependenciesDestinationPath(DependenciesPath);
             }
-            else
+            catch (Exception e)
             {
-                // If the destination path does not exist, create it.
-                // If the user does not have write access to the path, an exception will be raised.
-                try
-                {
-                    Directory.CreateDirectory(DependenciesPath);
-                }
-                catch (Exception e)
-                {
-                    var message = string.Format(PowerShellWorkerStrings.FailToCreateFunctionAppDependenciesDestinationPath, DependenciesPath, e.Message);
-                    logger.Log(LogLevel.Trace, message, isUserLog: true);
-                }
+                logger.Log(LogLevel.Error, e.Message, isUserLog: true);
+                _dependencyError = new DependencyInstallationException(e.Message, e);
+                return;
             }
 
             try
@@ -227,14 +220,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         try
                         {
                             // Save the module to the given path
-                            pwsh.AddCommand("PowerShellGet\\Save-Module")
-                                .AddParameter("Repository", Repository)
-                                .AddParameter("Name", moduleName)
-                                .AddParameter("RequiredVersion", latestVersion)
-                                .AddParameter("Path", DependenciesPath)
-                                .AddParameter("Force", Utils.BoxedTrue)
-                                .AddParameter("ErrorAction", "Stop")
-                                .InvokeAndClearCommands();
+                            RunSaveModuleCommand(pwsh, Repository, moduleName, latestVersion, DependenciesPath);
 
                             var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, latestVersion);
                             logger.Log(LogLevel.Trace, message, isUserLog: true);
@@ -243,17 +229,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         }
                         catch (Exception e)
                         {
+                            var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallModule, moduleName, latestVersion, e.Message);
+                            logger.Log(LogLevel.Error, errorMsg, isUserLog: true);
+
                             if (tries >= MaxNumberOfTries)
                             {
-                                var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
+                                errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
                                 _dependencyError = new DependencyInstallationException(errorMsg, e);
-
-                                throw _dependencyError;
-                            }
-                            else
-                            {
-                                var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependency, moduleName, latestVersion, e.Message);
-                                logger.Log(LogLevel.Error, errorMsg, isUserLog: true);
+                                return;
                             }
                         }
 
@@ -269,15 +252,65 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             finally
             {
                 // Clean up
-                pwsh.AddCommand(Utils.RemoveModuleCmdletInfo)
-                    .AddParameter("Name", "PackageManagement, PowerShellGet")
-                    .AddParameter("Force", Utils.BoxedTrue)
-                    .AddParameter("ErrorAction", "SilentlyContinue")
-                    .InvokeAndClearCommands();
+                RemoveSaveModuleModules(pwsh);
             }
         }
 
         #region Helper_Methods
+
+        /// <summary>
+        /// Runs Save-Module which downloads a module locally from the specified repository.
+        /// </summary>
+        protected virtual void RunSaveModuleCommand(PowerShell pwsh, string repository, string moduleName, string version, string path)
+        {
+            pwsh.AddCommand(SaveModuleCmdletName)
+                .AddParameter("Repository", repository)
+                .AddParameter("Name", moduleName)
+                .AddParameter("RequiredVersion", version)
+                .AddParameter("Path", path)
+                .AddParameter("Force", Utils.BoxedTrue)
+                .AddParameter("ErrorAction", "Stop")
+                .InvokeAndClearCommands();
+        }
+
+        /// <summary>
+        /// Removes the PowerShell modules used by the Save-Module cmdlet.
+        /// </summary>
+        protected virtual void RemoveSaveModuleModules(PowerShell pwsh)
+        {
+            pwsh.AddCommand(Utils.RemoveModuleCmdletInfo)
+                .AddParameter("Name", "PackageManagement, PowerShellGet")
+                .AddParameter("Force", Utils.BoxedTrue)
+                .AddParameter("ErrorAction", "SilentlyContinue")
+                .InvokeAndClearCommands();
+        }
+
+        /// <summary>
+        /// Sets/prepares the destination path where the function app dependencies will be installed.
+        /// </summary>
+        internal void SetDependenciesDestinationPath(string path)
+        {
+            // Save-Module supports downloading side-by-size module versions. However, we only want to keep one version at the time.
+            // If the ManagedDependencies folder exits, remove all its contents.
+            if (Directory.Exists(path))
+            {
+                DependencyManagementUtils.EmptyDirectory(path);
+            }
+            else
+            {
+                // If the destination path does not exist, create it.
+                // If the user does not have write access to the path, an exception will be raised.
+                try
+                {
+                    Directory.CreateDirectory(path);
+                }
+                catch (Exception e)
+                {
+                    var errorMsg = string.Format(PowerShellWorkerStrings.FailToCreateFunctionAppDependenciesDestinationPath, path, e.Message);
+                    throw new InvalidOperationException(errorMsg);
+                }
+            }
+        }
 
         /// <summary>
         /// Validates that the given major version is less or equal to the latest supported major version.

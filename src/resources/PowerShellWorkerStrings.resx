@@ -176,7 +176,7 @@
     <value>Dependency '{0}' is null or empty.</value>
   </data>
   <data name="ModuleHasBeenInstalled" xml:space="preserve">
-    <value>Module name '{0}' version '{0}' has been installed.</value>
+    <value>Module name '{0}' version '{1}' has been installed.</value>
   </data>
   <data name="LatestFunctionAppDependenciesAlreadyInstalled" xml:space="preserve">
     <value>FunctionApp has the latest dependencies already installed.</value>
@@ -194,7 +194,7 @@
     <value>Invalid major version for module '{0}'. The maximum available major version is '{1}'.</value>
   </data>
   <data name="FailToInstallFuncAppDependencies" xml:space="preserve">
-    <value>Fail to install FunctionApp dependencies. For more information, please see error logs. Restarting the app may resolve the error. Error: '{0}'</value>
+    <value>Fail to install FunctionApp dependencies. Error: '{0}'</value>
   </data>
   <data name="FailToResolveHomeDirectory" xml:space="preserve">
     <value>Fail to resolve '{0}' path in App Service.</value>
@@ -229,7 +229,7 @@
   <data name="FailToCreateFunctionAppDependenciesDestinationPath" xml:space="preserve">
     <value>Fail to create FunctionApp dependencies destination path '{0}'. Please make sure you have write access to this location. Error '{1}''. </value>
   </data>
-    <data name="FailToInstallFuncAppDependency" xml:space="preserve">
-    <value>Fail to install FunctionApp dependent module '{0}' version '{1}'. Error: '{2}''. </value>
+    <data name="FailToInstallModule" xml:space="preserve">
+    <value>Fail to install module '{0}' version '{1}'. Error: '{2}'</value>
   </data>
 </root>
