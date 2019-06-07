@@ -190,7 +190,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void TestManagedDependencySuccessfulModuleDownload()
         {
-            string filePath = null;
             try
             {
                 // Test case setup.
@@ -204,6 +203,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var dependencyManager = new TestDependencyManager();
                 dependencyManager.Initialize(functionLoadRequest);
 
+                // Configure the dependency manager to mimic a successful download.
+                dependencyManager.SuccessfulDownload = true;
+
                 // Install the function app dependencies.
                 dependencyManager.InstallFunctionAppDependencies(null, _testLogger);
 
@@ -214,14 +216,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 // The first log should say "Installing FunctionApp dependent modules."
                 Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, _testLogger.FullLog[0]);
 
-                // In the overwritten RunSaveModuleCommand method, we write a text file with module name and version.
-                // Read the file content of the generated file.
-                filePath = Path.Join(DependencyManager.DependenciesPath, dependencyManager.TestFileName);
-                string fileContent = File.ReadAllText(filePath);
-
-                // After running save module, we write a log with the module name and version.
-                // This should match was is written in the log.
-                Assert.Contains(fileContent, _testLogger.FullLog[1]);
+                // In the overwritten RunSaveModuleCommand method, we saved in DownloadedModuleInfo the module name and version.
+                // This same information is logged after running save-module, so validate that they match.
+                Assert.Contains(dependencyManager.DownloadedModuleInfo, _testLogger.FullLog[1]);
 
                 // Lastly, DependencyError should be null since the module was downloaded successfully.
                 Assert.Null(dependencyManager.DependencyError);
@@ -229,15 +226,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             finally
             {
                 TestCaseCleanup();
-                if (filePath != null && File.Exists(filePath))
-                {
-                    try { File.Delete(filePath); } catch { }
-                }
-             }
+            }
         }
 
         [Fact]
-        public void TestManagedDependencyRetryLogic()
+        public void TestManagedDependencySuccessfulModuleDownloadAfterTwoTries()
         {
             try
             {
@@ -253,10 +246,60 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var dependencyManager = new TestDependencyManager();
                 dependencyManager.Initialize(functionLoadRequest);
 
-                // Set the dependencyManager to throw in the RunSaveModuleCommand call.
-                dependencyManager.ShouldThrow = true;
+                // Configure the dependencyManager to not throw in the RunSaveModuleCommand call after 2 tries.
+                dependencyManager.ShouldNotThrowAfterCount = 2;
 
-                // Validate retry logic.
+                // Try to install the function app dependencies.
+                dependencyManager.InstallFunctionAppDependencies(null, _testLogger);
+
+                // Here we will get four logs:
+                // - one that say that we are installing the dependencies
+                // - two that say that we failed to download the module
+                // - one for a successful module download
+                bool correctLogCount = (_testLogger.FullLog.Count == 4);
+                Assert.True(correctLogCount);
+
+                // The first log should say "Installing FunctionApp dependent modules."
+                Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, _testLogger.FullLog[0]);
+
+                // The subsequent two logs should contain the following: "Fail to install module"
+                for (int index = 1; index < _testLogger.FullLog.Count - 1; index++)
+                {
+                    Assert.Contains("Fail to install module", _testLogger.FullLog[index]);
+                }
+
+                // Successful module download log after two retries.
+                // In the overwritten RunSaveModuleCommand method, we saved in DownloadedModuleInfo the module name and version.
+                // This same information is logged after running save-module, so validate that they match.
+                Assert.Contains(dependencyManager.DownloadedModuleInfo, _testLogger.FullLog[3]);
+
+                // Lastly, DependencyError should be null since the module was downloaded successfully after two tries.
+                Assert.Null(dependencyManager.DependencyError);
+            }
+            finally
+            {
+                TestCaseCleanup();
+            }
+        }
+
+        [Fact]
+        public void TestManagedDependencyRetryLogicMaxNumberOfTries()
+        {
+            try
+            {
+                // Test case setup
+                var requirementsDirectoryName = "BasicRequirements";
+                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
+                var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
+                var managedDependenciesFolderPath = GetManagedDependenciesPath(functionAppRoot);
+
+                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
+
+                // Create DependencyManager and process the requirements.psd1 file at the function app root.
+                var dependencyManager = new TestDependencyManager();
+                dependencyManager.Initialize(functionLoadRequest);
+
+                // Try to install the function app dependencies.
                 dependencyManager.InstallFunctionAppDependencies(null, _testLogger);
 
                 // Here we will get four logs: one that says that we are installing the
@@ -286,9 +329,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
     internal class TestDependencyManager : DependencyManager
     {
-        public bool ShouldThrow { get; set; }
+        // RunSaveModuleCommand in the DependencyManager class has retry logic with a max number of tries
+        // set to three. By default, we set ShouldNotThrowAfterCount to 4 to always throw.
+        public int ShouldNotThrowAfterCount { get; set; } = 4;
 
-        public string TestFileName { get; set; } = "ModuleInstalled.txt";
+        public bool SuccessfulDownload { get; set; }
+
+        public string DownloadedModuleInfo { get; set; }
+
+        private int SaveModuleCount { get; set; }
 
         internal TestDependencyManager()
         {
@@ -296,16 +345,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         protected override void RunSaveModuleCommand(PowerShell pwsh, string repository, string moduleName, string version, string path)
         {
-            if (ShouldThrow)
+            if (SuccessfulDownload || (SaveModuleCount >= ShouldNotThrowAfterCount))
             {
-                var errorMsg = $"Fail to install module '{moduleName}' version '{version}'";
-                throw new InvalidOperationException(errorMsg);
+                // Save the module name and version for a successful download.
+                DownloadedModuleInfo = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, version);
+                return;
             }
 
-            // Write a text file to the given path with the information of the module that was downloaded.
-            var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, version);
-            var filePath = Path.Join(path, TestFileName);
-            File.WriteAllText(filePath, message);
+            SaveModuleCount++;
+
+            var errorMsg = $"Fail to install module '{moduleName}' version '{version}'";
+            throw new InvalidOperationException(errorMsg);
         }
 
         protected override void RemoveSaveModuleModules(PowerShell pwsh)
