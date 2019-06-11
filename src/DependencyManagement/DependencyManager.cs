@@ -229,7 +229,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         }
                         catch (Exception e)
                         {
-                            var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallModule, moduleName, latestVersion, e.Message);
+                            string currentAttempt = GetCurrentAttemptMessage(tries);
+                            var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallModule, moduleName, latestVersion, currentAttempt, e.Message);
                             logger.Log(LogLevel.Error, errorMsg, isUserLog: true);
 
                             if (tries >= MaxNumberOfTries)
@@ -283,6 +284,35 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 .AddParameter("Force", Utils.BoxedTrue)
                 .AddParameter("ErrorAction", "SilentlyContinue")
                 .InvokeAndClearCommands();
+        }
+
+        /// <summary>
+        /// Returs the string representation of the given attempt number.
+        /// 1 returns 1st
+        /// 2 returns 2nd
+        /// 3 returns 3rd
+        /// </summary>
+        internal string GetCurrentAttemptMessage(int attempt)
+        {
+            string result = null;
+
+            switch (attempt)
+            {
+                case 1:
+                    result = PowerShellWorkerStrings.FirstAttempt;
+                    break;
+                case 2:
+                    result = PowerShellWorkerStrings.SecondAttempt;
+                    break;
+                case 3:
+                    result = PowerShellWorkerStrings.ThirdAttempt;
+                    break;
+                default:
+                    throw new InvalidOperationException("Invalid attempt number. Unreachable code.");
+
+            }
+
+            return result;
         }
 
         /// <summary>

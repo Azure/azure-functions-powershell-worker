@@ -229,7 +229,16 @@
   <data name="FailToCreateFunctionAppDependenciesDestinationPath" xml:space="preserve">
     <value>Fail to create FunctionApp dependencies destination path '{0}'. Please make sure you have write access to this location. Error '{1}''. </value>
   </data>
-    <data name="FailToInstallModule" xml:space="preserve">
-    <value>Fail to install module '{0}' version '{1}'. Error: '{2}'</value>
+  <data name="FailToInstallModule" xml:space="preserve">
+    <value>Fail to install module '{0}' version '{1}'. {2} attempt. Error: '{3}'</value>
+  </data>
+  <data name="FirstAttempt" xml:space="preserve">
+    <value>1st</value>
+  </data>
+  <data name="SecondAttempt" xml:space="preserve">
+    <value>2nd</value>
+  </data>
+  <data name="ThirdAttempt" xml:space="preserve">
+    <value>3rd</value>
   </data>
 </root>

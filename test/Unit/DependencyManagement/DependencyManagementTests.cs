@@ -266,6 +266,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 for (int index = 1; index < _testLogger.FullLog.Count - 1; index++)
                 {
                     Assert.Contains("Fail to install module", _testLogger.FullLog[index]);
+                    var currentAttempt = dependencyManager.GetCurrentAttemptMessage(index);
+                    Assert.Contains(currentAttempt, _testLogger.FullLog[index]);
                 }
 
                 // Successful module download log after two retries.
@@ -314,6 +316,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 for (int index = 1; index < _testLogger.FullLog.Count; index++)
                 {
                     Assert.Contains("Fail to install module", _testLogger.FullLog[index]);
+                    var currentAttempt = dependencyManager.GetCurrentAttemptMessage(index);
+                    Assert.Contains(currentAttempt, _testLogger.FullLog[index]);
                 }
 
                 // Lastly, DependencyError should get set after unsuccessfully  retyring 3 times.
