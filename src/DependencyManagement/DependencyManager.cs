@@ -10,8 +10,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
@@ -22,7 +24,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
     using System.Management.Automation;
     using System.Management.Automation.Language;
-    using System.Management.Automation.Runspaces;
 
     internal class DependencyManager
     {
@@ -70,11 +71,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         // If we do, we use it to clean up the module destination path.
         private bool _shouldUpdateFunctionAppDependencies;
 
+        // This string holds the message to be logged if we skipped updating function app dependencies.
+        private string _dependenciesNotUpdatedMessage;
+
         // Maximum number of tries for retry logic when installing function app dependencies.
         private const int MaxNumberOfTries = 3;
 
-        // Save-Module cmdlet name
+        // Save-Module cmdlet name.
         private const string SaveModuleCmdletName = "PowerShellGet\\Save-Module";
+
+        // The PowerShellGallery uri to query for the latest module version.
+        private const string PowerShellGalleryFindPackagesByIdUri = "https://www.powershellgallery.com/api/v2/FindPackagesById()?id=";
 
         internal DependencyManager()
         {
@@ -93,17 +100,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             {
                 var rpcLogger = new RpcLogger(msgStream);
                 rpcLogger.SetContext(request.RequestId, null);
+
+                if (!_shouldUpdateFunctionAppDependencies)
+                {
+                    if (!string.IsNullOrEmpty(_dependenciesNotUpdatedMessage))
+                    {
+                        // We were not able to update the function app dependencies.
+                        // However, there is a previous installation, so continue with the function app execution.
+                        rpcLogger.Log(LogLevel.Warning, _dependenciesNotUpdatedMessage, isUserLog: true);
+                        return;
+                    }
+                    else
+                    {
+                        // The function app already has the latest dependencies installed.
+                        rpcLogger.Log(LogLevel.Trace, PowerShellWorkerStrings.LatestFunctionAppDependenciesAlreadyInstalled, isUserLog: true);
+                        return;
+                    }
+                }
+
                 if (Dependencies.Count == 0)
                 {
                     // If there are no dependencies to install, log and return.
                     rpcLogger.Log(LogLevel.Trace, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, isUserLog: true);
-                    return;
-                }
-
-                if (!_shouldUpdateFunctionAppDependencies)
-                {
-                    // The function app already has the latest dependencies installed.
-                    rpcLogger.Log(LogLevel.Trace, PowerShellWorkerStrings.LatestFunctionAppDependenciesAlreadyInstalled, isUserLog: true);
                     return;
                 }
 
@@ -161,19 +179,49 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                     // Validate the module version.
                     string majorVersion = GetMajorVersion(version);
-                    string latestVersion = DependencyManagementUtils.GetModuleLatestSupportedVersion(name, majorVersion);
-                    ValidateModuleMajorVersion(name, majorVersion, latestVersion);
 
-                    // Before installing the module, check the path to see if it is already installed.
-                    var moduleVersionFolderPath = Path.Combine(DependenciesPath, name, latestVersion);
-                    if (!Directory.Exists(moduleVersionFolderPath))
+                    // Try to connect to the PSGallery via C# API to get the latest module supported version.
+                    string latestVersion = null;
+                    bool latestVersionRetrieved = false;
+                    try
                     {
-                        _shouldUpdateFunctionAppDependencies = true;
+                        latestVersion = GetModuleLatestSupportedVersion(name, majorVersion);
+                        latestVersionRetrieved = true;
+                    }
+                    catch (Exception e)
+                    {
+                        // If we fail to get the latest module version (this could be because the PSGallery is down).
+
+                        // Check to see if there are previous managed dependencies installed. If this is the case,
+                        // DependenciesPath is already set, so Get-Module will be able to find the modules.
+                        var pathToInstalledModule = Path.Combine(DependenciesPath, name);
+                        if (Directory.Exists(pathToInstalledModule))
+                        {
+                            // Message to the user for skipped dependencies upgrade.
+                            _dependenciesNotUpdatedMessage = string.Format(PowerShellWorkerStrings.DependenciesUpgradeSkippedMessage, e.Message);
+
+                            // Make sure that function app dependencies will NOT be installed, just continue with the function app execution.
+                            _shouldUpdateFunctionAppDependencies = false;
+                            return;
+                        }
+
+                        // Otherwise, rethrow and stop the function app execution.
+                        throw;
                     }
 
-                    // Create a DependencyInfo object and add it to the list of dependencies to install.
-                    var dependencyInfo = new DependencyInfo(name, majorVersion, latestVersion);
-                    Dependencies.Add(dependencyInfo);
+                    if (latestVersionRetrieved)
+                    {
+                        // Before installing the module, check the path to see if it is already installed.
+                        var moduleVersionFolderPath = Path.Combine(DependenciesPath, name, latestVersion);
+                        if (!Directory.Exists(moduleVersionFolderPath))
+                        {
+                            _shouldUpdateFunctionAppDependencies = true;
+                        }
+
+                        // Create a DependencyInfo object and add it to the list of dependencies to install.
+                        var dependencyInfo = new DependencyInfo(name, majorVersion, latestVersion);
+                        Dependencies.Add(dependencyInfo);
+                    }
                 }
             }
             catch (Exception e)
@@ -309,7 +357,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     break;
                 default:
                     throw new InvalidOperationException("Invalid attempt number. Unreachable code.");
-
             }
 
             return result;
@@ -343,20 +390,43 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         }
 
         /// <summary>
-        /// Validates that the given major version is less or equal to the latest supported major version.
+        /// Gets the latest module version from the PSGallery for the given module name and major version.
         /// </summary>
-        private void ValidateModuleMajorVersion(string moduleName, string majorVersion, string latestVersion)
+        internal string GetModuleLatestSupportedVersion(string moduleName, string majorVersion)
         {
-            // A Version object cannot be created with a single digit so add a '.0' to it.
-            var requestedVersion = new Version($"{majorVersion}.0");
-            var latestSupportedVersion = new Version(latestVersion);
+            string latestVersion = null;
 
-            if (requestedVersion.Major > latestSupportedVersion.Major)
+            string errorDetails = null;
+            bool throwException = false;
+
+            try
             {
-                // The requested major version is greater than the latest major supported version.
-                var errorMsg = string.Format(PowerShellWorkerStrings.InvalidModuleMajorVersion, moduleName, majorVersion);
-                throw new ArgumentException(errorMsg);
+                latestVersion = GetLatestModuleVersionFromThePSGallery(moduleName, majorVersion);
             }
+            catch (Exception e)
+            {
+                throwException = true;
+
+                if (!string.IsNullOrEmpty(e.Message))
+                {
+                    errorDetails = string.Format(PowerShellWorkerStrings.ErrorDetails, e.Message.ToString());
+                }
+            }
+
+            // If we could not find the latest module version error out.
+            if (string.IsNullOrEmpty(latestVersion) || throwException)
+            {
+                if (string.IsNullOrEmpty(errorDetails))
+                {
+                    errorDetails = string.Empty;
+                }
+
+                var errorMsg = string.Format(PowerShellWorkerStrings.FailToGetModuleLatestVersion, moduleName, majorVersion, errorDetails);
+                var argException = new ArgumentException(errorMsg);
+                throw argException;
+            }
+
+            return latestVersion;
         }
 
         /// <summary>
@@ -484,6 +554,76 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
 
             return managedDependenciesFolderPath;
+        }
+
+        /// <summary>
+        /// Returns the latest module version from the PSGallery for the given module name and major version.
+        /// </summary>
+        protected virtual string GetLatestModuleVersionFromThePSGallery(string moduleName, string majorVersion)
+        {
+            Uri address = new Uri($"{PowerShellGalleryFindPackagesByIdUri}'{moduleName}'");
+
+            string latestMajorVersion = null;
+            Stream stream = null;
+
+            var retryCount = 3;
+            while (true)
+            {
+                using (var client = new HttpClient())
+                {
+                    try
+                    {
+                        var response = client.GetAsync(address).Result;
+
+                        // Throw is not a successful request
+                        response.EnsureSuccessStatusCode();
+
+                        stream = response.Content.ReadAsStreamAsync().Result;
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        if (retryCount <= 0)
+                        {
+                            throw e;
+                        }
+                        retryCount--;
+                    }
+                }
+            }
+
+            if (stream != null)
+            {
+                // Load up the XML response
+                XmlDocument doc = new XmlDocument();
+                using (XmlReader reader = XmlReader.Create(stream))
+                {
+                    doc.Load(reader);
+                }
+
+                // Add the namespaces for the gallery xml content
+                XmlNamespaceManager nsmgr = new XmlNamespaceManager(doc.NameTable);
+                nsmgr.AddNamespace("ps", "http://www.w3.org/2005/Atom");
+                nsmgr.AddNamespace("d", "http://schemas.microsoft.com/ado/2007/08/dataservices");
+                nsmgr.AddNamespace("m", "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata");
+
+                // Find the version information
+                XmlNode root = doc.DocumentElement;
+                var props = root.SelectNodes("//m:properties/d:Version", nsmgr);
+
+                if (props != null && props.Count > 0)
+                {
+                    foreach (XmlNode prop in props)
+                    {
+                        if (prop.FirstChild.Value.StartsWith(majorVersion))
+                        {
+                            latestMajorVersion = prop.FirstChild.Value;
+                        }
+                    }
+                }
+            }
+
+            return latestMajorVersion;
         }
 
         #endregion

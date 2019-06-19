@@ -166,8 +166,8 @@
   <data name="SpecifiedCustomPipeName" xml:space="preserve">
     <value>Custom pipe name specified. You can attach to the process by using vscode or by running `Enter-PSHostProcess -CustomPipeName {0}`</value>
   </data>
-  <data name="CannotFindModuleVersion" xml:space="preserve">
-    <value>Cannot find a supported version for module '{0}' with major version '{0}'.</value>
+  <data name="FailToGetModuleLatestVersion" xml:space="preserve">
+    <value>Fail to get latest version for module '{0}' with major version '{1}'. {2} </value>
   </data>
   <data name="FunctionAppDoesNotHaveDependentModulesToInstall" xml:space="preserve">
     <value>FunctionApp does have dependent modules to install.</value>
@@ -189,9 +189,6 @@
   </data>
   <data name="InvalidVersionFormat" xml:space="preserve">
     <value>Version is not in the correct format. Please use the following notation: '{0}'</value>
-  </data>
-  <data name="InvalidModuleMajorVersion" xml:space="preserve">
-    <value>Invalid major version for module '{0}'. The maximum available major version is '{1}'.</value>
   </data>
   <data name="FailToInstallFuncAppDependencies" xml:space="preserve">
     <value>Fail to install FunctionApp dependencies. Error: '{0}'</value>
@@ -227,7 +224,7 @@
     <value>Unrecognized data collecting behavior '{0}'.</value>
   </data>
   <data name="FailToCreateFunctionAppDependenciesDestinationPath" xml:space="preserve">
-    <value>Fail to create FunctionApp dependencies destination path '{0}'. Please make sure you have write access to this location. Error '{1}''. </value>
+    <value>Fail to create FunctionApp dependencies destination path '{0}'. Please make sure you have write access to this location. Error '{1}'. </value>
   </data>
   <data name="FailToInstallModule" xml:space="preserve">
     <value>Fail to install module '{0}' version '{1}'. {2} attempt. Error: '{3}'</value>
@@ -240,5 +237,11 @@
   </data>
   <data name="ThirdAttempt" xml:space="preserve">
     <value>3rd</value>
+  </data>
+  <data name="ErrorDetails" xml:space="preserve">
+    <value>Error: '{0}'</value>
+  </data>
+  <data name="DependenciesUpgradeSkippedMessage" xml:space="preserve">
+    <value>Function app dependencies upgrade skipped. Error details: {0}. </value>
   </data>
 </root>
