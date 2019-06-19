@@ -329,6 +329,89 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 TestCaseCleanup();
             }
         }
+
+        [Fact]
+        public void FunctionAppExecutionShouldStopIfNoPreviousDependenciesAreInstalled()
+        {
+            try
+            {
+                // Test case setup
+                var requirementsDirectoryName = "BasicRequirements";
+                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
+                var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
+                var managedDependenciesFolderPath = GetManagedDependenciesPath(functionAppRoot);
+
+                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
+
+                // Create DependencyManager and configure it to mimic being unable to reach
+                // the PSGallery to retrieve the latest module version
+                var dependencyManager = new TestDependencyManager();
+                dependencyManager.GetLatestModuleVersionThrows = true;
+
+                // Trying to initialize the dependencyManager should throw
+                var exception = Assert.Throws<DependencyInstallationException>(() => dependencyManager.Initialize(functionLoadRequest));
+                Assert.Contains("Fail to install FunctionApp dependencies.", exception.Message);
+                Assert.Contains("Fail to connect to the PSGallery", exception.Message);
+
+                // Dependencies.Count should be 0, and DependencyManager.DependenciesPath should null
+                Assert.True(DependencyManager.Dependencies.Count == 0);
+                Assert.Null(DependencyManager.DependenciesPath);
+            }
+            finally
+            {
+                TestCaseCleanup();
+            }
+        }
+
+        [Fact]
+        public void FunctionAppExecutionShouldContinueIfPreviousDependenciesExist()
+        {
+            string AzModulePath = null;
+            try
+            {
+                // Test case setup
+                var requirementsDirectoryName = "BasicRequirements";
+                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
+                var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
+                var managedDependenciesFolderPath = GetManagedDependenciesPath(functionAppRoot);
+                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
+
+                // Create DependencyManager and configure it to mimic being unable to reach
+                // the PSGallery to retrive the latest module version
+                var dependencyManager = new TestDependencyManager();
+                dependencyManager.GetLatestModuleVersionThrows = true;
+
+                // Create a path to mimic an existing installation of the Az module
+                AzModulePath = Path.Join(managedDependenciesFolderPath, "Az");
+                if (Directory.Exists(AzModulePath))
+                {
+                    Directory.Delete(AzModulePath, true);
+                }
+                Directory.CreateDirectory(AzModulePath);
+
+                // Initializing the dependency manager should not throw even though we were not able
+                // to connect to the PSGallery--given that a previous installation of the Az module is present
+                dependencyManager.Initialize(functionLoadRequest);
+
+                // Dependencies.Count should be 0 (since no dependencies will be installed)
+                Assert.True(DependencyManager.Dependencies.Count == 0);
+
+                // Validate that DependencyManager.DependenciesPath is set, so
+                // Get-Module can find the existing dependencies installed
+                var dependenciesPathIsValid = managedDependenciesFolderPath.Equals(DependencyManager.DependenciesPath,
+                                                StringComparison.CurrentCultureIgnoreCase);
+                Assert.True(dependenciesPathIsValid);
+            }
+            finally
+            {
+                if (Directory.Exists(AzModulePath))
+                {
+                    Directory.Delete(AzModulePath, true);
+                }
+
+                TestCaseCleanup();
+            }
+        }
     }
 
     internal class TestDependencyManager : DependencyManager
@@ -342,6 +425,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         public string DownloadedModuleInfo { get; set; }
 
         private int SaveModuleCount { get; set; }
+
+        // Settings for GetLatestModuleVersionFromTheGallery
+        public bool GetLatestModuleVersionThrows { get; set; }
 
         internal TestDependencyManager()
         {
@@ -365,6 +451,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         protected override void RemoveSaveModuleModules(PowerShell pwsh)
         {
             return;
+        }
+
+        protected override string GetLatestModuleVersionFromThePSGallery(string moduleName, string majorVersion)
+        {
+            if (GetLatestModuleVersionThrows)
+            {
+                throw new InvalidOperationException("Fail to connect to the PSGallery");
+            }
+
+            return "2.0";
         }
     }
 }
