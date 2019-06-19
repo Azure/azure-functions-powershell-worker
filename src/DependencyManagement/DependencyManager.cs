@@ -108,14 +108,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         // We were not able to update the function app dependencies.
                         // However, there is a previous installation, so continue with the function app execution.
                         rpcLogger.Log(LogLevel.Warning, _dependenciesNotUpdatedMessage, isUserLog: true);
-                        return;
                     }
                     else
                     {
                         // The function app already has the latest dependencies installed.
                         rpcLogger.Log(LogLevel.Trace, PowerShellWorkerStrings.LatestFunctionAppDependenciesAlreadyInstalled, isUserLog: true);
-                        return;
                     }
+
+                    return;
                 }
 
                 if (Dependencies.Count == 0)
@@ -180,13 +180,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     // Validate the module version.
                     string majorVersion = GetMajorVersion(version);
 
-                    // Try to connect to the PSGallery via C# API to get the latest module supported version.
+                    // Try to connect to the PSGallery to get the latest module supported version.
                     string latestVersion = null;
-                    bool latestVersionRetrieved = false;
                     try
                     {
                         latestVersion = GetModuleLatestSupportedVersion(name, majorVersion);
-                        latestVersionRetrieved = true;
                     }
                     catch (Exception e)
                     {
@@ -209,19 +207,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         throw;
                     }
 
-                    if (latestVersionRetrieved)
+                    // Before installing the module, check the path to see if it is already installed.
+                    var moduleVersionFolderPath = Path.Combine(DependenciesPath, name, latestVersion);
+                    if (!Directory.Exists(moduleVersionFolderPath))
                     {
-                        // Before installing the module, check the path to see if it is already installed.
-                        var moduleVersionFolderPath = Path.Combine(DependenciesPath, name, latestVersion);
-                        if (!Directory.Exists(moduleVersionFolderPath))
-                        {
-                            _shouldUpdateFunctionAppDependencies = true;
-                        }
-
-                        // Create a DependencyInfo object and add it to the list of dependencies to install.
-                        var dependencyInfo = new DependencyInfo(name, majorVersion, latestVersion);
-                        Dependencies.Add(dependencyInfo);
+                        _shouldUpdateFunctionAppDependencies = true;
                     }
+
+                    // Create a DependencyInfo object and add it to the list of dependencies to install.
+                    var dependencyInfo = new DependencyInfo(name, majorVersion, latestVersion);
+                    Dependencies.Add(dependencyInfo);
                 }
             }
             catch (Exception e)
@@ -416,14 +411,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             // If we could not find the latest module version error out.
             if (string.IsNullOrEmpty(latestVersion) || throwException)
             {
-                if (string.IsNullOrEmpty(errorDetails))
-                {
-                    errorDetails = string.Empty;
-                }
-
-                var errorMsg = string.Format(PowerShellWorkerStrings.FailToGetModuleLatestVersion, moduleName, majorVersion, errorDetails);
-                var argException = new ArgumentException(errorMsg);
-                throw argException;
+                var errorMsg = string.Format(PowerShellWorkerStrings.FailToGetModuleLatestVersion, moduleName, majorVersion, errorDetails ?? string.Empty);
+                throw new InvalidOperationException(errorMsg);
             }
 
             return latestVersion;
