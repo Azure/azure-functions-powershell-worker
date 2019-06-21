@@ -345,7 +345,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
                 // Create DependencyManager and configure it to mimic being unable to reach
                 // the PSGallery to retrieve the latest module version
-                var dependencyManager = new TestDependencyManager();
+                var dependencyManager = new TestDependencyManager2();
                 dependencyManager.GetLatestModuleVersionThrows = true;
 
                 // Trying to initialize the dependencyManager should throw
@@ -378,7 +378,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
                 // Create DependencyManager and configure it to mimic being unable to reach
                 // the PSGallery to retrive the latest module version
-                var dependencyManager = new TestDependencyManager();
+                var dependencyManager = new TestDependencyManager2();
                 dependencyManager.GetLatestModuleVersionThrows = true;
 
                 // Create a path to mimic an existing installation of the Az module
@@ -426,9 +426,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         private int SaveModuleCount { get; set; }
 
-        // Settings for GetLatestModuleVersionFromTheGallery
-        public bool GetLatestModuleVersionThrows { get; set; }
-
         internal TestDependencyManager()
         {
         }
@@ -451,6 +448,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         protected override void RemoveSaveModuleModules(PowerShell pwsh)
         {
             return;
+        }
+    }
+
+    internal class TestDependencyManager2 : DependencyManager
+    {
+        // Settings for GetLatestModuleVersionFromTheGallery
+        public bool GetLatestModuleVersionThrows { get; set; }
+
+        internal TestDependencyManager2()
+        {
         }
 
         protected override string GetLatestModuleVersionFromThePSGallery(string moduleName, string majorVersion)
