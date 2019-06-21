@@ -162,7 +162,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // Also, we receive a FunctionLoadRequest when a proxy is configured. Proxies don't have the Metadata.Directory set
             // which would cause initialization issues with the PSModulePath. The only way to tell if a FunctionLoadRequest is
             // from a proxy is to test if Metadata.Directory is null or empty which is what we do here.
-            if (!_isFunctionAppInitialized && !string.IsNullOrEmpty(functionLoadRequest.Metadata.Directory))
+            if (!_isFunctionAppInitialized && !functionLoadRequest.Metadata.IsProxy)
             {
                 try
                 {
