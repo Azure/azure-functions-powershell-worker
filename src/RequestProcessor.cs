@@ -159,7 +159,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // Ideally, the initialization should happen when processing 'WorkerInitRequest', however, the 'WorkerInitRequest'
             // message doesn't provide information about the FunctionApp. That information is not available until the first
             // 'FunctionLoadRequest' comes in. Therefore, we run initialization here.
-            if (!_isFunctionAppInitialized)
+            // Also, we receive a FunctionLoadRequest when a proxy is configured. Proxies don't have the Metadata.Directory set
+            // which would cause initialization issues with the PSModulePath. Since they don't have that set, we skip over them.
+            if (!_isFunctionAppInitialized && !functionLoadRequest.Metadata.IsProxy)
             {
                 try
                 {
