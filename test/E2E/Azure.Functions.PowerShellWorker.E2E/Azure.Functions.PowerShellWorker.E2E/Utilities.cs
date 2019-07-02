@@ -48,6 +48,17 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             return true;
         }
 
+        public static async Task<string> InvokeHttpTrigger(string functionName, string queryString, HttpStatusCode expectedStatusCode, int expectedCode = 0)
+        {
+            var response = await GetHttpTriggerResponse(functionName, queryString);
+            if (expectedStatusCode != response.StatusCode && expectedCode != (int)response.StatusCode)
+            {
+                return null;
+            }
+
+            return await response.Content.ReadAsStringAsync();
+        }
+
         private static async Task<HttpResponseMessage> GetHttpTriggerResponse(string functionName, string queryString)
         {
             string uri = $"api/{functionName}{queryString}";
