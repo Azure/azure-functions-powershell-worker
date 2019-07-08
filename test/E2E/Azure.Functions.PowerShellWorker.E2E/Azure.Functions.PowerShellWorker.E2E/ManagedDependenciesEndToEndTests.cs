@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -14,7 +15,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         {
             var actualResponseMessage =
                 await Utilities.InvokeHttpTrigger("UsingManagedDependencies", string.Empty, HttpStatusCode.OK);
-            Assert.Contains(@"\ManagedDependencies\Az\", actualResponseMessage);
+            Assert.Matches(new Regex(@"[\\/]ManagedDependencies[\\/]Az[\\/]"), actualResponseMessage);
         }
     }
 }
