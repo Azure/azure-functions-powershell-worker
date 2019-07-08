@@ -65,9 +65,11 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
 
-            var httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri(Constants.FunctionsHostUrl);
-            return await httpClient.SendAsync(request);
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.BaseAddress = new Uri(Constants.FunctionsHostUrl);
+                return await httpClient.SendAsync(request);
+            }
         }
     }
 }
