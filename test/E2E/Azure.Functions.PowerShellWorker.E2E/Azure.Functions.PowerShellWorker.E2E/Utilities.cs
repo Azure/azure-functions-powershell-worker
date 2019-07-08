@@ -34,13 +34,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
         public static async Task<bool> InvokeHttpTrigger(string functionName, string queryString, HttpStatusCode expectedStatusCode, string expectedMessage, int expectedCode = 0)
         {
-            string uri = $"api/{functionName}{queryString}";
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
-
-            var httpClient = new HttpClient();
-            httpClient.BaseAddress = new Uri(Constants.FunctionsHostUrl);
-            var response = await httpClient.SendAsync(request);
+            var response = await GetHttpTriggerResponse(functionName, queryString);
             if (expectedStatusCode != response.StatusCode && expectedCode != (int)response.StatusCode)
             {
                 return false;
@@ -52,6 +46,28 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                 return actualMessage.Contains(expectedMessage);
             }
             return true;
+        }
+
+        public static async Task<string> InvokeHttpTrigger(string functionName, string queryString, HttpStatusCode expectedStatusCode, int expectedCode = 0)
+        {
+            var response = await GetHttpTriggerResponse(functionName, queryString);
+            if (expectedStatusCode != response.StatusCode && expectedCode != (int)response.StatusCode)
+            {
+                return null;
+            }
+
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        private static async Task<HttpResponseMessage> GetHttpTriggerResponse(string functionName, string queryString)
+        {
+            string uri = $"api/{functionName}{queryString}";
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
+
+            var httpClient = new HttpClient();
+            httpClient.BaseAddress = new Uri(Constants.FunctionsHostUrl);
+            return await httpClient.SendAsync(request);
         }
     }
 }
