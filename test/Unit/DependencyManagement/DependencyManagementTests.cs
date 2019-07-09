@@ -336,24 +336,27 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
                     var relevantLogs = _testLogger.FullLog.Where(
                         message => message.StartsWith("Error: Fail to install module")
-                                   || message.StartsWith("Trace: Installing FunctionApp dependent modules")).ToList();
+                                   || message.StartsWith("Trace: Installing FunctionApp dependent modules")
+                                   || message.StartsWith("Warning: Failed to install dependencies")).ToList();
 
                     // Here we will get four logs: one that says that we are installing the
                     // dependencies, and three for failing to install the module.
-                    Assert.Equal(4, relevantLogs.Count);
+                    Assert.Equal(5, relevantLogs.Count);
 
                     // The first log should say "Installing FunctionApp dependent modules."
                     Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, relevantLogs[0]);
 
                     // The subsequent logs should contain the following:
-                    for (int index = 1; index < relevantLogs.Count; index++)
+                    for (int index = 1; index < 4; index++)
                     {
                         Assert.Contains("Fail to install module", relevantLogs[index]);
                         var currentAttempt = DependencySnapshotInstaller.GetCurrentAttemptMessage(index);
                         Assert.Contains(currentAttempt, relevantLogs[index]);
                     }
 
-                    // Lastly, DependencyError should get set after unsuccessfully  retyring 3 times.
+                    Assert.Matches("Warning: Failed to install dependencies into '(.+?)', removing the folder", relevantLogs[4]);
+
+                    // Lastly, DependencyError should get set after unsuccessfully retrying 3 times.
                     Assert.NotNull(dependencyError);
                     Assert.Contains("Fail to install FunctionApp dependencies. Error:", dependencyError.Message);
                 }
