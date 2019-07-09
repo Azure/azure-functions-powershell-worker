@@ -12,7 +12,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     internal interface IDependencySnapshotInstaller
     {
         void InstallSnapshot(
-            IEnumerable<DependencyInfo> dependencies,
+            IEnumerable<DependencyManifestEntry> dependencies,
             string targetPath,
             PowerShell pwsh,
             ILogger logger);

@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         }
 
         public void InstallSnapshot(
-            IEnumerable<DependencyInfo> dependencies,
+            IEnumerable<DependencyManifestEntry> dependencies,
             string targetPath,
             PowerShell pwsh,
             ILogger logger)
@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
             try
             {
-                foreach (DependencyInfo module in dependencies)
+                foreach (DependencyInfo module in GetLatestPublishedVersionsOfDependencies(dependencies))
                 {
                     string moduleName = module.Name;
                     string latestVersion = module.LatestVersion;
@@ -116,6 +116,56 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 default:
                     throw new InvalidOperationException("Invalid attempt number. Unreachable code.");
             }
+        }
+
+        private List<DependencyInfo> GetLatestPublishedVersionsOfDependencies(
+            IEnumerable<DependencyManifestEntry> dependencies)
+        {
+            var result = new List<DependencyInfo>();
+
+            foreach (var entry in dependencies)
+            {
+                var latestVersion = GetModuleLatestPublishedVersion(entry.Name, entry.MajorVersion);
+
+                var dependencyInfo = new DependencyInfo(entry.Name, latestVersion);
+                result.Add(dependencyInfo);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Gets the latest published module version for the given module name and major version.
+        /// </summary>
+        private string GetModuleLatestPublishedVersion(string moduleName, string majorVersion)
+        {
+            string latestVersion = null;
+
+            string errorDetails = null;
+            bool throwException = false;
+
+            try
+            {
+                latestVersion = _moduleProvider.GetLatestPublishedModuleVersion(moduleName, majorVersion);
+            }
+            catch (Exception e)
+            {
+                throwException = true;
+
+                if (!string.IsNullOrEmpty(e.Message))
+                {
+                    errorDetails = string.Format(PowerShellWorkerStrings.ErrorDetails, e.Message);
+                }
+            }
+
+            // If we could not find the latest module version error out.
+            if (string.IsNullOrEmpty(latestVersion) || throwException)
+            {
+                var errorMsg = string.Format(PowerShellWorkerStrings.FailToGetModuleLatestVersion, moduleName, majorVersion, errorDetails ?? string.Empty);
+                throw new InvalidOperationException(errorMsg);
+            }
+
+            return latestVersion;
         }
     }
 }
