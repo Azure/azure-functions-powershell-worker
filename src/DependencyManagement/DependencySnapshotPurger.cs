@@ -25,6 +25,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             _storage = storage;
         }
 
+        /// <summary>
+        /// Remove old unused snapshots.
+        /// </summary>
         public void Purge(ILogger logger)
         {
             var allSnapshotPaths = _storage.GetInstalledAndInstallingSnapshots();

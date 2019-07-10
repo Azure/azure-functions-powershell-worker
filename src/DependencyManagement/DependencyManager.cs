@@ -102,10 +102,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         /// <summary>
         /// Start dependency installation if needed.
+        /// firstPowerShell is the first PowerShell instance created in this process (which this is important for local debugging),
+        /// and it _may_ be used to download modules.
         /// </summary>
-        /// <param name="request">The StreamingMessage request for function load</param>
-        /// <param name="firstPowerShell">The first PowerShell instance (may or may not be used to download modules)</param>
-        /// <param name="logger">The logger</param>
         public void StartDependencyInstallationIfNeeded(StreamingMessage request, PowerShell firstPowerShell, ILogger logger)
         {
             if (!request.FunctionLoadRequest.ManagedDependencyEnabled)

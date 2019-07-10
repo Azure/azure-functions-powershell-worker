@@ -9,6 +9,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
     internal interface IDependencySnapshotPurger
     {
+        /// <summary>
+        /// Remove old unused snapshots.
+        /// </summary>
         void Purge(ILogger logger);
     }
 }
