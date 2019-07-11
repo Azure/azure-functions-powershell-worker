@@ -25,14 +25,14 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             var rootDependenciesFolderPosition =
                 Array.FindIndex(
                     pathParts,
-                    item => string.Compare(item, ManagedDependenciesRootFolder, StringComparison.InvariantCultureIgnoreCase) == 0);
+                    item => string.Compare(item, ManagedDependenciesRootFolder, StringComparison.OrdinalIgnoreCase) == 0);
 
             Assert.True(rootDependenciesFolderPosition != -1, $"'{ManagedDependenciesRootFolder}' is not found in response message '{actualResponseMessage}'");
 
             var moduleFolderPosition =
                 Array.FindIndex(
                     pathParts,
-                    item => string.Compare(item, ModuleFolder, StringComparison.InvariantCultureIgnoreCase) == 0);
+                    item => string.Compare(item, ModuleFolder, StringComparison.OrdinalIgnoreCase) == 0);
 
             Assert.True(moduleFolderPosition != -1, $"'{ModuleFolder}' is not found at an expected position in response message '{actualResponseMessage}'");
         }

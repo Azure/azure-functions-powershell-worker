@@ -63,7 +63,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// <returns>
         /// The dependency snapshot path where all the required dependencies are installed
         /// or will be installed. This path can be added to PSModulePath.
-        /// Returns null if managed dependencies are disabled or the 
+        /// Returns null if managed dependencies are disabled or the manifest does not have any dependencies declared.
         /// </returns>
         public string Initialize(StreamingMessage request, ILogger logger)
         {
@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 if (!_dependenciesFromManifest.Any())
                 {
-                    logger.Log(LogLevel.Trace, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, isUserLog: true);
+                    logger.Log(LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, isUserLog: true);
                     return null;
                 }
 

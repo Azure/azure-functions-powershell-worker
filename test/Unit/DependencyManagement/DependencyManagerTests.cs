@@ -70,7 +70,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             var dependenciesPath = dependencyManager.Initialize(_mockLogger.Object);
 
             Assert.Null(dependenciesPath);
-            VerifyMessageLogged(LogLevel.Trace, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall);
+            VerifyMessageLogged(LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall);
         }
 
         [Fact]
