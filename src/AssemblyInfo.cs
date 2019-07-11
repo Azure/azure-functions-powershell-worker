@@ -6,4 +6,4 @@
 using System.Runtime.CompilerServices;
 
 [assembly:InternalsVisibleTo("Microsoft.Azure.Functions.PowerShellWorker.Test")]
-
+[assembly:InternalsVisibleTo("DynamicProxyGenAssembly2")]

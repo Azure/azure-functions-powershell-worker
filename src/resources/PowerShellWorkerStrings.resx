@@ -178,8 +178,8 @@
   <data name="ModuleHasBeenInstalled" xml:space="preserve">
     <value>Module name '{0}' version '{1}' has been installed.</value>
   </data>
-  <data name="LatestFunctionAppDependenciesAlreadyInstalled" xml:space="preserve">
-    <value>FunctionApp has the latest dependencies already installed.</value>
+  <data name="AcceptableFunctionAppDependenciesAlreadyInstalled" xml:space="preserve">
+    <value>The function app has existing dependencies installed. Updating the dependencies to the latest versions will be performed in the background. New function app instances will pick up any new dependencies.</value>
   </data>
   <data name="ManagedDependencyNotSupported" xml:space="preserve">
     <value>Managed dependency name '{0}' is not supported.</value>
@@ -243,5 +243,11 @@
   </data>
   <data name="DependenciesUpgradeSkippedMessage" xml:space="preserve">
     <value>Function app dependencies upgrade skipped. Error details: {0}. </value>
+  </data>
+  <data name="FailedToRemoveDependenciesFolder" xml:space="preserve">
+    <value>Failed to remove old dependencies folder '{0}'. Error: '{1}'.</value>
+  </data>
+  <data name="RemovingDependenciesFolder" xml:space="preserve">
+    <value>Removing dependencies folder '{0}'.</value>
   </data>
 </root>

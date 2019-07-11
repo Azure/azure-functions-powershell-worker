@@ -8,6 +8,7 @@
 - [Host Request Processing](#host-request-processing)
 - [Intuitive User Experience](#intuitive-user-experience)
 - [Concurrent Invocation of Functions](#concurrent-invocation-of-functions)
+- [Managed Dependencies](#managed-dependencies)
 - [Durable Functions Prototype](#durable-functions-prototype)
 
 ## Introduction
@@ -458,6 +459,44 @@ The default pool size is currently one, but it's configurable through an environ
 Once a PowerShell Manager instance is checked out, the worker's main thread will create a task with it for the actual invocation, which will happen in a thread-pool thread. The worker's main thread itself will immediately go processing the next incoming request. After the function invocation is done, the PowerShell Manager instance will be reset and reclaimed by the pool, waiting to be checked out again for the next invocation.
 
 Note that, checking out a PowerShell Manager instance from the pool is a blocking operation. When the number of concurrent invocations reaches the pool size, the worker's main thread will block on the checkout operation for the next invocation request until a PowerShell Manager instance becomes available. The initial design was to let the checkout operation happen in the thread-pool thread too, so the main thread would just create a task and go back processing the next request. However, it turned out to result in high lock contention due to too many tasks competing during the checkout operation. Therefore, the design was changed to make the checkout operation happen only in main thread, and a task gets created only after a PowerShell Manager instance becomes available.
+
+## Managed Dependencies
+
+### Problem
+
+The goal is to let the user declare the dependencies required by functions, and rely on the service automatically locating and installing the dependencies from the PowerShell Gallery or other sources, taking care of selecting the proper versions, and automatically upgrading the dependencies to the latest versions (if allowed by the version specifications provided by the user).
+
+Dependencies are declared in the _requirements.psd1_ file (_manifest_) as a collection of pairs (<_name_>, <_version specification_>). Currently, only _Az_ module is allowed, and the version specification should strictly match the following pattern: `<major version>.*`, so a typical manifest looks like this:
+
+``` PowerShell
+@{ 'Az' = '2.*' }
+```
+
+However, the design should accommodate multiple module entries and allow specifying exact versions.
+
+Installing and upgrading dependencies should be performed automatically, without requiring any interaction with the user, and without interfering with the currently running functions. This represents an important design challenge. In a different context, dependencies could be stored on a single location on the file system, managed by regular PowerShell tools (`Install-Module`/`Save-Module`, `PSDepend`, etc.), while having the same file system location added to _PSModulePath_ to make all the modules available to scripts running on this machine. This is what PowerShell users normally do, and this approach looks attractive because it is simple and conventional. However, in the contexts where multiple independent workers load modules and execute scripts concurrently, and at the same time some module versions are being added, upgraded, or removed, this simple approach causes many known problems. The root causes of these problems are in the fundamentals of PowerShell and PowerShell modules design. The managed dependencies design in Azure Functions must take this into account. The problems will be solved if we satisfy the following conditions:
+
+- **Only one writer at a time**. No concurrent executions of `Save-Module`, `PSDepend`, or anything else that could perform changes _on the same target file path_*_.
+- **Atomic updates**. All workers executing a PowerShell script should always observe a state of dependency files that is a result of a _successful and complete_ execution of `Save-Module` or a similar tool. The workers should never observe any partial results.
+- **Immutable view**. As soon as a set of dependency files is exposed to a worker for loading module purposes for the first time, this set of files should never change _during the life time of this worker._ Deletions, additions, or modifications are not acceptable.
+
+### Solution
+
+The main design idea is to partition the installed dependencies in such a way that every PowerShell worker gets exactly one complete and immutable set of dependencies for the lifetime of this worker (until restart). The same set of dependencies can be shared by multiple PowerShell workers, but each worker is strictly tied to a single set.
+
+On the first function load request, the PowerShell worker reads the manifest and installs all the required dependencies into a dedicated folder on a file storage shared between all PowerShell workers within the function app. The subsequent function invocation requests are blocked until the installation of _all_ the dependencies is _completed successfully_. After the successful installation, the PowerShell worker insert the path of the folder to the '_PSModulePath_' variable of the PowerShell worker process, so that they become available to all functions running on this worker, and allows function invocation requests to proceed. The path to this folder is inserted into '_PSModulePath_' _before_ the `functionAppRoot\Modules` path, so that the managed dependencies folder is discovered first when modules are imported. This entire set of dependencies becomes an immutable _snapshot_: once created and exposed to PowerShell workers, it never changes: no modules or module versions are ever added to this snapshot or removed from this snapshot.
+
+On the next function load request (normally received on a worker start), the worker reads the manifest and checks if the latest snapshot contains the dependencies satisfying the manifest. If the latest snapshot is _acceptable_, the worker makes '_PSModulePath_' point to this snapshot folder and allows the next function invocation proceed immediately. At the same time, the worker starts a background installation of all the dependencies into a new folder, which after successful completion becomes the latest snapshot. At this point, other starting workers will be able to find and use the new snapshot. The workers that were already running when the new snapshot was installed will be able to use it after restart.
+
+A snapshot is considered _acceptable_ if it contains any version _allowed_ by the manifest for each required dependency. For example, Az 2.1 is allowed by the manifest containing `'Az' = '2.*'`, so the snapshot containing Az 2.1 will be considered acceptable, even if Az 2.2 is published on the PowerShell Gallery. As a result, the next function invocation will be allowed to proceed with Az 2.1 without waiting for any other Az version to be installed, and without even trying to contact the PowerShell Gallery for discovering the latest module version. All these activities can be performed in the background, without blocking function invocations.
+
+However, if the latest snapshot is _not acceptable_ (i.e. it does not contain module versions required by the manifest), the worker starts installing the dependencies into a new snapshot, and all the subsequent function invocation requests are blocked, waiting for the new snapshot installation to complete.
+
+When a snapshot installation starts, the dependencies are first installed into a folder with a name following a special pattern (`*.i`), so that this snapshot is not picked up by any worker prematurely, before the installation is complete. After _successful_ completion, the snapshot is _atomically promoted_ by renaming the folder to follow a different pattern (`*.r`), which indicates to other workers that this snapshot is ready to use. If the installation fails or cannot complete for any reason (for example, the worker restarts, crashes, or gets decommissioned), the folder stays in the installing state until removed.
+
+Incomplete and old snapshots that are no longer in use are periodically removed from the file storage. No other changes are ever performed to the snapshots that were once installed.
+
+In this design, upgrading dependencies is conceptually decoupled from executing functions. Upgrading dependencies can be performed on any schedule by one or multiple agents, (almost) without any coordination between each other or with the workers executing functions. This allows us to make independent decisions on whether to run it from a separate service or keep it in PowerShell workers, and schedule the upgrade as often as we want. For now, upgrading dependencies is still performed by the PowerShell workers, just to avoid the overhead of deploying and maintaining a separate service. However, the design keeps this option open.
 
 ## Durable Functions Prototype
 

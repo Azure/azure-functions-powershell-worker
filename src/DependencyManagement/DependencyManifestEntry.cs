@@ -5,15 +5,16 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
-    internal class DependencyInfo
+    internal class DependencyManifestEntry
     {
-        internal readonly string Name;
-        internal readonly string LatestVersion;
+        public string Name { get; }
 
-        internal DependencyInfo(string name, string latestVersion)
+        public string MajorVersion { get; }
+
+        public DependencyManifestEntry(string name, string majorVersion)
         {
             Name = name;
-            LatestVersion = latestVersion;
+            MajorVersion = majorVersion;
         }
     }
 }
