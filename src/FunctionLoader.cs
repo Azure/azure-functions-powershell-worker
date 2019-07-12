@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
-using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {

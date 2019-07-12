@@ -6,6 +6,7 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
     using System;
+    using System.IO;
 
     internal static class DependencySnapshotFolderNameTools
     {
@@ -14,6 +15,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         public const string InstalledPostfix = ".r";
 
         public const string InstalledPattern = "*" + InstalledPostfix;
+
+        private const string AccessMarkerFileName = ".used";
 
         public static string CreateUniqueName()
         {
@@ -35,6 +38,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         public static string ConvertInstalledToInstalling(string installedPath)
         {
             return installedPath + InstallingPostfix;
+        }
+
+        public static string CreateLastAccessMarkerFilePath(string installedPath)
+        {
+            return Path.Join(installedPath, AccessMarkerFileName);
         }
     }
 }

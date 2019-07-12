@@ -11,6 +11,7 @@ using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
+    using System.Linq;
     using System.Management.Automation;
 
     public class DependencyManagementTests : IDisposable
@@ -76,8 +77,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory);
-                dependencyManager.Initialize(_testLogger);
+                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+                {
+                    dependencyManager.Initialize(_testLogger);
+                }
             }
             catch
             {
@@ -99,14 +102,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory);
-                var currentDependenciesPath = dependencyManager.Initialize(_testLogger);
+                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+                {
+                    var currentDependenciesPath = dependencyManager.Initialize(_testLogger);
 
-                // Validate that dependenciesPath and DependencyManager.Dependencies are set correctly.
-                var dependenciesPathIsValid = currentDependenciesPath.StartsWith(
-                                                managedDependenciesFolderPath,
-                                                StringComparison.CurrentCultureIgnoreCase);
-                Assert.True(dependenciesPathIsValid);
+                    // Validate that dependenciesPath and DependencyManager.Dependencies are set correctly.
+                    var dependenciesPathIsValid = currentDependenciesPath.StartsWith(
+                                                    managedDependenciesFolderPath,
+                                                    StringComparison.CurrentCultureIgnoreCase);
+                    Assert.True(dependenciesPathIsValid);
+                }
             }
             finally
             {
@@ -127,10 +132,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory);
-                var currentDependenciesPath = dependencyManager.Initialize(_testLogger);
+                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+                {
+                    var currentDependenciesPath = dependencyManager.Initialize(_testLogger);
 
-                Assert.Null(currentDependenciesPath);
+                    Assert.Null(currentDependenciesPath);
+                }
             }
             finally
             {
@@ -146,12 +153,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
             var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
-            // Trying to set the functionApp dependencies should throw since requirements.psd1 is not a hash table.
-            var exception = Assert.Throws<DependencyInstallationException>(
-                () => new DependencyManager(functionLoadRequest.Metadata.Directory).Initialize(_testLogger));
-            Assert.Contains("The PowerShell data file", exception.Message);
-            Assert.Contains("requirements.psd1", exception.Message);
-            Assert.Contains("is invalid since it cannot be evaluated into a Hashtable object", exception.Message);
+            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+            {
+                // Trying to set the functionApp dependencies should throw since requirements.psd1 is not a hash table.
+                var exception = Assert.Throws<DependencyInstallationException>(
+                                    () => { dependencyManager.Initialize(_testLogger); });
+                Assert.Contains("The PowerShell data file", exception.Message);
+                Assert.Contains("requirements.psd1", exception.Message);
+                Assert.Contains("is invalid since it cannot be evaluated into a Hashtable object", exception.Message);
+            }
         }
 
         [Fact]
@@ -162,13 +172,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
             var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
-            // Trying to set the functionApp dependencies should throw since the module version
-            // in requirements.psd1 is not in a valid format.
-            var exception = Assert.Throws<DependencyInstallationException>(
-                () => new DependencyManager(functionLoadRequest.Metadata.Directory).Initialize(_testLogger));
-            Assert.Contains("Version is not in the correct format.", exception.Message);
-            Assert.Contains("Please use the following notation:", exception.Message);
-            Assert.Contains("MajorVersion.*", exception.Message);
+            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+            {
+                // Trying to set the functionApp dependencies should throw since the module version
+                // in requirements.psd1 is not in a valid format.
+                var exception = Assert.Throws<DependencyInstallationException>(
+                                    () => { dependencyManager.Initialize(_testLogger); });
+
+                Assert.Contains("Version is not in the correct format.", exception.Message);
+                Assert.Contains("Please use the following notation:", exception.Message);
+                Assert.Contains("MajorVersion.*", exception.Message);
+            }
         }
 
         [Fact]
@@ -179,12 +193,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
             var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
-            // Trying to set the functionApp dependencies should throw since no
-            // requirements.psd1 is found at the function app root.
-            var exception = Assert.Throws<DependencyInstallationException>(
-                () => new DependencyManager(functionLoadRequest.Metadata.Directory).Initialize(_testLogger));
-            Assert.Contains("No 'requirements.psd1'", exception.Message);
-            Assert.Contains("is found at the FunctionApp root folder", exception.Message);
+            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+            {
+                // Trying to set the functionApp dependencies should throw since no
+                // requirements.psd1 is found at the function app root.
+                var exception = Assert.Throws<DependencyInstallationException>(
+                                    () => { dependencyManager.Initialize(_testLogger); });
+
+                Assert.Contains("No 'requirements.psd1'", exception.Message);
+                Assert.Contains("is found at the FunctionApp root folder", exception.Message);
+            }
         }
 
         [Fact]
@@ -203,25 +221,30 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var mockModuleProvider = new MockModuleProvider { SuccessfulDownload = true };
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, mockModuleProvider);
-                dependencyManager.Initialize(_testLogger);
+                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, mockModuleProvider))
+                {
+                    dependencyManager.Initialize(_testLogger);
 
-                // Install the function app dependencies.
-                var dependencyError = dependencyManager.InstallFunctionAppDependencies(PowerShell.Create(), PowerShell.Create, _testLogger);
+                    // Install the function app dependencies.
+                    var dependencyError = dependencyManager.InstallFunctionAppDependencies(PowerShell.Create(), PowerShell.Create, _testLogger);
 
-                // Here we will get two logs: one that says that we are installing the dependencies, and one for a successful download.
-                bool correctLogCount = (_testLogger.FullLog.Count == 2);
-                Assert.True(correctLogCount);
+                    var relevantLogs = _testLogger.FullLog.Where(
+                        message => message.StartsWith("Trace: Module name")
+                                   || message.StartsWith("Trace: Installing FunctionApp dependent modules")).ToList();
 
-                // The first log should say "Installing FunctionApp dependent modules."
-                Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, _testLogger.FullLog[0]);
+                    // Here we will get two logs: one that says that we are installing the dependencies, and one for a successful download.
+                    Assert.Equal(2, relevantLogs.Count);
 
-                // In the overwritten RunSaveModuleCommand method, we saved in DownloadedModuleInfo the module name and version.
-                // This same information is logged after running save-module, so validate that they match.
-                Assert.Contains(mockModuleProvider.DownloadedModuleInfo, _testLogger.FullLog[1]);
+                    // The first log should say "Installing FunctionApp dependent modules."
+                    Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, relevantLogs[0]);
 
-                // Lastly, DependencyError should be null since the module was downloaded successfully.
-                Assert.Null(dependencyError);
+                    // In the overwritten RunSaveModuleCommand method, we saved in DownloadedModuleInfo the module name and version.
+                    // This same information is logged after running save-module, so validate that they match.
+                    Assert.Contains(mockModuleProvider.DownloadedModuleInfo, relevantLogs[1]);
+
+                    // Lastly, DependencyError should be null since the module was downloaded successfully.
+                    Assert.Null(dependencyError);
+                }
             }
             finally
             {
@@ -246,37 +269,43 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var mockModuleProvider = new MockModuleProvider { ShouldNotThrowAfterCount = 2 };
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, mockModuleProvider);
-                dependencyManager.Initialize(_testLogger);
-
-                // Try to install the function app dependencies.
-                var dependencyError = dependencyManager.InstallFunctionAppDependencies(PowerShell.Create(), PowerShell.Create, _testLogger);
-
-                // Here we will get four logs:
-                // - one that say that we are installing the dependencies
-                // - two that say that we failed to download the module
-                // - one for a successful module download
-                bool correctLogCount = (_testLogger.FullLog.Count == 4);
-                Assert.True(correctLogCount);
-
-                // The first log should say "Installing FunctionApp dependent modules."
-                Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, _testLogger.FullLog[0]);
-
-                // The subsequent two logs should contain the following: "Fail to install module"
-                for (int index = 1; index < _testLogger.FullLog.Count - 1; index++)
+                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, mockModuleProvider))
                 {
-                    Assert.Contains("Fail to install module", _testLogger.FullLog[index]);
-                    var currentAttempt = DependencySnapshotInstaller.GetCurrentAttemptMessage(index);
-                    Assert.Contains(currentAttempt, _testLogger.FullLog[index]);
+                    dependencyManager.Initialize(_testLogger);
+
+                    // Try to install the function app dependencies.
+                    var dependencyError = dependencyManager.InstallFunctionAppDependencies(PowerShell.Create(), PowerShell.Create, _testLogger);
+
+                    var relevantLogs = _testLogger.FullLog.Where(
+                        message => message.StartsWith("Error: Fail to install module")
+                                   || message.StartsWith("Trace: Installing FunctionApp dependent modules")
+                                   || message.StartsWith("Trace: Module name")).ToList();
+
+                    // Here we will get four logs:
+                    // - one that say that we are installing the dependencies
+                    // - two that say that we failed to download the module
+                    // - one for a successful module download
+                    Assert.Equal(4, relevantLogs.Count);
+
+                    // The first log should say "Installing FunctionApp dependent modules."
+                    Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, relevantLogs[0]);
+
+                    // The subsequent two logs should contain the following: "Fail to install module"
+                    for (int index = 1; index < relevantLogs.Count - 1; index++)
+                    {
+                        Assert.Contains("Fail to install module", relevantLogs[index]);
+                        var currentAttempt = DependencySnapshotInstaller.GetCurrentAttemptMessage(index);
+                        Assert.Contains(currentAttempt, relevantLogs[index]);
+                    }
+
+                    // Successful module download log after two retries.
+                    // In the overwritten RunSaveModuleCommand method, we saved in DownloadedModuleInfo the module name and version.
+                    // This same information is logged after running save-module, so validate that they match.
+                    Assert.Contains(mockModuleProvider.DownloadedModuleInfo, relevantLogs[3]);
+
+                    // Lastly, DependencyError should be null since the module was downloaded successfully after two tries.
+                    Assert.Null(dependencyError);
                 }
-
-                // Successful module download log after two retries.
-                // In the overwritten RunSaveModuleCommand method, we saved in DownloadedModuleInfo the module name and version.
-                // This same information is logged after running save-module, so validate that they match.
-                Assert.Contains(mockModuleProvider.DownloadedModuleInfo, _testLogger.FullLog[3]);
-
-                // Lastly, DependencyError should be null since the module was downloaded successfully after two tries.
-                Assert.Null(dependencyError);
             }
             finally
             {
@@ -298,30 +327,36 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, new MockModuleProvider());
-                dependencyManager.Initialize(_testLogger);
-
-                // Try to install the function app dependencies.
-                var dependencyError = dependencyManager.InstallFunctionAppDependencies(PowerShell.Create(), PowerShell.Create, _testLogger);
-
-                // Here we will get four logs: one that says that we are installing the
-                // dependencies, and three for failing to install the module.
-                Assert.Equal(4, _testLogger.FullLog.Count);
-
-                // The first log should say "Installing FunctionApp dependent modules."
-                Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, _testLogger.FullLog[0]);
-
-                // The subsequent logs should contain the following:
-                for (int index = 1; index < _testLogger.FullLog.Count; index++)
+                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, new MockModuleProvider()))
                 {
-                    Assert.Contains("Fail to install module", _testLogger.FullLog[index]);
-                    var currentAttempt = DependencySnapshotInstaller.GetCurrentAttemptMessage(index);
-                    Assert.Contains(currentAttempt, _testLogger.FullLog[index]);
-                }
+                    dependencyManager.Initialize(_testLogger);
 
-                // Lastly, DependencyError should get set after unsuccessfully  retyring 3 times.
-                Assert.NotNull(dependencyError);
-                Assert.Contains("Fail to install FunctionApp dependencies. Error:", dependencyError.Message);
+                    // Try to install the function app dependencies.
+                    var dependencyError = dependencyManager.InstallFunctionAppDependencies(PowerShell.Create(), PowerShell.Create, _testLogger);
+
+                    var relevantLogs = _testLogger.FullLog.Where(
+                        message => message.StartsWith("Error: Fail to install module")
+                                   || message.StartsWith("Trace: Installing FunctionApp dependent modules")).ToList();
+
+                    // Here we will get four logs: one that says that we are installing the
+                    // dependencies, and three for failing to install the module.
+                    Assert.Equal(4, relevantLogs.Count);
+
+                    // The first log should say "Installing FunctionApp dependent modules."
+                    Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, relevantLogs[0]);
+
+                    // The subsequent logs should contain the following:
+                    for (int index = 1; index < relevantLogs.Count; index++)
+                    {
+                        Assert.Contains("Fail to install module", relevantLogs[index]);
+                        var currentAttempt = DependencySnapshotInstaller.GetCurrentAttemptMessage(index);
+                        Assert.Contains(currentAttempt, relevantLogs[index]);
+                    }
+
+                    // Lastly, DependencyError should get set after unsuccessfully  retyring 3 times.
+                    Assert.NotNull(dependencyError);
+                    Assert.Contains("Fail to install FunctionApp dependencies. Error:", dependencyError.Message);
+                }
             }
             finally
             {
@@ -344,18 +379,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
                 // Create DependencyManager and configure it to mimic being unable to reach
                 // the PSGallery to retrieve the latest module version
-                var dependencyManager = new DependencyManager(
+                using (var dependencyManager = new DependencyManager(
                     functionLoadRequest.Metadata.Directory,
-                    new MockModuleProvider { GetLatestModuleVersionThrows = true });
+                    new MockModuleProvider { GetLatestModuleVersionThrows = true }))
+                {
+                    dependencyManager.Initialize(_testLogger);
+                    dependencyManager.StartDependencyInstallationIfNeeded(PowerShell.Create(), PowerShell.Create, _testLogger);
+                    var dependencyError = Assert.Throws<DependencyInstallationException>(
+                                            () => dependencyManager.WaitForDependenciesAvailability(() => _testLogger));
 
-                dependencyManager.Initialize(_testLogger);
-                dependencyManager.StartDependencyInstallationIfNeeded(PowerShell.Create(), PowerShell.Create, _testLogger);
-                var dependencyError = Assert.Throws<DependencyInstallationException>(
-                                        () => dependencyManager.WaitForDependenciesAvailability(() => _testLogger));
-
-                Assert.Contains("Fail to install FunctionApp dependencies.", dependencyError.Message);
-                Assert.Contains("Fail to get latest version for module 'Az' with major version '1'.", dependencyError.Message);
-                Assert.Contains("Fail to connect to the PSGallery", dependencyError.Message);
+                    Assert.Contains("Fail to install FunctionApp dependencies.", dependencyError.Message);
+                    Assert.Contains("Fail to get latest version for module 'Az' with major version '1'.", dependencyError.Message);
+                    Assert.Contains("Fail to connect to the PSGallery", dependencyError.Message);
+                }
             }
             finally
             {
@@ -378,28 +414,29 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
                 // Create DependencyManager and configure it to mimic being unable to reach
                 // the PSGallery to retrive the latest module version
-                var dependencyManager = new DependencyManager(
+                using (var dependencyManager = new DependencyManager(
                     functionLoadRequest.Metadata.Directory,
-                    new MockModuleProvider { GetLatestModuleVersionThrows = true });
-
-                // Create a path to mimic an existing installation of the Az module
-                AzModulePath = Path.Join(managedDependenciesFolderPath, "FakeDependenciesSnapshot", "Az");
-                if (Directory.Exists(AzModulePath))
+                    new MockModuleProvider { GetLatestModuleVersionThrows = true }))
                 {
-                    Directory.Delete(AzModulePath, true);
+                    // Create a path to mimic an existing installation of the Az module
+                    AzModulePath = Path.Join(managedDependenciesFolderPath, "FakeDependenciesSnapshot", "Az");
+                    if (Directory.Exists(AzModulePath))
+                    {
+                        Directory.Delete(AzModulePath, true);
+                    }
+                    Directory.CreateDirectory(Path.Join(AzModulePath, "1.0"));
+
+                    // Initializing the dependency manager should not throw even though we were not able
+                    // to connect to the PSGallery--given that a previous installation of the Az module is present
+                    var currentDependenciesPath = dependencyManager.Initialize(_testLogger);
+
+                    // Validate that DependencyManager.DependenciesPath is set, so
+                    // Get-Module can find the existing dependencies installed
+                    var dependenciesPathIsValid = currentDependenciesPath.StartsWith(
+                        managedDependenciesFolderPath,
+                        StringComparison.CurrentCultureIgnoreCase);
+                    Assert.True(dependenciesPathIsValid);
                 }
-                Directory.CreateDirectory(Path.Join(AzModulePath, "1.0"));
-
-                // Initializing the dependency manager should not throw even though we were not able
-                // to connect to the PSGallery--given that a previous installation of the Az module is present
-                var currentDependenciesPath = dependencyManager.Initialize(_testLogger);
-
-                // Validate that DependencyManager.DependenciesPath is set, so
-                // Get-Module can find the existing dependencies installed
-                var dependenciesPathIsValid = currentDependenciesPath.StartsWith(
-                                                managedDependenciesFolderPath,
-                                                StringComparison.CurrentCultureIgnoreCase);
-                Assert.True(dependenciesPathIsValid);
             }
             finally
             {

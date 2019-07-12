@@ -49,5 +49,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             Assert.NotEqual(convertedToInstalling1, convertedToInstalling2);
         }
+
+        [Fact]
+        public void CreatesLastAccessMarkerFilePathBasedOnSnapshotPath()
+        {
+            const string SnapshotPath = "Installed";
+            var markerFilePath = DependencySnapshotFolderNameTools.CreateLastAccessMarkerFilePath(SnapshotPath);
+            Assert.Contains(SnapshotPath, markerFilePath);
+            Assert.NotEqual(SnapshotPath, markerFilePath);
+        }
     }
 }

@@ -90,5 +90,32 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             return Directory.GetCreationTimeUtc(path);
         }
+
+        public void SetSnapshotAccessTimeToUtcNow(string path)
+        {
+            var markerFilePath = DependencySnapshotFolderNameTools.CreateLastAccessMarkerFilePath(path);
+            if (File.Exists(markerFilePath))
+            {
+                File.SetLastWriteTimeUtc(markerFilePath, DateTime.UtcNow);
+            }
+            else
+            {
+                var file = File.Open(markerFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete);
+                file.Dispose();
+            }
+
+        }
+
+        public DateTime GetSnapshotAccessTimeUtc(string path)
+        {
+            var heartbeatFilePath = DependencySnapshotFolderNameTools.CreateLastAccessMarkerFilePath(path);
+            var heartbeatLastWrite = File.GetLastWriteTimeUtc(heartbeatFilePath);
+            var snapshotCreation = GetSnapshotCreationTimeUtc(path);
+
+            // If heartbeatLastWrite is older than snapshotCreation, this indicates that the heartbeat file
+            // does not exist (as in this case File.GetLastWriteTimeUtc returns January 1, 1601 A.D.).
+            // In this situation, we want to use the snapshot creation time as the closest approximation instead.
+            return heartbeatLastWrite >= snapshotCreation ? heartbeatLastWrite : snapshotCreation;
+        }
     }
 }

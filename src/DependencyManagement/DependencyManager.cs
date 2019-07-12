@@ -16,7 +16,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
     using System.Management.Automation;
 
-    internal class DependencyManager
+    internal class DependencyManager : IDisposable
     {
         #region Private fields
 
@@ -29,6 +29,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private readonly IInstalledDependenciesLocator _installedDependenciesLocator;
 
         private readonly IDependencySnapshotInstaller _installer;
+
+        private readonly IDependencySnapshotPurger _purger;
 
         private DependencyManifestEntry[] _dependenciesFromManifest;
 
@@ -47,12 +49,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             IModuleProvider moduleProvider = null,
             IDependencyManagerStorage storage = null,
             IInstalledDependenciesLocator installedDependenciesLocator = null,
-            IDependencySnapshotInstaller installer = null)
+            IDependencySnapshotInstaller installer = null,
+            IDependencySnapshotPurger purger = null)
         {
             _moduleProvider = moduleProvider ?? new PowerShellGalleryModuleProvider();
             _storage = storage ?? new DependencyManagerStorage(GetFunctionAppRootPath(requestMetadataDirectory));
             _installedDependenciesLocator = installedDependenciesLocator ?? new InstalledDependenciesLocator(_storage);
-            _installer = installer ?? new DependencySnapshotInstaller(_moduleProvider, _storage, new DependencySnapshotPurger(_storage));
+            _installer = installer ?? new DependencySnapshotInstaller(_moduleProvider, _storage);
+            _purger = purger ?? new DependencySnapshotPurger(_storage);
         }
 
         /// <summary>
@@ -90,6 +94,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 _currentSnapshotPath = _installedDependenciesLocator.GetPathWithAcceptableDependencyVersionsInstalled()
                                         ?? _storage.CreateNewSnapshotPath();
+
+                _purger.SetCurrentlyUsedSnapshot(_currentSnapshotPath, logger);
 
                 return _currentSnapshotPath;
             }
@@ -158,6 +164,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             return _nextSnapshotPath;
         }
 
+        public void Dispose()
+        {
+            (_purger as IDisposable)?.Dispose();
+            _dependencyInstallationTask?.Dispose();
+        }
+
         /// <summary>
         /// Installs function app dependencies.
         /// </summary>
@@ -182,12 +194,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                         var dependencies = GetLatestPublishedVersionsOfDependencies(_dependenciesFromManifest);
 
+                        // Purge before installing a new snapshot, as we may be able to free some space.
+                        _purger.Purge(logger);
+
                         // Background installation: can't use the firstPwsh runspace because it belongs
                         // to the pool used to run functions code, so create a new runspace.
                         using (var pwsh = pwshFactory())
                         {
                             _installer.InstallSnapshot(dependencies, _nextSnapshotPath, pwsh, logger);
                         }
+
+                        // Now that a new snapshot has been installed, there is a chance an old snapshot can be purged.
+                        _purger.Purge(logger);
                     }
                 }
                 else
