@@ -37,6 +37,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         }
 
         /// <summary>
+        /// Returns true if the function with the given functionId is already loaded.
+        /// </summary>
+        public static bool IsLoaded(string functionId)
+        {
+            return LoadedFunctions.ContainsKey(functionId);
+        }
+
+        /// <summary>
         /// This method runs once per 'FunctionLoadRequest' during the code start of the worker.
         /// It will always run synchronously because we process 'FunctionLoadRequest' synchronously.
         /// </summary>
