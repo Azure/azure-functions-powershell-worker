@@ -42,7 +42,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         internal static void LoadFunction(FunctionLoadRequest request)
         {
-            LoadedFunctions.Add(request.FunctionId, new AzFunctionInfo(request.Metadata));
+            if (!LoadedFunctions.ContainsKey(request.FunctionId))
+            {
+                LoadedFunctions.Add(request.FunctionId, new AzFunctionInfo(request.Metadata));
+            }
         }
 
         /// <summary>
