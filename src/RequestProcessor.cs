@@ -146,6 +146,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 out StatusResult status);
             response.FunctionLoadResponse.FunctionId = functionLoadRequest.FunctionId;
 
+            // The worker may occasionally receive multiple function load requests with
+            // the same FunctionId. In order to make function load request idempotent,
+            // the worker should ignore the duplicates.
+            if (FunctionLoader.IsLoaded(functionLoadRequest.FunctionId))
+            {
+                // If FunctionLoader considers this function loaded, this means
+                // the previous request was successful, so respond accordingly.
+                return response;
+            }
+
             // When a functionLoadRequest comes in, we check to see if a dependency download has failed in a previous call
             // or if PowerShell could not be initialized. If this is the case, mark this as a failed request
             // and submit the exception to the Host (runtime).
