@@ -188,8 +188,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     {
                         logger.Log(
                             LogLevel.Trace,
-                            PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled,
-                            isUserLog: true);
+                            PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled);
 
                         // Background installation: can't use the firstPwsh runspace because it belongs
                         // to the pool used to run functions code, so create a new runspace.
@@ -220,7 +219,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     var dependenciesNotUpdatedMessage =
                         string.Format(PowerShellWorkerStrings.DependenciesUpgradeSkippedMessage, _dependencyInstallationError.Message);
 
-                    logger.Log(LogLevel.Warning, dependenciesNotUpdatedMessage, _dependencyInstallationError, isUserLog: true);
+                    logger.Log(LogLevel.Warning, dependenciesNotUpdatedMessage, _dependencyInstallationError);
                 }
             }
 
