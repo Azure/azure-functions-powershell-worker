@@ -185,6 +185,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                     _nextSnapshotPath = _storage.CreateNewSnapshotPath();
 
+                    // Purge before installing a new snapshot, as we may be able to free some space.
+                    _purger.Purge(logger);
+
                     if (!IsAnyInstallationStartedRecently())
                     {
                         logger.Log(
@@ -193,9 +196,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                             isUserLog: true);
 
                         var dependencies = GetLatestPublishedVersionsOfDependencies(_dependenciesFromManifest);
-
-                        // Purge before installing a new snapshot, as we may be able to free some space.
-                        _purger.Purge(logger);
 
                         // Background installation: can't use the firstPwsh runspace because it belongs
                         // to the pool used to run functions code, so create a new runspace.
