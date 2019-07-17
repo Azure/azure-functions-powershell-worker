@@ -24,6 +24,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         private readonly Mock<IDependencyManagerStorage> _mockStorage = new Mock<IDependencyManagerStorage>(MockBehavior.Strict);
         private readonly Mock<IInstalledDependenciesLocator> _mockInstalledDependenciesLocator = new Mock<IInstalledDependenciesLocator>(MockBehavior.Strict);
         private readonly Mock<IDependencySnapshotInstaller> _mockInstaller = new Mock<IDependencySnapshotInstaller>(MockBehavior.Strict);
+        private readonly Mock<IDependencySnapshotPurger> _mockPurger = new Mock<IDependencySnapshotPurger>();
         private readonly Mock<ILogger> _mockLogger = new Mock<ILogger>();
 
         [Fact]
@@ -40,11 +41,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
                 .Returns(default(string));
             _mockStorage.Setup(_ => _.CreateNewSnapshotPath()).Returns("NewSnapshot");
+            _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
 
             var dependencyManager = CreateDependencyManagerWithMocks();
             var dependenciesPath = dependencyManager.Initialize(_mockLogger.Object);
 
             Assert.Equal("NewSnapshot", dependenciesPath);
+            _mockPurger.Verify(_ => _.SetCurrentlyUsedSnapshot("NewSnapshot", _mockLogger.Object), Times.Once);
         }
 
         [Fact]
@@ -54,11 +57,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 GetAnyNonEmptyDependencyManifestEntries());
             _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
                 .Returns("InstalledSnapshot");
+            _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
 
             var dependencyManager = CreateDependencyManagerWithMocks();
             var dependenciesPath = dependencyManager.Initialize(_mockLogger.Object);
 
             Assert.Equal("InstalledSnapshot", dependenciesPath);
+            _mockPurger.Verify(_ => _.SetCurrentlyUsedSnapshot("InstalledSnapshot", _mockLogger.Object), Times.Once);
         }
 
         [Fact]
@@ -112,6 +117,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(dependencyManifestEntries);
             _mockStorage.Setup(_ => _.CreateNewSnapshotPath()).Returns("NewSnapshot");
+            _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
 
             foreach (var dependencyManifestEntry in dependencyManifestEntries)
             {
@@ -168,6 +174,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockStorage.Setup(_ => _.SnapshotExists("NewSnapshot")).Returns(false);
             _mockStorage.Setup(_ => _.GetInstalledAndInstallingSnapshots()).Returns(new string[0]);
+            _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
 
             var dependencyManager = CreateDependencyManagerWithMocks();
             dependencyManager.Initialize(_mockLogger.Object);
@@ -177,6 +184,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             Assert.True(hadToWait);
             VerifyMessageLogged(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress);
             VerifyExactlyOneSnapshotInstalled();
+            _mockPurger.Verify(_ => _.Purge(It.IsAny<ILogger>()), Times.Never);
         }
 
         [Fact]
@@ -204,6 +212,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockStorage.Setup(_ => _.GetInstalledAndInstallingSnapshots()).Returns(new[] { "AlreadyInstalled" });
             _mockStorage.Setup(_ => _.GetSnapshotCreationTimeUtc("AlreadyInstalled"))
                 .Returns(DateTime.UtcNow - TimeSpan.FromMinutes(30));
+            _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
 
             var dependencyManager = CreateDependencyManagerWithMocks();
             dependencyManager.Initialize(_mockLogger.Object);
@@ -213,6 +222,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             Assert.False(hadToWait);
             Assert.Equal("NewSnapshot", dependencyManager.WaitForBackgroundDependencyInstallationTaskCompletion());
             VerifyExactlyOneSnapshotInstalled();
+            _mockPurger.Verify(_ => _.Purge(_mockLogger.Object), Times.AtLeastOnce());
         }
 
         [Fact]
@@ -220,20 +230,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
                 .Returns("AlreadyInstalled");
-
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
             _mockStorage.Setup(_ => _.CreateNewSnapshotPath()).Returns("NewSnapshot");
-
             _mockModuleProvider.Setup(
                 _ => _.GetLatestPublishedModuleVersion(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns("LatestVersion");
-
             _mockStorage.Setup(_ => _.SnapshotExists("AlreadyInstalled")).Returns(true);
             _mockStorage.Setup(_ => _.GetInstalledAndInstallingSnapshots()).Returns(new[] { "AlreadyInstalled", "InProgress" });
             _mockStorage.Setup(_ => _.GetSnapshotCreationTimeUtc("AlreadyInstalled"))
                 .Returns(DateTime.UtcNow - TimeSpan.FromMinutes(30));
             _mockStorage.Setup(_ => _.GetSnapshotCreationTimeUtc("InProgress"))
                 .Returns(DateTime.UtcNow - TimeSpan.FromMinutes(1));
+            _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
 
             var dependencyManager = CreateDependencyManagerWithMocks();
             dependencyManager.Initialize(_mockLogger.Object);
@@ -243,6 +251,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             Assert.Equal(!true, hadToWait);
             dependencyManager.WaitForBackgroundDependencyInstallationTaskCompletion();
             _mockInstaller.VerifyNoOtherCalls();
+            _mockPurger.Verify(_ => _.Purge(_mockLogger.Object), Times.AtLeastOnce());
         }
 
         [Fact]
@@ -252,6 +261,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 .Returns(default(string));
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
             _mockStorage.Setup(_ => _.CreateNewSnapshotPath()).Returns("NewSnapshot");
+            _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
 
             _mockModuleProvider.Setup(
                 _ => _.GetLatestPublishedModuleVersion(It.IsAny<string>(), It.IsAny<string>()))
@@ -293,6 +303,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
             _mockStorage.Setup(_ => _.CreateNewSnapshotPath()).Returns("NewSnapshot");
+            _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
 
             var dependencyManager = CreateDependencyManagerWithMocks();
             var dependenciesPath = dependencyManager.Initialize(_mockLogger.Object);
@@ -346,6 +357,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
             _mockStorage.Setup(_ => _.CreateNewSnapshotPath()).Returns("NewSnapshot");
+            _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
 
             var dependencyManager = CreateDependencyManagerWithMocks();
             var dependenciesPath = dependencyManager.Initialize(_mockLogger.Object);
@@ -445,7 +457,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 _mockModuleProvider.Object,
                 _mockStorage.Object,
                 _mockInstalledDependenciesLocator.Object,
-                _mockInstaller.Object);
+                _mockInstaller.Object,
+                _mockPurger.Object);
         }
     }
 }

@@ -29,5 +29,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         void RemoveSnapshot(string path);
 
         DateTime GetSnapshotCreationTimeUtc(string path);
+
+        void SetSnapshotAccessTimeToUtcNow(string path);
+
+        DateTime GetSnapshotAccessTimeUtc(string path);
     }
 }

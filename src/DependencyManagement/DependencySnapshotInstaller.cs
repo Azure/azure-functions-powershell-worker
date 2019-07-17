@@ -23,16 +23,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private readonly IDependencyManagerStorage _storage;
 
-        private readonly IDependencySnapshotPurger _purger;
-
         public DependencySnapshotInstaller(
             IModuleProvider moduleProvider,
-            IDependencyManagerStorage storage,
-            IDependencySnapshotPurger purger)
+            IDependencyManagerStorage storage)
         {
             _moduleProvider = moduleProvider ?? throw new ArgumentNullException(nameof(moduleProvider));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
-            _purger = purger ?? throw new ArgumentNullException(nameof(purger));
         }
 
         public void InstallSnapshot(
@@ -91,7 +87,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             finally
             {
                 _moduleProvider.Cleanup(pwsh);
-                _purger.Purge(logger);
             }
         }
 

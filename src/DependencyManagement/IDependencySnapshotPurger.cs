@@ -10,7 +10,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     internal interface IDependencySnapshotPurger
     {
         /// <summary>
-        /// Remove old unused snapshots.
+        /// Set the path to the snapshot currently used by the current worker.
+        /// As long as there is any live worker that declared this snapshot as
+        /// being in use, this snapshot should not be purged by any worker.
+        /// </summary>
+        void SetCurrentlyUsedSnapshot(string path, ILogger logger);
+
+        /// <summary>
+        /// Remove unused snapshots.
         /// </summary>
         void Purge(ILogger logger);
     }
