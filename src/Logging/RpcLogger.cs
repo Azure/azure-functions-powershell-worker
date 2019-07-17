@@ -59,11 +59,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
             else
             {
-                WriteSystemLog(message, _systemLogMsg, _requestId, _invocationId);
+                WriteSystemLog(logLevel, message, _systemLogMsg, _requestId, _invocationId);
             }
         }
 
-        private static void WriteSystemLog(string message, StringBuilder stringBuilder, string requestId, string invocationId)
+        private static void WriteSystemLog(LogLevel logLevel, string message, StringBuilder stringBuilder, string requestId, string invocationId)
         {
             stringBuilder = stringBuilder ?? new StringBuilder();
 
@@ -78,15 +78,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             {
                 stringBuilder.AppendLine($"  Invocation-Id: {invocationId}");
             }
+            stringBuilder.AppendLine($"  Log-Level: {logLevel}");
             stringBuilder.AppendLine($"  Log-Message: {message}").AppendLine("}");
 
             Console.WriteLine(stringBuilder.ToString());
             stringBuilder.Clear();
         }
 
-        internal static void WriteSystemLog(string message)
+        internal static void WriteSystemLog(LogLevel logLevel, string message)
         {
-            WriteSystemLog(message, stringBuilder: null, requestId: null, invocationId: null);
+            WriteSystemLog(logLevel, message, stringBuilder: null, requestId: null, invocationId: null);
         }
     }
 }

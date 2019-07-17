@@ -17,6 +17,8 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
+    using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+
     internal class RequestProcessor
     {
         private readonly MessagingStream _msgStream;
@@ -76,7 +78,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 }
                 else
                 {
-                    RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
+                    RpcLogger.WriteSystemLog(LogLevel.Warning, string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
                     continue;
                 }
 
@@ -100,7 +102,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             string pipeName = Environment.GetEnvironmentVariable("PSWorkerCustomPipeName");
             if (!string.IsNullOrEmpty(pipeName))
             {
-                RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
+                RpcLogger.WriteSystemLog(LogLevel.Trace, string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
                 RemoteSessionNamedPipeServer.CreateCustomNamedPipeServer(pipeName);
             }
 
