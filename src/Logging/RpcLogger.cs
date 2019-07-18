@@ -69,17 +69,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
             // For system logs, we log to stdio with a prefix of LanguageWorkerConsoleLog.
             // These are picked up by the Functions Host
-            stringBuilder.Append(SystemLogPrefix).AppendLine("System Log: {");
+            stringBuilder.Append(SystemLogPrefix).Append("System Log: {");
             if (!string.IsNullOrEmpty(requestId))
             {
-                stringBuilder.AppendLine($"  Request-Id: {requestId}");
+                stringBuilder.Append($" Request-Id: {requestId};");
             }
             if (!string.IsNullOrEmpty(invocationId))
             {
-                stringBuilder.AppendLine($"  Invocation-Id: {invocationId}");
+                stringBuilder.Append($" Invocation-Id: {invocationId};");
             }
-            stringBuilder.AppendLine($"  Log-Level: {logLevel}");
-            stringBuilder.AppendLine($"  Log-Message: {message}").AppendLine("}");
+            stringBuilder.Append($" Log-Level: {logLevel};");
+            stringBuilder.Append($" Log-Message: {message}");
+            stringBuilder.AppendLine(" }");
 
             Console.WriteLine(stringBuilder.ToString());
             stringBuilder.Clear();
