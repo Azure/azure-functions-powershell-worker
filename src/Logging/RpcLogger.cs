@@ -36,6 +36,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             _invocationId = null;
         }
 
+        /// <inheritdoc/>
         public void Log(bool isUserOnlyLog, LogLevel logLevel, string message, Exception exception = null)
         {
             if (isUserOnlyLog)
