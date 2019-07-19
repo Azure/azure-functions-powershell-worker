@@ -4,7 +4,6 @@
 //
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,8 +20,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         #region Private fields
 
         private static readonly TimeSpan s_minBackgroundUpgradePeriod = GetMinBackgroundUpgradePeriod();
-
-        private readonly IModuleProvider _moduleProvider;
 
         private readonly IDependencyManagerStorage _storage;
 
@@ -52,10 +49,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             IDependencySnapshotInstaller installer = null,
             IDependencySnapshotPurger purger = null)
         {
-            _moduleProvider = moduleProvider ?? new PowerShellGalleryModuleProvider();
             _storage = storage ?? new DependencyManagerStorage(GetFunctionAppRootPath(requestMetadataDirectory));
             _installedDependenciesLocator = installedDependenciesLocator ?? new InstalledDependenciesLocator(_storage);
-            _installer = installer ?? new DependencySnapshotInstaller(_moduleProvider, _storage);
+            _installer = installer ?? new DependencySnapshotInstaller(moduleProvider ?? new PowerShellGalleryModuleProvider(), _storage);
             _purger = purger ?? new DependencySnapshotPurger(_storage);
         }
 
@@ -195,13 +191,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                             PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled,
                             isUserLog: true);
 
-                        var dependencies = GetLatestPublishedVersionsOfDependencies(_dependenciesFromManifest);
-
                         // Background installation: can't use the firstPwsh runspace because it belongs
                         // to the pool used to run functions code, so create a new runspace.
                         using (var pwsh = pwshFactory())
                         {
-                            _installer.InstallSnapshot(dependencies, _nextSnapshotPath, pwsh, logger);
+                            _installer.InstallSnapshot(_dependenciesFromManifest, _nextSnapshotPath, pwsh, logger);
                         }
 
                         // Now that a new snapshot has been installed, there is a chance an old snapshot can be purged.
@@ -210,12 +204,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 }
                 else
                 {
-                    var dependencies = GetLatestPublishedVersionsOfDependencies(_dependenciesFromManifest);
-
                     // Foreground installation: *may* use the firstPwsh runspace, since the function execution is
                     // blocked until the installation is complete, so we are potentially saving some time by reusing
                     // the runspace as opposed to creating another one.
-                    _installer.InstallSnapshot(dependencies, _currentSnapshotPath, firstPwsh, logger);
+                    _installer.InstallSnapshot(_dependenciesFromManifest,_currentSnapshotPath, firstPwsh, logger);
                 }
             }
             catch (Exception e)
@@ -236,56 +228,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         }
 
         #region Helper_Methods
-
-        private List<DependencyInfo> GetLatestPublishedVersionsOfDependencies(
-            IEnumerable<DependencyManifestEntry> dependencies)
-        {
-            var result = new List<DependencyInfo>();
-
-            foreach (var entry in dependencies)
-            {
-                var latestVersion = GetModuleLatestPublishedVersion(entry.Name, entry.MajorVersion);
-
-                var dependencyInfo = new DependencyInfo(entry.Name, latestVersion);
-                result.Add(dependencyInfo);
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Gets the latest published module version for the given module name and major version.
-        /// </summary>
-        private string GetModuleLatestPublishedVersion(string moduleName, string majorVersion)
-        {
-            string latestVersion = null;
-
-            string errorDetails = null;
-            bool throwException = false;
-
-            try
-            {
-                latestVersion = _moduleProvider.GetLatestPublishedModuleVersion(moduleName, majorVersion);
-            }
-            catch (Exception e)
-            {
-                throwException = true;
-
-                if (!string.IsNullOrEmpty(e.Message))
-                {
-                    errorDetails = string.Format(PowerShellWorkerStrings.ErrorDetails, e.Message);
-                }
-            }
-
-            // If we could not find the latest module version error out.
-            if (string.IsNullOrEmpty(latestVersion) || throwException)
-            {
-                var errorMsg = string.Format(PowerShellWorkerStrings.FailToGetModuleLatestVersion, moduleName, majorVersion, errorDetails ?? string.Empty);
-                throw new InvalidOperationException(errorMsg);
-            }
-
-            return latestVersion;
-        }
 
         private void WaitOnDependencyInstallationTask()
         {
