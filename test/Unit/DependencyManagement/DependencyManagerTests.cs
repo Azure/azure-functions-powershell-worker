@@ -7,7 +7,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Management.Automation;
 
     using Moq;
@@ -74,7 +73,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             var dependenciesPath = dependencyManager.Initialize(_mockLogger.Object);
 
             Assert.Null(dependenciesPath);
-            VerifyMessageLogged(LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall);
+            VerifyMessageLogged(LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, expectedIsUserLog: true);
         }
 
         [Fact]
@@ -160,7 +159,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             var hadToWait = dependencyManager.WaitForDependenciesAvailability(() => _mockLogger.Object);
 
             Assert.True(hadToWait);
-            VerifyMessageLogged(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress);
+            VerifyMessageLogged(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, expectedIsUserLog: true);
             VerifyExactlyOneSnapshotInstalled();
             _mockPurger.Verify(_ => _.Purge(It.IsAny<ILogger>()), Times.Never);
         }
@@ -256,7 +255,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             var hadToWait = dependencyManager.WaitForDependenciesAvailability(() => _mockLogger.Object);
 
             Assert.True(hadToWait);
-            VerifyMessageLogged(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress);
+            VerifyMessageLogged(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, expectedIsUserLog: true);
             VerifyExactlyOneSnapshotInstalled();
         }
 
@@ -300,10 +299,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     Assert.Throws<DependencyInstallationException>(
                         () => dependencyManager.WaitForBackgroundDependencyInstallationTaskCompletion());
 
-                VerifyMessageLogged(LogLevel.Trace, PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled);
+                VerifyMessageLogged(LogLevel.Trace, PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled, expectedIsUserLog: false);
 
                 Assert.Contains(injectedException.Message, caughtException.Message);
-                VerifyMessageLogged(LogLevel.Warning, injectedException.Message);
+                VerifyMessageLogged(LogLevel.Warning, injectedException.Message, expectedIsUserLog: false);
             }
             else
             {
@@ -331,14 +330,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockInstaller.VerifyNoOtherCalls();
         }
 
-        private void VerifyMessageLogged(LogLevel expectedLogLevel, string expectedMessage)
+        private void VerifyMessageLogged(LogLevel expectedLogLevel, string expectedMessage, bool expectedIsUserLog)
         {
             _mockLogger.Verify(
                 _ => _.Log(
+                        expectedIsUserLog,
                         expectedLogLevel,
                         It.Is<string>(message => message.Contains(expectedMessage)),
-                        It.IsAny<Exception>(),
-                        true));
+                        It.IsAny<Exception>()));
         }
 
         private DependencyManager CreateDependencyManagerWithMocks()

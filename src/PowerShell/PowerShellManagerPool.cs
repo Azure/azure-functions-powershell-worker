@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -14,6 +13,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
     using System.Management.Automation;
+    using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
     /// <summary>
     /// The PowerShellManager pool for the in-proc concurrency support.
@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             _msgStream = msgStream;
             _pool = new BlockingCollection<PowerShellManager>(_upperBound);
-            RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.LogConcurrencyUpperBound, _upperBound.ToString()));
+            RpcLogger.WriteSystemLog(LogLevel.Information, string.Format(PowerShellWorkerStrings.LogConcurrencyUpperBound, _upperBound.ToString()));
         }
 
         /// <summary>
@@ -82,7 +82,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                         logger.SetContext(requestId, invocationId);
                         psManager = new PowerShellManager(logger, id);
 
-                        RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.LogNewPowerShellManagerCreated, id.ToString()));
+                        RpcLogger.WriteSystemLog(LogLevel.Trace, string.Format(PowerShellWorkerStrings.LogNewPowerShellManagerCreated, id.ToString()));
                     }
                 }
 

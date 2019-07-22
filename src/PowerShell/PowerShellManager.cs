@@ -153,7 +153,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             if (profilePath == null)
             {
                 string noProfileMsg = string.Format(PowerShellWorkerStrings.FileNotFound, "profile.ps1", FunctionLoader.FunctionAppRootPath);
-                _logger.Log(LogLevel.Trace, noProfileMsg);
+                _logger.Log(isUserOnlyLog: false, LogLevel.Trace, noProfileMsg);
                 return;
             }
 
@@ -178,7 +178,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 if (_pwsh.HadErrors)
                 {
                     string errorMsg = string.Format(PowerShellWorkerStrings.FailToRunProfile, profilePath);
-                    _logger.Log(LogLevel.Error, errorMsg, exception, isUserLog: true);
+                    _logger.Log(isUserOnlyLog: true, LogLevel.Error, errorMsg, exception);
                 }
             }
         }

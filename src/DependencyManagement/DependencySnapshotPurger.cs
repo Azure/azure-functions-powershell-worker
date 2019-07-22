@@ -82,14 +82,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 try
                 {
                     var message = string.Format(PowerShellWorkerStrings.RemovingDependenciesFolder, pathToRemove);
-                    logger.Log(LogLevel.Trace, message, null, isUserLog: true);
+                    logger.Log(isUserOnlyLog: false, LogLevel.Trace, message);
 
                     _storage.RemoveSnapshot(pathToRemove);
                 }
                 catch (IOException e)
                 {
                     var message = string.Format(PowerShellWorkerStrings.FailedToRemoveDependenciesFolder, pathToRemove, e.Message);
-                    logger.Log(LogLevel.Warning, message, e, isUserLog: true);
+                    logger.Log(isUserOnlyLog: false, LogLevel.Warning, message, e);
                 }
             }
         }
@@ -102,11 +102,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         internal void Heartbeat(string path, ILogger logger)
         {
             logger.Log(
+                isUserOnlyLog: false,
                 LogLevel.Trace,
-                string.Format(
-                    PowerShellWorkerStrings.UpdatingManagedDependencySnapshotHeartbeat,
-                    path),
-                isUserLog: true);
+                string.Format(PowerShellWorkerStrings.UpdatingManagedDependencySnapshotHeartbeat, path));
 
             if (_storage.SnapshotExists(path))
             {
@@ -123,7 +121,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             catch (IOException e)
             {
                 var message = string.Format(PowerShellWorkerStrings.FailedToRetrieveDependenciesFolderAccessTime, path, e.Message);
-                logger.Log(LogLevel.Warning, message, e, isUserLog: true);
+                logger.Log(isUserOnlyLog: false, LogLevel.Warning, message, e);
                 return DateTime.MaxValue;
             }
         }

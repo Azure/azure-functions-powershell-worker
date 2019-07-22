@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 if (!_dependenciesFromManifest.Any())
                 {
-                    logger.Log(LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, isUserLog: true);
+                    logger.Log(isUserOnlyLog: true, LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall);
                     return null;
                 }
 
@@ -141,7 +141,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
 
             var logger = getLogger();
-            logger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, isUserLog: true);
+            logger.Log(isUserOnlyLog: true, LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress);
             WaitOnDependencyInstallationTask();
             return true;
         }
@@ -187,9 +187,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     if (!IsAnyInstallationStartedRecently())
                     {
                         logger.Log(
+                            isUserOnlyLog: false,
                             LogLevel.Trace,
-                            PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled,
-                            isUserLog: true);
+                            PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled);
 
                         // Background installation: can't use the firstPwsh runspace because it belongs
                         // to the pool used to run functions code, so create a new runspace.
@@ -220,7 +220,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     var dependenciesNotUpdatedMessage =
                         string.Format(PowerShellWorkerStrings.DependenciesUpgradeSkippedMessage, _dependencyInstallationError.Message);
 
-                    logger.Log(LogLevel.Warning, dependenciesNotUpdatedMessage, _dependencyInstallationError, isUserLog: true);
+                    logger.Log(isUserOnlyLog: false, LogLevel.Warning, dependenciesNotUpdatedMessage, _dependencyInstallationError);
                 }
             }
 

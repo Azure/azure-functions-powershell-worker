@@ -16,14 +16,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
     {
         private const string SystemLogPrefix = "LanguageWorkerConsoleLog";
         private readonly MessagingStream _msgStream;
-        private readonly StringBuilder _systemLogMsg;
         private string _invocationId;
         private string _requestId;
 
         internal RpcLogger(MessagingStream msgStream)
         {
             _msgStream = msgStream;
-            _systemLogMsg = new StringBuilder();
         }
 
         public void SetContext(string requestId, string invocationId)
@@ -38,9 +36,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             _invocationId = null;
         }
 
-        public void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
+        /// <inheritdoc/>
+        public void Log(bool isUserOnlyLog, LogLevel logLevel, string message, Exception exception = null)
         {
-            if (isUserLog)
+            if (isUserOnlyLog)
             {
                 // For user logs, we send them over Rpc with details about the invocation.
                 var logMessage = new StreamingMessage
@@ -59,34 +58,35 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
             else
             {
-                WriteSystemLog(message, _systemLogMsg, _requestId, _invocationId);
+                WriteSystemLog(logLevel, message, _requestId, _invocationId);
             }
         }
 
-        private static void WriteSystemLog(string message, StringBuilder stringBuilder, string requestId, string invocationId)
+        private static void WriteSystemLog(LogLevel logLevel, string message, string requestId, string invocationId)
         {
-            stringBuilder = stringBuilder ?? new StringBuilder();
-
             // For system logs, we log to stdio with a prefix of LanguageWorkerConsoleLog.
             // These are picked up by the Functions Host
-            stringBuilder.Append(SystemLogPrefix).AppendLine("System Log: {");
+            var stringBuilder = new StringBuilder(SystemLogPrefix);
+
+            stringBuilder.Append("System Log: {");
             if (!string.IsNullOrEmpty(requestId))
             {
-                stringBuilder.AppendLine($"  Request-Id: {requestId}");
+                stringBuilder.Append($" Request-Id: {requestId};");
             }
             if (!string.IsNullOrEmpty(invocationId))
             {
-                stringBuilder.AppendLine($"  Invocation-Id: {invocationId}");
+                stringBuilder.Append($" Invocation-Id: {invocationId};");
             }
-            stringBuilder.AppendLine($"  Log-Message: {message}").AppendLine("}");
+            stringBuilder.Append($" Log-Level: {logLevel};");
+            stringBuilder.Append($" Log-Message: {message}");
+            stringBuilder.AppendLine(" }");
 
             Console.WriteLine(stringBuilder.ToString());
-            stringBuilder.Clear();
         }
 
-        internal static void WriteSystemLog(string message)
+        internal static void WriteSystemLog(LogLevel logLevel, string message)
         {
-            WriteSystemLog(message, stringBuilder: null, requestId: null, invocationId: null);
+            WriteSystemLog(logLevel, message, requestId: null, invocationId: null);
         }
     }
 }
