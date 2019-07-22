@@ -84,7 +84,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 if (!_dependenciesFromManifest.Any())
                 {
-                    logger.Log(LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, isUserLog: true);
+                    logger.Log(LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, isUserOnlyLog: true);
                     return null;
                 }
 
@@ -141,7 +141,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
 
             var logger = getLogger();
-            logger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, isUserLog: true);
+            logger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, isUserOnlyLog: true);
             WaitOnDependencyInstallationTask();
             return true;
         }

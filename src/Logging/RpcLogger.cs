@@ -36,9 +36,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             _invocationId = null;
         }
 
-        public void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserLog = false)
+        public void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserOnlyLog = false)
         {
-            if (isUserLog)
+            if (isUserOnlyLog)
             {
                 // For user logs, we send them over Rpc with details about the invocation.
                 var logMessage = new StreamingMessage
