@@ -334,10 +334,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             _mockLogger.Verify(
                 _ => _.Log(
+                        expectedIsUserLog,
                         expectedLogLevel,
                         It.Is<string>(message => message.Contains(expectedMessage)),
-                        It.IsAny<Exception>(),
-                        expectedIsUserLog));
+                        It.IsAny<Exception>()));
         }
 
         private DependencyManager CreateDependencyManagerWithMocks()

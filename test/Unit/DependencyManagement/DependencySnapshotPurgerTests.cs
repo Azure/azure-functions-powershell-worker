@@ -179,11 +179,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockLogger.Verify(
                 _ => _.Log(
+                    false,
                     LogLevel.Warning,
                     It.Is<string>(message => message.Contains("Failed to retrieve dependencies folder '2' access time")
                                              && message.Contains(injectedException.Message)),
-                    injectedException,
-                    false),
+                    injectedException),
                 Times.Once);
         }
 
@@ -216,11 +216,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockLogger.Verify(
                 _ => _.Log(
+                    false,
                     LogLevel.Warning,
                     It.Is<string>(message => message.Contains("Failed to remove old dependencies folder '1'")
                                              && message.Contains(injectedException.Message)),
-                    injectedException,
-                    false),
+                    injectedException),
                 Times.Once);
         }
 

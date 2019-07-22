@@ -37,7 +37,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             PowerShell pwsh,
             ILogger logger)
         {
-            logger.Log(LogLevel.Trace, PowerShellWorkerStrings.InstallingFunctionAppDependentModules);
+            logger.Log(isUserOnlyLog: false, LogLevel.Trace, PowerShellWorkerStrings.InstallingFunctionAppDependentModules);
 
             var installingPath = CreateInstallingSnapshot(targetPath);
 
@@ -57,7 +57,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                             _moduleProvider.SaveModule(pwsh, moduleName, latestVersion, installingPath);
 
                             var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, latestVersion);
-                            logger.Log(LogLevel.Trace, message);
+                            logger.Log(isUserOnlyLog: false, LogLevel.Trace, message);
 
                             break;
                         }
@@ -65,7 +65,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         {
                             string currentAttempt = GetCurrentAttemptMessage(tries);
                             var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallModule, moduleName, latestVersion, currentAttempt, e.Message);
-                            logger.Log(LogLevel.Error, errorMsg);
+                            logger.Log(isUserOnlyLog: false, LogLevel.Error, errorMsg);
 
                             if (tries >= MaxNumberOfTries)
                             {

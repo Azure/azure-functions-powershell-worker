@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is DebugRecord record)
             {
-                _logger.Log(LogLevel.Debug, $"DEBUG: {record.Message}", isUserOnlyLog: true);
+                _logger.Log(isUserOnlyLog: true, LogLevel.Debug, $"DEBUG: {record.Message}");
             }
         }
 
@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is ErrorRecord record)
             {
-                _logger.Log(LogLevel.Error, $"ERROR: {record.Exception.Message}", record.Exception, isUserOnlyLog: true);
+                _logger.Log(isUserOnlyLog: true, LogLevel.Error, $"ERROR: {record.Exception.Message}", record.Exception);
             }
         }
 
@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             if(e.ItemAdded is InformationRecord record)
             {
                 string prefix = (record.Tags.Count == 1 && record.Tags[0] == "__PipelineObject__") ? "OUTPUT:" : "INFORMATION:";
-                _logger.Log(LogLevel.Information, $"{prefix} {record.MessageData}", isUserOnlyLog: true);
+                _logger.Log(isUserOnlyLog: true, LogLevel.Information, $"{prefix} {record.MessageData}");
             }
         }
 
@@ -48,7 +48,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is ProgressRecord record)
             {
-                _logger.Log(LogLevel.Trace, $"PROGRESS: {record.StatusDescription}", isUserOnlyLog: true);
+                _logger.Log(isUserOnlyLog: true, LogLevel.Trace, $"PROGRESS: {record.StatusDescription}");
             }
         }
 
@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is VerboseRecord record)
             {
-                _logger.Log(LogLevel.Trace, $"VERBOSE: {record.Message}", isUserOnlyLog: true);
+                _logger.Log(isUserOnlyLog: true, LogLevel.Trace, $"VERBOSE: {record.Message}");
             }
         }
 
@@ -64,7 +64,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is WarningRecord record)
             {
-                _logger.Log(LogLevel.Warning, $"WARNING: {record.Message}", isUserOnlyLog: true);
+                _logger.Log(isUserOnlyLog: true, LogLevel.Warning, $"WARNING: {record.Message}");
             }
         }
     }

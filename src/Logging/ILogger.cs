@@ -10,7 +10,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     internal interface ILogger
     {
-        void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserOnlyLog = false);
+        void Log(bool isUserOnlyLog, LogLevel logLevel, string message, Exception exception = null);
         void SetContext(string requestId, string invocationId);
         void ResetContext();
     }

@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
     {
         public List<string> FullLog = new List<string>();
 
-        public void Log(LogLevel logLevel, string message, Exception exception = null, bool isUserOnlyLog = false)
+        public void Log(bool isUserOnlyLog, LogLevel logLevel, string message, Exception exception = null)
         {
             var log = $"{logLevel}: {message}";
             Console.WriteLine(log);
