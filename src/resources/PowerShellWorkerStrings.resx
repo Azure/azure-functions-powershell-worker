@@ -172,17 +172,17 @@
   <data name="FunctionAppDoesNotHaveDependentModulesToInstall" xml:space="preserve">
     <value>FunctionApp does have dependent modules to install.</value>
   </data>
-  <data name="DependencyPropertyIsNullOrEmpty" xml:space="preserve">
-    <value>Dependency '{0}' is null or empty.</value>
+  <data name="DependencyNameIsNullOrEmpty" xml:space="preserve">
+    <value>Dependency name is null or empty.</value>
+  </data>
+  <data name="StartedInstallingModule" xml:space="preserve">
+    <value>Started installing module '{0}' version '{1}'.</value>
   </data>
   <data name="ModuleHasBeenInstalled" xml:space="preserve">
     <value>Module name '{0}' version '{1}' has been installed.</value>
   </data>
   <data name="AcceptableFunctionAppDependenciesAlreadyInstalled" xml:space="preserve">
     <value>The function app has existing dependencies installed. Updating the dependencies to the latest versions will be performed in the background. New function app instances will pick up any new dependencies.</value>
-  </data>
-  <data name="ManagedDependencyNotSupported" xml:space="preserve">
-    <value>Managed dependency name '{0}' is not supported.</value>
   </data>
   <data name="InvalidPowerShellDataFile" xml:space="preserve">
     <value>The PowerShell data file '{0}' is invalid since it cannot be evaluated into a Hashtable object.</value>
@@ -255,5 +255,8 @@
   </data>
   <data name="UpdatingManagedDependencySnapshotHeartbeat" xml:space="preserve">
     <value>Updating dependencies folder heartbeat for '{0}''.</value>
+  </data>
+  <data name="TooManyDependencies" xml:space="preserve">
+    <value>The number of entries in the '{0}' file ({1}) exceeds the maximum number of supported entries ({2}).</value>
   </data>
 </root>

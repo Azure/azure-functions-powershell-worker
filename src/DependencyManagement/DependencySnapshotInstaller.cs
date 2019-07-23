@@ -48,6 +48,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     string moduleName = module.Name;
                     string latestVersion = module.LatestVersion;
 
+                    logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.StartedInstallingModule, moduleName, latestVersion));
+
                     int tries = 1;
 
                     while (true)

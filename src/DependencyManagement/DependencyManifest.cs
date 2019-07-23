@@ -9,7 +9,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     using System.Collections;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using System.Management.Automation.Language;
     using System.Text;
     using System.Text.RegularExpressions;
@@ -18,14 +17,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     {
         private const string RequirementsPsd1FileName = "requirements.psd1";
 
-        private const string AzModuleName = "Az";
-
-        // The list of managed dependencies supported in Azure Functions.
-        private static readonly List<string> SupportedManagedDependencies = new List<string> { AzModuleName };
-
         private readonly string _functionAppRootPath;
 
-        public DependencyManifest(string functionAppRootPath)
+        private readonly int _maxDependencyEntries;
+
+        public DependencyManifest(string functionAppRootPath, int maxDependencyEntries = 10)
         {
             if (string.IsNullOrWhiteSpace(functionAppRootPath))
             {
@@ -33,6 +29,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
 
             _functionAppRootPath = functionAppRootPath;
+            _maxDependencyEntries = maxDependencyEntries;
         }
 
         public IEnumerable<DependencyManifestEntry> GetEntries()
@@ -90,27 +87,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 throw new ArgumentException(errorMsg);
             }
 
+            if (hashtable.Count > _maxDependencyEntries)
+            {
+                var message = string.Format(PowerShellWorkerStrings.TooManyDependencies, RequirementsPsd1FileName, hashtable.Count, _maxDependencyEntries);
+                throw new ArgumentException(message);
+            }
+
             return hashtable;
         }
 
         /// <summary>
-        /// Validate that the module name is not null or empty,
-        /// and ensure that the module is a supported dependency.
+        /// Validate that the module name is not null or empty.
         /// </summary>
         private static void ValidateModuleName(string name)
         {
-            // Validate the name property.
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrWhiteSpace(name))
             {
-                var errorMessage = string.Format(PowerShellWorkerStrings.DependencyPropertyIsNullOrEmpty, "name");
-                throw new ArgumentException(errorMessage);
-            }
-
-            // If this is not a supported module, error out.
-            if (!SupportedManagedDependencies.Contains(name, StringComparer.OrdinalIgnoreCase))
-            {
-                var errorMessage = string.Format(PowerShellWorkerStrings.ManagedDependencyNotSupported, name);
-                throw new ArgumentException(errorMessage);
+                throw new ArgumentException(PowerShellWorkerStrings.DependencyNameIsNullOrEmpty);
             }
         }
 
@@ -126,10 +119,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private static void ValidateVersionFormat(string version)
         {
-            if (string.IsNullOrEmpty(version))
+            if (version == null)
             {
-                var errorMessage = string.Format(PowerShellWorkerStrings.DependencyPropertyIsNullOrEmpty, "version");
-                throw new ArgumentException(errorMessage);
+                throw new ArgumentNullException(version);
             }
 
             if (!IsValidVersionFormat(version))
@@ -144,7 +136,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// </summary>
         private static bool IsValidVersionFormat(string version)
         {
-            var pattern = @"^(\d){1,2}(\.)(\*)";
+            var pattern = @"^(\d)+(\.)(\*)";
             return Regex.IsMatch(version, pattern);
         }
     }
