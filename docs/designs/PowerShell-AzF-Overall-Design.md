@@ -466,10 +466,13 @@ Note that, checking out a PowerShell Manager instance from the pool is a blockin
 
 The goal is to let the user declare the dependencies required by functions, and rely on the service automatically locating and installing the dependencies from the PowerShell Gallery or other sources, taking care of selecting the proper versions, and automatically upgrading the dependencies to the latest versions (if allowed by the version specifications provided by the user).
 
-Dependencies are declared in the _requirements.psd1_ file (_manifest_) as a collection of pairs (<_name_>, <_version specification_>). Currently, only _Az_ module is allowed, and the version specification should strictly match the following pattern: `<major version>.*`, so a typical manifest looks like this:
+Dependencies are declared in the _requirements.psd1_ file (_manifest_) as a collection of pairs (<_name_>, <_version specification_>). Currently, the version specification should strictly match the following pattern: `<major version>.*`, so a typical manifest looks like this:
 
 ``` PowerShell
-@{ 'Az' = '2.*' }
+@{
+  'Az' = '2.*'
+  'PSDepend' = '0.*'
+}
 ```
 
 However, the design should accommodate multiple module entries and allow specifying exact versions.
