@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// Remove unused snapshots.
         /// A snapshot is considered unused if it has not been accessed for at least
         /// (MDHeartbeatPeriodMinutes + MDOldSnapshotHeartbeatMarginMinutes) minutes.
-        /// However, the last PSWorkerMinNumberOfSnapshotsToKeep snapshots will be kept regardless
+        /// However, the last MDMinNumberOfSnapshotsToKeep snapshots will be kept regardless
         /// of the access time.
         /// </summary>
         public void Purge(ILogger logger)
@@ -140,7 +140,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private static int GetMinNumberOfSnapshotsToKeep()
         {
-            return GetEnvironmentVariableIntValue("PSWorkerMinNumberOfSnapshotsToKeep") ?? 1;
+            return GetEnvironmentVariableIntValue("MDMinNumberOfSnapshotsToKeep") ?? 1;
         }
 
         private static int? GetEnvironmentVariableIntValue(string name)
