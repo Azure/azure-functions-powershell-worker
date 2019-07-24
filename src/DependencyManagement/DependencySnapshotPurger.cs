@@ -54,7 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// <summary>
         /// Remove unused snapshots.
         /// A snapshot is considered unused if it has not been accessed for at least
-        /// (PSWorkerHeartbeatPeriodMinutes + PSWorkerOldSnapshotHeartbeatMarginMinutes) minutes.
+        /// (MDHeartbeatPeriodMinutes + PSWorkerOldSnapshotHeartbeatMarginMinutes) minutes.
         /// However, the last PSWorkerMinNumberOfSnapshotsToKeep snapshots will be kept regardless
         /// of the access time.
         /// </summary>
@@ -129,7 +129,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private static TimeSpan GetHeartbeatPeriod()
         {
             return TimeSpan.FromMinutes(
-                GetEnvironmentVariableIntValue("PSWorkerHeartbeatPeriodMinutes") ?? 60);
+                GetEnvironmentVariableIntValue("MDHeartbeatPeriodMinutes") ?? 60);
         }
 
         private static TimeSpan GetOldHeartbeatAgeMargin()
