@@ -23,7 +23,12 @@ Write-Host 'Deleting Functions Core Tools if exists...'
 Remove-Item -Force "$FUNC_CLI_DIRECTORY.zip" -ErrorAction Ignore
 Remove-Item -Recurse -Force $FUNC_CLI_DIRECTORY -ErrorAction Ignore
 
-$version = Invoke-RestMethod -Uri 'https://functionsclibuilds.blob.core.windows.net/builds/2/latest/version.txt'
+if (-not (Test-Path $env:CORE_TOOLS_URL))
+{
+    $env:CORE_TOOLS_URL = 'https://functionsclibuilds.blob.core.windows.net/builds/2/latest'
+}
+
+$version = Invoke-RestMethod -Uri "$env:CORE_TOOLS_URL/version.txt"
 Write-Host "Downloading Functions Core Tools (Version: $version)..."
 
 $output = "$FUNC_CLI_DIRECTORY.zip"
