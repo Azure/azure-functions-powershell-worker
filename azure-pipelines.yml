@@ -19,7 +19,8 @@ steps:
       ./build.ps1 -Clean -Configuration Release
   displayName: './build.ps1 -Clean -Configuration Release'
 
-- pwsh: |
-    ./build.ps1 -NoBuild -Test
-    ./test/E2E/Start-E2ETest.ps1
-  displayName: 'Running Tests'
+- pwsh: ./build.ps1 -NoBuild -Test
+  displayName: 'Running UnitTest'
+
+- pwsh: ./test/E2E/Start-E2ETest.ps1
+  displayName: 'Running E2ETest'
