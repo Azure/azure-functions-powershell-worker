@@ -84,10 +84,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 _storage.PromoteInstallingSnapshotToInstalledAtomically(targetPath);
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 var message = string.Format(PowerShellWorkerStrings.FailedToInstallDependenciesSnapshot, targetPath);
-                logger.Log(LogLevel.Warning, message, isUserLog: true);
+                logger.Log(isUserOnlyLog: false, LogLevel.Warning, message, e);
                 _storage.RemoveSnapshot(installingPath);
                 throw;
             }
