@@ -267,7 +267,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private static TimeSpan GetMinBackgroundUpgradePeriod()
         {
-            var value = Environment.GetEnvironmentVariable("PSWorkerMinBackgroundUpgradePeriodMinutes");
+            var value = Environment.GetEnvironmentVariable("MDMinBackgroundUpgradePeriodMinutes");
             if (string.IsNullOrEmpty(value) || !int.TryParse(value, out var parsedValue))
             {
                 return TimeSpan.FromMinutes(15);
