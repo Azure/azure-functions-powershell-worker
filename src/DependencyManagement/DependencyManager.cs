@@ -207,7 +207,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     // Foreground installation: *may* use the firstPwsh runspace, since the function execution is
                     // blocked until the installation is complete, so we are potentially saving some time by reusing
                     // the runspace as opposed to creating another one.
-                    _installer.InstallSnapshot(_dependenciesFromManifest,_currentSnapshotPath, firstPwsh, logger);
+                    _installer.InstallSnapshot(_dependenciesFromManifest, _currentSnapshotPath, firstPwsh, logger);
                 }
             }
             catch (Exception e)
