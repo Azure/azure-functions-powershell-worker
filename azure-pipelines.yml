@@ -1,0 +1,25 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+- dev
+
+pool:
+    vmImage: 'vs2017-win2016'
+
+steps:
+- pwsh: ./build.ps1 -NoBuild -Bootstrap
+  displayName: 'Running ./build.ps1 -NoBuild -Bootstrap'
+
+- pwsh: |
+      $ErrorActionPreference = "Stop"
+      ./build.ps1 -Clean -Configuration Release
+  displayName: './build.ps1 -Clean -Configuration Release'
+
+- pwsh: |
+    ./build.ps1 -NoBuild -Test
+    ./test/E2E/Start-E2ETest.ps1
+  displayName: 'Running Tests'
