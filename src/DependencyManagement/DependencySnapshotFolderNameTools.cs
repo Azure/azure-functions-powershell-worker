@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         public static string CreateUniqueName()
         {
-            var uniqueBase = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff");
+            var uniqueBase = DateTime.UtcNow.ToString("yyMMddHHmmssfff");
             return uniqueBase + InstalledPostfix;
         }
 
