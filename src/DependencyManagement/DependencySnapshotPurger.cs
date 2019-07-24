@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -54,7 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// <summary>
         /// Remove unused snapshots.
         /// A snapshot is considered unused if it has not been accessed for at least
-        /// (MDHeartbeatPeriodMinutes + MDOldSnapshotHeartbeatMarginMinutes) minutes.
+        /// (MDHeartbeatPeriod + MDOldSnapshotHeartbeatMarginMinutes) minutes.
         /// However, the last MDMinNumberOfSnapshotsToKeep snapshots will be kept regardless
         /// of the access time.
         /// </summary>
@@ -128,8 +128,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private static TimeSpan GetHeartbeatPeriod()
         {
-            return TimeSpan.FromMinutes(
-                GetEnvironmentVariableIntValue("MDHeartbeatPeriodMinutes") ?? 60);
+            return GetEnvironmentVariableTimeSpanValue("MDHeartbeatPeriod") ?? TimeSpan.FromMinutes(60);
         }
 
         private static TimeSpan GetOldHeartbeatAgeMargin()
@@ -152,6 +151,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
 
             return parsedValue;
+        }
+
+        private static TimeSpan? GetEnvironmentVariableTimeSpanValue(string name)
+        {
+            var value = Environment.GetEnvironmentVariable(name);
+            return string.IsNullOrEmpty(value) ? default(TimeSpan?) : TimeSpan.Parse(value);
         }
     }
 }
