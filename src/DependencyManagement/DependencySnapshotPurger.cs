@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -54,7 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// <summary>
         /// Remove unused snapshots.
         /// A snapshot is considered unused if it has not been accessed for at least
-        /// (MDHeartbeatPeriod + MDOldSnapshotHeartbeatMarginMinutes) minutes.
+        /// (MDHeartbeatPeriod + MDOldSnapshotHeartbeatMargin) minutes.
         /// However, the last MDMinNumberOfSnapshotsToKeep snapshots will be kept regardless
         /// of the access time.
         /// </summary>
@@ -133,8 +133,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private static TimeSpan GetOldHeartbeatAgeMargin()
         {
-            return TimeSpan.FromMinutes(
-                GetEnvironmentVariableIntValue("MDOldSnapshotHeartbeatMarginMinutes") ?? 90);
+            return GetEnvironmentVariableTimeSpanValue("MDOldSnapshotHeartbeatMargin") ?? TimeSpan.FromMinutes(90);
         }
 
         private static int GetMinNumberOfSnapshotsToKeep()
