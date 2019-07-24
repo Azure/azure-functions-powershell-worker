@@ -185,7 +185,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockStorage.Setup(_ => _.SnapshotExists("AlreadyInstalled")).Returns(true);
             _mockStorage.Setup(_ => _.GetInstalledAndInstallingSnapshots()).Returns(new[] { "AlreadyInstalled" });
             _mockStorage.Setup(_ => _.GetSnapshotCreationTimeUtc("AlreadyInstalled"))
-                .Returns(DateTime.UtcNow - TimeSpan.FromMinutes(30));
+                .Returns(DateTime.UtcNow - TimeSpan.FromHours(25));
             _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
 
             var dependencyManager = CreateDependencyManagerWithMocks();
