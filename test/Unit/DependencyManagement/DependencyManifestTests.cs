@@ -118,6 +118,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [InlineData("@{ MyModule = '' }")]
         [InlineData("@{ MyModule = ' ' }")]
         [InlineData("@{ MyModule = 'a' }")]
+        [InlineData("@{ MyModule = '1a' }")]
         [InlineData("@{ MyModule = '.' }")]
         [InlineData("@{ MyModule = '1.' }")]
         [InlineData("@{ MyModule = '*' }")]
