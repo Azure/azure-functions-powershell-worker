@@ -43,7 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
             try
             {
-                foreach (DependencyInfo module in GetLatestPublishedVersionsOfDependencies(dependencies))
+                foreach (DependencyInfo module in GetExactVersionsOfDependencies(dependencies))
                 {
                     string moduleName = module.Name;
                     string exactVersion = module.ExactVersion;
@@ -127,20 +127,33 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
         }
 
-        private List<DependencyInfo> GetLatestPublishedVersionsOfDependencies(
+        private List<DependencyInfo> GetExactVersionsOfDependencies(
             IEnumerable<DependencyManifestEntry> dependencies)
         {
             var result = new List<DependencyInfo>();
 
             foreach (var entry in dependencies)
             {
-                var latestVersion = GetModuleLatestPublishedVersion(entry.Name, entry.VersionSpecification);
-
-                var dependencyInfo = new DependencyInfo(entry.Name, latestVersion);
+                var dependencyInfo = new DependencyInfo(entry.Name, GetExactVersion(entry));
                 result.Add(dependencyInfo);
             }
 
             return result;
+        }
+
+        private string GetExactVersion(DependencyManifestEntry entry)
+        {
+            switch (entry.VersionSpecificationType)
+            {
+                case VersionSpecificationType.ExactVersion:
+                    return entry.VersionSpecification;
+
+                case VersionSpecificationType.MajorVersion:
+                    return GetModuleLatestPublishedVersion(entry.Name, entry.VersionSpecification);
+
+                default:
+                    throw new ArgumentException($"Unknown version specification type: {entry.VersionSpecificationType}");
+            }
         }
 
         /// <summary>

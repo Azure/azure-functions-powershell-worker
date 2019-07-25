@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             new[]
             {
                 new DependencyManifestEntry("A", VersionSpecificationType.MajorVersion, "3"),
-                new DependencyManifestEntry("C", VersionSpecificationType.MajorVersion, "7"),
+                new DependencyManifestEntry("C", VersionSpecificationType.ExactVersion, "7.0.1.3"),
                 new DependencyManifestEntry("B", VersionSpecificationType.MajorVersion, "11")
             };
 
@@ -195,6 +195,38 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(It.IsAny<string>()), Times.Never);
             _mockStorage.Verify(_ => _.RemoveSnapshot(_targetPathInstalling));
             _mockModuleProvider.Verify(_ => _.Cleanup(dummyPowerShell), Times.Once);
+        }
+
+        [Fact]
+        public void DoesNotTryToDetermineLatestPublishedModuleVersionIfExactVersionIsSpecified()
+        {
+            // Arrange
+
+            var testDependencyManifestEntries =
+                new[]
+                {
+                    new DependencyManifestEntry("A", VersionSpecificationType.ExactVersion, "Exact version of A")
+                };
+
+            _mockStorage.Setup(
+                _ => _.CreateInstallingSnapshot(It.IsAny<string>())).Returns(_targetPathInstalling);
+
+            _mockModuleProvider.Setup(
+                _ => _.SaveModule(It.IsAny<PowerShell>(), "A", "Exact version of A", _targetPathInstalling));
+
+            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(It.IsAny<string>()));
+            _mockModuleProvider.Setup(_ => _.Cleanup(It.IsAny<PowerShell>()));
+
+            // Act
+
+            var installer = CreateDependenciesSnapshotInstallerWithMocks();
+            installer.InstallSnapshot(testDependencyManifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
+
+            // Assert
+
+            _mockModuleProvider.Verify(
+                _ => _.GetLatestPublishedModuleVersion(It.IsAny<string>(), It.IsAny<string>()),
+                Times.Never);
         }
 
         private DependencySnapshotInstaller CreateDependenciesSnapshotInstallerWithMocks()
