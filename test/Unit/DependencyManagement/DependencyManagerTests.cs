@@ -93,40 +93,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
-        public void StartDependencyInstallationIfNeeded_InstallsSnapshotWithLatestPublishedModuleVersions()
-        {
-            _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
-                .Returns(default(string));
-
-            var dependencyManifestEntries = GetAnyNonEmptyDependencyManifestEntries();
-
-            _mockStorage.Setup(_ => _.GetDependencies()).Returns(dependencyManifestEntries);
-            _mockStorage.Setup(_ => _.CreateNewSnapshotPath()).Returns("NewSnapshot");
-            _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
-
-            _mockInstaller.Setup(
-                _ => _.InstallSnapshot(
-                        dependencyManifestEntries,
-                        "NewSnapshot",
-                        It.IsAny<PowerShell>(),
-                        _mockLogger.Object));
-
-            _mockStorage.Setup(_ => _.SnapshotExists(It.IsAny<string>())).Returns(false);
-
-            var dependencyManager = CreateDependencyManagerWithMocks();
-            dependencyManager.Initialize(_mockLogger.Object);
-            dependencyManager.StartDependencyInstallationIfNeeded(PowerShell.Create(), PowerShell.Create, _mockLogger.Object);
-            dependencyManager.WaitForDependenciesAvailability(() => _mockLogger.Object);
-
-            _mockInstaller.Verify(
-                _ => _.InstallSnapshot(
-                    It.IsAny<IEnumerable<DependencyManifestEntry>>(), It.IsAny<string>(), It.IsAny<PowerShell>(), It.IsAny<ILogger>()),
-                Times.Once());
-
-            _mockInstaller.VerifyNoOtherCalls();
-        }
-
-        [Fact]
         public void StartDependencyInstallationIfNeeded_InstallsSnapshotInForeground_WhenNoAcceptableDependenciesInstalled()
         {
             _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
