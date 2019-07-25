@@ -31,7 +31,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             _targetPathInstalled = DependencySnapshotFolderNameTools.CreateUniqueName();
             _targetPathInstalling = DependencySnapshotFolderNameTools.ConvertInstalledToInstalling(_targetPathInstalled);
-            ExpectSnapshotCreationAndPromotion();
+            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled)).Returns(_targetPathInstalling);
+            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
         }
 
         [Fact]
@@ -193,12 +194,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         private DependencySnapshotInstaller CreateDependenciesSnapshotInstallerWithMocks()
         {
             return new DependencySnapshotInstaller(_mockModuleProvider.Object, _mockStorage.Object);
-        }
-
-        private void ExpectSnapshotCreationAndPromotion()
-        {
-            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled)).Returns(_targetPathInstalling);
-            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
         }
 
         private void VerifyLoggedOnce(IEnumerable<string> messageParts)
