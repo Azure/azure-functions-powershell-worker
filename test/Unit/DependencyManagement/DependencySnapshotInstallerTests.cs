@@ -31,6 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             _targetPathInstalled = DependencySnapshotFolderNameTools.CreateUniqueName();
             _targetPathInstalling = DependencySnapshotFolderNameTools.ConvertInstalledToInstalling(_targetPathInstalled);
+            ExpectSnapshotCreationAndPromotion();
         }
 
         [Fact]
@@ -48,8 +49,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Exact version") };
-
-            ExpectSnapshotCreationAndPromotion();
 
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
@@ -69,8 +68,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.MajorVersion, "Major version") };
 
-            ExpectSnapshotCreationAndPromotion();
-
             _mockModuleProvider.Setup(
                     _ => _.GetLatestPublishedModuleVersion("Module", "Major version"))
                 .Returns("Latest version");
@@ -89,8 +86,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version") };
 
-            ExpectSnapshotCreationAndPromotion();
-
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
 
@@ -103,8 +98,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version") };
-
-            ExpectSnapshotCreationAndPromotion();
 
             var dummyPowerShell = PowerShell.Create();
 
@@ -128,8 +121,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     _ => _.GetLatestPublishedModuleVersion(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns("Exact B version");
 
-            ExpectSnapshotCreationAndPromotion();
-
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
 
@@ -144,8 +135,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.MajorVersion, "Version") };
-
-            ExpectSnapshotCreationAndPromotion();
 
             var dummyPowerShell = PowerShell.Create();
 
@@ -179,8 +168,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version") };
-
-            ExpectSnapshotCreationAndPromotion();
 
             var dummyPowerShell = PowerShell.Create();
 
