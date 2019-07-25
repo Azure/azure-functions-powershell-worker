@@ -5,6 +5,7 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
+    using System;
     using System.Linq;
 
     internal class InstalledDependenciesLocator : IInstalledDependenciesLocator
@@ -23,7 +24,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             if (lastSnapshotPath != null)
             {
                 var dependencies = _storage.GetDependencies();
-                if (dependencies.All(entry => IsMajorVersionInstalled(lastSnapshotPath, entry)))
+                if (dependencies.All(entry => IsAcceptableVersionInstalled(lastSnapshotPath, entry)))
                 {
                     return lastSnapshotPath;
                 }
@@ -32,12 +33,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             return null;
         }
 
-        private bool IsMajorVersionInstalled(string snapshotPath, DependencyManifestEntry dependency)
+        private bool IsAcceptableVersionInstalled(string snapshotPath, DependencyManifestEntry dependency)
         {
-            var installedVersions =
-                _storage.GetInstalledModuleVersions(
-                    snapshotPath, dependency.Name, dependency.VersionSpecification);
+            switch (dependency.VersionSpecificationType)
+            {
+                case VersionSpecificationType.ExactVersion:
+                    return _storage.IsModuleVersionInstalled(
+                        snapshotPath, dependency.Name, dependency.VersionSpecification);
 
+                case VersionSpecificationType.MajorVersion:
+                    return IsMajorVersionInstalled(
+                        snapshotPath, dependency.Name, dependency.VersionSpecification);
+
+                default:
+                    throw new ArgumentException($"Unknown version specification type: {dependency.VersionSpecificationType}");
+            }
+        }
+
+        private bool IsMajorVersionInstalled(string snapshotPath, string name, string majorVersion)
+        {
+            var installedVersions = _storage.GetInstalledModuleVersions(snapshotPath, name, majorVersion);
             return installedVersions.Any();
         }
     }
