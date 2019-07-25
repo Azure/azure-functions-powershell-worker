@@ -46,19 +46,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void SavesSpecifiedVersion_WhenExactVersionIsSpecified()
         {
-            // Arrange
-
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Exact version") };
 
             ExpectSnapshotCreationAndPromotion();
 
-            // Act
-
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
-
-            // Assert
 
             _mockModuleProvider.Verify(
                 _ => _.SaveModule(It.IsAny<PowerShell>(), "Module", "Exact version", _targetPathInstalling),
@@ -72,8 +66,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void SavesLatestPublishedVersion_WhenMajorVersionIsSpecified()
         {
-            // Arrange
-
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.MajorVersion, "Major version") };
 
@@ -83,12 +75,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 _ => _.GetLatestPublishedModuleVersion("Module", "Major version"))
                 .Returns("Latest version");
 
-            // Act
-
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
-
-            // Assert
 
             _mockModuleProvider.Verify(
                 _ => _.SaveModule(It.IsAny<PowerShell>(), "Module", "Latest version", _targetPathInstalling),
@@ -98,19 +86,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void PromotesInstallingSnapshotToInstalledAfterSuccessfullySavingModule()
         {
-            // Arrange
-
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version") };
 
             ExpectSnapshotCreationAndPromotion();
 
-            // Act
-
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
-
-            // Assert
 
             _mockStorage.Verify(_ => _.CreateInstallingSnapshot(_targetPathInstalled), Times.Once);
             _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled), Times.Once);
@@ -119,8 +101,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void CleansUpPowerShellRunspaceAfterSuccessfullySavingModule()
         {
-            // Arrange
-
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version") };
 
@@ -128,12 +108,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             var dummyPowerShell = PowerShell.Create();
 
-            // Act
-
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             installer.InstallSnapshot(manifestEntries, _targetPathInstalled, dummyPowerShell, _mockLogger.Object);
-
-            // Assert
 
             _mockModuleProvider.Verify(_ => _.Cleanup(dummyPowerShell), Times.Once);
         }
@@ -141,8 +117,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void LogsInstallationStartAndFinish()
         {
-            // Arrange
-
             var manifestEntries =
                 new[]
                 {
@@ -156,12 +130,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             ExpectSnapshotCreationAndPromotion();
 
-            // Act
-
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
 
-            // Assert
             VerifyLoggedOnce(new[] { "Started installing", "A", "Exact A version" });
             VerifyLoggedOnce(new[] { "has been installed", "A", "Exact A version" });
             VerifyLoggedOnce(new[] { "Started installing", "B", "Exact B version" });
@@ -171,8 +142,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void DoesNotSaveModuleIfGetLatestPublishedModuleVersionThrows()
         {
-            // Arrange
-
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.MajorVersion, "Version") };
 
@@ -190,13 +159,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockModuleProvider.Setup(_ => _.Cleanup(dummyPowerShell));
 
-            // Act
-
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             var caughtException = Assert.Throws<InvalidOperationException>(
                 () => installer.InstallSnapshot(manifestEntries, _targetPathInstalled, dummyPowerShell, _mockLogger.Object));
-
-            // Assert
 
             Assert.Contains(injectedException.Message, caughtException.Message);
 
@@ -212,8 +177,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void DoesNotPromoteDependenciesSnapshotIfSaveModuleKeepsThrowing()
         {
-            // Arrange
-
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version") };
 
@@ -229,13 +192,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockStorage.Setup(_ => _.RemoveSnapshot(_targetPathInstalling));
 
-            // Act
-
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             var thrownException = Assert.Throws<DependencyInstallationException>(
                 () => installer.InstallSnapshot(manifestEntries, _targetPathInstalled, dummyPowerShell, _mockLogger.Object));
-
-            // Assert
 
             Assert.Contains(injectedException.Message, thrownException.Message);
 
