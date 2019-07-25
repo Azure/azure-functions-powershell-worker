@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -38,16 +38,41 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
             foreach (DictionaryEntry entry in hashtable)
             {
-                // A valid entry is of the form: 'ModuleName'='MajorVersion.*"
+                // A valid entry is of the form:
+                //     'ModuleName'='MajorVersion.*'
+                // or
+                //     'ModuleName'='ExactVersion'
                 var name = (string)entry.Key;
                 var version = (string)entry.Value;
 
                 ValidateModuleName(name);
 
-                yield return new DependencyManifestEntry(
-                    name,
-                    VersionSpecificationType.MajorVersion,
-                    GetMajorVersion(version));
+                // Look for the 'MajorVersion.*' pattern
+                var match = Regex.Match(version, @"^(\d+)\.\*$");
+                if (match.Success)
+                {
+                    yield return new DependencyManifestEntry(
+                        name,
+                        VersionSpecificationType.MajorVersion,
+                        match.Groups[1].Value);
+                }
+                else
+                {
+                    // This is a very basic sanity check of the format that allows
+                    // us detect some obviously wrong cases: make sure it starts with digits,
+                    // does not contain * anywhere, and ends with a word character.
+                    // Not even trying to match the actual version format rules.
+                    if (!Regex.IsMatch(version, @"^\d+([^\*]*?\w)?$"))
+                    {
+                        var errorMessage = string.Format(PowerShellWorkerStrings.InvalidVersionFormat, version, "MajorVersion.*");
+                        throw new ArgumentException(errorMessage);
+                    }
+
+                    yield return new DependencyManifestEntry(
+                        name,
+                        VersionSpecificationType.ExactVersion,
+                        version);
+                }
             }
         }
 
@@ -108,39 +133,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             {
                 throw new ArgumentException(PowerShellWorkerStrings.DependencyNameIsNullOrEmpty);
             }
-        }
-
-        /// <summary>
-        /// Parses the given string version and extracts the major version.
-        /// Please note that the only version we currently support is of the form '1.*'.
-        /// </summary>
-        private static string GetMajorVersion(string version)
-        {
-            ValidateVersionFormat(version);
-            return version.Split(".")[0];
-        }
-
-        private static void ValidateVersionFormat(string version)
-        {
-            if (version == null)
-            {
-                throw new ArgumentNullException(version);
-            }
-
-            if (!IsValidVersionFormat(version))
-            {
-                var errorMessage = string.Format(PowerShellWorkerStrings.InvalidVersionFormat, version, "MajorVersion.*");
-                throw new ArgumentException(errorMessage);
-            }
-        }
-
-        /// <summary>
-        /// Validates the given version format. Currently, we only support 'Number.*'.
-        /// </summary>
-        private static bool IsValidVersionFormat(string version)
-        {
-            var pattern = @"^(\d)+(\.)(\*)";
-            return Regex.IsMatch(version, pattern);
         }
     }
 }

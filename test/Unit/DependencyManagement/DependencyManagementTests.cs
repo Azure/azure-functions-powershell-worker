@@ -179,9 +179,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var exception = Assert.Throws<DependencyInstallationException>(
                                     () => { dependencyManager.Initialize(_testLogger); });
 
-                Assert.Contains("Version is not in the correct format.", exception.Message);
-                Assert.Contains("Please use the following notation:", exception.Message);
-                Assert.Contains("MajorVersion.*", exception.Message);
+                Assert.Contains("not in the correct format.", exception.Message);
+                Assert.Contains("1.0.*", exception.Message);
+                Assert.Contains("Please specify the exact version or use the following notation: 'MajorVersion.*'", exception.Message);
             }
         }
 

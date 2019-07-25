@@ -68,6 +68,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [InlineData("@{ MyModule = '1.*' }", "MyModule", "1", VersionSpecificationType.MajorVersion)]
         [InlineData("@{ MyModule = '23.*' }", "MyModule", "23", VersionSpecificationType.MajorVersion)]
         [InlineData("@{ MyModule = '456.*' }", "MyModule", "456", VersionSpecificationType.MajorVersion)]
+        [InlineData("@{ MyModule = '0' }", "MyModule", "0", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1' }", "MyModule", "1", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1.0' }", "MyModule", "1.0", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '3.4.5' }", "MyModule", "3.4.5", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '123.45.67.89' }", "MyModule", "123.45.67.89", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '123.45.67.89-alpha4' }", "MyModule", "123.45.67.89-alpha4", VersionSpecificationType.ExactVersion)]
         public void GetEntriesParsesRequirementsFileWithSingleEntry(
             string content,
             string moduleName,
@@ -110,13 +116,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
         [Theory]
         [InlineData("@{ MyModule = '' }")]
+        [InlineData("@{ MyModule = ' ' }")]
         [InlineData("@{ MyModule = 'a' }")]
         [InlineData("@{ MyModule = '.' }")]
-        [InlineData("@{ MyModule = '1' }")]
         [InlineData("@{ MyModule = '1.' }")]
-        [InlineData("@{ MyModule = '1.0' }")]
-        [InlineData("@{ MyModule = '1.2' }")]
-        [InlineData("@{ MyModule = '2.3.4' }")]
+        [InlineData("@{ MyModule = '*' }")]
+        [InlineData("@{ MyModule = '*.1' }")]
+        [InlineData("@{ MyModule = '1.*.2' }")]
+        [InlineData("@{ MyModule = '1.0.*' }")]
         public void GetEntriesThrowsOnInvalidVersionSpecification(string content)
         {
             CreateRequirementsFile(content);
@@ -124,7 +131,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             var manifest = new DependencyManifest(_appRootPath);
 
             var exception = Assert.Throws<ArgumentException>(() => manifest.GetEntries().ToList());
-            Assert.Contains("Version is not in the correct format", exception.Message);
+            Assert.Contains("not in the correct format", exception.Message);
         }
 
         [Theory]
