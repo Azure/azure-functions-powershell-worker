@@ -54,12 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             // Arrange
 
-            _mockStorage.Setup(
-                _ => _.CreateInstallingSnapshot(It.IsAny<string>())).Returns(_targetPathInstalling);
-
-            _mockModuleProvider.Setup(
-                _ => _.SaveModule(It.IsAny<PowerShell>(), "Module", "Exact version", _targetPathInstalling));
-
+            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(It.IsAny<string>())).Returns(_targetPathInstalling);
             _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(It.IsAny<string>()));
 
             // Act
@@ -96,9 +91,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 _ => _.GetLatestPublishedModuleVersion("Module", "Major version"))
                 .Returns("Latest version");
 
-            _mockModuleProvider.Setup(
-                _ => _.SaveModule(It.IsAny<PowerShell>(), "Module", "Latest version", _targetPathInstalling));
-
             _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(It.IsAny<string>()));
 
             // Act
@@ -125,10 +117,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 };
 
             _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled)).Returns(_targetPathInstalling);
-
-            _mockModuleProvider.Setup(
-                _ => _.SaveModule(It.IsAny<PowerShell>(), "Module", "Version", _targetPathInstalling));
-
             _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
 
             // Act
@@ -155,10 +143,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             var dummyPowerShell = PowerShell.Create();
             _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled)).Returns(_targetPathInstalling);
-
-            _mockModuleProvider.Setup(
-                _ => _.SaveModule(dummyPowerShell, "Module", "Version", _targetPathInstalling));
-
             _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
 
             // Act
