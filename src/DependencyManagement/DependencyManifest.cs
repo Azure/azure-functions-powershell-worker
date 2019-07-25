@@ -45,35 +45,38 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 var name = (string)entry.Key;
                 var version = (string)entry.Value;
 
-                ValidateModuleName(name);
-
-                // Look for the 'MajorVersion.*' pattern
-                var match = Regex.Match(version, @"^(\d+)\.\*$");
-                if (match.Success)
-                {
-                    yield return new DependencyManifestEntry(
-                        name,
-                        VersionSpecificationType.MajorVersion,
-                        match.Groups[1].Value);
-                }
-                else
-                {
-                    // This is a very basic sanity check of the format that allows
-                    // us detect some obviously wrong cases: make sure it starts with digits,
-                    // does not contain * anywhere, and ends with a word character.
-                    // Not even trying to match the actual version format rules.
-                    if (!Regex.IsMatch(version, @"^\d+([^\*]*?\w)?$"))
-                    {
-                        var errorMessage = string.Format(PowerShellWorkerStrings.InvalidVersionFormat, version, "MajorVersion.*");
-                        throw new ArgumentException(errorMessage);
-                    }
-
-                    yield return new DependencyManifestEntry(
-                        name,
-                        VersionSpecificationType.ExactVersion,
-                        version);
-                }
+                yield return CreateDependencyManifestEntry(name, version);
             }
+        }
+
+        private static DependencyManifestEntry CreateDependencyManifestEntry(string name, string version)
+        {
+            ValidateModuleName(name);
+
+            // Look for the 'MajorVersion.*' pattern first
+            var match = Regex.Match(version, @"^(\d+)\.\*$");
+            if (match.Success)
+            {
+                return new DependencyManifestEntry(
+                    name,
+                    VersionSpecificationType.MajorVersion,
+                    match.Groups[1].Value);
+            }
+
+            // This is a very basic sanity check of the format that allows
+            // us detect some obviously wrong cases: make sure it starts with digits,
+            // does not contain * anywhere, and ends with a word character.
+            // Not even trying to match the actual version format rules.
+            if (!Regex.IsMatch(version, @"^\d+([^\*]*?\w)?$"))
+            {
+                var errorMessage = string.Format(PowerShellWorkerStrings.InvalidVersionFormat, version, "MajorVersion.*");
+                throw new ArgumentException(errorMessage);
+            }
+
+            return new DependencyManifestEntry(
+                name,
+                VersionSpecificationType.ExactVersion,
+                version);
         }
 
         /// <summary>
