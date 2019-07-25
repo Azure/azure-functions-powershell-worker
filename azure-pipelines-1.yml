@@ -27,7 +27,7 @@ steps:
     AzureWebJobsStorage: $(AzureWebJobsStorage)
     AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
     AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
-    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)    
+    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
     FUNCTIONS_WORKER_RUNTIME : "powershell"
   displayName: 'Running E2ETest'
 
@@ -38,12 +38,14 @@ steps:
   displayName: 'Create test app zip file'
 
 - pwsh: |
-
     if (-not (Get-command new-azstoragecontext -ea SilentlyContinue))
     {
       Install-Module Az.Storage -Force -Verbose -Scope CurrentUser
     }
-    $context = New-AzStorageContext -StorageAccountName $(StorageAccountName) -StorageAccountKey $(StorageAccountKey)
+
+    $context = New-AzStorageContext -StorageAccountName $(StorageAccountName) `
+                                    -StorageAccountKey $(StorageAccountKey)
+
     Set-AzStorageBlobContent -File ./E2ETestArtifacts/e2etestspowershell.zip `
                              -Container $(ContainerName) `
                              -Blob 'e2etestspowershell.zip' `
