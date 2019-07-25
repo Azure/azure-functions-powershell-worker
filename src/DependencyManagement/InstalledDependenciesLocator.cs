@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             var installedVersions =
                 _storage.GetInstalledModuleVersions(
-                    snapshotPath, dependency.Name, dependency.MajorVersion);
+                    snapshotPath, dependency.Name, dependency.VersionSpecification);
 
             return installedVersions.Any();
         }

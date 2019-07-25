@@ -134,7 +134,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
             foreach (var entry in dependencies)
             {
-                var latestVersion = GetModuleLatestPublishedVersion(entry.Name, entry.MajorVersion);
+                var latestVersion = GetModuleLatestPublishedVersion(entry.Name, entry.VersionSpecification);
 
                 var dependencyInfo = new DependencyInfo(entry.Name, latestVersion);
                 result.Add(dependencyInfo);

@@ -82,7 +82,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             Assert.Single(entries);
             Assert.Equal(moduleName, entries.Single().Name);
             Assert.Equal(versionSpecificationType, entries.Single().VersionSpecificationType);
-            Assert.Equal(majorVersion, entries.Single().MajorVersion);
+            Assert.Equal(majorVersion, entries.Single().VersionSpecification);
         }
 
         [Fact]
@@ -97,15 +97,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             var entryA = entries.Single(entry => entry.Name == "A");
             Assert.Equal(VersionSpecificationType.MajorVersion, entryA.VersionSpecificationType);
-            Assert.Equal("3", entryA.MajorVersion);
+            Assert.Equal("3", entryA.VersionSpecification);
 
             var entryB = entries.Single(entry => entry.Name == "B");
             Assert.Equal(VersionSpecificationType.MajorVersion, entryB.VersionSpecificationType);
-            Assert.Equal("7", entryB.MajorVersion);
+            Assert.Equal("7", entryB.VersionSpecification);
 
             var entryC = entries.Single(entry => entry.Name == "C");
             Assert.Equal(VersionSpecificationType.MajorVersion, entryC.VersionSpecificationType);
-            Assert.Equal("0", entryC.MajorVersion);
+            Assert.Equal("0", entryC.VersionSpecification);
         }
 
         [Theory]

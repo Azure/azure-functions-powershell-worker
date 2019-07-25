@@ -66,7 +66,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             foreach (var entry in _testDependencyManifestEntries)
             {
                 _mockModuleProvider.Setup(
-                        _ => _.GetLatestPublishedModuleVersion(entry.Name, entry.MajorVersion))
+                        _ => _.GetLatestPublishedModuleVersion(entry.Name, entry.VersionSpecification))
                     .Returns(_testLatestPublishedModuleVersions[entry.Name]);
 
                 _mockModuleProvider.Setup(
@@ -170,7 +170,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             foreach (var entry in _testDependencyManifestEntries)
             {
                 _mockModuleProvider.Setup(
-                        _ => _.GetLatestPublishedModuleVersion(entry.Name, entry.MajorVersion))
+                        _ => _.GetLatestPublishedModuleVersion(entry.Name, entry.VersionSpecification))
                     .Returns(_testLatestPublishedModuleVersions[entry.Name]);
             }
 
