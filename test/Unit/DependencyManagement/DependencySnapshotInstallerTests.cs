@@ -133,7 +133,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
-        public void InstallsLatestPublishedVersion_WhenMajorVersionIsSpecified()
+        public void SavesLatestPublishedVersion_WhenMajorVersionIsSpecified()
         {
             // Arrange
 
@@ -168,7 +168,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
-        public void InstallsSpecifiedVersion_WhenExactVersionIsSpecified()
+        public void SavesSpecifiedVersion_WhenExactVersionIsSpecified()
         {
             var manifestEntries =
                 new[]
