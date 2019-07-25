@@ -64,11 +64,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Theory]
-        [InlineData("@{ MyModule = '0.*' }", "MyModule", "0")]
-        [InlineData("@{ MyModule = '1.*' }", "MyModule", "1")]
-        [InlineData("@{ MyModule = '23.*' }", "MyModule", "23")]
-        [InlineData("@{ MyModule = '456.*' }", "MyModule", "456")]
-        public void GetEntriesParsesRequirementsFileWithSingleEntry(string content, string moduleName, string majorVersion)
+        [InlineData("@{ MyModule = '0.*' }", "MyModule", "0", VersionSpecificationType.MajorVersion)]
+        [InlineData("@{ MyModule = '1.*' }", "MyModule", "1", VersionSpecificationType.MajorVersion)]
+        [InlineData("@{ MyModule = '23.*' }", "MyModule", "23", VersionSpecificationType.MajorVersion)]
+        [InlineData("@{ MyModule = '456.*' }", "MyModule", "456", VersionSpecificationType.MajorVersion)]
+        public void GetEntriesParsesRequirementsFileWithSingleEntry(
+            string content,
+            string moduleName,
+            string majorVersion,
+            VersionSpecificationType versionSpecificationType)
         {
             CreateRequirementsFile(content);
 
@@ -77,6 +81,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             Assert.Single(entries);
             Assert.Equal(moduleName, entries.Single().Name);
+            Assert.Equal(versionSpecificationType, entries.Single().VersionSpecificationType);
             Assert.Equal(majorVersion, entries.Single().MajorVersion);
         }
 
@@ -89,9 +94,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             var entries = manifest.GetEntries().ToList();
 
             Assert.Equal(3, entries.Count);
-            Assert.Equal("3", entries.Single(entry => entry.Name == "A").MajorVersion);
-            Assert.Equal("7", entries.Single(entry => entry.Name == "B").MajorVersion);
-            Assert.Equal("0", entries.Single(entry => entry.Name == "C").MajorVersion);
+
+            var entryA = entries.Single(entry => entry.Name == "A");
+            Assert.Equal(VersionSpecificationType.MajorVersion, entryA.VersionSpecificationType);
+            Assert.Equal("3", entryA.MajorVersion);
+
+            var entryB = entries.Single(entry => entry.Name == "B");
+            Assert.Equal(VersionSpecificationType.MajorVersion, entryB.VersionSpecificationType);
+            Assert.Equal("7", entryB.MajorVersion);
+
+            var entryC = entries.Single(entry => entry.Name == "C");
+            Assert.Equal(VersionSpecificationType.MajorVersion, entryC.VersionSpecificationType);
+            Assert.Equal("0", entryC.MajorVersion);
         }
 
         [Theory]

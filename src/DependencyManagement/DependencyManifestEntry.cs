@@ -9,11 +9,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     {
         public string Name { get; }
 
+        public VersionSpecificationType VersionSpecificationType { get;  }
+
         public string MajorVersion { get; }
 
         public DependencyManifestEntry(string name, string majorVersion)
         {
             Name = name;
+            VersionSpecificationType = VersionSpecificationType.MajorVersion;
             MajorVersion = majorVersion;
         }
     }
