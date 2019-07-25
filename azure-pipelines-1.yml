@@ -29,6 +29,7 @@ steps:
     AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
     AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
     FUNCTIONS_WORKER_RUNTIME : "powershell"
+  continueOnError: true
   displayName: 'Running E2ETest'
 
 - pwsh: |
@@ -46,17 +47,13 @@ steps:
     $context = New-AzStorageContext -StorageAccountName $(StorageAccountName) `
                                     -StorageAccountKey $(StorageAccountKey)
 
-    Set-AzStorageBlobContent -File ./E2ETestArtifacts/e2etestspowershell.zip `
-                             -Container $(ContainerName) `
-                             -Blob 'e2etestspowershell.zip' `
-                             -Context $context `
-                             -Force `
-                             -Verbose
+    foreach ($fileName in @("e2etestspowershell.zip", "PowerShellWorker.zip")
+    {
+      Set-AzStorageBlobContent -File ./E2ETestArtifacts/$fileName `
+                               -Container $(ContainerName) `
+                               -Blob '$fileName `
+                               -Context $context `
+                               -Force `
+                               -Verbose
+    }
   displayName: 'Copying test app zip artifacts to blob'
-
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
-  displayName: 'Publishing build and test result artifacts'
