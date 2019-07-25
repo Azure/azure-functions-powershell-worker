@@ -1,0 +1,59 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+#trigger:
+#- master
+#- dev
+
+pool:
+    vmImage: 'vs2017-win2016'
+
+variables:
+  Configuration: Release
+
+steps:
+- pwsh: ./build.ps1 -NoBuild -Bootstrap
+  displayName: 'Running ./build.ps1 -NoBuild -Bootstrap'
+
+- pwsh: |
+      $ErrorActionPreference = "Stop"
+      ./build.ps1 -Clean -Configuration Release
+  displayName: './build.ps1 -Clean -Configuration Release'
+
+- pwsh: ./test/E2E/Start-E2ETest.ps1
+  env:
+    AzureWebJobsStorage: $(AzureWebJobsStorage)
+    AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
+    AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
+    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
+    FUNCTIONS_WORKER_RUNTIME : "powershell"
+  continueOnError: true
+  displayName: 'Running E2ETest'
+
+- pwsh: |
+      $null = New-Item -Path ./E2ETestArtifacts -ItemType Directory -Force
+      Compress-Archive -Path ./src/bin/$configuration/netcoreapp2.2/publish/* -DestinationPath ./E2ETestArtifacts/PowerShellWorker.zip
+      Compress-Archive -Path ./test/E2E/TestFunctionApp/* -DestinationPath ./E2ETestArtifacts/e2etestspowershell.zip
+  displayName: 'Create test app zip file'
+
+- pwsh: |
+    if (-not (Get-command new-azstoragecontext -ea SilentlyContinue))
+    {
+      Install-Module Az.Storage -Force -Verbose -Scope CurrentUser
+    }
+
+    $context = New-AzStorageContext -StorageAccountName $(StorageAccountName) `
+                                    -StorageAccountKey $(StorageAccountKey)
+
+    foreach ($fileName in @("e2etestspowershell.zip", "PowerShellWorker.zip")
+    {
+      Set-AzStorageBlobContent -File ./E2ETestArtifacts/$fileName `
+                               -Container $(ContainerName) `
+                               -Blob '$fileName `
+                               -Context $context `
+                               -Force `
+                               -Verbose
+    }
+  displayName: 'Copying test app zip artifacts to blob'

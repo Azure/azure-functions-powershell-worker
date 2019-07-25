@@ -7,8 +7,16 @@ using Xunit;
 
 namespace Azure.Functions.PowerShell.Tests.E2E
 {
+    [Collection(Constants.FunctionAppCollectionName)]
     public class HttpEndToEndTests 
     {
+        private readonly FunctionAppFixture _fixture;
+
+        public HttpEndToEndTests(FunctionAppFixture fixture)
+        {
+            this._fixture = fixture;
+        }
+
         [Theory]
         [InlineData("HttpTrigger", "?name=Test", HttpStatusCode.OK, "Hello Test")]
         [InlineData("HttpTrigger", "?name=John&lastName=Doe", HttpStatusCode.OK, "Hello John")]

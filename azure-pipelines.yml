@@ -1,0 +1,49 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+#trigger:
+#- master
+#- dev
+
+pool:
+    vmImage: 'vs2017-win2016'
+
+variables:
+  Configuration: Release
+
+steps:
+- pwsh: ./build.ps1 -NoBuild -Bootstrap
+  displayName: 'Running ./build.ps1 -NoBuild -Bootstrap'
+
+- pwsh: |
+      $ErrorActionPreference = "Stop"
+      ./build.ps1 -Clean -Configuration Release
+  displayName: './build.ps1 -Clean -Configuration Release'
+
+- pwsh: ./build.ps1 -NoBuild -Test
+  displayName: 'Running UnitTest'
+
+- pwsh: ./test/E2E/Start-E2ETest.ps1
+  env:
+    AzureWebJobsStorage: $(AzureWebJobsStorage)
+    AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
+    AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
+    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)    
+    FUNCTIONS_WORKER_RUNTIME : "powershell"
+  displayName: 'Running E2ETest'
+
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(System.DefaultWorkingDirectory)/testResults'
+    Contents: '*.trx'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+  displayName: 'Copying test result file for artifacts'
+  
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+  displayName: 'Publishing build and test result artifacts'
