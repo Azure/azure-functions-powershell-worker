@@ -259,11 +259,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             _mockLogger.Verify(
                 _ => _.Log(
-                    false,
+                    false, // isUserOnlyLog
                     LogLevel.Trace,
-                    It.Is<string>(
+                    It.Is<string>( // the message should contain every item of messageParts
                         message => messageParts.All(part => message.Contains(part))),
-                    null),
+                    null), // exception
                 Times.Once);
         }
     }
