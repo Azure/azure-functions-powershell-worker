@@ -202,12 +202,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             // Arrange
 
-            var testDependencyManifestEntries =
-                new[]
-                {
-                    new DependencyManifestEntry("A", VersionSpecificationType.ExactVersion, "Exact version of A")
-                };
-
             _mockStorage.Setup(
                 _ => _.CreateInstallingSnapshot(It.IsAny<string>())).Returns(_targetPathInstalling);
 
@@ -220,7 +214,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             // Act
 
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
-            installer.InstallSnapshot(testDependencyManifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
+
+            var manifestEntries =
+                new[]
+                {
+                    new DependencyManifestEntry("A", VersionSpecificationType.ExactVersion, "Exact version of A")
+                };
+
+            installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
 
             // Assert
 
