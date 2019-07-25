@@ -26,4 +26,10 @@ steps:
   displayName: 'Running UnitTest'
 
 - pwsh: ./test/E2E/Start-E2ETest.ps1
+  env:
+    AzureWebJobsStorage: $(AzureWebJobsStorage)
+    AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
+    AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
+    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)    
+    FUNCTIONS_WORKER_RUNTIME : "powershell"
   displayName: 'Running E2ETest'
