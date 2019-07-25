@@ -37,6 +37,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         public void DoesNothingOnConstruction()
         {
             CreateDependenciesSnapshotInstallerWithMocks();
+
+            _mockModuleProvider.VerifyNoOtherCalls();
+            _mockStorage.VerifyNoOtherCalls();
+            _mockLogger.VerifyNoOtherCalls();
         }
 
         [Fact]
