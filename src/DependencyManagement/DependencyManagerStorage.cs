@@ -55,7 +55,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             return Directory.EnumerateDirectories(_managedDependenciesRootPath);
         }
 
-        // TODO: replace with IsMajorModuleVersionInstalled?
         public IEnumerable<string> GetInstalledModuleVersions(string snapshotPath, string moduleName, string majorVersion)
         {
             var modulePath = Path.Join(snapshotPath, moduleName);
