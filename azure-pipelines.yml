@@ -10,6 +10,9 @@ trigger:
 pool:
     vmImage: 'vs2017-win2016'
 
+variables:
+  Configuration: Release
+
 steps:
 - pwsh: ./build.ps1 -NoBuild -Bootstrap
   displayName: 'Running ./build.ps1 -NoBuild -Bootstrap'
