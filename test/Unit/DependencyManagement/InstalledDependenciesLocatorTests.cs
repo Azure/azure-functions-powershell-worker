@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
-        public void ReturnsLatestSnapshotPath_WhenAnyDependencyDoesNotHaveAcceptableVersionInstalled()
+        public void ReturnsLatestSnapshotPath_WhenAllDependenciesHaveAcceptableVersionInstalled()
         {
             // Even though multiple snapshots can be currently installed, only the latest one will be considered
             // (determined by name).
@@ -61,7 +61,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(_dependencyManifestEntries);
 
-            // No 11.* version for module B detected!
             _mockStorage.Setup(_ => _.GetInstalledModuleVersions("s3", "A", "3")).Returns(new[] { "3.1", "3.3" });
             _mockStorage.Setup(_ => _.GetInstalledModuleVersions("s3", "B", "11")).Returns(new [] { "11.8.0.2" });
             _mockStorage.Setup(_ => _.GetInstalledModuleVersions("s3", "C", "7")).Returns(new[] { "7.0" });
