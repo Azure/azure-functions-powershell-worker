@@ -34,8 +34,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void Initialize_ReturnsNewSnapshotPath_WhenNoAcceptableDependencyVersionsInstalled()
         {
-            _mockStorage.Setup(_ => _.GetDependencies()).Returns(
-                new[] { new DependencyManifestEntry("ModuleName", VersionSpecificationType.MajorVersion, "1") });
+            _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
             _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
                 .Returns(default(string));
             _mockStorage.Setup(_ => _.CreateNewSnapshotPath()).Returns("NewSnapshot");
