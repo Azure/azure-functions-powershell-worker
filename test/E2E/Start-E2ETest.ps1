@@ -23,7 +23,7 @@ Write-Host 'Deleting Functions Core Tools if exists...'
 Remove-Item -Force "$FUNC_CLI_DIRECTORY.zip" -ErrorAction Ignore
 Remove-Item -Recurse -Force $FUNC_CLI_DIRECTORY -ErrorAction Ignore
 
-if (-not (Test-Path $env:CORE_TOOLS_URL))
+if (-not $env:CORE_TOOLS_URL)
 {
     $env:CORE_TOOLS_URL = 'https://functionsclibuilds.blob.core.windows.net/builds/2/latest'
 }
@@ -76,7 +76,7 @@ Start-Sleep -s 30
 Write-Host "Running E2E integration tests..." -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 
-dotnet test "$PSScriptRoot/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E.csproj" --logger:trx --results-directory ..\..\testResults"
+dotnet test "$PSScriptRoot/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E.csproj" --logger:trx --results-directory ..\..\testResults
 if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
 
 Write-Host "-----------------------------------------------------------------------------" -ForegroundColor Green
