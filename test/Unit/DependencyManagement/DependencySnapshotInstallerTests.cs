@@ -56,43 +56,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
-        public void InstallsDependencySnapshots()
-        {
-            // Arrange
-
-            var dummyPowerShell = PowerShell.Create();
-            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled))
-                .Returns(_targetPathInstalling);
-
-            foreach (var entry in _testDependencyManifestEntries)
-            {
-                _mockModuleProvider.Setup(
-                        _ => _.GetLatestPublishedModuleVersion(entry.Name, entry.VersionSpecification))
-                    .Returns(_testLatestPublishedModuleVersions[entry.Name]);
-
-                _mockModuleProvider.Setup(
-                    _ => _.SaveModule(dummyPowerShell, entry.Name, _testLatestPublishedModuleVersions[entry.Name], _targetPathInstalling));
-            }
-
-            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
-            _mockModuleProvider.Setup(_ => _.Cleanup(dummyPowerShell));
-
-            // Act
-
-            var installer = CreateDependenciesSnapshotInstallerWithMocks();
-            installer.InstallSnapshot(_testDependencyManifestEntries, _targetPathInstalled, dummyPowerShell, _mockLogger.Object);
-
-            // Assert
-
-            foreach (var entry in _testDependencyManifestEntries)
-            {
-                _mockModuleProvider.Verify(
-                    _ => _.SaveModule(dummyPowerShell, entry.Name, _testLatestPublishedModuleVersions[entry.Name], _targetPathInstalling),
-                    Times.Once);
-            }
-        }
-
-        [Fact]
         public void DoesNotSaveModuleIfGetLatestPublishedModuleVersionThrows()
         {
             // Arrange
