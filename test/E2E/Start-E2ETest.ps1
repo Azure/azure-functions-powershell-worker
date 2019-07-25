@@ -37,7 +37,7 @@ Invoke-RestMethod -Uri $FUNC_CLI_DOWNLOAD_URL -OutFile $output
 Write-Host 'Extracting Functions Core Tools...'
 Expand-Archive $output -DestinationPath $FUNC_CLI_DIRECTORY
 
-Write-Host "Copying azure-functions-powershell-worker to  Functions Host workers directory..."
+Write-Host "Copying azure-functions-powershell-worker to Functions Host workers directory..."
 
 $configuration = if ($env:CONFIGURATION) { $env:CONFIGURATION } else { 'Debug' }
 Remove-Item -Recurse -Force -Path "$FUNC_CLI_DIRECTORY/workers/powershell"
@@ -69,24 +69,10 @@ if ($IsMacOS -or $IsLinux) {
 if ($LASTEXITCODE -ne 0) { throw "Installing extensions failed." }
 Pop-Location
 
-Write-Host "Starting functions host..."
-$proc = start-process -NoNewWindow -PassThru -filepath $funcExePath -WorkingDirectory "$PSScriptRoot\TestFunctionApp" -ArgumentList "host start" -RedirectStandardOutput "output.txt"
-Start-Sleep -s 30
-
 Write-Host "Running E2E integration tests..." -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 
-dotnet test "$PSScriptRoot/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E.csproj" --logger:trx --results-directory ..\..\testResults
+dotnet test "$PSScriptRoot/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E.csproj" --logger:trx --results-directory "$PSScriptRoot/../../testResults"
 if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
 
 Write-Host "-----------------------------------------------------------------------------" -ForegroundColor Green
-
-
-Write-Host "Closing process..."
-Stop-Process -Id $proc.Id -Erroraction Ignore 
-
-Write-Host "Host Logs:"
-$host_logs = Get-Content -Path "output.txt" -Raw
-Write-Host $host_logs
-
-Remove-Item -Path "output.txt" -ErrorAction SilentlyContinue

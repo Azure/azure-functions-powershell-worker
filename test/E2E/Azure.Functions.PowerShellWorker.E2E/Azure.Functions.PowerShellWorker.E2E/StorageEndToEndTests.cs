@@ -7,8 +7,16 @@ using Xunit;
 
 namespace Azure.Functions.PowerShell.Tests.E2E
 {
+    [Collection(Constants.FunctionAppCollectionName)]
     public class StorageEndToEndTests 
     {
+        private readonly FunctionAppFixture _fixture;
+
+        public StorageEndToEndTests(FunctionAppFixture fixture)
+        {
+            this._fixture = fixture;
+        }
+
         [Fact]
         public async Task QueueTriggerAndOutput_Succeeds()
         {
