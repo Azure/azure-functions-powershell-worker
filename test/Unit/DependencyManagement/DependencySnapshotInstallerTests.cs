@@ -46,16 +46,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void SavesSpecifiedVersion_WhenExactVersionIsSpecified()
         {
+            // Arrange
+
             var manifestEntries =
                 new[]
                 {
                     new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Exact version")
                 };
 
-            // Arrange
-
-            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(It.IsAny<string>())).Returns(_targetPathInstalling);
-            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(It.IsAny<string>()));
+            ExpectSnapshotCreationAndPromotion();
 
             // Act
 
@@ -84,14 +83,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     new DependencyManifestEntry("Module", VersionSpecificationType.MajorVersion, "Major version")
                 };
 
-            _mockStorage.Setup(
-                _ => _.CreateInstallingSnapshot(It.IsAny<string>())).Returns(_targetPathInstalling);
+            ExpectSnapshotCreationAndPromotion();
 
             _mockModuleProvider.Setup(
                 _ => _.GetLatestPublishedModuleVersion("Module", "Major version"))
                 .Returns("Latest version");
-
-            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(It.IsAny<string>()));
 
             // Act
 
@@ -116,8 +112,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version")
                 };
 
-            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled)).Returns(_targetPathInstalling);
-            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
+            ExpectSnapshotCreationAndPromotion();
 
             // Act
 
@@ -141,9 +136,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version")
                 };
 
+            ExpectSnapshotCreationAndPromotion();
+
             var dummyPowerShell = PowerShell.Create();
-            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled)).Returns(_targetPathInstalling);
-            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
 
             // Act
 
@@ -171,8 +166,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     _ => _.GetLatestPublishedModuleVersion(It.IsAny<string>(), It.IsAny<string>()))
                 .Returns("Exact B version");
 
-            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(It.IsAny<string>())).Returns(_targetPathInstalling);
-            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
+            ExpectSnapshotCreationAndPromotion();
 
             // Act
 
@@ -197,9 +191,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     new DependencyManifestEntry("Module", VersionSpecificationType.MajorVersion, "Version")
                 };
 
+            ExpectSnapshotCreationAndPromotion();
+
             var dummyPowerShell = PowerShell.Create();
-            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled))
-                .Returns(_targetPathInstalling);
 
             var injectedException = new InvalidOperationException("Couldn't get latest published module version");
 
@@ -241,9 +235,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version")
                 };
 
+            ExpectSnapshotCreationAndPromotion();
+
             var dummyPowerShell = PowerShell.Create();
-            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled))
-                .Returns(_targetPathInstalling);
 
             var injectedException = new Exception("Couldn't save module");
 
@@ -271,6 +265,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         private DependencySnapshotInstaller CreateDependenciesSnapshotInstallerWithMocks()
         {
             return new DependencySnapshotInstaller(_mockModuleProvider.Object, _mockStorage.Object);
+        }
+
+        private void ExpectSnapshotCreationAndPromotion()
+        {
+            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled)).Returns(_targetPathInstalling);
+            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
         }
 
         private void VerifyLoggedOnce(IEnumerable<string> messageParts)
