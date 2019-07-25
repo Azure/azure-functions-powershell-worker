@@ -82,7 +82,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
-        public void PromotesInstallingSnapshotToInstalledAfterSuccessfullySavingModule()
+        public void PromotesInstallingSnapshotToInstalledIfSaveModuleDoesNotThrow()
         {
             var manifestEntries =
                 new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version") };
