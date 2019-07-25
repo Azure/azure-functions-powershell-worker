@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 
 namespace Azure.Functions.PowerShell.Tests.E2E
 {
@@ -16,8 +15,8 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             funcHostProcess.StartInfo.RedirectStandardError = true;
             funcHostProcess.StartInfo.RedirectStandardOutput = true;
             funcHostProcess.StartInfo.CreateNoWindow = true;
-            funcHostProcess.StartInfo.WorkingDirectory = Path.Combine(rootDir, @"test\E2E");
-            funcHostProcess.StartInfo.FileName = Path.Combine(rootDir, @"Azure.Functions.Cli\func.exe");
+            funcHostProcess.StartInfo.WorkingDirectory = Path.Combine(rootDir, @"test\E2E\TestFunctionApp");
+            funcHostProcess.StartInfo.FileName = Path.Combine(rootDir, @"test\E2E\Azure.Functions.Cli\func.exe");
             funcHostProcess.StartInfo.ArgumentList.Add("start");
             if (enableAuth)
             {
