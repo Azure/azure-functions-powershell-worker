@@ -98,12 +98,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
                 .Returns(default(string));
 
-            var dependencyManifestEntries = new[]
-                {
-                    new DependencyManifestEntry("A", VersionSpecificationType.MajorVersion, "3"),
-                    new DependencyManifestEntry("C", VersionSpecificationType.MajorVersion, "7"),
-                    new DependencyManifestEntry("B", VersionSpecificationType.MajorVersion, "11")
-                };
+            var dependencyManifestEntries = GetAnyNonEmptyDependencyManifestEntries();
 
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(dependencyManifestEntries);
             _mockStorage.Setup(_ => _.CreateNewSnapshotPath()).Returns("NewSnapshot");
