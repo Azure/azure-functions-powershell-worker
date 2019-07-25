@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         public void Initialize_ReturnsNewSnapshotPath_WhenNoAcceptableDependencyVersionsInstalled()
         {
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(
-                new[] { new DependencyManifestEntry("ModuleName", "1") });
+                new[] { new DependencyManifestEntry("ModuleName", VersionSpecificationType.MajorVersion, "1") });
             _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
                 .Returns(default(string));
             _mockStorage.Setup(_ => _.CreateNewSnapshotPath()).Returns("NewSnapshot");
@@ -100,9 +100,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             var dependencyManifestEntries = new[]
                 {
-                    new DependencyManifestEntry("A", "3"),
-                    new DependencyManifestEntry("C", "7"),
-                    new DependencyManifestEntry("B", "11")
+                    new DependencyManifestEntry("A", VersionSpecificationType.MajorVersion, "3"),
+                    new DependencyManifestEntry("C", VersionSpecificationType.MajorVersion, "7"),
+                    new DependencyManifestEntry("B", VersionSpecificationType.MajorVersion, "11")
                 };
 
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(dependencyManifestEntries);
@@ -317,7 +317,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
         private static DependencyManifestEntry[] GetAnyNonEmptyDependencyManifestEntries()
         {
-            return new[] { new DependencyManifestEntry("ModuleName", "1") };
+            return new[] { new DependencyManifestEntry("ModuleName", VersionSpecificationType.MajorVersion, "1") };
         }
 
         private void VerifyExactlyOneSnapshotInstalled()

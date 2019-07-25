@@ -16,9 +16,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
         private readonly DependencyManifestEntry[] _dependencyManifestEntries =
             {
-                new DependencyManifestEntry("A", "3"),
-                new DependencyManifestEntry("C", "7"),
-                new DependencyManifestEntry("B", "11")
+                new DependencyManifestEntry("A", VersionSpecificationType.MajorVersion, "3"),
+                new DependencyManifestEntry("C", VersionSpecificationType.MajorVersion, "7"),
+                new DependencyManifestEntry("B", VersionSpecificationType.MajorVersion, "11")
             };
 
         [Fact]

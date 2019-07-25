@@ -44,7 +44,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 ValidateModuleName(name);
 
-                yield return new DependencyManifestEntry(name, GetMajorVersion(version));
+                yield return new DependencyManifestEntry(
+                    name,
+                    VersionSpecificationType.MajorVersion,
+                    GetMajorVersion(version));
             }
         }
 
