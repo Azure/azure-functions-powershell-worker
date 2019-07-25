@@ -84,17 +84,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             // Assert
 
-            _mockStorage.Verify(_ => _.CreateInstallingSnapshot(_targetPathInstalled), Times.Once);
-
             foreach (var entry in _testDependencyManifestEntries)
             {
                 _mockModuleProvider.Verify(
                     _ => _.SaveModule(dummyPowerShell, entry.Name, _testLatestPublishedModuleVersions[entry.Name], _targetPathInstalling),
                     Times.Once);
             }
-
-            _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled), Times.Once);
-            _mockModuleProvider.Verify(_ => _.Cleanup(dummyPowerShell), Times.Once);
         }
 
         [Fact]
@@ -242,6 +237,37 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockModuleProvider.Verify(
                 _ => _.GetLatestPublishedModuleVersion(It.IsAny<string>(), It.IsAny<string>()),
                 Times.Never);
+        }
+
+        [Fact]
+        public void PromotesInstallingSnapshotToInstalledAfterSuccessfullySavingModule()
+        {
+            // Arrange
+
+            var manifestEntries =
+                new[]
+                {
+                    new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version")
+                };
+
+            var dummyPowerShell = PowerShell.Create();
+            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled)).Returns(_targetPathInstalling);
+
+            _mockModuleProvider.Setup(
+                _ => _.SaveModule(dummyPowerShell, "Module", "Version", _targetPathInstalling));
+
+            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
+
+            // Act
+
+            var installer = CreateDependenciesSnapshotInstallerWithMocks();
+            installer.InstallSnapshot(manifestEntries, _targetPathInstalled, dummyPowerShell, _mockLogger.Object);
+
+            // Assert
+
+            _mockStorage.Verify(_ => _.CreateInstallingSnapshot(_targetPathInstalled), Times.Once);
+            _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled), Times.Once);
+            _mockModuleProvider.Verify(_ => _.Cleanup(dummyPowerShell), Times.Once);
         }
 
         [Fact]
