@@ -24,22 +24,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         private readonly Mock<IDependencyManagerStorage> _mockStorage = new Mock<IDependencyManagerStorage>(MockBehavior.Strict);
         private readonly Mock<ILogger> _mockLogger = new Mock<ILogger>();
 
-        private readonly IEnumerable<DependencyManifestEntry> _testDependencyManifestEntries =
-            new[]
-            {
-                new DependencyManifestEntry("A", VersionSpecificationType.MajorVersion, "3"),
-                new DependencyManifestEntry("C", VersionSpecificationType.ExactVersion, "7.0.1.3"),
-                new DependencyManifestEntry("B", VersionSpecificationType.MajorVersion, "11")
-            };
-
-        private readonly Dictionary<string, string> _testLatestPublishedModuleVersions =
-            new Dictionary<string, string>
-            {
-                { "A", "3.8.2" },
-                { "B", "11.0" },
-                { "C", "7.0.1.3" }
-            };
-
         private readonly string _targetPathInstalled;
         private readonly string _targetPathInstalling;
 
@@ -192,6 +176,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             // Arrange
 
+            var manifestEntries =
+                new[]
+                {
+                    new DependencyManifestEntry("Module", VersionSpecificationType.MajorVersion, "Version")
+                };
+
             var dummyPowerShell = PowerShell.Create();
             _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled))
                 .Returns(_targetPathInstalling);
@@ -210,7 +200,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             var caughtException = Assert.Throws<InvalidOperationException>(
-                () => installer.InstallSnapshot(_testDependencyManifestEntries, _targetPathInstalled, dummyPowerShell, _mockLogger.Object));
+                () => installer.InstallSnapshot(manifestEntries, _targetPathInstalled, dummyPowerShell, _mockLogger.Object));
 
             // Assert
 
@@ -230,18 +220,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             // Arrange
 
+            var manifestEntries =
+                new[]
+                {
+                    new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version")
+                };
+
             var dummyPowerShell = PowerShell.Create();
             _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled))
                 .Returns(_targetPathInstalling);
 
             var injectedException = new Exception("Couldn't save module");
-
-            foreach (var entry in _testDependencyManifestEntries)
-            {
-                _mockModuleProvider.Setup(
-                        _ => _.GetLatestPublishedModuleVersion(entry.Name, entry.VersionSpecification))
-                    .Returns(_testLatestPublishedModuleVersions[entry.Name]);
-            }
 
             _mockModuleProvider.Setup(
                 _ => _.SaveModule(It.IsAny<PowerShell>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
@@ -253,7 +242,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
             var thrownException = Assert.Throws<DependencyInstallationException>(
-                () => installer.InstallSnapshot(_testDependencyManifestEntries, _targetPathInstalled, dummyPowerShell, _mockLogger.Object));
+                () => installer.InstallSnapshot(manifestEntries, _targetPathInstalled, dummyPowerShell, _mockLogger.Object));
 
             // Assert
 
