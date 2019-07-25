@@ -47,7 +47,7 @@ steps:
     $context = New-AzStorageContext -StorageAccountName $(StorageAccountName) `
                                     -StorageAccountKey $(StorageAccountKey)
 
-    foreach ($fileName in @("e2etestspowershell.zip", "PowerShellWorker.zip")
+    foreach ($fileName in @("e2etestspowershell.zip", "PowerShellWorker.zip"))
     {
       Set-AzStorageBlobContent -File ./E2ETestArtifacts/$fileName `
                                -Container $(ContainerName) `
