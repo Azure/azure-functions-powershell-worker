@@ -46,9 +46,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 foreach (DependencyInfo module in GetLatestPublishedVersionsOfDependencies(dependencies))
                 {
                     string moduleName = module.Name;
-                    string latestVersion = module.LatestVersion;
+                    string exactVersion = module.ExactVersion;
 
-                    logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.StartedInstallingModule, moduleName, latestVersion));
+                    logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.StartedInstallingModule, moduleName, exactVersion));
 
                     int tries = 1;
 
@@ -56,9 +56,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     {
                         try
                         {
-                            _moduleProvider.SaveModule(pwsh, moduleName, latestVersion, installingPath);
+                            _moduleProvider.SaveModule(pwsh, moduleName, exactVersion, installingPath);
 
-                            var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, latestVersion);
+                            var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, exactVersion);
                             logger.Log(isUserOnlyLog: false, LogLevel.Trace, message);
 
                             break;
@@ -66,7 +66,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         catch (Exception e)
                         {
                             string currentAttempt = GetCurrentAttemptMessage(tries);
-                            var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallModule, moduleName, latestVersion, currentAttempt, e.Message);
+                            var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallModule, moduleName, exactVersion, currentAttempt, e.Message);
                             logger.Log(isUserOnlyLog: false, LogLevel.Error, errorMsg);
 
                             if (tries >= MaxNumberOfTries)
