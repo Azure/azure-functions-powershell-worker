@@ -34,7 +34,7 @@ steps:
 
 - pwsh: |
       $null = New-Item -Path ./E2ETestArtifacts -ItemType Directory -Force
-      Compress-Archive -Path ./src/bin/Debug/netcoreapp2.2/publish/* -DestinationPath ./E2ETestArtifacts/PowerShellWorker.zip
+      Compress-Archive -Path ./src/bin/$configuration/netcoreapp2.2/publish/* -DestinationPath ./E2ETestArtifacts/PowerShellWorker.zip
       Compress-Archive -Path ./test/E2E/TestFunctionApp/* -DestinationPath ./E2ETestArtifacts/e2etestspowershell.zip
   displayName: 'Create test app zip file'
 
