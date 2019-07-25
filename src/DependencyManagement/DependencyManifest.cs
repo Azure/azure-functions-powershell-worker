@@ -53,30 +53,34 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             ValidateModuleName(name);
 
-            // Look for the 'MajorVersion.*' pattern first
-            var match = Regex.Match(version, @"^(\d+)\.\*$");
+            var match = Regex.Match(version, @"^(\d+)(.*)");
             if (match.Success)
             {
-                return new DependencyManifestEntry(
-                    name,
-                    VersionSpecificationType.MajorVersion,
-                    match.Groups[1].Value);
+                // Look for the 'MajorVersion.*' pattern first.
+                var afterMajorVersion = match.Groups[2].Value;
+                if (afterMajorVersion == ".*")
+                {
+                    return new DependencyManifestEntry(
+                        name,
+                        VersionSpecificationType.MajorVersion,
+                        match.Groups[1].Value);
+                }
+
+                // This is a very basic sanity check of the format that allows us detect some
+                // obviously wrong cases: make sure afterMajorVersion starts with a dot,
+                // does not contain * anywhere, and ends with a word character.
+                // Not even trying to match the actual version format rules, though.
+                if (Regex.IsMatch(afterMajorVersion, @"^(\.[^\*]*?\w)?$"))
+                {
+                    return new DependencyManifestEntry(
+                        name,
+                        VersionSpecificationType.ExactVersion,
+                        version);
+                }
             }
 
-            // This is a very basic sanity check of the format that allows
-            // us detect some obviously wrong cases: make sure it starts with digits,
-            // does not contain * anywhere, and ends with a word character.
-            // Not even trying to match the actual version format rules.
-            if (!Regex.IsMatch(version, @"^\d+([^\*]*?\w)?$"))
-            {
-                var errorMessage = string.Format(PowerShellWorkerStrings.InvalidVersionFormat, version, "MajorVersion.*");
-                throw new ArgumentException(errorMessage);
-            }
-
-            return new DependencyManifestEntry(
-                name,
-                VersionSpecificationType.ExactVersion,
-                version);
+            var errorMessage = string.Format(PowerShellWorkerStrings.InvalidVersionFormat, version, "MajorVersion.*");
+            throw new ArgumentException(errorMessage);
         }
 
         /// <summary>
