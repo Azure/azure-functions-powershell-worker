@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 
 namespace Azure.Functions.PowerShell.Tests.E2E
 {
@@ -9,7 +10,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         public static Process GetFuncHostProcess(bool enableAuth = false)
         {
             var funcHostProcess = new Process();
-            var rootDir = Path.GetFullPath(@"..\..");
+            var rootDir = Path.GetFullPath(@"..\..\..\..\..\..\..\");
 
             funcHostProcess.StartInfo.UseShellExecute = false;
             funcHostProcess.StartInfo.RedirectStandardError = true;
