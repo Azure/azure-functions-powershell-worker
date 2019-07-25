@@ -72,7 +72,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             ExpectSnapshotCreationAndPromotion();
 
             _mockModuleProvider.Setup(
-                _ => _.GetLatestPublishedModuleVersion("Module", "Major version"))
+                    _ => _.GetLatestPublishedModuleVersion("Module", "Major version"))
                 .Returns("Latest version");
 
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
@@ -187,7 +187,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             var injectedException = new Exception("Couldn't save module");
 
             _mockModuleProvider.Setup(
-                _ => _.SaveModule(It.IsAny<PowerShell>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+                    _ => _.SaveModule(It.IsAny<PowerShell>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Throws(injectedException);
 
             _mockStorage.Setup(_ => _.RemoveSnapshot(_targetPathInstalling));
