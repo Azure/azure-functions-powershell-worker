@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Azure.Functions.PowerShell.Tests.E2E
 {
@@ -10,13 +11,14 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         {
             var funcHostProcess = new Process();
             var rootDir = Path.GetFullPath(String.Format(@"..{0}..{0}..{0}..{0}..{0}..{0}..{0}", Path.DirectorySeparatorChar));
+            var funcName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "func.exe": "func";
 
             funcHostProcess.StartInfo.UseShellExecute = false;
             funcHostProcess.StartInfo.RedirectStandardError = true;
             funcHostProcess.StartInfo.RedirectStandardOutput = true;
             funcHostProcess.StartInfo.CreateNoWindow = true;
             funcHostProcess.StartInfo.WorkingDirectory = Path.Combine(rootDir, String.Format(@"test{0}E2E{0}TestFunctionApp", Path.DirectorySeparatorChar));
-            funcHostProcess.StartInfo.FileName = Path.Combine(rootDir, String.Format(@"test{0}E2E{0}Azure.Functions.Cli{0}func.exe", Path.DirectorySeparatorChar));
+            funcHostProcess.StartInfo.FileName = Path.Combine(rootDir, "test", "E2E", "Azure.Functions.Cli", funcName);
             funcHostProcess.StartInfo.ArgumentList.Add("start");
             if (enableAuth)
             {
