@@ -120,6 +120,35 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version")
                 };
 
+            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled)).Returns(_targetPathInstalling);
+
+            _mockModuleProvider.Setup(
+                _ => _.SaveModule(It.IsAny<PowerShell>(), "Module", "Version", _targetPathInstalling));
+
+            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
+
+            // Act
+
+            var installer = CreateDependenciesSnapshotInstallerWithMocks();
+            installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
+
+            // Assert
+
+            _mockStorage.Verify(_ => _.CreateInstallingSnapshot(_targetPathInstalled), Times.Once);
+            _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled), Times.Once);
+        }
+
+        [Fact]
+        public void CleansUpPowerShellRunspaceAfterSuccessfullySavingModule()
+        {
+            // Arrange
+
+            var manifestEntries =
+                new[]
+                {
+                    new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version")
+                };
+
             var dummyPowerShell = PowerShell.Create();
             _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled)).Returns(_targetPathInstalling);
 
@@ -135,8 +164,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             // Assert
 
-            _mockStorage.Verify(_ => _.CreateInstallingSnapshot(_targetPathInstalled), Times.Once);
-            _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled), Times.Once);
             _mockModuleProvider.Verify(_ => _.Cleanup(dummyPowerShell), Times.Once);
         }
 
