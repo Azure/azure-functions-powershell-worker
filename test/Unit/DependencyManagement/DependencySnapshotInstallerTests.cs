@@ -7,6 +7,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Management.Automation;
 
     using Moq;
@@ -87,30 +88,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             foreach (var entry in _testDependencyManifestEntries)
             {
-                _mockLogger.Verify(
-                    _ => _.Log(
-                        false,
-                        LogLevel.Trace,
-                        It.Is<string>(
-                            message => message.Contains("Started installing")
-                                       && message.Contains(entry.Name)
-                                       && message.Contains(_testLatestPublishedModuleVersions[entry.Name])),
-                        null),
-                    Times.Once);
-
                 _mockModuleProvider.Verify(
                     _ => _.SaveModule(dummyPowerShell, entry.Name, _testLatestPublishedModuleVersions[entry.Name], _targetPathInstalling),
-                    Times.Once);
-
-                _mockLogger.Verify(
-                    _ => _.Log(
-                        false,
-                        LogLevel.Trace,
-                        It.Is<string>(
-                            message => message.Contains("has been installed")
-                                       && message.Contains(entry.Name)
-                                       && message.Contains(_testLatestPublishedModuleVersions[entry.Name])),
-                        null),
                     Times.Once);
             }
 
@@ -265,9 +244,52 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 Times.Never);
         }
 
+        [Fact]
+        public void LogsInstallationStartAndFinish()
+        {
+            // Arrange
+
+            var manifestEntries =
+                new[]
+                {
+                    new DependencyManifestEntry("A", VersionSpecificationType.ExactVersion, "Exact A version"),
+                    new DependencyManifestEntry("B", VersionSpecificationType.MajorVersion, "Major B version")
+                };
+
+            _mockModuleProvider.Setup(
+                    _ => _.GetLatestPublishedModuleVersion(It.IsAny<string>(), It.IsAny<string>()))
+                .Returns("Exact B version");
+
+            _mockStorage.Setup(_ => _.CreateInstallingSnapshot(It.IsAny<string>())).Returns(_targetPathInstalling);
+            _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
+
+            // Act
+
+            var installer = CreateDependenciesSnapshotInstallerWithMocks();
+            installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), _mockLogger.Object);
+
+            // Assert
+            VerifyLoggedOnce(new[] { "Started installing", "A", "Exact A version" });
+            VerifyLoggedOnce(new[] { "has been installed", "A", "Exact A version" });
+            VerifyLoggedOnce(new[] { "Started installing", "B", "Exact B version" });
+            VerifyLoggedOnce(new[] { "has been installed", "B", "Exact B version" });
+        }
+
         private DependencySnapshotInstaller CreateDependenciesSnapshotInstallerWithMocks()
         {
             return new DependencySnapshotInstaller(_mockModuleProvider.Object, _mockStorage.Object);
+        }
+
+        private void VerifyLoggedOnce(IEnumerable<string> messageParts)
+        {
+            _mockLogger.Verify(
+                _ => _.Log(
+                    false,
+                    LogLevel.Trace,
+                    It.Is<string>(
+                        message => messageParts.All(part => message.Contains(part))),
+                    null),
+                Times.Once);
         }
     }
 }
