@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -129,7 +129,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
             if (!IsValidVersionFormat(version))
             {
-                var errorMessage = string.Format(PowerShellWorkerStrings.InvalidVersionFormat, "MajorVersion.*");
+                var errorMessage = string.Format(PowerShellWorkerStrings.InvalidVersionFormat, version, "MajorVersion.*");
                 throw new ArgumentException(errorMessage);
             }
         }
