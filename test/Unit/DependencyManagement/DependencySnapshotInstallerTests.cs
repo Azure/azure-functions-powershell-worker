@@ -49,10 +49,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             // Arrange
 
             var manifestEntries =
-                new[]
-                {
-                    new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Exact version")
-                };
+                new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Exact version") };
 
             ExpectSnapshotCreationAndPromotion();
 
@@ -78,10 +75,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             // Arrange
 
             var manifestEntries =
-                new[]
-                {
-                    new DependencyManifestEntry("Module", VersionSpecificationType.MajorVersion, "Major version")
-                };
+                new[] { new DependencyManifestEntry("Module", VersionSpecificationType.MajorVersion, "Major version") };
 
             ExpectSnapshotCreationAndPromotion();
 
@@ -107,10 +101,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             // Arrange
 
             var manifestEntries =
-                new[]
-                {
-                    new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version")
-                };
+                new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version") };
 
             ExpectSnapshotCreationAndPromotion();
 
@@ -131,10 +122,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             // Arrange
 
             var manifestEntries =
-                new[]
-                {
-                    new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version")
-                };
+                new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version") };
 
             ExpectSnapshotCreationAndPromotion();
 
@@ -186,10 +174,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             // Arrange
 
             var manifestEntries =
-                new[]
-                {
-                    new DependencyManifestEntry("Module", VersionSpecificationType.MajorVersion, "Version")
-                };
+                new[] { new DependencyManifestEntry("Module", VersionSpecificationType.MajorVersion, "Version") };
 
             ExpectSnapshotCreationAndPromotion();
 
@@ -230,10 +215,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             // Arrange
 
             var manifestEntries =
-                new[]
-                {
-                    new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version")
-                };
+                new[] { new DependencyManifestEntry("Module", VersionSpecificationType.ExactVersion, "Version") };
 
             ExpectSnapshotCreationAndPromotion();
 
