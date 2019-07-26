@@ -51,10 +51,10 @@ steps:
 
     foreach ($fileName in @("e2etestspowershell.zip", "powershellworker.zip"))
     {
-      write-host "Uploading file to bo Azure Blob"
+      write-host "Uploading file to Azure Blob"
       Set-AzStorageBlobContent -File ./E2ETestArtifacts/$fileName `
                                -Container $(ContainerName) `
-                               -Blob '$fileName `
+                               -Blob $fileName `
                                -Context $context `
                                -Force `
                                -Verbose
