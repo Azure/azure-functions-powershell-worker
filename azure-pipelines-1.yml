@@ -34,7 +34,7 @@ steps:
 
 - pwsh: |
       $null = New-Item -Path ./E2ETestArtifacts -ItemType Directory -Force
-      Compress-Archive -Path ./src/bin/Release/netcoreapp2.2/publish/* -DestinationPath ./E2ETestArtifacts/PowerShellWorker.zip
+      Compress-Archive -Path ./src/bin/Release/netcoreapp2.2/publish/* -DestinationPath ./E2ETestArtifacts/powershellworker.zip
       Compress-Archive -Path ./test/E2E/TestFunctionApp/* -DestinationPath ./E2ETestArtifacts/e2etestspowershell.zip
   displayName: 'Create test app zip file'
 
@@ -44,11 +44,29 @@ steps:
       Install-Module Az.Storage -Force -Verbose -Scope CurrentUser
     }
 
+    # Check that the require variables are available
+    if (-not $(StorageAccountName))
+    {
+      throw "StorageAccountName is not available"
+    }
+
+    if (-not $(StorageAccountKey))
+    {
+      throw "StorageAccountKey is not available"
+    }
+
+    if (-not $(ContainerName))
+    {
+      throw "ContainerName is not available"
+    }
+
+    write-host "Creating context"
     $context = New-AzStorageContext -StorageAccountName $(StorageAccountName) `
                                     -StorageAccountKey $(StorageAccountKey)
 
-    foreach ($fileName in @("e2etestspowershell.zip", "PowerShellWorker.zip"))
+    foreach ($fileName in @("e2etestspowershell.zip", "powershellworker.zip"))
     {
+      write-host "Uploading file to bo Azure Blob"
       Set-AzStorageBlobContent -File ./E2ETestArtifacts/$fileName `
                                -Container $(ContainerName) `
                                -Blob '$fileName `
