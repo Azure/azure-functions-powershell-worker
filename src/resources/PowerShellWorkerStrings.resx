@@ -257,6 +257,6 @@
     <value>Updating dependencies folder heartbeat for '{0}''.</value>
   </data>
   <data name="TooManyDependencies" xml:space="preserve">
-    <value>The number of entries in the '{0}' file ({1}) exceeds the maximum number of supported entries ({2}).</value>
+    <value>The number of entries in the '{0}' file is {1}, which exceeds the maximum supported number of entries ({2}).</value>
   </data>
 </root>
