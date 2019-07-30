@@ -339,8 +339,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                                    || message.StartsWith("Trace: Installing FunctionApp dependent modules")
                                    || message.StartsWith("Warning: Failed to install dependencies")).ToList();
 
-                    // Here we will get four logs: one that says that we are installing the
-                    // dependencies, and three for failing to install the module.
+                    // Here we will get five logs: one that says that we are installing the
+                    // dependencies, three for failing to install the module,
+                    // and one warning notifying of removing the dependencies folder.
                     Assert.Equal(5, relevantLogs.Count);
 
                     // The first log should say "Installing FunctionApp dependent modules."
