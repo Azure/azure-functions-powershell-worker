@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -57,13 +57,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             if (match.Success)
             {
                 // Look for the 'MajorVersion.*' pattern first.
+                var majorVersion = match.Groups[1].Value;
                 var afterMajorVersion = match.Groups[2].Value;
                 if (afterMajorVersion == ".*")
                 {
                     return new DependencyManifestEntry(
                         name,
                         VersionSpecificationType.MajorVersion,
-                        match.Groups[1].Value);
+                        majorVersion);
                 }
 
                 // This is a very basic sanity check of the format that allows us detect some
