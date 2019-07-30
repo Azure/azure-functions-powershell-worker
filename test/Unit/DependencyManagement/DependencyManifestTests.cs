@@ -146,8 +146,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             var exception = Assert.Throws<ArgumentException>(() => manifest.GetEntries().ToList());
 
-            const string ExpectedMessage = "The number of entries in the 'requirements.psd1' file (3)"
-                                           + " exceeds the maximum number of supported entries (2).";
+            const string ExpectedMessage = "The number of entries in the 'requirements.psd1' file is 3,"
+                                           + " which exceeds the maximum supported number of entries (2).";
             Assert.Equal(ExpectedMessage, exception.Message);
         }
 
