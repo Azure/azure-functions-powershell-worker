@@ -466,14 +466,19 @@ Note that, checking out a PowerShell Manager instance from the pool is a blockin
 
 The goal is to let the user declare the dependencies required by functions, and rely on the service automatically locating and installing the dependencies from the PowerShell Gallery or other sources, taking care of selecting the proper versions, and automatically upgrading the dependencies to the latest versions (if allowed by the version specifications provided by the user).
 
-Dependencies are declared in the _requirements.psd1_ file (_manifest_) as a collection of pairs (<_name_>, <_version specification_>). Currently, the version specification should strictly match the following pattern: `<major version>.*`, so a typical manifest looks like this:
+Dependencies are declared in the _requirements.psd1_ file (_manifest_) as a collection of pairs (<_name_>, <_version specification_>). Currently, the version specification should either be an exact and complete version, or strictly match the following pattern: `<major version>.*`. So, a typical manifest may look like this:
 
 ``` PowerShell
 @{
   'Az' = '2.*'
   'PSDepend' = '0.*'
+  'Pester' = '5.0.0-alpha3'
 }
 ```
+
+When the `<major version>.*` format is used, the worker will retrieve the latest available module version (within the specified major version) from the PowerShell Gallery, ignoring prerelease versions.
+
+When the exact version is specified, the worker will retrieve the specified version only, ignoring any other version. Prerelease versions are allowed in this case.
 
 The number of entries in the _requirements.psd1_ file should not exceed **10**. This limit is not user-configurable.
 
