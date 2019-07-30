@@ -84,6 +84,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 _storage.PromoteInstallingSnapshotToInstalledAtomically(targetPath);
             }
+            catch (Exception e)
+            {
+                var message = string.Format(PowerShellWorkerStrings.FailedToInstallDependenciesSnapshot, targetPath);
+                logger.Log(isUserOnlyLog: false, LogLevel.Warning, message, e);
+                _storage.RemoveSnapshot(installingPath);
+                throw;
+            }
             finally
             {
                 _moduleProvider.Cleanup(pwsh);
