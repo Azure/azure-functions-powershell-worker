@@ -475,7 +475,7 @@ Dependencies are declared in the _requirements.psd1_ file (_manifest_) as a coll
 }
 ```
 
-However, the design should accommodate multiple module entries and allow specifying exact versions.
+The number of entries in the _requirements.psd1_ file should not exceed **10**. This limit is not user-configurable.
 
 Installing and upgrading dependencies should be performed automatically, without requiring any interaction with the user, and without interfering with the currently running functions. This represents an important design challenge. In a different context, dependencies could be stored on a single location on the file system, managed by regular PowerShell tools (`Install-Module`/`Save-Module`, `PSDepend`, etc.), while having the same file system location added to _PSModulePath_ to make all the modules available to scripts running on this machine. This is what PowerShell users normally do, and this approach looks attractive because it is simple and conventional. However, in the contexts where multiple independent workers load modules and execute scripts concurrently, and at the same time some module versions are being added, upgraded, or removed, this simple approach causes many known problems. The root causes of these problems are in the fundamentals of PowerShell and PowerShell modules design. The managed dependencies design in Azure Functions must take this into account. The problems will be solved if we satisfy the following conditions:
 
