@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -67,10 +67,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         majorVersion);
                 }
 
-                // This is a very basic sanity check of the format that allows us detect some
+                // At this point, we know this is not the 'MajorVersion.*' pattern.
+                // We want to perform a very basic sanity check of the format to detect some
                 // obviously wrong cases: make sure afterMajorVersion starts with a dot,
                 // does not contain * anywhere, and ends with a word character.
-                // Not even trying to match the actual version format rules, though.
+                // Not even trying to match the actual version format rules,
+                // as they are quite complex and controlled by the server side anyway.
                 if (Regex.IsMatch(afterMajorVersion, @"^(\.[^\*]*?\w)?$"))
                 {
                     return new DependencyManifestEntry(
