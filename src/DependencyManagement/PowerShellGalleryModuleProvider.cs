@@ -106,6 +106,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 .AddParameter("Repository", Repository)
                 .AddParameter("Name", moduleName)
                 .AddParameter("RequiredVersion", version)
+                .AddParameter("AllowPrerelease", version)
                 .AddParameter("Path", path)
                 .AddParameter("Force", Utils.BoxedTrue)
                 .AddParameter("ErrorAction", "Stop")
