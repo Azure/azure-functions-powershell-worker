@@ -207,7 +207,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     // Foreground installation: *may* use the firstPwsh runspace, since the function execution is
                     // blocked until the installation is complete, so we are potentially saving some time by reusing
                     // the runspace as opposed to creating another one.
-                    _installer.InstallSnapshot(_dependenciesFromManifest,_currentSnapshotPath, firstPwsh, logger);
+                    _installer.InstallSnapshot(_dependenciesFromManifest, _currentSnapshotPath, firstPwsh, logger);
                 }
             }
             catch (Exception e)
@@ -267,13 +267,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private static TimeSpan GetMinBackgroundUpgradePeriod()
         {
-            var value = Environment.GetEnvironmentVariable("PSWorkerMinBackgroundUpgradePeriodMinutes");
-            if (string.IsNullOrEmpty(value) || !int.TryParse(value, out var parsedValue))
-            {
-                return TimeSpan.FromMinutes(15);
-            }
-
-            return TimeSpan.FromMinutes(parsedValue);
+            var value = Environment.GetEnvironmentVariable("MDMinBackgroundUpgradePeriod");
+            return string.IsNullOrEmpty(value) ? TimeSpan.FromDays(1) : TimeSpan.Parse(value);
         }
 
         #endregion
