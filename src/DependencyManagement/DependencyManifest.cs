@@ -42,10 +42,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 //     'ModuleName'='MajorVersion.*'
                 // or
                 //     'ModuleName'='ExactVersion'
-                var name = (string)entry.Key;
-                var version = (string)entry.Value;
 
-                yield return CreateDependencyManifestEntry(name, version);
+                yield return CreateDependencyManifestEntry(
+                                name: (string)entry.Key,
+                                version: (string)entry.Value);
             }
         }
 
