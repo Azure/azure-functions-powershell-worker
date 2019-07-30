@@ -15,6 +15,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
     using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
     using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 
+    using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+
     public class DependencySnapshotInstallerTests
     {
         private readonly Mock<IModuleProvider> _mockModuleProvider = new Mock<IModuleProvider>(MockBehavior.Strict);
@@ -85,8 +87,30 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             foreach (var entry in _testDependencyManifestEntries)
             {
+                _mockLogger.Verify(
+                    _ => _.Log(
+                        false,
+                        LogLevel.Trace,
+                        It.Is<string>(
+                            message => message.Contains("Started installing")
+                                       && message.Contains(entry.Name)
+                                       && message.Contains(_testLatestPublishedModuleVersions[entry.Name])),
+                        null),
+                    Times.Once);
+
                 _mockModuleProvider.Verify(
                     _ => _.SaveModule(dummyPowerShell, entry.Name, _testLatestPublishedModuleVersions[entry.Name], _targetPathInstalling),
+                    Times.Once);
+
+                _mockLogger.Verify(
+                    _ => _.Log(
+                        false,
+                        LogLevel.Trace,
+                        It.Is<string>(
+                            message => message.Contains("has been installed")
+                                       && message.Contains(entry.Name)
+                                       && message.Contains(_testLatestPublishedModuleVersions[entry.Name])),
+                        null),
                     Times.Once);
             }
 
