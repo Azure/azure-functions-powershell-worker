@@ -10,8 +10,16 @@ using Xunit;
 
 namespace Azure.Functions.PowerShell.Tests.E2E
 {
+    [Collection(Constants.FunctionAppCollectionName)]
     public class EventHubsEndToEndTests 
     {
+        private readonly FunctionAppFixture _fixture;
+
+        public EventHubsEndToEndTests(FunctionAppFixture fixture)
+        {
+            this._fixture = fixture;
+        }
+
         [Fact]
         public async Task EventHubTriggerAndOutputJSON_Succeeds()
         {
