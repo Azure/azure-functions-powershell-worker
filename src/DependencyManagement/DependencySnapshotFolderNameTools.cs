@@ -10,9 +10,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
     internal static class DependencySnapshotFolderNameTools
     {
-        private const string InstallingPostfix = ".i";
+        private const string InstallingPostfix = "i";
 
-        public const string InstalledPostfix = ".r";
+        public const string InstalledPostfix = "r";
 
         public const string InstalledPattern = "*" + InstalledPostfix;
 
@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         public static string CreateUniqueName()
         {
-            var uniqueBase = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss.ffffff");
+            var uniqueBase = DateTime.UtcNow.ToString("yyMMddHHmmssfff");
             return uniqueBase + InstalledPostfix;
         }
 
@@ -29,11 +29,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// appending a postfix, so that that the resulting path follows a different
         /// pattern and can be discovered using a different file mask.
         /// For example, for the _installed_ path
-        ///     ".../20190710-1234.567890.r"
+        ///     ".../1907101234567r"
         /// the _installing_ path will be:
-        ///     ".../20190710-1234.567890.r.i"
-        /// This makes it possible to enumerate all the installed snapshots by using ".../*.r" mask,
-        /// and all the installing snapshots by using ".../*.i" mask.
+        ///     ".../1907101234567ri"
+        /// This makes it possible to enumerate all the installed snapshots by using ".../*r" mask,
+        /// and all the installing snapshots by using ".../*i" mask.
         /// </summary>
         public static string ConvertInstalledToInstalling(string installedPath)
         {

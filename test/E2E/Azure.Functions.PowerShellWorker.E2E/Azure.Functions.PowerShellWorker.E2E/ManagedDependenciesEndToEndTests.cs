@@ -9,8 +9,16 @@ using Xunit;
 
 namespace Azure.Functions.PowerShell.Tests.E2E
 {
+    [Collection(Constants.FunctionAppCollectionName)]
     public class ManagedDependenciesEndToEndTests 
     {
+        private readonly FunctionAppFixture _fixture;
+
+        public ManagedDependenciesEndToEndTests(FunctionAppFixture fixture)
+        {
+            this._fixture = fixture;
+        }
+
         [Fact]
         public async Task ManagedDependenciesAreAvailable()
         {

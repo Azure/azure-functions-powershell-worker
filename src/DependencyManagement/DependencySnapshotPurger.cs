@@ -54,8 +54,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// <summary>
         /// Remove unused snapshots.
         /// A snapshot is considered unused if it has not been accessed for at least
-        /// (PSWorkerHeartbeatPeriodMinutes + PSWorkerOldSnapshotHeartbeatMarginMinutes) minutes.
-        /// However, the last PSWorkerMinNumberOfSnapshotsToKeep snapshots will be kept regardless
+        /// (MDHeartbeatPeriod + MDOldSnapshotHeartbeatMargin) minutes.
+        /// However, the last MDMinNumberOfSnapshotsToKeep snapshots will be kept regardless
         /// of the access time.
         /// </summary>
         public void Purge(ILogger logger)
@@ -128,19 +128,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private static TimeSpan GetHeartbeatPeriod()
         {
-            return TimeSpan.FromMinutes(
-                GetEnvironmentVariableIntValue("PSWorkerHeartbeatPeriodMinutes") ?? 60);
+            return GetEnvironmentVariableTimeSpanValue("MDHeartbeatPeriod") ?? TimeSpan.FromMinutes(60);
         }
 
         private static TimeSpan GetOldHeartbeatAgeMargin()
         {
-            return TimeSpan.FromMinutes(
-                GetEnvironmentVariableIntValue("PSWorkerOldSnapshotHeartbeatMarginMinutes") ?? 90);
+            return GetEnvironmentVariableTimeSpanValue("MDOldSnapshotHeartbeatMargin") ?? TimeSpan.FromMinutes(90);
         }
 
         private static int GetMinNumberOfSnapshotsToKeep()
         {
-            return GetEnvironmentVariableIntValue("PSWorkerMinNumberOfSnapshotsToKeep") ?? 1;
+            return GetEnvironmentVariableIntValue("MDMinNumberOfSnapshotsToKeep") ?? 1;
         }
 
         private static int? GetEnvironmentVariableIntValue(string name)
@@ -152,6 +150,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
 
             return parsedValue;
+        }
+
+        private static TimeSpan? GetEnvironmentVariableTimeSpanValue(string name)
+        {
+            var value = Environment.GetEnvironmentVariable(name);
+            return string.IsNullOrEmpty(value) ? default(TimeSpan?) : TimeSpan.Parse(value);
         }
     }
 }

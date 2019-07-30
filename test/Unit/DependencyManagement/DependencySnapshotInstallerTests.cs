@@ -133,6 +133,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     _ => _.GetLatestPublishedModuleVersion(It.IsAny<string>(), It.IsAny<string>()))
                 .Throws(injectedException);
 
+            _mockStorage.Setup(_ => _.RemoveSnapshot(_targetPathInstalling));
+
             _mockModuleProvider.Setup(_ => _.Cleanup(dummyPowerShell));
 
             // Act
@@ -150,6 +152,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 Times.Never);
 
             _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(It.IsAny<string>()), Times.Never);
+            _mockStorage.Verify(_ => _.RemoveSnapshot(_targetPathInstalling));
             _mockModuleProvider.Verify(_ => _.Cleanup(dummyPowerShell), Times.Once);
         }
 
@@ -175,6 +178,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 _ => _.SaveModule(It.IsAny<PowerShell>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Throws(injectedException);
 
+            _mockStorage.Setup(_ => _.RemoveSnapshot(_targetPathInstalling));
+
             _mockModuleProvider.Setup(_ => _.Cleanup(dummyPowerShell));
 
             // Act
@@ -188,6 +193,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             Assert.Contains(injectedException.Message, thrownException.Message);
 
             _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(It.IsAny<string>()), Times.Never);
+            _mockStorage.Verify(_ => _.RemoveSnapshot(_targetPathInstalling));
             _mockModuleProvider.Verify(_ => _.Cleanup(dummyPowerShell), Times.Once);
         }
 

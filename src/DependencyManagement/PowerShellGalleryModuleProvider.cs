@@ -74,7 +74,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 // Find the version information
                 XmlNode root = doc.DocumentElement;
-                var props = root.SelectNodes("//m:properties/d:Version", nsmgr);
+                var props = root.SelectNodes("//m:properties[d:IsPrerelease = \"false\"]/d:Version", nsmgr);
 
                 if (props != null && props.Count > 0)
                 {
