@@ -64,11 +64,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Theory]
-        [InlineData("@{ MyModule = '0.*' }", "MyModule", "0")]
-        [InlineData("@{ MyModule = '1.*' }", "MyModule", "1")]
-        [InlineData("@{ MyModule = '23.*' }", "MyModule", "23")]
-        [InlineData("@{ MyModule = '456.*' }", "MyModule", "456")]
-        public void GetEntriesParsesRequirementsFileWithSingleEntry(string content, string moduleName, string majorVersion)
+        [InlineData("@{ MyModule = '0.*' }", "MyModule", "0", VersionSpecificationType.MajorVersion)]
+        [InlineData("@{ MyModule = '1.*' }", "MyModule", "1", VersionSpecificationType.MajorVersion)]
+        [InlineData("@{ MyModule = '23.*' }", "MyModule", "23", VersionSpecificationType.MajorVersion)]
+        [InlineData("@{ MyModule = '456.*' }", "MyModule", "456", VersionSpecificationType.MajorVersion)]
+        [InlineData("@{ MyModule = '0' }", "MyModule", "0", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1' }", "MyModule", "1", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1.0' }", "MyModule", "1.0", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '3.4.5' }", "MyModule", "3.4.5", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '123.45.67.89' }", "MyModule", "123.45.67.89", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '123.45.67.89-alpha4' }", "MyModule", "123.45.67.89-alpha4", VersionSpecificationType.ExactVersion)]
+        public void GetEntriesParsesRequirementsFileWithSingleEntry(
+            string content,
+            string moduleName,
+            string majorVersion,
+            VersionSpecificationType versionSpecificationType)
         {
             CreateRequirementsFile(content);
 
@@ -77,7 +87,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             Assert.Single(entries);
             Assert.Equal(moduleName, entries.Single().Name);
-            Assert.Equal(majorVersion, entries.Single().MajorVersion);
+            Assert.Equal(versionSpecificationType, entries.Single().VersionSpecificationType);
+            Assert.Equal(majorVersion, entries.Single().VersionSpecification);
         }
 
         [Fact]
@@ -89,20 +100,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             var entries = manifest.GetEntries().ToList();
 
             Assert.Equal(3, entries.Count);
-            Assert.Equal("3", entries.Single(entry => entry.Name == "A").MajorVersion);
-            Assert.Equal("7", entries.Single(entry => entry.Name == "B").MajorVersion);
-            Assert.Equal("0", entries.Single(entry => entry.Name == "C").MajorVersion);
+
+            var entryA = entries.Single(entry => entry.Name == "A");
+            Assert.Equal(VersionSpecificationType.MajorVersion, entryA.VersionSpecificationType);
+            Assert.Equal("3", entryA.VersionSpecification);
+
+            var entryB = entries.Single(entry => entry.Name == "B");
+            Assert.Equal(VersionSpecificationType.MajorVersion, entryB.VersionSpecificationType);
+            Assert.Equal("7", entryB.VersionSpecification);
+
+            var entryC = entries.Single(entry => entry.Name == "C");
+            Assert.Equal(VersionSpecificationType.MajorVersion, entryC.VersionSpecificationType);
+            Assert.Equal("0", entryC.VersionSpecification);
         }
 
         [Theory]
         [InlineData("@{ MyModule = '' }")]
+        [InlineData("@{ MyModule = ' ' }")]
         [InlineData("@{ MyModule = 'a' }")]
+        [InlineData("@{ MyModule = '1a' }")]
         [InlineData("@{ MyModule = '.' }")]
-        [InlineData("@{ MyModule = '1' }")]
         [InlineData("@{ MyModule = '1.' }")]
-        [InlineData("@{ MyModule = '1.0' }")]
-        [InlineData("@{ MyModule = '1.2' }")]
-        [InlineData("@{ MyModule = '2.3.4' }")]
+        [InlineData("@{ MyModule = '*' }")]
+        [InlineData("@{ MyModule = '*.1' }")]
+        [InlineData("@{ MyModule = '1.*.2' }")]
+        [InlineData("@{ MyModule = '1.0.*' }")]
         public void GetEntriesThrowsOnInvalidVersionSpecification(string content)
         {
             CreateRequirementsFile(content);
@@ -110,7 +132,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             var manifest = new DependencyManifest(_appRootPath);
 
             var exception = Assert.Throws<ArgumentException>(() => manifest.GetEntries().ToList());
-            Assert.Contains("Version is not in the correct format", exception.Message);
+            Assert.Contains("not in the correct format", exception.Message);
         }
 
         [Theory]

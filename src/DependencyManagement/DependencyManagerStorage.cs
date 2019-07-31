@@ -66,6 +66,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             return Directory.EnumerateDirectories(modulePath, $"{majorVersion}.*");
         }
 
+        public bool IsModuleVersionInstalled(string snapshotPath, string moduleName, string version)
+        {
+            var moduleVersionPath = Path.Join(snapshotPath, moduleName, version);
+            return Directory.Exists(moduleVersionPath);
+        }
+
         public string CreateNewSnapshotPath()
         {
             return Path.Join(

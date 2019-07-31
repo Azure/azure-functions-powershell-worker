@@ -43,12 +43,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
             try
             {
-                foreach (DependencyInfo module in GetLatestPublishedVersionsOfDependencies(dependencies))
+                foreach (DependencyInfo module in GetExactVersionsOfDependencies(dependencies))
                 {
-                    string moduleName = module.Name;
-                    string latestVersion = module.LatestVersion;
-
-                    logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.StartedInstallingModule, moduleName, latestVersion));
+                    logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.StartedInstallingModule, module.Name, module.ExactVersion));
 
                     int tries = 1;
 
@@ -56,9 +53,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     {
                         try
                         {
-                            _moduleProvider.SaveModule(pwsh, moduleName, latestVersion, installingPath);
+                            _moduleProvider.SaveModule(pwsh, module.Name, module.ExactVersion, installingPath);
 
-                            var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, latestVersion);
+                            var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, module.Name, module.ExactVersion);
                             logger.Log(isUserOnlyLog: false, LogLevel.Trace, message);
 
                             break;
@@ -66,7 +63,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         catch (Exception e)
                         {
                             string currentAttempt = GetCurrentAttemptMessage(tries);
-                            var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallModule, moduleName, latestVersion, currentAttempt, e.Message);
+                            var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallModule, module.Name, module.ExactVersion, currentAttempt, e.Message);
                             logger.Log(isUserOnlyLog: false, LogLevel.Error, errorMsg);
 
                             if (tries >= MaxNumberOfTries)
@@ -127,20 +124,33 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
         }
 
-        private List<DependencyInfo> GetLatestPublishedVersionsOfDependencies(
+        private List<DependencyInfo> GetExactVersionsOfDependencies(
             IEnumerable<DependencyManifestEntry> dependencies)
         {
             var result = new List<DependencyInfo>();
 
             foreach (var entry in dependencies)
             {
-                var latestVersion = GetModuleLatestPublishedVersion(entry.Name, entry.MajorVersion);
-
-                var dependencyInfo = new DependencyInfo(entry.Name, latestVersion);
+                var dependencyInfo = new DependencyInfo(entry.Name, GetExactVersion(entry));
                 result.Add(dependencyInfo);
             }
 
             return result;
+        }
+
+        private string GetExactVersion(DependencyManifestEntry entry)
+        {
+            switch (entry.VersionSpecificationType)
+            {
+                case VersionSpecificationType.ExactVersion:
+                    return entry.VersionSpecification;
+
+                case VersionSpecificationType.MajorVersion:
+                    return GetModuleLatestPublishedVersion(entry.Name, entry.VersionSpecification);
+
+                default:
+                    throw new ArgumentException($"Unknown version specification type: {entry.VersionSpecificationType}");
+            }
         }
 
         /// <summary>

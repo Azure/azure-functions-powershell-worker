@@ -20,6 +20,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         IEnumerable<string> GetInstalledModuleVersions(string snapshotPath, string moduleName, string majorVersion);
 
+        bool IsModuleVersionInstalled(string snapshotPath, string moduleName, string version);
+
         string CreateNewSnapshotPath();
 
         string CreateInstallingSnapshot(string path);
