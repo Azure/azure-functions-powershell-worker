@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
-using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
@@ -73,7 +72,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// Setup the well known paths about the FunctionApp.
         /// This method is called only once during the code start.
         /// </summary>
-        internal static void SetupWellKnownPaths(FunctionLoadRequest request)
+        internal static void SetupWellKnownPaths(FunctionLoadRequest request, string managedDependenciesPath)
         {
             // Resolve the FunctionApp root path
             FunctionAppRootPath = Path.GetFullPath(Path.Join(request.Metadata.Directory, ".."));
@@ -84,9 +83,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             FunctionModulePath = $"{appLevelModulesPath}{Path.PathSeparator}{workerLevelModulesPath}";
 
             // Add the managed dependencies folder path
-            if (DependencyManager.DependenciesPath != null)
+            if (managedDependenciesPath != null)
             {
-                FunctionModulePath = $"{DependencyManager.DependenciesPath}{Path.PathSeparator}{FunctionModulePath}";
+                FunctionModulePath = $"{managedDependenciesPath}{Path.PathSeparator}{FunctionModulePath}";
             }
 
             // Resolve the FunctionApp profile path

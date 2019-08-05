@@ -14,15 +14,16 @@ using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
-using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
+    using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+
     internal class RequestProcessor
     {
         private readonly MessagingStream _msgStream;
         private readonly PowerShellManagerPool _powershellPool;
-        private readonly DependencyManager _dependencyManager;
+        private DependencyManager _dependencyManager;
 
         // Holds the exception if an issue is encountered while processing the function app dependencies.
         private Exception _initTerminatingError;
@@ -37,7 +38,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             _msgStream = msgStream;
             _powershellPool = new PowerShellManagerPool(msgStream);
-            _dependencyManager = new DependencyManager();
 
             // Host sends capabilities/init data to worker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.WorkerInitRequest, ProcessWorkerInitRequest);
@@ -78,7 +78,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 }
                 else
                 {
-                    RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
+                    RpcLogger.WriteSystemLog(LogLevel.Warning, string.Format(PowerShellWorkerStrings.UnsupportedMessage, request.ContentCase));
                     continue;
                 }
 
@@ -102,7 +102,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             string pipeName = Environment.GetEnvironmentVariable("PSWorkerCustomPipeName");
             if (!string.IsNullOrEmpty(pipeName))
             {
-                RpcLogger.WriteSystemLog(string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
+                RpcLogger.WriteSystemLog(LogLevel.Trace, string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
                 RemoteSessionNamedPipeServer.CreateCustomNamedPipeServer(pipeName);
             }
 
@@ -176,10 +176,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 try
                 {
                     _isFunctionAppInitialized = true;
-                    _dependencyManager.Initialize(functionLoadRequest);
+                 
+                    var rpcLogger = new RpcLogger(_msgStream);
+                    rpcLogger.SetContext(request.RequestId, null);
+                    
+                    _dependencyManager = new DependencyManager(request.FunctionLoadRequest.Metadata.Directory);
+                    var managedDependenciesPath = _dependencyManager.Initialize(request, rpcLogger);
 
                     // Setup the FunctionApp root path and module path.
-                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest);
+                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath);
 
                     // Create the very first Runspace so the debugger has the target to attach to.
                     // This PowerShell instance is shared by the first PowerShellManager instance created in the pool,
@@ -188,7 +193,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     _powershellPool.Initialize(pwsh);
 
                     // Start the download asynchronously if needed.
-                    _dependencyManager.ProcessDependencyDownload(_msgStream, request, pwsh);
+                    _dependencyManager.StartDependencyInstallationIfNeeded(request, pwsh, rpcLogger);
                 }
                 catch (Exception e)
                 {
@@ -222,48 +227,34 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         internal StreamingMessage ProcessInvocationRequest(StreamingMessage request)
         {
-            Exception error = null;
-
             try
             {
-                if (_dependencyManager.DependencyDownloadTask != null &&
-                    !_dependencyManager.DependencyDownloadTask.IsCompleted)
-                {
-                    var rpcLogger = new RpcLogger(_msgStream);
-                    rpcLogger.SetContext(request.RequestId, request.InvocationRequest?.InvocationId);
-                    rpcLogger.Log(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, isUserLog: true);
-                    _dependencyManager.WaitOnDependencyDownload();
-                }
+                // Will block if installing dependencies is required
+                _dependencyManager.WaitForDependenciesAvailability(
+                    () =>
+                        {
+                            var rpcLogger = new RpcLogger(_msgStream);
+                            rpcLogger.SetContext(request.RequestId, request.InvocationRequest?.InvocationId);
+                            return rpcLogger;
+                        });
 
-                if (_dependencyManager.DependencyError != null)
+                AzFunctionInfo functionInfo = FunctionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
+                PowerShellManager psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
+
+                if (_powershellPool.UpperBound == 1)
                 {
-                    error = _dependencyManager.DependencyError;
+                    // When the concurrency upper bound is 1, we can handle only one invocation at a time anyways,
+                    // so it's better to just do it on the current thread to reduce the required synchronization.
+                    ProcessInvocationRequestImpl(request, functionInfo, psManager);
                 }
                 else
                 {
-                    AzFunctionInfo functionInfo = FunctionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
-                    PowerShellManager psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
-
-                    if (_powershellPool.UpperBound == 1)
-                    {
-                        // When the concurrency upper bound is 1, we can handle only one invocation at a time anyways,
-                        // so it's better to just do it on the current thread to reduce the required synchronization.
-                        ProcessInvocationRequestImpl(request, functionInfo, psManager);
-                    }
-                    else
-                    {
-                        // When the concurrency upper bound is more than 1, we have to handle the invocation in a worker
-                        // thread, so multiple invocations can make progress at the same time, even though by time-sharing.
-                        Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager));
-                    }
+                    // When the concurrency upper bound is more than 1, we have to handle the invocation in a worker
+                    // thread, so multiple invocations can make progress at the same time, even though by time-sharing.
+                    Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager));
                 }
             }
             catch (Exception e)
-            {
-                error = e;
-            }
-
-            if (error != null)
             {
                 StreamingMessage response = NewStreamingMessageTemplate(
                     request.RequestId,
@@ -272,7 +263,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                 response.InvocationResponse.InvocationId = request.InvocationRequest.InvocationId;
                 status.Status = StatusResult.Types.Status.Failure;
-                status.Exception = error.ToRpcException();
+                status.Exception = e.ToRpcException();
 
                 return response;
             }

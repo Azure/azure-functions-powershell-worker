@@ -172,23 +172,23 @@
   <data name="FunctionAppDoesNotHaveDependentModulesToInstall" xml:space="preserve">
     <value>FunctionApp does have dependent modules to install.</value>
   </data>
-  <data name="DependencyPropertyIsNullOrEmpty" xml:space="preserve">
-    <value>Dependency '{0}' is null or empty.</value>
+  <data name="DependencyNameIsNullOrEmpty" xml:space="preserve">
+    <value>Dependency name is null or empty.</value>
+  </data>
+  <data name="StartedInstallingModule" xml:space="preserve">
+    <value>Started installing module '{0}' version '{1}'.</value>
   </data>
   <data name="ModuleHasBeenInstalled" xml:space="preserve">
     <value>Module name '{0}' version '{1}' has been installed.</value>
   </data>
-  <data name="LatestFunctionAppDependenciesAlreadyInstalled" xml:space="preserve">
-    <value>FunctionApp has the latest dependencies already installed.</value>
-  </data>
-  <data name="ManagedDependencyNotSupported" xml:space="preserve">
-    <value>Managed dependency name '{0}' is not supported.</value>
+  <data name="AcceptableFunctionAppDependenciesAlreadyInstalled" xml:space="preserve">
+    <value>The function app has existing dependencies installed. Updating the dependencies to the latest versions will be performed in the background. New function app instances will pick up any new dependencies.</value>
   </data>
   <data name="InvalidPowerShellDataFile" xml:space="preserve">
     <value>The PowerShell data file '{0}' is invalid since it cannot be evaluated into a Hashtable object.</value>
   </data>
   <data name="InvalidVersionFormat" xml:space="preserve">
-    <value>Version is not in the correct format. Please use the following notation: '{0}'</value>
+    <value>Version specification '{0}' is not in the correct format. Please specify the exact version or use the following notation: '{1}'</value>
   </data>
   <data name="FailToInstallFuncAppDependencies" xml:space="preserve">
     <value>Fail to install FunctionApp dependencies. Error: '{0}'</value>
@@ -243,5 +243,23 @@
   </data>
   <data name="DependenciesUpgradeSkippedMessage" xml:space="preserve">
     <value>Function app dependencies upgrade skipped. Error details: {0}. </value>
+  </data>
+  <data name="FailedToRemoveDependenciesFolder" xml:space="preserve">
+    <value>Failed to remove old dependencies folder '{0}'. Error: '{1}'.</value>
+  </data>
+  <data name="RemovingDependenciesFolder" xml:space="preserve">
+    <value>Removing dependencies folder '{0}'.</value>
+  </data>
+  <data name="FailedToRetrieveDependenciesFolderAccessTime" xml:space="preserve">
+    <value>Failed to retrieve dependencies folder '{0}' access time. Error: '{1}'.</value>
+  </data>
+  <data name="UpdatingManagedDependencySnapshotHeartbeat" xml:space="preserve">
+    <value>Updating dependencies folder heartbeat for '{0}''.</value>
+  </data>
+  <data name="FailedToInstallDependenciesSnapshot" xml:space="preserve">
+    <value>Failed to install dependencies into '{0}', removing the folder.</value>
+  </data>
+  <data name="TooManyDependencies" xml:space="preserve">
+    <value>The number of entries in the '{0}' file is {1}, which exceeds the maximum supported number of entries ({2}).</value>
   </data>
 </root>

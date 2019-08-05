@@ -8,14 +8,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     internal class DependencyInfo
     {
         internal readonly string Name;
-        internal readonly string MajorVersion;
-        internal readonly string LatestVersion;
+        internal readonly string ExactVersion;
 
-        internal DependencyInfo(string name, string majorVersion, string latestVersion)
+        internal DependencyInfo(string name, string exactVersion)
         {
             Name = name;
-            MajorVersion = majorVersion;
-            LatestVersion = latestVersion;
+            ExactVersion = exactVersion;
         }
     }
 }
