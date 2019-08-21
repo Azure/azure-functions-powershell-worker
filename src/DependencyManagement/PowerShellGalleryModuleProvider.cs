@@ -6,9 +6,7 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
     using System;
-    using System.IO;
     using System.Management.Automation;
-    using System.Net.Http;
     using System.Xml;
 
     using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
@@ -16,6 +14,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
     internal class PowerShellGalleryModuleProvider : IModuleProvider
     {
+        private readonly IPowerShellGallerySearchInvoker _searchInvoker;
+
+        public PowerShellGalleryModuleProvider(IPowerShellGallerySearchInvoker searchInvoker = null)
+        {
+            _searchInvoker = searchInvoker ?? new PowerShellGallerySearchInvoker();
+        }
+
         /// <summary>
         /// Returns the latest module version from the PSGallery for the given module name and major version.
         /// </summary>
@@ -27,38 +32,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
             Uri address = new Uri($"{PowerShellGalleryFindPackagesByIdUri}'{moduleName}'");
 
-            string latestMajorVersion = null;
-            Stream stream = null;
+            var expectedVersionStart = majorVersion + ".";
 
-            var retryCount = 3;
-            while (true)
+            Version latestVersion = null;
+
+            do
             {
-                using (var client = new HttpClient())
+                var stream = _searchInvoker.Invoke(address);
+                if (stream == null)
                 {
-                    try
-                    {
-                        var response = client.GetAsync(address).Result;
-
-                        // Throw is not a successful request
-                        response.EnsureSuccessStatusCode();
-
-                        stream = response.Content.ReadAsStreamAsync().Result;
-                        break;
-                    }
-                    catch (Exception)
-                    {
-                        if (retryCount <= 0)
-                        {
-                            throw;
-                        }
-
-                        retryCount--;
-                    }
+                    break;
                 }
-            }
 
-            if (stream != null)
-            {
                 // Load up the XML response
                 XmlDocument doc = new XmlDocument();
                 using (XmlReader reader = XmlReader.Create(stream))
@@ -68,27 +53,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 // Add the namespaces for the gallery xml content
                 XmlNamespaceManager nsmgr = new XmlNamespaceManager(doc.NameTable);
-                nsmgr.AddNamespace("ps", "http://www.w3.org/2005/Atom");
+                nsmgr.AddNamespace("a", "http://www.w3.org/2005/Atom");
                 nsmgr.AddNamespace("d", "http://schemas.microsoft.com/ado/2007/08/dataservices");
                 nsmgr.AddNamespace("m", "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata");
 
-                // Find the version information
                 XmlNode root = doc.DocumentElement;
-                var props = root.SelectNodes("//m:properties[d:IsPrerelease = \"false\"]/d:Version", nsmgr);
+                latestVersion = GetLatestVersion(root, nsmgr, expectedVersionStart, latestVersion);
 
-                if (props != null && props.Count > 0)
-                {
-                    foreach (XmlNode prop in props)
-                    {
-                        if (prop.FirstChild.Value.StartsWith(majorVersion))
-                        {
-                            latestMajorVersion = prop.FirstChild.Value;
-                        }
-                    }
-                }
+                // The response may be paginated. In this case, the current page
+                // contains a link to the next page.
+                address = GetNextLink(root, nsmgr);
             }
+            while (address != null);
 
-            return latestMajorVersion;
+            return latestVersion?.ToString();
         }
 
         /// <summary>
@@ -124,6 +102,34 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 .AddParameter("Force", Utils.BoxedTrue)
                 .AddParameter("ErrorAction", "SilentlyContinue")
                 .InvokeAndClearCommands();
+        }
+
+        private static Version GetLatestVersion(
+            XmlNode root, XmlNamespaceManager namespaceManager, string expectedVersionStart, Version latestVersion)
+        {
+            var versions = root.SelectNodes("/a:feed/a:entry/m:properties[d:IsPrerelease = \"false\"]/d:Version", namespaceManager);
+            if (versions != null)
+            {
+                foreach (XmlNode prop in versions)
+                {
+                    if (prop.FirstChild.Value.StartsWith(expectedVersionStart)
+                        && Version.TryParse(prop.FirstChild.Value, out var thisVersion))
+                    {
+                        if (latestVersion == null || thisVersion > latestVersion)
+                        {
+                            latestVersion = thisVersion;
+                        }
+                    }
+                }
+            }
+
+            return latestVersion;
+        }
+
+        private static Uri GetNextLink(XmlNode root, XmlNamespaceManager namespaceManager)
+        {
+            var nextLink = root.SelectNodes("/a:feed/a:link[@rel=\"next\"]/@href", namespaceManager);
+            return nextLink.Count == 1 ? new Uri(nextLink[0].Value) : null;
         }
     }
 }
