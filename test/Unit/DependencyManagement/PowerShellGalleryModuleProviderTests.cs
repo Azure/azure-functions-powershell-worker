@@ -320,28 +320,5 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 Assert.Equal("1.2.3.6", actualVersion);
             }
         }
-
-        [Theory]
-        [InlineData("Az", "0", "0.7.0")]
-        [InlineData("Az", "1", "1.8.0")]
-        [InlineData("Az", "2", "2.5.0")]
-        [InlineData("Az", "3", null)]
-        [InlineData("Az.Accounts", "0", null)]
-        [InlineData("Az.Accounts", "1", "1.6.1")]
-        [InlineData("Az.Accounts", "2", null)]
-        [InlineData("dbatools", "0", "0.9.834")]
-        [InlineData("dbatools", "1", "1.0.34")]
-        [InlineData("Pester", "0", null)]
-        [InlineData("Pester", "1", null)]
-        [InlineData("Pester", "2", null)]
-        [InlineData("Pester", "3", "3.4.6")]
-        [InlineData("Pester", "4", "4.8.1")]
-        [InlineData("Pester", "5", null)]
-        public void RetrievesLatestVersion(string moduleName, string majorVersion, string expectedVersion)
-        {
-            var moduleProvider = new PowerShellGalleryModuleProvider();
-            var actualVersion = moduleProvider.GetLatestPublishedModuleVersion(moduleName, majorVersion);
-            Assert.Equal(expectedVersion, actualVersion);
-        }
     }
 }
