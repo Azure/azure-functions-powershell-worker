@@ -35,11 +35,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// </summary>
         internal PowerShellManagerPool(MessagingStream msgStream)
         {
-            string upperBound = Environment.GetEnvironmentVariable("PSWorkerInProcConcurrencyUpperBound");
-            if (string.IsNullOrEmpty(upperBound) || !int.TryParse(upperBound, out _upperBound))
-            {
-                _upperBound = 1;
-            }
+            _upperBound = PowerShellWorkerConfiguration.GetInt("PSWorkerInProcConcurrencyUpperBound") ?? 1;
 
             _msgStream = msgStream;
             _pool = new BlockingCollection<PowerShellManager>(_upperBound);

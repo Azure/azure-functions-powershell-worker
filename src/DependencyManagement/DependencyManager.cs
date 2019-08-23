@@ -19,7 +19,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     {
         #region Private fields
 
-        private static readonly TimeSpan s_minBackgroundUpgradePeriod = GetMinBackgroundUpgradePeriod();
+        private static readonly TimeSpan s_minBackgroundUpgradePeriod =
+            PowerShellWorkerConfiguration.GetTimeSpan("MDMinBackgroundUpgradePeriod") ?? TimeSpan.FromDays(1);
 
         private readonly IDependencyManagerStorage _storage;
 
@@ -263,12 +264,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
 
             return Path.GetFullPath(Path.Join(requestMetadataDirectory, ".."));
-        }
-
-        private static TimeSpan GetMinBackgroundUpgradePeriod()
-        {
-            var value = Environment.GetEnvironmentVariable("MDMinBackgroundUpgradePeriod");
-            return string.IsNullOrEmpty(value) ? TimeSpan.FromDays(1) : TimeSpan.Parse(value);
         }
 
         #endregion
