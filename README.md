@@ -45,9 +45,6 @@ and the [Azure Functions runtime V2](https://docs.microsoft.com/en-us/azure/azur
 
 ## Contributing
 
-> This project is **not currently taking pull requests**
-because it's still in the early development and is changing rapidly.
-
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)
 or contact [opencode@microsoft.com](mailto:opencode@microsoft.com)
