@@ -3,7 +3,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
@@ -20,7 +19,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     /// </summary>
     internal class PowerShellManagerPool
     {
-        private readonly int _upperBound;
         private readonly MessagingStream _msgStream;
         private readonly BlockingCollection<PowerShellManager> _pool;
         private int _poolSize;
@@ -28,22 +26,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Gets the concurrency upper bound.
         /// </summary>
-        internal int UpperBound => _upperBound;
+        internal int UpperBound { get; } = PowerShellWorkerConfiguration.GetInt("PSWorkerInProcConcurrencyUpperBound") ?? 1;
 
         /// <summary>
         /// Constructor of the pool.
         /// </summary>
         internal PowerShellManagerPool(MessagingStream msgStream)
         {
-            string upperBound = Environment.GetEnvironmentVariable("PSWorkerInProcConcurrencyUpperBound");
-            if (string.IsNullOrEmpty(upperBound) || !int.TryParse(upperBound, out _upperBound))
-            {
-                _upperBound = 1;
-            }
-
             _msgStream = msgStream;
-            _pool = new BlockingCollection<PowerShellManager>(_upperBound);
-            RpcLogger.WriteSystemLog(LogLevel.Information, string.Format(PowerShellWorkerStrings.LogConcurrencyUpperBound, _upperBound.ToString()));
+            _pool = new BlockingCollection<PowerShellManager>(UpperBound);
+            RpcLogger.WriteSystemLog(LogLevel.Information, string.Format(PowerShellWorkerStrings.LogConcurrencyUpperBound, UpperBound.ToString()));
         }
 
         /// <summary>
@@ -71,10 +63,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             if (!_pool.TryTake(out psManager))
             {
                 // The pool doesn't have an idle one.
-                if (_poolSize < _upperBound)
+                if (_poolSize < UpperBound)
                 {
                     int id = Interlocked.Increment(ref _poolSize);
-                    if (id <= _upperBound)
+                    if (id <= UpperBound)
                     {
                         // If the pool hasn't reached its bounded capacity yet, then
                         // we create a new item and return it.

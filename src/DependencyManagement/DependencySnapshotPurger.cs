@@ -128,34 +128,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private static TimeSpan GetHeartbeatPeriod()
         {
-            return GetEnvironmentVariableTimeSpanValue("MDHeartbeatPeriod") ?? TimeSpan.FromMinutes(60);
+            return PowerShellWorkerConfiguration.GetTimeSpan("MDHeartbeatPeriod") ?? TimeSpan.FromMinutes(60);
         }
 
         private static TimeSpan GetOldHeartbeatAgeMargin()
         {
-            return GetEnvironmentVariableTimeSpanValue("MDOldSnapshotHeartbeatMargin") ?? TimeSpan.FromMinutes(90);
+            return PowerShellWorkerConfiguration.GetTimeSpan("MDOldSnapshotHeartbeatMargin") ?? TimeSpan.FromMinutes(90);
         }
 
         private static int GetMinNumberOfSnapshotsToKeep()
         {
-            return GetEnvironmentVariableIntValue("MDMinNumberOfSnapshotsToKeep") ?? 1;
-        }
-
-        private static int? GetEnvironmentVariableIntValue(string name)
-        {
-            var value = Environment.GetEnvironmentVariable(name);
-            if (string.IsNullOrEmpty(value) || !int.TryParse(value, out var parsedValue))
-            {
-                return null;
-            }
-
-            return parsedValue;
-        }
-
-        private static TimeSpan? GetEnvironmentVariableTimeSpanValue(string name)
-        {
-            var value = Environment.GetEnvironmentVariable(name);
-            return string.IsNullOrEmpty(value) ? default(TimeSpan?) : TimeSpan.Parse(value);
+            return PowerShellWorkerConfiguration.GetInt("MDMinNumberOfSnapshotsToKeep") ?? 1;
         }
     }
 }
