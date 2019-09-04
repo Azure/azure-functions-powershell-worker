@@ -14,7 +14,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         bool SnapshotExists(string name);
 
-        IEnumerable<string> GetInstalledSnapshots();
+        string GetLatestInstalledSnapshot();
 
         IEnumerable<string> GetInstalledAndInstallingSnapshots();
 
@@ -29,6 +29,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         void PromoteInstallingSnapshotToInstalledAtomically(string path);
 
         void RemoveSnapshot(string path);
+
+        void SetSnapshotCreationTimeToUtcNow(string path);
 
         DateTime GetSnapshotCreationTimeUtc(string path);
 

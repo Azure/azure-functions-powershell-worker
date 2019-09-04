@@ -52,7 +52,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             _storage = storage ?? new DependencyManagerStorage(GetFunctionAppRootPath(requestMetadataDirectory));
             _installedDependenciesLocator = installedDependenciesLocator ?? new InstalledDependenciesLocator(_storage);
-            _installer = installer ?? new DependencySnapshotInstaller(moduleProvider ?? new PowerShellGalleryModuleProvider(), _storage);
+            _installer = installer ?? new DependencySnapshotInstaller(
+                                            moduleProvider ?? new PowerShellGalleryModuleProvider(),
+                                            _storage,
+                                            new PowerShellModuleSnapshotComparer());
             _purger = purger ?? new DependencySnapshotPurger(_storage);
         }
 

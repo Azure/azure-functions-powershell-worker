@@ -118,7 +118,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             {
                 return _storage.GetSnapshotAccessTimeUtc(path);
             }
-            catch (IOException e)
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
                 var message = string.Format(PowerShellWorkerStrings.FailedToRetrieveDependenciesFolderAccessTime, path, e.Message);
                 logger.Log(isUserOnlyLog: false, LogLevel.Warning, message, e);

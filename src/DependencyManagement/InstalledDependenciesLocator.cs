@@ -19,8 +19,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         public string GetPathWithAcceptableDependencyVersionsInstalled()
         {
-            var snapshotPaths = _storage.GetInstalledSnapshots();
-            var lastSnapshotPath = snapshotPaths.Max();
+            var lastSnapshotPath = _storage.GetLatestInstalledSnapshot();
             if (lastSnapshotPath != null)
             {
                 var dependencies = _storage.GetDependencies();

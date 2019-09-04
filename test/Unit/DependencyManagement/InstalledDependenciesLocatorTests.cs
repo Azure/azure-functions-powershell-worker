@@ -25,23 +25,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             // Even though multiple snapshots can be currently installed, only the latest one will be considered
             // (determined by name).
-            _mockStorage.Setup(_ => _.GetInstalledSnapshots()).Returns(new[] { "s1", "s3", "s2" });
+            _mockStorage.Setup(_ => _.GetLatestInstalledSnapshot()).Returns("snapshot");
 
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(_dependencyManifestEntries);
 
-            _mockStorage.Setup(_ => _.IsModuleVersionInstalled("s3", "A", "exact version of A")).Returns(true);
-            _mockStorage.Setup(_ => _.GetInstalledModuleVersions("s3", "B", "major version of B")).Returns(new [] { "exact version of B" });
+            _mockStorage.Setup(_ => _.IsModuleVersionInstalled("snapshot", "A", "exact version of A")).Returns(true);
+            _mockStorage.Setup(_ => _.GetInstalledModuleVersions("snapshot", "B", "major version of B")).Returns(new [] { "exact version of B" });
 
             var installedDependenciesLocator = new InstalledDependenciesLocator(_mockStorage.Object);
             var result = installedDependenciesLocator.GetPathWithAcceptableDependencyVersionsInstalled();
 
-            Assert.Equal("s3", result);
+            Assert.Equal("snapshot", result);
         }
 
         [Fact]
         public void ReturnsNull_WhenNoInstalledDependencySnapshotsFound()
         {
-            _mockStorage.Setup(_ => _.GetInstalledSnapshots()).Returns(new string[0]);
+            _mockStorage.Setup(_ => _.GetLatestInstalledSnapshot()).Returns(default(string));
 
             var installedDependenciesLocator = new InstalledDependenciesLocator(_mockStorage.Object);
             var result = installedDependenciesLocator.GetPathWithAcceptableDependencyVersionsInstalled();
@@ -54,13 +54,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             // Even though multiple snapshots can be currently installed, only the latest one will be considered
             // (determined by name).
-            _mockStorage.Setup(_ => _.GetInstalledSnapshots()).Returns(new[] { "s1", "s3", "s2" });
+            _mockStorage.Setup(_ => _.GetLatestInstalledSnapshot()).Returns("snapshot");
 
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(_dependencyManifestEntries);
 
             // No version for module B detected!
-            _mockStorage.Setup(_ => _.IsModuleVersionInstalled("s3", "A", "exact version of A")).Returns(true);
-            _mockStorage.Setup(_ => _.GetInstalledModuleVersions("s3", "B", "major version of B")).Returns(new string[0]);
+            _mockStorage.Setup(_ => _.IsModuleVersionInstalled("snapshot", "A", "exact version of A")).Returns(true);
+            _mockStorage.Setup(_ => _.GetInstalledModuleVersions("snapshot", "B", "major version of B")).Returns(new string[0]);
 
             var installedDependenciesLocator = new InstalledDependenciesLocator(_mockStorage.Object);
             var result = installedDependenciesLocator.GetPathWithAcceptableDependencyVersionsInstalled();
@@ -73,13 +73,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             // Even though multiple snapshots can be currently installed, only the latest one will be considered
             // (determined by name).
-            _mockStorage.Setup(_ => _.GetInstalledSnapshots()).Returns(new[] { "s1", "s3", "s2" });
+            _mockStorage.Setup(_ => _.GetLatestInstalledSnapshot()).Returns("snapshot");
 
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(_dependencyManifestEntries);
 
             // The specified module A version is not installed
-            _mockStorage.Setup(_ => _.IsModuleVersionInstalled("s3", "A", "exact version of A")).Returns(false);
-            _mockStorage.Setup(_ => _.GetInstalledModuleVersions("s3", "B", "major version of B")).Returns(new [] { "exact version of B" });
+            _mockStorage.Setup(_ => _.IsModuleVersionInstalled("snapshot", "A", "exact version of A")).Returns(false);
+            _mockStorage.Setup(_ => _.GetInstalledModuleVersions("snapshot", "B", "major version of B")).Returns(new [] { "exact version of B" });
 
             var installedDependenciesLocator = new InstalledDependenciesLocator(_mockStorage.Object);
             var result = installedDependenciesLocator.GetPathWithAcceptableDependencyVersionsInstalled();

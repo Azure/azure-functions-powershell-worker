@@ -33,16 +33,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             return Directory.Exists(path);
         }
 
-        public IEnumerable<string> GetInstalledSnapshots()
+        public string GetLatestInstalledSnapshot()
         {
-            if (!Directory.Exists(_managedDependenciesRootPath))
-            {
-                return Enumerable.Empty<string>();
-            }
-
-            return Directory.EnumerateDirectories(
-                _managedDependenciesRootPath,
-                DependencySnapshotFolderNameTools.InstalledPattern);
+            return GetInstalledSnapshots().Max();
         }
 
         public IEnumerable<string> GetInstalledAndInstallingSnapshots()
@@ -97,6 +90,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             Directory.Delete(path, recursive: true);
         }
 
+        public void SetSnapshotCreationTimeToUtcNow(string path)
+        {
+            Directory.SetCreationTimeUtc(path, DateTime.UtcNow);
+        }
+
         public DateTime GetSnapshotCreationTimeUtc(string path)
         {
             return Directory.GetCreationTimeUtc(path);
@@ -127,6 +125,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             // does not exist (as in this case File.GetLastWriteTimeUtc returns January 1, 1601 A.D.).
             // In this situation, we want to use the snapshot creation time as the closest approximation instead.
             return heartbeatLastWrite >= snapshotCreation ? heartbeatLastWrite : snapshotCreation;
+        }
+
+        private IEnumerable<string> GetInstalledSnapshots()
+        {
+            if (!Directory.Exists(_managedDependenciesRootPath))
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            return Directory.EnumerateDirectories(
+                _managedDependenciesRootPath,
+                DependencySnapshotFolderNameTools.InstalledPattern);
         }
     }
 }
