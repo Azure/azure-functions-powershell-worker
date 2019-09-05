@@ -6,6 +6,7 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using Moq;
     using Xunit;
@@ -150,13 +151,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockStorage.Verify(_ => _.RemoveSnapshot(It.IsAny<string>()), Times.Never);
         }
 
-        [Fact]
-        public void KeepsPurgingIfGetSnapshotAccessTimeUtcThrows()
+        [Theory]
+        [MemberData(nameof(GetNonFatalFileSystemExceptions))]
+        public void KeepsPurgingIfGetSnapshotAccessTimeUtcThrows(Exception injectedException)
         {
             _mockStorage.Setup(_ => _.GetInstalledAndInstallingSnapshots())
                 .Returns(new[] { "1", "2", "3" });
 
-            var injectedException = new IOException("Couldn't get access time");
             _mockStorage.Setup(_ => _.GetSnapshotAccessTimeUtc("1")).Returns(DateTime.UtcNow - TimeSpan.FromMinutes(11));
             _mockStorage.Setup(_ => _.GetSnapshotAccessTimeUtc("2")).Throws(injectedException);
             _mockStorage.Setup(_ => _.GetSnapshotAccessTimeUtc("3")).Returns(DateTime.UtcNow - TimeSpan.FromMinutes(15));
@@ -185,6 +186,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                                              && message.Contains(injectedException.Message)),
                     injectedException),
                 Times.Once);
+        }
+
+        public static IEnumerable<object[]> GetNonFatalFileSystemExceptions()
+        {
+            yield return new object[] { new IOException("Injected IOException") };
+            yield return new object[] { new UnauthorizedAccessException("Injected UnauthorizedAccessException") };
         }
 
         [Fact]

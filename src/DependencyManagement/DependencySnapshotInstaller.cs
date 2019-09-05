@@ -20,15 +20,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private const int MaxNumberOfTries = 3;
 
         private readonly IModuleProvider _moduleProvider;
-
         private readonly IDependencyManagerStorage _storage;
+        private readonly IDependencySnapshotComparer _snapshotComparer;
 
         public DependencySnapshotInstaller(
             IModuleProvider moduleProvider,
-            IDependencyManagerStorage storage)
+            IDependencyManagerStorage storage,
+            IDependencySnapshotComparer snapshotComparer)
         {
             _moduleProvider = moduleProvider ?? throw new ArgumentNullException(nameof(moduleProvider));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            _snapshotComparer = snapshotComparer ?? throw new ArgumentNullException(nameof(snapshotComparer));
         }
 
         public void InstallSnapshot(
@@ -37,51 +39,43 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             PowerShell pwsh,
             ILogger logger)
         {
-            logger.Log(isUserOnlyLog: false, LogLevel.Trace, PowerShellWorkerStrings.InstallingFunctionAppDependentModules);
-
             var installingPath = CreateInstallingSnapshot(targetPath);
+
+            logger.Log(
+                isUserOnlyLog: false,
+                LogLevel.Trace,
+                string.Format(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, installingPath));
 
             try
             {
                 foreach (DependencyInfo module in GetExactVersionsOfDependencies(dependencies))
                 {
-                    logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.StartedInstallingModule, module.Name, module.ExactVersion));
-
-                    int tries = 1;
-
-                    while (true)
-                    {
-                        try
-                        {
-                            _moduleProvider.SaveModule(pwsh, module.Name, module.ExactVersion, installingPath);
-
-                            var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, module.Name, module.ExactVersion);
-                            logger.Log(isUserOnlyLog: false, LogLevel.Trace, message);
-
-                            break;
-                        }
-                        catch (Exception e)
-                        {
-                            string currentAttempt = GetCurrentAttemptMessage(tries);
-                            var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallModule, module.Name, module.ExactVersion, currentAttempt, e.Message);
-                            logger.Log(isUserOnlyLog: false, LogLevel.Error, errorMsg);
-
-                            if (tries >= MaxNumberOfTries)
-                            {
-                                errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
-                                throw new DependencyInstallationException(errorMsg, e);
-                            }
-                        }
-
-                        // Wait for 2^(tries-1) seconds between retries. In this case, it would be 1, 2, and 4 seconds, respectively.
-                        var waitTimeSpan = TimeSpan.FromSeconds(Math.Pow(2, tries - 1));
-                        Thread.Sleep(waitTimeSpan);
-
-                        tries++;
-                    }
+                    InstallModule(module, installingPath, pwsh, logger);
                 }
 
-                _storage.PromoteInstallingSnapshotToInstalledAtomically(targetPath);
+                var latestSnapshot = _storage.GetLatestInstalledSnapshot();
+                if (latestSnapshot != null && _snapshotComparer.AreEquivalent(installingPath, latestSnapshot, logger))
+                {
+                    logger.Log(
+                        isUserOnlyLog: false,
+                        LogLevel.Trace,
+                        string.Format(PowerShellWorkerStrings.RemovingEquivalentDependencySnapshot, installingPath, latestSnapshot));
+
+                    // The new snapshot is not better than the latest installed snapshot,
+                    // so remove the new snapshot and update the timestamp of the latest snapshot
+                    // in order to avoid unnecessary worker restarts.
+                    _storage.RemoveSnapshot(installingPath);
+                    _storage.SetSnapshotCreationTimeToUtcNow(latestSnapshot);
+                }
+                else
+                {
+                    _storage.PromoteInstallingSnapshotToInstalledAtomically(targetPath);
+
+                    logger.Log(
+                        isUserOnlyLog: false,
+                        LogLevel.Trace,
+                        string.Format(PowerShellWorkerStrings.PromotedDependencySnapshot, installingPath, targetPath));
+                }
             }
             catch (Exception e)
             {
@@ -106,6 +100,44 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             {
                 var errorMsg = string.Format(PowerShellWorkerStrings.FailToCreateFunctionAppDependenciesDestinationPath, path, e.Message);
                 throw new InvalidOperationException(errorMsg);
+            }
+        }
+
+        private void InstallModule(DependencyInfo module, string installingPath, PowerShell pwsh, ILogger logger)
+        {
+            logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.StartedInstallingModule, module.Name, module.ExactVersion));
+
+            int tries = 1;
+
+            while (true)
+            {
+                try
+                {
+                    _moduleProvider.SaveModule(pwsh, module.Name, module.ExactVersion, installingPath);
+
+                    var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, module.Name, module.ExactVersion);
+                    logger.Log(isUserOnlyLog: false, LogLevel.Trace, message);
+
+                    break;
+                }
+                catch (Exception e)
+                {
+                    string currentAttempt = GetCurrentAttemptMessage(tries);
+                    var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallModule, module.Name, module.ExactVersion, currentAttempt, e.Message);
+                    logger.Log(isUserOnlyLog: false, LogLevel.Error, errorMsg);
+
+                    if (tries >= MaxNumberOfTries)
+                    {
+                        errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
+                        throw new DependencyInstallationException(errorMsg, e);
+                    }
+                }
+
+                // Wait for 2^(tries-1) seconds between retries. In this case, it would be 1, 2, and 4 seconds, respectively.
+                var waitTimeSpan = TimeSpan.FromSeconds(Math.Pow(2, tries - 1));
+                Thread.Sleep(waitTimeSpan);
+
+                tries++;
             }
         }
 

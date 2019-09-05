@@ -235,8 +235,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     // Here we will get two logs: one that says that we are installing the dependencies, and one for a successful download.
                     Assert.Equal(2, relevantLogs.Count);
 
-                    // The first log should say "Installing FunctionApp dependent modules."
-                    Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, relevantLogs[0]);
+                    Assert.Contains("Installing FunctionApp dependent modules", relevantLogs[0]);
 
                     // In the overwritten RunSaveModuleCommand method, we saved in DownloadedModuleInfo the module name and version.
                     // This same information is logged after running save-module, so validate that they match.
@@ -287,8 +286,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     // - one for a successful module download
                     Assert.Equal(4, relevantLogs.Count);
 
-                    // The first log should say "Installing FunctionApp dependent modules."
-                    Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, relevantLogs[0]);
+                    Assert.Contains("Installing FunctionApp dependent modules", relevantLogs[0]);
 
                     // The subsequent two logs should contain the following: "Fail to install module"
                     for (int index = 1; index < relevantLogs.Count - 1; index++)
@@ -344,8 +342,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     // and one warning notifying of removing the dependencies folder.
                     Assert.Equal(5, relevantLogs.Count);
 
-                    // The first log should say "Installing FunctionApp dependent modules."
-                    Assert.Contains(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, relevantLogs[0]);
+                    Assert.Contains("Installing FunctionApp dependent modules", relevantLogs[0]);
 
                     // The subsequent logs should contain the following:
                     for (int index = 1; index < 4; index++)

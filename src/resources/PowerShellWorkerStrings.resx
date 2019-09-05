@@ -197,7 +197,7 @@
     <value>Fail to resolve '{0}' path in App Service.</value>
   </data>
   <data name="InstallingFunctionAppDependentModules" xml:space="preserve">
-    <value>Installing FunctionApp dependent modules.</value>
+    <value>Installing FunctionApp dependent modules to '{0}'.</value>
   </data>
   <data name="FailToClenupModuleDestinationPath" xml:space="preserve">
     <value>Fail to clean up module destination path '{0}'</value>
@@ -261,5 +261,14 @@
   </data>
   <data name="TooManyDependencies" xml:space="preserve">
     <value>The number of entries in the '{0}' file is {1}, which exceeds the maximum supported number of entries ({2}).</value>
+  </data>
+  <data name="FailedToCompareDependencySnapshots" xml:space="preserve">
+    <value>Failed to compare dependency snapshots '{0}' and '{1}'. Error: '{2}'.</value>
+  </data>
+  <data name="RemovingEquivalentDependencySnapshot" xml:space="preserve">
+    <value>Removing dependency snapshot '{0}' because it is equivalent to '{1}'.</value>
+  </data>
+  <data name="PromotedDependencySnapshot" xml:space="preserve">
+    <value>Promoted dependency snapshot '{0}' to '{1}'.</value>
   </data>
 </root>
