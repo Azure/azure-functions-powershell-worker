@@ -271,4 +271,7 @@
   <data name="PromotedDependencySnapshot" xml:space="preserve">
     <value>Promoted dependency snapshot '{0}' to '{1}'.</value>
   </data>
+  <data name="FunctionQueuingRequest" xml:space="preserve">
+    <value>Your function '{0}' is queuing requests as there are no available runspaces. You may be able to increase your throughput by following the best practices on https://aka.ms/functions-powershell-concurrency.</value>
+  </data>
 </root>
