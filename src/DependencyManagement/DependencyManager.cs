@@ -30,6 +30,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private readonly IDependencySnapshotPurger _purger;
 
+        private readonly INewerDependencySnapshotDetector _newerSnapshotDetector;
+
         private DependencyManifestEntry[] _dependenciesFromManifest;
 
         private string _currentSnapshotPath;
@@ -48,7 +50,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             IDependencyManagerStorage storage = null,
             IInstalledDependenciesLocator installedDependenciesLocator = null,
             IDependencySnapshotInstaller installer = null,
-            IDependencySnapshotPurger purger = null)
+            IDependencySnapshotPurger purger = null,
+            INewerDependencySnapshotDetector newerSnapshotDetector = null)
         {
             _storage = storage ?? new DependencyManagerStorage(GetFunctionAppRootPath(requestMetadataDirectory));
             _installedDependenciesLocator = installedDependenciesLocator ?? new InstalledDependenciesLocator(_storage);
@@ -57,6 +60,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                                             _storage,
                                             new PowerShellModuleSnapshotComparer());
             _purger = purger ?? new DependencySnapshotPurger(_storage);
+            _newerSnapshotDetector = newerSnapshotDetector ?? new NewerDependencySnapshotDetector(_storage, new WorkerRestarter());
         }
 
         /// <summary>
@@ -96,6 +100,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                                         ?? _storage.CreateNewSnapshotPath();
 
                 _purger.SetCurrentlyUsedSnapshot(_currentSnapshotPath, logger);
+                _newerSnapshotDetector.Start(_currentSnapshotPath, logger);
 
                 return _currentSnapshotPath;
             }
@@ -167,6 +172,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         public void Dispose()
         {
             (_purger as IDisposable)?.Dispose();
+            (_newerSnapshotDetector as IDisposable)?.Dispose();
             _dependencyInstallationTask?.Dispose();
         }
 

@@ -23,6 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         private readonly Mock<IInstalledDependenciesLocator> _mockInstalledDependenciesLocator = new Mock<IInstalledDependenciesLocator>(MockBehavior.Strict);
         private readonly Mock<IDependencySnapshotInstaller> _mockInstaller = new Mock<IDependencySnapshotInstaller>(MockBehavior.Strict);
         private readonly Mock<IDependencySnapshotPurger> _mockPurger = new Mock<IDependencySnapshotPurger>();
+        private readonly Mock<INewerDependencySnapshotDetector> _mockNewerDependencySnapshotDetector = new Mock<INewerDependencySnapshotDetector>();
         private readonly Mock<ILogger> _mockLogger = new Mock<ILogger>();
 
         [Fact]
@@ -50,8 +51,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void Initialize_ReturnsExistingSnapshotPath_WhenAcceptableDependencyVersionsAlreadyInstalled()
         {
-            _mockStorage.Setup(_ => _.GetDependencies()).Returns(
-                GetAnyNonEmptyDependencyManifestEntries());
+            _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
             _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
                 .Returns("InstalledSnapshot");
             _mockPurger.Setup(_ => _.SetCurrentlyUsedSnapshot(It.IsAny<string>(), _mockLogger.Object));
@@ -73,6 +73,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             Assert.Null(dependenciesPath);
             VerifyMessageLogged(LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, expectedIsUserLog: true);
+        }
+
+        [Fact]
+        public void Initialize_StartsNewerDependencySnapshotDetector()
+        {
+            _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
+            _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
+                .Returns("InstalledSnapshot");
+
+            var dependencyManager = CreateDependencyManagerWithMocks();
+            dependencyManager.Initialize(_mockLogger.Object);
+
+            _mockNewerDependencySnapshotDetector.Verify(
+                _ => _.Start("InstalledSnapshot", _mockLogger.Object));
         }
 
         [Fact]
@@ -308,7 +322,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 storage: _mockStorage.Object,
                 installedDependenciesLocator: _mockInstalledDependenciesLocator.Object,
                 installer: _mockInstaller.Object,
-                purger: _mockPurger.Object);
+                purger: _mockPurger.Object,
+                newerSnapshotDetector: _mockNewerDependencySnapshotDetector.Object);
         }
     }
 }

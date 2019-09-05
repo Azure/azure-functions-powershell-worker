@@ -271,4 +271,16 @@
   <data name="PromotedDependencySnapshot" xml:space="preserve">
     <value>Promoted dependency snapshot '{0}' to '{1}'.</value>
   </data>
+  <data name="LookingForNewerDependencySnapshot" xml:space="preserve">
+    <value>Looking for a dependency snapshot newer than {0}.</value>
+  </data>
+  <data name="NoNewerDependencySnapshotDetected" xml:space="preserve">
+    <value>No newer dependency snapshot detected.</value>
+  </data>
+  <data name="NewerDependencySnapshotDetected" xml:space="preserve">
+    <value>Detected newer dependency snapshot: '{0}'.</value>
+  </data>
+  <data name="RestartingWorker" xml:space="preserve">
+    <value>The PowerShell worker process is exiting with exit code '{0}', expecting a restart.</value>
+  </data>
 </root>
