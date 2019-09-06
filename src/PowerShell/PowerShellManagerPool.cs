@@ -80,6 +80,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 if (psManager == null)
                 {
+                    var logger = new RpcLogger(_msgStream);
+                    logger.SetContext(requestId, invocationId);
+                    logger.Log(isUserOnlyLog: true, LogLevel.Warning, string.Format(PowerShellWorkerStrings.FunctionQueuingRequest, functionInfo.FuncName));
+
                     // If the pool has reached its bounded capacity, then the thread
                     // should be blocked until an idle one becomes available.
                     psManager = _pool.Take();
