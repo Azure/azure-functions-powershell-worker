@@ -70,8 +70,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     {
                         // If the pool hasn't reached its bounded capacity yet, then
                         // we create a new item and return it.
-                        var logger = new RpcLogger(_msgStream);
-                        logger.SetContext(requestId, invocationId);
+                        var logger = CreateLoggerWithContext(requestId, invocationId);
                         psManager = new PowerShellManager(logger, id);
 
                         RpcLogger.WriteSystemLog(LogLevel.Trace, string.Format(PowerShellWorkerStrings.LogNewPowerShellManagerCreated, id.ToString()));
@@ -80,8 +79,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 if (psManager == null)
                 {
-                    var logger = new RpcLogger(_msgStream);
-                    logger.SetContext(requestId, invocationId);
+                    var logger = CreateLoggerWithContext(requestId, invocationId);
                     logger.Log(isUserOnlyLog: true, LogLevel.Warning, string.Format(PowerShellWorkerStrings.FunctionQueuingRequest, functionInfo.FuncName));
 
                     // If the pool has reached its bounded capacity, then the thread
@@ -113,6 +111,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 psManager.Logger.ResetContext();
                 _pool.Add(psManager);
             }
+        }
+
+        private RpcLogger CreateLoggerWithContext(string requestId, string invocationId)
+        {
+            var logger = new RpcLogger(_msgStream);
+            logger.SetContext(requestId, invocationId);
+            return logger;
         }
     }
 }
