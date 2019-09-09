@@ -96,6 +96,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 StreamingMessage.ContentOneofCase.WorkerInitResponse,
                 out StatusResult status);
 
+            response.WorkerInitResponse.Capabilities.Add("RpcHttpBodyOnly", "true");
+
             // If the environment variable is set, spin up the custom named pipe server.
             // This is typically used for debugging. It will throw a friendly exception if the
             // pipe name is not a valid pipename.
