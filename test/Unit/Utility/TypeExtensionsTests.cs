@@ -114,7 +114,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(httpRequestContext.Method, method);
             Assert.Equal(httpRequestContext.Url, url);
             Assert.Equal(httpRequestContext.Body, data);
-            Assert.Equal(httpRequestContext.RawBody, rawData);
+
+            // RawBody from the input object is not used anymore
+            // (see the "RpcHttpBodyOnly" capability for more details).
+            Assert.Equal(httpRequestContext.RawBody, data);
+
             Assert.Empty(httpRequestContext.Headers);
             Assert.Empty(httpRequestContext.Params);
             Assert.Empty(httpRequestContext.Query);
