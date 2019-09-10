@@ -19,18 +19,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     {
         #region Private fields
 
-        private static readonly TimeSpan s_minBackgroundUpgradePeriod =
-            PowerShellWorkerConfiguration.GetTimeSpan("MDMinBackgroundUpgradePeriod") ?? TimeSpan.FromDays(1);
-
         private readonly IDependencyManagerStorage _storage;
 
         private readonly IInstalledDependenciesLocator _installedDependenciesLocator;
 
         private readonly IDependencySnapshotInstaller _installer;
 
-        private readonly IDependencySnapshotPurger _purger;
-
         private readonly INewerDependencySnapshotDetector _newerSnapshotDetector;
+
+        private readonly IBackgroundDependencySnapshotMaintainer _backgroundSnapshotMaintainer;
 
         private DependencyManifestEntry[] _dependenciesFromManifest;
 
@@ -50,8 +47,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             IDependencyManagerStorage storage = null,
             IInstalledDependenciesLocator installedDependenciesLocator = null,
             IDependencySnapshotInstaller installer = null,
-            IDependencySnapshotPurger purger = null,
-            INewerDependencySnapshotDetector newerSnapshotDetector = null)
+            INewerDependencySnapshotDetector newerSnapshotDetector = null,
+            IBackgroundDependencySnapshotMaintainer maintainer = null)
         {
             _storage = storage ?? new DependencyManagerStorage(GetFunctionAppRootPath(requestMetadataDirectory));
             _installedDependenciesLocator = installedDependenciesLocator ?? new InstalledDependenciesLocator(_storage);
@@ -59,8 +56,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                                             moduleProvider ?? new PowerShellGalleryModuleProvider(),
                                             _storage,
                                             new PowerShellModuleSnapshotComparer());
-            _purger = purger ?? new DependencySnapshotPurger(_storage);
             _newerSnapshotDetector = newerSnapshotDetector ?? new NewerDependencySnapshotDetector(_storage, new WorkerRestarter());
+            _backgroundSnapshotMaintainer =
+                maintainer ?? new BackgroundDependencySnapshotMaintainer(
+                                    _storage,
+                                    _installer,
+                                    new DependencySnapshotPurger(_storage));
         }
 
         /// <summary>
@@ -99,7 +100,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 _currentSnapshotPath = _installedDependenciesLocator.GetPathWithAcceptableDependencyVersionsInstalled()
                                         ?? _storage.CreateNewSnapshotPath();
 
-                _purger.SetCurrentlyUsedSnapshot(_currentSnapshotPath, logger);
+                _backgroundSnapshotMaintainer.Start(_currentSnapshotPath, _dependenciesFromManifest, logger);
                 _newerSnapshotDetector.Start(_currentSnapshotPath, logger);
 
                 return _currentSnapshotPath;
@@ -171,7 +172,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         public void Dispose()
         {
-            (_purger as IDisposable)?.Dispose();
+            (_backgroundSnapshotMaintainer as IDisposable)?.Dispose();
             (_newerSnapshotDetector as IDisposable)?.Dispose();
             _dependencyInstallationTask?.Dispose();
         }
@@ -181,63 +182,37 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// </summary>
         internal Exception InstallFunctionAppDependencies(PowerShell firstPwsh, Func<PowerShell> pwshFactory, ILogger logger)
         {
-            var isBackgroundInstallation = false;
-
-            try
+            if (AreAcceptableDependenciesAlreadyInstalled())
             {
-                if (AreAcceptableDependenciesAlreadyInstalled())
-                {
-                    isBackgroundInstallation = true;
-
-                    _nextSnapshotPath = _storage.CreateNewSnapshotPath();
-
-                    // Purge before installing a new snapshot, as we may be able to free some space.
-                    _purger.Purge(logger);
-
-                    if (!IsAnyInstallationStartedRecently())
-                    {
-                        logger.Log(
-                            isUserOnlyLog: false,
-                            LogLevel.Trace,
-                            PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled);
-
-                        // Background installation: can't use the firstPwsh runspace because it belongs
-                        // to the pool used to run functions code, so create a new runspace.
-                        using (var pwsh = pwshFactory())
-                        {
-                            _installer.InstallSnapshot(_dependenciesFromManifest, _nextSnapshotPath, pwsh, logger);
-                        }
-
-                        // Now that a new snapshot has been installed, there is a chance an old snapshot can be purged.
-                        _purger.Purge(logger);
-                    }
-                }
-                else
-                {
-                    // Foreground installation: *may* use the firstPwsh runspace, since the function execution is
-                    // blocked until the installation is complete, so we are potentially saving some time by reusing
-                    // the runspace as opposed to creating another one.
-                    _installer.InstallSnapshot(_dependenciesFromManifest, _currentSnapshotPath, firstPwsh, logger);
-                }
+                // Background installation: can't use the firstPwsh runspace because it belongs
+                // to the pool used to run functions code, so create a new runspace.
+                _nextSnapshotPath = _backgroundSnapshotMaintainer.InstallAndPurgeSnapshots(pwshFactory, logger);
             }
-            catch (Exception e)
+            else
             {
-                var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
-                _dependencyInstallationError = new DependencyInstallationException(errorMsg, e);
-
-                if (isBackgroundInstallation)
-                {
-                    var dependenciesNotUpdatedMessage =
-                        string.Format(PowerShellWorkerStrings.DependenciesUpgradeSkippedMessage, _dependencyInstallationError.Message);
-
-                    logger.Log(isUserOnlyLog: false, LogLevel.Warning, dependenciesNotUpdatedMessage, _dependencyInstallationError);
-                }
+                // Foreground installation: *may* use the firstPwsh runspace, since the function execution is
+                // blocked until the installation is complete, so we are potentially saving some time by reusing
+                // the runspace as opposed to creating another one.
+                InstallSnapshotInForeground(firstPwsh, logger);
             }
 
             return _dependencyInstallationError;
         }
 
         #region Helper_Methods
+
+        private void InstallSnapshotInForeground(PowerShell pwsh, ILogger logger)
+        {
+            try
+            {
+                _installer.InstallSnapshot(_dependenciesFromManifest, _currentSnapshotPath, pwsh, logger);
+            }
+            catch (Exception e)
+            {
+                var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
+                _dependencyInstallationError = new DependencyInstallationException(errorMsg, e);
+            }
+        }
 
         private void WaitOnDependencyInstallationTask()
         {
@@ -253,16 +228,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private bool AreAcceptableDependenciesAlreadyInstalled()
         {
             return _storage.SnapshotExists(_currentSnapshotPath);
-        }
-
-        private bool IsAnyInstallationStartedRecently()
-        {
-            var threshold = DateTime.UtcNow - s_minBackgroundUpgradePeriod;
-
-            return _storage
-                .GetInstalledAndInstallingSnapshots()
-                .Select(path => _storage.GetSnapshotCreationTimeUtc(path))
-                .Any(creationTime => creationTime > threshold);
         }
 
         private static string GetFunctionAppRootPath(string requestMetadataDirectory)
