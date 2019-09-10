@@ -109,14 +109,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 }
             };
 
-            var expected = new HttpRequestContext
-            {
-                Method = method,
-                Url = url,
-                Body = data,
-                RawBody = data
-            };
-
             var httpRequestContext = (HttpRequestContext)input.ToObject();
 
             Assert.Equal(httpRequestContext.Method, method);
