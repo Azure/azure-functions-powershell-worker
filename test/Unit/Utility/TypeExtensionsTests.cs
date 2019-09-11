@@ -8,9 +8,9 @@ using System.Collections;
 using System.IO;
 using System.Net;
 using System.Management.Automation;
+using System.Text;
 
 using Google.Protobuf;
-using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Newtonsoft.Json;
@@ -90,7 +90,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var method = "Get";
             var url = "https://example.com";
             var data = "Hello World";
-            var rawData = "{\"Foo\":\"Bar\"}";
+
+            // RawBody from the input object is not used anymore
+            // (see the "RpcHttpBodyOnly" capability for more details).
+            var rawData = "does not matter";
 
             var input = new TypedData
             {
@@ -111,17 +114,60 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             var httpRequestContext = (HttpRequestContext)input.ToObject();
 
-            Assert.Equal(httpRequestContext.Method, method);
-            Assert.Equal(httpRequestContext.Url, url);
-            Assert.Equal(httpRequestContext.Body, data);
-
-            // RawBody from the input object is not used anymore
-            // (see the "RpcHttpBodyOnly" capability for more details).
-            Assert.Equal(httpRequestContext.RawBody, data);
-
+            Assert.Equal(method, httpRequestContext.Method);
+            Assert.Equal(url, httpRequestContext.Url);
+            Assert.Equal(data, httpRequestContext.Body);
             Assert.Empty(httpRequestContext.Headers);
             Assert.Empty(httpRequestContext.Params);
             Assert.Empty(httpRequestContext.Query);
+        }
+
+        [Fact]
+        public void TestTypedDataToObjectHttpRequestContextBodyData_String()
+        {
+            var data = "Hello World";
+
+            var input = new TypedData
+            {
+                Http = new RpcHttp
+                {
+                    Method = "Get",
+                    Url = "https://example.com",
+                    Body = new TypedData
+                    {
+                        String = data
+                    }
+                }
+            };
+
+            var httpRequestContext = (HttpRequestContext)input.ToObject();
+
+            Assert.Equal(data, httpRequestContext.Body);
+            Assert.Equal(data, httpRequestContext.RawBody);
+        }
+
+        [Fact]
+        public void TestTypedDataToObjectHttpRequestContextBodyData_Bytes()
+        {
+            var data = "Hello World";
+
+            var input = new TypedData
+            {
+                Http = new RpcHttp
+                {
+                    Method = "Get",
+                    Url = "https://example.com",
+                    Body = new TypedData
+                    {
+                        Bytes = ByteString.CopyFromUtf8(data)
+                    }
+                }
+            };
+
+            var httpRequestContext = (HttpRequestContext)input.ToObject();
+
+            Assert.Equal(Encoding.UTF8.GetBytes(data), httpRequestContext.Body);
+            Assert.Equal(data, httpRequestContext.RawBody);
         }
 
         [Fact]
