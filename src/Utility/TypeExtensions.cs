@@ -6,12 +6,11 @@
 using System;
 using System.Collections;
 using System.IO;
-using System.Linq;
 using System.Management.Automation;
+using System.Text;
 
 using Google.Protobuf;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
-using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.PowerShell.Commands;
 using Newtonsoft.Json.Linq;
 
@@ -54,15 +53,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             if (rpcHttp.Body != null)
             {
                 httpRequestContext.Body = rpcHttp.Body.ToObject();
-            }
-
-            if (rpcHttp.RawBody != null)
-            {
-                object rawBody = rpcHttp.RawBody.DataCase == TypedData.DataOneofCase.String
-                    ? rpcHttp.RawBody.String
-                    : rpcHttp.RawBody.ToObject();
-
-                httpRequestContext.RawBody = rawBody;
+                httpRequestContext.RawBody = GetRawBody(rpcHttp.Body);
             }
 
             return httpRequestContext;
@@ -96,6 +87,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     return null;
                 default:
                     return new InvalidOperationException("DataCase was not set.");
+            }
+        }
+
+        private static object GetRawBody(TypedData rpcHttpBody)
+        {
+            switch (rpcHttpBody.DataCase)
+            {
+                case TypedData.DataOneofCase.String:
+                    return rpcHttpBody.String;
+
+                case TypedData.DataOneofCase.Bytes:
+                    return Encoding.UTF8.GetString(rpcHttpBody.Bytes.ToByteArray());
+
+                default:
+                    return rpcHttpBody.ToObject();
             }
         }
 
