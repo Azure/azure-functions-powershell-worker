@@ -170,6 +170,60 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(data, httpRequestContext.RawBody);
         }
 
+        [Theory]
+        [InlineData("text/plain", "Hello World")]
+        [InlineData("text/plain", "{\"Key\":\"Value\"}")]
+        [InlineData("text/something", "{\"Key\":\"Value\"}")]
+        [InlineData("application/something", "{\"Key\":\"Value\"}")]
+        [InlineData("application/json-patch+json", "{\"Key\":\"Value\"}")]
+        [InlineData("anything/else", "{\"Key\":\"Value\"}")]
+        [InlineData(";", "{\"Key\":\"Value\"}")]
+        public void TestTypedDataToObjectHttpRequestContextBodyData_DoesNotDeserializeStringFromJson(string contentType, string stringData)
+        {
+            var input = new TypedData
+            {
+                Http = new RpcHttp
+                {
+                    Headers = { { "content-type", contentType } },
+                    Body = new TypedData { String = stringData }
+                }
+            };
+
+            var httpRequestContext = (HttpRequestContext)input.ToObject();
+
+            Assert.Equal(stringData, httpRequestContext.Body);
+        }
+
+        [Theory]
+        [InlineData("application/json", "{\"Key\":\"Value\"}")]
+        [InlineData("application/json; charset=utf-8", "{\"Key\":\"Value\"}")]
+        [InlineData("Application/JSON", "{\"Key\":\"Value\"}")]
+        [InlineData(null, "{\"Key\":\"Value\"}")]
+        public void TestTypedDataToObjectHttpRequestContextBodyData_DoesDeserializeStringFromJson(string contentType, string stringData)
+        {
+            var rpcHttp = contentType == null
+                            ? new RpcHttp
+                                    {
+                                        Body = new TypedData { String = stringData }
+                                    }
+                            : new RpcHttp
+                                    {
+                                        Headers = { { "content-type", contentType } },
+                                        Body = new TypedData { String = stringData }
+                                    };
+
+            var input = new TypedData
+            {
+                Http = rpcHttp
+            };
+
+            var httpRequestContext = (HttpRequestContext)input.ToObject();
+
+            var expected = JsonConvert.DeserializeObject<Hashtable>(stringData);
+            var actual = (Hashtable)httpRequestContext.Body;
+            Assert.Equal(expected["Key"], actual["Key"]);
+        }
+
         [Fact]
         public void TestTypedDataToObjectString()
         {
@@ -182,7 +236,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
-        public void TestTypedDataToObjectStringAsJson()
+        public void TestTypedDataToObjectStringAsJson_Deserialize()
         {
             var data = "{\"Foo\":\"Bar\"}";
 
@@ -190,6 +244,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var expected = JsonConvert.DeserializeObject<Hashtable>(data);
             var actual = (Hashtable)input.ToObject();
             Assert.Equal((string)expected["Foo"], (string)actual["Foo"]);
+        }
+
+        [Fact]
+        public void TestTypedDataToObjectStringAsJson_DoNotDeserialize()
+        {
+            var data = "{\"Foo\":\"Bar\"}";
+
+            var input = new TypedData { String = data };
+            var expected = data;
+            var actual = (string)input.ToObject(convertFromJsonIfValidJson: false);
+            Assert.Equal(expected, actual);
         }
 
         [Fact]

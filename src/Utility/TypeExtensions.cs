@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Management.Automation;
+using System.Net.Http.Headers;
 using System.Text;
 
 using Google.Protobuf;
@@ -18,6 +19,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     internal static class TypeExtensions
     {
+        private const string ContentTypeHeaderKey = "content-type";
+
+        private const string ApplicationJsonMediaType = "application/json";
+        private const string TextPlainMediaType = "text/plain";
+
         private static HttpRequestContext ToHttpRequestContext (this RpcHttp rpcHttp)
         {
             var httpRequestContext =  new HttpRequestContext
@@ -52,14 +58,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
             if (rpcHttp.Body != null)
             {
-                httpRequestContext.Body = rpcHttp.Body.ToObject();
+                httpRequestContext.Body = rpcHttp.Body.ToObject(ShouldConvertBodyFromJson(rpcHttp));
                 httpRequestContext.RawBody = GetRawBody(rpcHttp.Body);
             }
 
             return httpRequestContext;
         }
 
-        internal static object ToObject(this TypedData data)
+        internal static object ToObject(this TypedData data, bool convertFromJsonIfValidJson = true)
         {
             if (data == null)
             {
@@ -82,7 +88,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     return data.Stream.ToByteArray();
                 case TypedData.DataOneofCase.String:
                     string str = data.String;
-                    return IsValidJson(str) ? ConvertFromJson(str) : str;
+                    return convertFromJsonIfValidJson && IsValidJson(str)
+                                ? ConvertFromJson(str)
+                                : str;
                 case TypedData.DataOneofCase.None:
                     return null;
                 default:
@@ -175,7 +183,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
 
             // Allow the user to set content-type in the Headers
-            const string ContentTypeHeaderKey = "content-type";
             if (!rpcHttp.Headers.ContainsKey(ContentTypeHeaderKey))
             {
                 rpcHttp.Headers.Add(ContentTypeHeaderKey, DeriveContentType(httpResponseContext, rpcHttp));
@@ -188,8 +195,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         {
             return httpResponseContext.ContentType ??
                                 (rpcHttp.Body.DataCase == TypedData.DataOneofCase.Json
-                                    ? "application/json"
-                                    : "text/plain");
+                                    ? ApplicationJsonMediaType
+                                    : TextPlainMediaType);
         }
 
         internal static TypedData ToTypedData(this object value)
@@ -268,6 +275,36 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
 
             return false;
+        }
+
+        private static bool ShouldConvertBodyFromJson(RpcHttp rpcHttp)
+        {
+            var contentType = GetContentType(rpcHttp);
+            if (contentType == null)
+            {
+                return true;
+            }
+
+            return MediaTypeHeaderValue.TryParse(contentType, out var mediaTypeHeaderValue)
+                   && mediaTypeHeaderValue.MediaType.Equals(ApplicationJsonMediaType, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string GetContentType(RpcHttp rpcHttp)
+        {
+            if (rpcHttp.Headers == null)
+            {
+                return null;
+            }
+
+            foreach (var (key, value) in rpcHttp.Headers)
+            {
+                if (key.Equals(ContentTypeHeaderKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    return value;
+                }
+            }
+
+            return null;
         }
     }
 }
