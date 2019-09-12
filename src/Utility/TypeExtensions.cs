@@ -277,6 +277,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             return false;
         }
 
+        /// <summary>
+        /// The body should be deserialized from JSON automatically only if the HTTP request:
+        ///   - does not have Content-Type header; or
+        ///   - does have Content-Type header, and it contains 'application/json'.
+        /// Any other Content-Type is interpreted as an instruction to *not* deserialize the body.
+        /// In these cases, we should pass the body to the function code as is, without any attempt to deserialize.
+        /// </summary>
         private static bool ShouldConvertBodyFromJson(RpcHttp rpcHttp)
         {
             var contentType = GetContentType(rpcHttp);
