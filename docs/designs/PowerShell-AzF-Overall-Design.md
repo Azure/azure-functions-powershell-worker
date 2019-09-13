@@ -67,6 +67,21 @@ The host process sends an _InvocationRequest_ every time a function is triggered
 
 The real invocation happens mainly in the PowerShell Manager. It transforms the input binding data to the appropriate types that are easy to work with in PowerShell, and then invokes the function script with the transformed value as arguments. Once the invocation finishes, it collects the results for the output bindings. The output results will then be converted to the pre-defined gRPC data type, and sent to the Host within an _InvocationResponse_.
 
+#### TraceContext
+
+As part of the _InvocationRequest_, the host also sends TraceContext which contains the Traceparent (the current Activity id), Tracestate and Attributes (the current map of tags from Activity). Users can access this by specifying it as parameter as shown in the example below.
+
+```powershell
+
+param($req, $TraceContext)
+
+$activityId = $TraceContext.Traceparent
+$traceState = $TraceContext.Tracestate
+$attributes = $TraceContext.Attributes
+```
+
+Please refer to [TraceContext](https://www.w3.org/TR/trace-context/) for more details on TraceContext and it's properties. The parameters can be used in conjunction with Application Insights SDK to enable distributed tracing scenarios. 
+
 ## Intuitive User Experience
 
 The top priority is to make PowerShell Functions offer an intuitive user experience that is already familiar to PowerShell users. To achieve this, concepts of Azure Functions need to be exposed in a PowerShell friendly way. Also, unique functionalities are added to PowerShell Functions due to its characteristics.

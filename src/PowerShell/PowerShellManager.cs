@@ -189,6 +189,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         internal Hashtable InvokeFunction(
             AzFunctionInfo functionInfo,
             Hashtable triggerMetadata,
+            TraceContext traceContext,
             IList<ParameterBinding> inputData)
         {
             string scriptPath = functionInfo.ScriptPath;
@@ -228,6 +229,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 if(functionInfo.HasTriggerMetadataParam)
                 {
                     _pwsh.AddParameter(AzFunctionInfo.TriggerMetadata, triggerMetadata);
+                }
+                if(functionInfo.HasTraceContextParam)
+                {
+                    _pwsh.AddParameter(AzFunctionInfo.TraceContext, traceContext);
                 }
 
                 Collection<object> pipelineItems = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject")
