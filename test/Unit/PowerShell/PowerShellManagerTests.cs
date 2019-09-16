@@ -313,7 +313,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             testManager.InvokeProfile(profilePath);
 
             Assert.Equal(2, s_testLogger.FullLog.Count);
-            Assert.Equal("Error: ERROR: help me!", s_testLogger.FullLog[0]);
+            Assert.StartsWith("Error: ERROR: ", s_testLogger.FullLog[0]);
+            Assert.Contains("help me!", s_testLogger.FullLog[0]);
             Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", s_testLogger.FullLog[1]);
         }
 

@@ -7,12 +7,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Reflection;
 
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
-using System.Management.Automation.Runspaces;
 using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
@@ -35,6 +33,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private readonly ILogger _logger;
         private readonly PowerShell _pwsh;
         private bool _runspaceInited;
+
+        private readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
 
         /// <summary>
         /// Gets the Runspace InstanceId.
@@ -114,7 +114,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// </summary>
         private void RegisterStreamEvents()
         {
-            var streamHandler = new StreamHandler(_logger);
+            var streamHandler = new StreamHandler(_logger, _errorRecordFormatter);
             _pwsh.Streams.Debug.DataAdding += streamHandler.DebugDataAdding;
             _pwsh.Streams.Error.DataAdding += streamHandler.ErrorDataAdding;
             _pwsh.Streams.Information.DataAdding += streamHandler.InformationDataAdding;
@@ -230,8 +230,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     _pwsh.AddParameter(AzFunctionInfo.TriggerMetadata, triggerMetadata);
                 }
 
-                Collection<object> pipelineItems = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject")
-                                                        .InvokeAndClearCommands<object>();
+                try
+                {
+                    Collection<object> pipelineItems = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject")
+                                                            .InvokeAndClearCommands<object>();
+                }
+                catch (RuntimeException e)
+                {
+                    Logger.Log(isUserOnlyLog: true, LogLevel.Error, GetFunctionExceptionMessage(e));
+                    throw;
+                }
 
                 Hashtable result = new Hashtable(outputBindings, StringComparer.OrdinalIgnoreCase);
 
@@ -280,6 +288,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             //  - create new event manager and transaction manager;
             // We should only remove the new global variables and does nothing else.
             Utils.CleanupGlobalVariables(_pwsh);
+        }
+
+        private string GetFunctionExceptionMessage(IContainsErrorRecord exception)
+        {
+            return $"EXCEPTION: {_errorRecordFormatter.Format(exception.ErrorRecord)}";
         }
     }
 }

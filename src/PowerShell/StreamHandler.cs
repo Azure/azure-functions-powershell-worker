@@ -13,10 +13,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     internal class StreamHandler
     {
         ILogger _logger;
+        private ErrorRecordFormatter _errorRecordFormatter;
 
-        public StreamHandler(ILogger logger)
+        public StreamHandler(ILogger logger, ErrorRecordFormatter errorRecordFormatter)
         {
             _logger = logger;
+            _errorRecordFormatter = errorRecordFormatter;
         }
 
         public void DebugDataAdding(object sender, DataAddingEventArgs e)
@@ -31,7 +33,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is ErrorRecord record)
             {
-                _logger.Log(isUserOnlyLog: true, LogLevel.Error, $"ERROR: {record.Exception.Message}", record.Exception);
+                _logger.Log(isUserOnlyLog: true, LogLevel.Error, $"ERROR: {_errorRecordFormatter.Format(record)}", record.Exception);
             }
         }
 
