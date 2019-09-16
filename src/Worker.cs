@@ -14,6 +14,8 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
+    using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+
     /// <summary>
     /// The PowerShell language worker for Azure Function
     /// </summary>
@@ -24,6 +26,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         public async static Task Main(string[] args)
         {
+            RpcLogger.WriteSystemLog(
+                LogLevel.Information,
+                $"Azure Functions PowerShell Worker version [{typeof(Worker).Assembly.GetName().Version}]");
+
             WorkerArguments arguments = null;
             Parser.Default.ParseArguments<WorkerArguments>(args)
                 .WithParsed(ops => arguments = ops)
