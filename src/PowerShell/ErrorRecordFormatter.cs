@@ -17,6 +17,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
         private readonly PowerShell _pwsh = PowerShell.Create();
 
+        /// <summary>
+        /// maxSize limits the maximum size of the formatted error string (in characters).
+        /// The rest will be truncated. This value should be high enough to allow the result
+        /// contain the most important and relevant information, but low enough to create
+        /// no problems for the communication channels used to propagate this data.
+        /// The default value is somewhat arbitrary but satisfies both conditions.
+        /// </summary>
         public string Format(ErrorRecord errorRecord, int maxSize = 1 * 1024 * 1024)
         {
             var errorDetails = _pwsh.AddCommand("Microsoft.PowerShell.Utility\\Out-String")
