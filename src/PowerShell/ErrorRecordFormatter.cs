@@ -19,7 +19,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
         public string Format(ErrorRecord errorRecord, int maxSize = 1 * 1024 * 1024)
         {
-            var errorDetails = _pwsh.AddCommand("Out-String")
+            var errorDetails = _pwsh.AddCommand("Microsoft.PowerShell.Utility\\Out-String")
                                     .AddParameter("InputObject", errorRecord)
                                     .InvokeAndClearCommands<string>();
 
