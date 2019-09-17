@@ -28,7 +28,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             RpcLogger.WriteSystemLog(
                 LogLevel.Information,
-                $"Azure Functions PowerShell Worker version [{typeof(Worker).Assembly.GetName().Version}]");
+                string.Format(PowerShellWorkerStrings.PowerShellWorkerVersion, typeof(Worker).Assembly.GetName().Version));
 
             WorkerArguments arguments = null;
             Parser.Default.ParseArguments<WorkerArguments>(args)
