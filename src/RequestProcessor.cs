@@ -368,6 +368,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
             Hashtable triggerMetadata = null;
+            TraceContext traceContext = null;
 
             if (functionInfo.HasTriggerMetadataParam)
             {
@@ -396,7 +397,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 }
             }
 
-            return psManager.InvokeFunction(functionInfo, triggerMetadata, invocationRequest.InputData);
+            if (functionInfo.HasTraceContextParam)
+            {
+                traceContext = new TraceContext(invocationRequest.TraceContext.TraceParent, invocationRequest.TraceContext.TraceState, invocationRequest.TraceContext.Attributes);
+            }
+
+            return psManager.InvokeFunction(functionInfo, triggerMetadata, traceContext, invocationRequest.InputData);
         }
 
         /// <summary>
