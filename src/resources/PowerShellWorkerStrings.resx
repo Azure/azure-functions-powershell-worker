@@ -286,4 +286,10 @@
   <data name="FunctionQueuingRequest" xml:space="preserve">
     <value>Your function '{0}' is queuing requests as there are no available runspaces. You may be able to increase your throughput by following the best practices on https://aka.ms/functions-powershell-concurrency.</value>
   </data>
+  <data name="FirstFunctionLoadCompleted" xml:space="preserve">
+    <value>First function load request completed in {0} ms.</value>
+  </data>
+  <data name="FunctionInvocationStarting" xml:space="preserve">
+    <value>Invoking function '{0}' code {1} ms after receiving request. Invocation performance details: {2}</value>
+  </data>
 </root>

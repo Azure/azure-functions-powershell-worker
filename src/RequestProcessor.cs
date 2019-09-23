@@ -17,6 +17,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
+    using System.Diagnostics;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
     internal class RequestProcessor
@@ -140,6 +141,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         internal StreamingMessage ProcessFunctionLoadRequest(StreamingMessage request)
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             FunctionLoadRequest functionLoadRequest = request.FunctionLoadRequest;
 
             StreamingMessage response = NewStreamingMessageTemplate(
@@ -178,10 +182,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 try
                 {
                     _isFunctionAppInitialized = true;
-                 
+
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, null);
-                    
+
                     _dependencyManager = new DependencyManager(request.FunctionLoadRequest.Metadata.Directory);
                     var managedDependenciesPath = _dependencyManager.Initialize(request, rpcLogger);
 
@@ -196,6 +200,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                     // Start the download asynchronously if needed.
                     _dependencyManager.StartDependencyInstallationIfNeeded(request, pwsh, rpcLogger);
+
+                    rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.FirstFunctionLoadCompleted, stopwatch.ElapsedMilliseconds));
                 }
                 catch (Exception e)
                 {
@@ -231,6 +237,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             try
             {
+                var stopwatch = new FunctionInvocationPerformanceStopwatch();
+                stopwatch.OnStart();
+
                 // Will block if installing dependencies is required
                 _dependencyManager.WaitForDependenciesAvailability(
                     () =>
@@ -240,12 +249,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                             return rpcLogger;
                         });
 
+                stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.DependenciesAvailable);
+
                 AzFunctionInfo functionInfo = FunctionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
                 PowerShellManager psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
+                stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.RunspaceAvailable);
 
                 // When the concurrency upper bound is more than 1, we have to handle the invocation in a worker
                 // thread, so multiple invocations can make progress at the same time, even though by time-sharing.
-                Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager));
+                Task.Run(() => ProcessInvocationRequestImpl(request, functionInfo, psManager, stopwatch));
             }
             catch (Exception e)
             {
@@ -268,7 +280,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// Implementation method to actual invoke the corresponding function.
         /// InvocationRequest messages are processed in parallel when there are multiple PowerShellManager instances in the pool.
         /// </summary>
-        private void ProcessInvocationRequestImpl(StreamingMessage request, AzFunctionInfo functionInfo, PowerShellManager psManager)
+        private void ProcessInvocationRequestImpl(
+            StreamingMessage request,
+            AzFunctionInfo functionInfo,
+            PowerShellManager psManager,
+            FunctionInvocationPerformanceStopwatch stopwatch)
         {
             InvocationRequest invocationRequest = request.InvocationRequest;
             StreamingMessage response = NewStreamingMessageTemplate(
@@ -282,7 +298,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 // Invoke the function and return a hashtable of out binding data
                 Hashtable results = functionInfo.Type == AzFunctionType.OrchestrationFunction
                     ? InvokeOrchestrationFunction(psManager, functionInfo, invocationRequest)
-                    : InvokeSingleActivityFunction(psManager, functionInfo, invocationRequest);
+                    : InvokeSingleActivityFunction(psManager, functionInfo, invocationRequest, stopwatch);
 
                 BindOutputFromResult(response.InvocationResponse, functionInfo, results);
             }
@@ -360,7 +376,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Invoke a regular function or an activity function.
         /// </summary>
-        private Hashtable InvokeSingleActivityFunction(PowerShellManager psManager, AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
+        private Hashtable InvokeSingleActivityFunction(
+            PowerShellManager psManager,
+            AzFunctionInfo functionInfo,
+            InvocationRequest invocationRequest,
+            FunctionInvocationPerformanceStopwatch stopwatch)
         {
             const string InvocationId = "InvocationId";
             const string FunctionDirectory = "FunctionDirectory";
@@ -402,7 +422,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 traceContext = new TraceContext(invocationRequest.TraceContext.TraceParent, invocationRequest.TraceContext.TraceState, invocationRequest.TraceContext.Attributes);
             }
 
-            return psManager.InvokeFunction(functionInfo, triggerMetadata, traceContext, invocationRequest.InputData);
+            stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.MetadataAndTraceContextReady);
+
+            return psManager.InvokeFunction(functionInfo, triggerMetadata, traceContext, invocationRequest.InputData, stopwatch);
         }
 
         /// <summary>
