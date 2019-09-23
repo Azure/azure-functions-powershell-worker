@@ -149,10 +149,10 @@
     <value>Function with the ID '{0}' was not loaded.</value>
   </data>
   <data name="FunctionAppRootNotResolved" xml:space="preserve">
-    <value>The FunctionApp root hasn't been resolved yet!</value>
+    <value>The function app root hasn't been resolved yet!</value>
   </data>
   <data name="FileNotFound" xml:space="preserve">
-    <value>No '{0}' is found at the FunctionApp root folder: {1}.</value>
+    <value>No '{0}' is found at the function app root folder: {1}.</value>
   </data>
   <data name="FailToRunProfile" xml:space="preserve">
     <value>Fail to run profile.ps1. See logs for detailed errors. Profile location: {0}.</value>
@@ -173,7 +173,7 @@
     <value>Fail to get latest version for module '{0}' with major version '{1}'. {2} </value>
   </data>
   <data name="FunctionAppDoesNotHaveDependentModulesToInstall" xml:space="preserve">
-    <value>FunctionApp does have dependent modules to install.</value>
+    <value>Function app does have dependent modules to install.</value>
   </data>
   <data name="DependencyNameIsNullOrEmpty" xml:space="preserve">
     <value>Dependency name is null or empty.</value>
@@ -194,13 +194,13 @@
     <value>Version specification '{0}' is not in the correct format. Please specify the exact version or use the following notation: '{1}'</value>
   </data>
   <data name="FailToInstallFuncAppDependencies" xml:space="preserve">
-    <value>Fail to install FunctionApp dependencies. Error: '{0}'</value>
+    <value>Fail to install function app dependencies. Error: '{0}'</value>
   </data>
   <data name="FailToResolveHomeDirectory" xml:space="preserve">
     <value>Fail to resolve '{0}' path in App Service.</value>
   </data>
   <data name="InstallingFunctionAppDependentModules" xml:space="preserve">
-    <value>Installing FunctionApp dependent modules to '{0}'.</value>
+    <value>Installing function app dependent modules to '{0}'.</value>
   </data>
   <data name="FailToClenupModuleDestinationPath" xml:space="preserve">
     <value>Fail to clean up module destination path '{0}'</value>
@@ -227,7 +227,7 @@
     <value>Unrecognized data collecting behavior '{0}'.</value>
   </data>
   <data name="FailToCreateFunctionAppDependenciesDestinationPath" xml:space="preserve">
-    <value>Fail to create FunctionApp dependencies destination path '{0}'. Please make sure you have write access to this location. Error '{1}'. </value>
+    <value>Fail to create function app dependencies destination path '{0}'. Please make sure you have write access to this location. Error '{1}'. </value>
   </data>
   <data name="FailToInstallModule" xml:space="preserve">
     <value>Fail to install module '{0}' version '{1}'. {2} attempt. Error: '{3}'</value>
