@@ -155,7 +155,7 @@
     <value>No '{0}' is found at the function app root folder: {1}.</value>
   </data>
   <data name="FailToRunProfile" xml:space="preserve">
-    <value>Fail to run profile.ps1. See logs for detailed errors. Profile location: {0}.</value>
+    <value>Failed to run profile.ps1. See logs for detailed errors. Profile location: {0}.</value>
   </data>
   <data name="UnsupportedMessage" xml:space="preserve">
     <value>Unsupported message type: {0}.</value>
@@ -170,7 +170,7 @@
     <value>Custom pipe name specified. You can attach to the process by using vscode or by running `Enter-PSHostProcess -CustomPipeName {0}`</value>
   </data>
   <data name="FailToGetModuleLatestVersion" xml:space="preserve">
-    <value>Fail to get latest version for module '{0}' with major version '{1}'. {2} </value>
+    <value>Failed to get latest version for module '{0}' with major version '{1}'. {2} </value>
   </data>
   <data name="FunctionAppDoesNotHaveDependentModulesToInstall" xml:space="preserve">
     <value>Function app does have dependent modules to install.</value>
@@ -194,16 +194,16 @@
     <value>Version specification '{0}' is not in the correct format. Please specify the exact version or use the following notation: '{1}'</value>
   </data>
   <data name="FailToInstallFuncAppDependencies" xml:space="preserve">
-    <value>Fail to install function app dependencies. Error: '{0}'</value>
+    <value>Failed to install function app dependencies. Error: '{0}'</value>
   </data>
   <data name="FailToResolveHomeDirectory" xml:space="preserve">
-    <value>Fail to resolve '{0}' path in App Service.</value>
+    <value>Failed to resolve '{0}' path in App Service.</value>
   </data>
   <data name="InstallingFunctionAppDependentModules" xml:space="preserve">
     <value>Installing function app dependent modules to '{0}'.</value>
   </data>
   <data name="FailToClenupModuleDestinationPath" xml:space="preserve">
-    <value>Fail to clean up module destination path '{0}'</value>
+    <value>Failed to clean up module destination path '{0}'</value>
   </data>
   <data name="LogConcurrencyUpperBound" xml:space="preserve">
     <value>The enforced concurrency level (pool size limit) is '{0}'.</value>
@@ -227,10 +227,10 @@
     <value>Unrecognized data collecting behavior '{0}'.</value>
   </data>
   <data name="FailToCreateFunctionAppDependenciesDestinationPath" xml:space="preserve">
-    <value>Fail to create function app dependencies destination path '{0}'. Please make sure you have write access to this location. Error '{1}'. </value>
+    <value>Failed to create function app dependencies destination path '{0}'. Please make sure you have write access to this location. Error '{1}'. </value>
   </data>
   <data name="FailToInstallModule" xml:space="preserve">
-    <value>Fail to install module '{0}' version '{1}'. {2} attempt. Error: '{3}'</value>
+    <value>Failed to install module '{0}' version '{1}'. {2} attempt. Error: '{3}'</value>
   </data>
   <data name="FirstAttempt" xml:space="preserve">
     <value>1st</value>
