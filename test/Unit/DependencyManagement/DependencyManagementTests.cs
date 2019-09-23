@@ -201,7 +201,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                                     () => { dependencyManager.Initialize(_testLogger); });
 
                 Assert.Contains("No 'requirements.psd1'", exception.Message);
-                Assert.Contains("is found at the FunctionApp root folder", exception.Message);
+                Assert.Contains("is found at the function app root folder", exception.Message);
             }
         }
 
@@ -230,12 +230,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
                     var relevantLogs = _testLogger.FullLog.Where(
                         message => message.StartsWith("Trace: Module name")
-                                   || message.StartsWith("Trace: Installing FunctionApp dependent modules")).ToList();
+                                   || message.StartsWith("Trace: Installing function app required modules")).ToList();
 
                     // Here we will get two logs: one that says that we are installing the dependencies, and one for a successful download.
                     Assert.Equal(2, relevantLogs.Count);
 
-                    Assert.Contains("Installing FunctionApp dependent modules", relevantLogs[0]);
+                    Assert.Contains("Installing function app required modules", relevantLogs[0]);
 
                     // In the overwritten RunSaveModuleCommand method, we saved in DownloadedModuleInfo the module name and version.
                     // This same information is logged after running save-module, so validate that they match.
@@ -276,8 +276,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     var dependencyError = dependencyManager.InstallFunctionAppDependencies(PowerShell.Create(), PowerShell.Create, _testLogger);
 
                     var relevantLogs = _testLogger.FullLog.Where(
-                        message => message.StartsWith("Error: Fail to install module")
-                                   || message.StartsWith("Trace: Installing FunctionApp dependent modules")
+                        message => message.StartsWith("Error: Failed to install module")
+                                   || message.StartsWith("Trace: Installing function app required modules")
                                    || message.StartsWith("Trace: Module name")).ToList();
 
                     // Here we will get four logs:
@@ -286,12 +286,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     // - one for a successful module download
                     Assert.Equal(4, relevantLogs.Count);
 
-                    Assert.Contains("Installing FunctionApp dependent modules", relevantLogs[0]);
+                    Assert.Contains("Installing function app required modules", relevantLogs[0]);
 
                     // The subsequent two logs should contain the following: "Fail to install module"
                     for (int index = 1; index < relevantLogs.Count - 1; index++)
                     {
-                        Assert.Contains("Fail to install module", relevantLogs[index]);
+                        Assert.Contains("Failed to install module", relevantLogs[index]);
                         var currentAttempt = DependencySnapshotInstaller.GetCurrentAttemptMessage(index);
                         Assert.Contains(currentAttempt, relevantLogs[index]);
                     }
@@ -333,8 +333,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     var dependencyError = dependencyManager.InstallFunctionAppDependencies(PowerShell.Create(), PowerShell.Create, _testLogger);
 
                     var relevantLogs = _testLogger.FullLog.Where(
-                        message => message.StartsWith("Error: Fail to install module")
-                                   || message.StartsWith("Trace: Installing FunctionApp dependent modules")
+                        message => message.StartsWith("Error: Failed to install module")
+                                   || message.StartsWith("Trace: Installing function app required modules")
                                    || message.StartsWith("Warning: Failed to install dependencies")).ToList();
 
                     // Here we will get five logs: one that says that we are installing the
@@ -342,7 +342,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     // and one warning notifying of removing the dependencies folder.
                     Assert.Equal(5, relevantLogs.Count);
 
-                    Assert.Contains("Installing FunctionApp dependent modules", relevantLogs[0]);
+                    Assert.Contains("Installing function app required modules", relevantLogs[0]);
 
                     // The subsequent logs should contain the following:
                     for (int index = 1; index < 4; index++)
@@ -356,7 +356,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
                     // Lastly, DependencyError should get set after unsuccessfully retrying 3 times.
                     Assert.NotNull(dependencyError);
-                    Assert.Contains("Fail to install FunctionApp dependencies. Error:", dependencyError.Message);
+                    Assert.Contains("Failed to install function app dependencies. Error:", dependencyError.Message);
                 }
             }
             finally
@@ -389,9 +389,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     var dependencyError = Assert.Throws<DependencyInstallationException>(
                                             () => dependencyManager.WaitForDependenciesAvailability(() => _testLogger));
 
-                    Assert.Contains("Fail to install FunctionApp dependencies.", dependencyError.Message);
-                    Assert.Contains("Fail to get latest version for module 'Az' with major version '1'.", dependencyError.Message);
-                    Assert.Contains("Fail to connect to the PSGallery", dependencyError.Message);
+                    Assert.Contains("Failed to install function app dependencies.", dependencyError.Message);
+                    Assert.Contains("Failed to get latest version for module 'Az' with major version '1'.", dependencyError.Message);
+                    Assert.Contains("Failed to connect to the PSGallery", dependencyError.Message);
                 }
             }
             finally
@@ -469,7 +469,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             if (GetLatestModuleVersionThrows)
             {
-                throw new InvalidOperationException("Fail to connect to the PSGallery");
+                throw new InvalidOperationException("Failed to connect to the PSGallery");
             }
 
             return "2.0";

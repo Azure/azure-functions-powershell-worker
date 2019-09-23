@@ -251,7 +251,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                         () => dependencyManager.WaitForDependenciesAvailability(() => _mockLogger.Object));
 
                 Assert.Contains(injectedException.Message, caughtException.Message);
-                Assert.Contains("Fail to install FunctionApp dependencies", caughtException.Message);
+                Assert.Contains("Failed to install function app dependencies", caughtException.Message);
             }
         }
 

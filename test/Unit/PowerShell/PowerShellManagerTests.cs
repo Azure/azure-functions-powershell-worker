@@ -300,7 +300,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             Assert.Throws<CmdletInvocationException>(() => testManager.InvokeProfile(profilePath));
             Assert.Single(s_testLogger.FullLog);
-            Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", s_testLogger.FullLog[0]);
+            Assert.Matches("Error: Failed to run profile.ps1. See logs for detailed errors. Profile location: ", s_testLogger.FullLog[0]);
         }
 
         [Fact]
@@ -316,7 +316,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(2, s_testLogger.FullLog.Count);
             Assert.StartsWith("Error: ERROR: ", s_testLogger.FullLog[0]);
             Assert.Contains("help me!", s_testLogger.FullLog[0]);
-            Assert.Matches("Error: Fail to run profile.ps1. See logs for detailed errors. Profile location: ", s_testLogger.FullLog[1]);
+            Assert.Matches("Error: Failed to run profile.ps1. See logs for detailed errors. Profile location: ", s_testLogger.FullLog[1]);
         }
 
         [Fact]
@@ -327,7 +327,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             NewTestPowerShellManager(s_testLogger);
 
             Assert.Single(s_testLogger.FullLog);
-            Assert.Equal($"Trace: No 'profile.ps1' is found at the FunctionApp root folder: {FunctionLoader.FunctionAppRootPath}.", s_testLogger.FullLog[0]);
+            Assert.Equal($"Trace: No 'profile.ps1' is found at the function app root folder: {FunctionLoader.FunctionAppRootPath}.", s_testLogger.FullLog[0]);
         }
 
         [Fact]

@@ -38,7 +38,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             var manifest = new DependencyManifest(_appRootPath);
             var exception = Assert.Throws<ArgumentException>(() => manifest.GetEntries().ToList());
-            Assert.Contains("No 'requirements.psd1' is found at the FunctionApp root folder", exception.Message);
+            Assert.Contains("No 'requirements.psd1' is found at the function app root folder", exception.Message);
             Assert.Contains(_appRootPath, exception.Message);
         }
 
