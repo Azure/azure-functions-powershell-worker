@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             logger.Log(
                 isUserOnlyLog: false,
                 LogLevel.Trace,
-                string.Format(PowerShellWorkerStrings.InstallingFunctionAppDependentModules, installingPath));
+                string.Format(PowerShellWorkerStrings.InstallingFunctionAppRequiredModules, installingPath));
 
             try
             {
