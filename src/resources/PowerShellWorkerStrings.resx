@@ -202,9 +202,6 @@
   <data name="InstallingFunctionAppRequiredModules" xml:space="preserve">
     <value>Installing function app required modules to '{0}'.</value>
   </data>
-  <data name="FailToClenupModuleDestinationPath" xml:space="preserve">
-    <value>Failed to clean up module destination path '{0}'</value>
-  </data>
   <data name="LogConcurrencyUpperBound" xml:space="preserve">
     <value>The enforced concurrency level (pool size limit) is '{0}'.</value>
   </data>
