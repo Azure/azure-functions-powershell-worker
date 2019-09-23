@@ -93,7 +93,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 if (!_dependenciesFromManifest.Any())
                 {
-                    logger.Log(isUserOnlyLog: true, LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall);
+                    logger.Log(isUserOnlyLog: true, LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveRequiredModulesToInstall);
                     return null;
                 }
 
