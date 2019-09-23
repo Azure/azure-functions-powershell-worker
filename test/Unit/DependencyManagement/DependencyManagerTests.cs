@@ -74,7 +74,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 var dependenciesPath = dependencyManager.Initialize(_mockLogger.Object);
 
                 Assert.Null(dependenciesPath);
-                VerifyMessageLogged(LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveDependentModulesToInstall, expectedIsUserLog: true);
+                VerifyMessageLogged(LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveRequiredModulesToInstall, expectedIsUserLog: true);
 
                 _mockBackgroundDependencySnapshotMaintainer.VerifyNoOtherCalls();
                 _mockNewerDependencySnapshotDetector.VerifyNoOtherCalls();

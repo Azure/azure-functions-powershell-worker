@@ -172,8 +172,8 @@
   <data name="FailToGetModuleLatestVersion" xml:space="preserve">
     <value>Failed to get latest version for module '{0}' with major version '{1}'. {2} </value>
   </data>
-  <data name="FunctionAppDoesNotHaveDependentModulesToInstall" xml:space="preserve">
-    <value>Function app does have dependent modules to install.</value>
+  <data name="FunctionAppDoesNotHaveRequiredModulesToInstall" xml:space="preserve">
+    <value>Function app does have required modules to install.</value>
   </data>
   <data name="DependencyNameIsNullOrEmpty" xml:space="preserve">
     <value>Dependency name is null or empty.</value>
