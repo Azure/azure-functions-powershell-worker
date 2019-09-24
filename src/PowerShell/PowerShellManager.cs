@@ -16,6 +16,7 @@ using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
     using System.Management.Automation;
+    using System.Text;
 
     internal class PowerShellManager
     {
@@ -190,7 +191,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             AzFunctionInfo functionInfo,
             Hashtable triggerMetadata,
             TraceContext traceContext,
-            IList<ParameterBinding> inputData)
+            IList<ParameterBinding> inputData,
+            FunctionInvocationPerformanceStopwatch stopwatch)
         {
             string scriptPath = functionInfo.ScriptPath;
             string entryPoint = functionInfo.EntryPoint;
@@ -213,6 +215,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     _pwsh.AddCommand(entryPoint);
                 }
 
+                stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.FunctionCodeReady);
+
                 // Set arguments for each input binding parameter
                 foreach (ParameterBinding binding in inputData)
                 {
@@ -225,6 +229,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     }
                 }
 
+                stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InputBindingValuesReady);
+
                 // Gives access to additional Trigger Metadata if the user specifies TriggerMetadata
                 if(functionInfo.HasTriggerMetadataParam)
                 {
@@ -235,10 +241,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     _pwsh.AddParameter(AzFunctionInfo.TraceContext, traceContext);
                 }
 
+                _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
+
+                stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InvokingFunctionCode);
+
+                Logger.Log(isUserOnlyLog: false, LogLevel.Trace, CreateInvocationPerformanceReportMessage(functionInfo.FuncName, stopwatch));
+
                 try
                 {
-                    Collection<object> pipelineItems = _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject")
-                                                            .InvokeAndClearCommands<object>();
+                    Collection<object> pipelineItems = _pwsh.InvokeAndClearCommands<object>();
                 }
                 catch (RuntimeException e)
                 {
@@ -298,6 +309,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private string GetFunctionExceptionMessage(IContainsErrorRecord exception)
         {
             return $"EXCEPTION: {_errorRecordFormatter.Format(exception.ErrorRecord)}";
+        }
+
+        private static string CreateInvocationPerformanceReportMessage(string functionName, FunctionInvocationPerformanceStopwatch stopwatch)
+        {
+            var performanceDetails = FormatPerformanceDetails(stopwatch);
+
+            return string.Format(
+                PowerShellWorkerStrings.FunctionInvocationStarting,
+                functionName,
+                stopwatch.TotalMilliseconds,
+                performanceDetails);
+        }
+
+        private static StringBuilder FormatPerformanceDetails(FunctionInvocationPerformanceStopwatch stopwatch)
+        {
+            var performanceDetails = new StringBuilder(1024);
+            foreach (var (key, value) in stopwatch.CheckpointMilliseconds)
+            {
+                performanceDetails.Append(key);
+                performanceDetails.Append(": ");
+                performanceDetails.Append(value);
+                performanceDetails.Append(" ms; ");
+            }
+
+            return performanceDetails;
         }
     }
 }
