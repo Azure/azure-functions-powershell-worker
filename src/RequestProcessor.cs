@@ -297,7 +297,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             {
                 // Invoke the function and return a hashtable of out binding data
                 Hashtable results = functionInfo.Type == AzFunctionType.OrchestrationFunction
-                    ? InvokeOrchestrationFunction(psManager, functionInfo, invocationRequest)
+                    ? InvokeOrchestrationFunction(psManager, functionInfo, invocationRequest, stopwatch)
                     : InvokeSingleActivityFunction(psManager, functionInfo, invocationRequest, stopwatch);
 
                 BindOutputFromResult(response.InvocationResponse, functionInfo, results);
@@ -368,7 +368,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Invoke an orchestration function.
         /// </summary>
-        private Hashtable InvokeOrchestrationFunction(PowerShellManager psManager, AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
+        private Hashtable InvokeOrchestrationFunction(
+            PowerShellManager psManager,
+            AzFunctionInfo functionInfo,
+            InvocationRequest invocationRequest,
+            FunctionInvocationPerformanceStopwatch stopwatch)
         {
             throw new NotImplementedException(PowerShellWorkerStrings.DurableFunctionNotSupported);
         }
