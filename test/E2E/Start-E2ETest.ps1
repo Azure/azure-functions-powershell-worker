@@ -28,7 +28,7 @@ if (-not $env:CORE_TOOLS_URL)
     $env:CORE_TOOLS_URL = 'https://functionsclibuilds.blob.core.windows.net/builds/2/latest'
 }
 
-$version = Invoke-RestMethod -Uri "$env:CORE_TOOLS_URL/version.txt"
+$version = '2.7.1678'
 Write-Host "Downloading Functions Core Tools (Version: $version)..."
 
 $output = "$FUNC_CLI_DIRECTORY.zip"
