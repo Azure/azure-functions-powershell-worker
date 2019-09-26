@@ -17,11 +17,6 @@ This repository will host the PowerShell language worker implementation for Azur
 We'll also be using it to track work items related to PowerShell support.
 Please feel free to leave comments about any of the features and design patterns.
 
-> 🚧 The project is currently **work in progress**.
-Please do not use in production as we expect developments over time.
-To receive important updates, including breaking changes announcements,
-watch the Azure App Service announcements repository. 🚧
-
 ## Overview
 
 PowerShell support for Functions is based on [PowerShell Core 6.1](https://github.com/powershell/powershell),
