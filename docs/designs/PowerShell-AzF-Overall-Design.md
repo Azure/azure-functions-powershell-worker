@@ -603,4 +603,4 @@ As you may notice, the above PowerShell Durable Function scripts use 'return'. T
 
 ## Summary
 
-This document discusses the design of the PowerShell language worker as in its status quo. This is an on-going project that just reached its second private preview. More iterations will be awaiting us to add new features. This document will be updated regularly with the progress of the project.
+This document discusses the design of the PowerShell language worker as in its status quo. This is an on-going project, and more iterations will be awaiting us to add new features. This document will be updated regularly with the progress of the project.
