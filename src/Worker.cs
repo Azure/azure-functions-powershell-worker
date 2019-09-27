@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .WithParsed(ops => arguments = ops)
                 .WithNotParsed(err => Environment.Exit(1));
 
-            var msgStream = new MessagingStream(arguments.Host, arguments.Port);
+            var msgStream = new MessagingStream(arguments.Host, arguments.Port, arguments.MaxMessageLength);
             var requestProcessor = new RequestProcessor(msgStream);
 
             // Send StartStream message
