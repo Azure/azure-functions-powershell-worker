@@ -55,7 +55,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             _installer = installer ?? new DependencySnapshotInstaller(
                                             moduleProvider ?? new PowerShellGalleryModuleProvider(),
                                             _storage,
-                                            new PowerShellModuleSnapshotComparer());
+                                            new PowerShellModuleSnapshotComparer(),
+                                            new PowerShellModuleSnapshotLogger());
             _newerSnapshotDetector = newerSnapshotDetector ?? new NewerDependencySnapshotDetector(_storage, new WorkerRestarter());
             _backgroundSnapshotMaintainer =
                 maintainer ?? new BackgroundDependencySnapshotMaintainer(

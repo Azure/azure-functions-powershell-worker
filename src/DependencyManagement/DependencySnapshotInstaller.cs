@@ -22,15 +22,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private readonly IModuleProvider _moduleProvider;
         private readonly IDependencyManagerStorage _storage;
         private readonly IDependencySnapshotComparer _snapshotComparer;
+        private readonly IDependencySnapshotContentLogger _snapshotContentLogger;
 
         public DependencySnapshotInstaller(
             IModuleProvider moduleProvider,
             IDependencyManagerStorage storage,
-            IDependencySnapshotComparer snapshotComparer)
+            IDependencySnapshotComparer snapshotComparer,
+            IDependencySnapshotContentLogger snapshotContentLogger)
         {
             _moduleProvider = moduleProvider ?? throw new ArgumentNullException(nameof(moduleProvider));
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _snapshotComparer = snapshotComparer ?? throw new ArgumentNullException(nameof(snapshotComparer));
+            _snapshotContentLogger = snapshotContentLogger ?? throw new ArgumentNullException(nameof(snapshotContentLogger));
         }
 
         public void InstallSnapshot(
@@ -75,6 +78,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         isUserOnlyLog: false,
                         LogLevel.Trace,
                         string.Format(PowerShellWorkerStrings.PromotedDependencySnapshot, installingPath, targetPath));
+
+                    _snapshotContentLogger.LogDependencySnapshotContent(targetPath, logger);
                 }
             }
             catch (Exception e)
