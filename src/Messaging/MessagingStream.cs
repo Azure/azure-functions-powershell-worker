@@ -17,11 +17,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
         private readonly AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(initialCount: 1, maxCount: 1);
 
-        internal MessagingStream(string host, int port, int maxReceiveMessageLength)
+        internal MessagingStream(string host, int port, int maxMessageLength)
         {
             var channelOptions = new []
             {
-                new ChannelOption(ChannelOptions.MaxReceiveMessageLength, maxReceiveMessageLength)
+                new ChannelOption(ChannelOptions.MaxReceiveMessageLength, maxMessageLength),
+                new ChannelOption(ChannelOptions.MaxSendMessageLength, maxMessageLength)
             };
 
             Channel channel = new Channel(host, port, ChannelCredentials.Insecure, channelOptions);
