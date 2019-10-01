@@ -296,6 +296,6 @@
     <value>Dependency snapshot '{0}' contains module '{1}' version '{2}'.</value>
   </data>
   <data name="FailedToEnumerateDependencySnapshotContent" xml:space="preserve">
-    <value>Could not enumerated dependency snapshot '{0}' content: {1}</value>
+    <value>Failed to enumerate dependency snapshot '{0}' content: {1}</value>
   </data>
 </root>
