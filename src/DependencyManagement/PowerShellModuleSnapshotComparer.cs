@@ -32,8 +32,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             try
             {
-                var versionSubdirsA = GetModuleVersionSubdirectories(snapshotPathA);
-                var versionSubdirsB = GetModuleVersionSubdirectories(snapshotPathB);
+                var versionSubdirsA = PowerShellModuleSnapshotTools.GetModuleVersionSubdirectories(snapshotPathA, _getSubdirectories);
+                var versionSubdirsB = PowerShellModuleSnapshotTools.GetModuleVersionSubdirectories(snapshotPathB, _getSubdirectories);
                 return versionSubdirsA.SequenceEqual(versionSubdirsB);
             }
             catch (IOException e)
@@ -48,21 +48,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 logger.Log(isUserOnlyLog: false, LogLevel.Warning, message);
                 return false;
-            }
-        }
-
-        private IEnumerable<string> GetModuleVersionSubdirectories(string snapshotPath)
-        {
-            var modulePaths = _getSubdirectories(snapshotPath).ToList();
-            modulePaths.Sort();
-            foreach (var modulePath in modulePaths)
-            {
-                var versionPaths = _getSubdirectories(modulePath).ToList();
-                versionPaths.Sort();
-                foreach (var versionPath in versionPaths)
-                {
-                    yield return Path.Join(Path.GetFileName(modulePath), Path.GetFileName(versionPath));
-                }
             }
         }
     }

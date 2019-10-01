@@ -23,6 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         private readonly Mock<IModuleProvider> _mockModuleProvider = new Mock<IModuleProvider>();
         private readonly Mock<IDependencyManagerStorage> _mockStorage = new Mock<IDependencyManagerStorage>(MockBehavior.Strict);
         private readonly Mock<IDependencySnapshotComparer> _mockSnapshotComparer = new Mock<IDependencySnapshotComparer>(MockBehavior.Strict);
+        private readonly Mock<IDependencySnapshotContentLogger> _mockSnapshotContentLogger = new Mock<IDependencySnapshotContentLogger>();
         private readonly Mock<ILogger> _mockLogger = new Mock<ILogger>();
 
         private readonly string _targetPathInstalled;
@@ -94,6 +95,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockStorage.Verify(_ => _.CreateInstallingSnapshot(_targetPathInstalled), Times.Once);
             _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled), Times.Once);
+            _mockSnapshotContentLogger.Verify(_ => _.LogDependencySnapshotContent(_targetPathInstalled, _mockLogger.Object), Times.Once);
         }
 
         [Fact]
@@ -110,6 +112,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockStorage.Verify(_ => _.CreateInstallingSnapshot(_targetPathInstalled), Times.Once);
             _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled), Times.Once);
+            _mockSnapshotContentLogger.Verify(_ => _.LogDependencySnapshotContent(_targetPathInstalled, _mockLogger.Object), Times.Once);
         }
 
         [Fact]
@@ -230,7 +233,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
         private DependencySnapshotInstaller CreateDependenciesSnapshotInstallerWithMocks()
         {
-            return new DependencySnapshotInstaller(_mockModuleProvider.Object, _mockStorage.Object, _mockSnapshotComparer.Object);
+            return new DependencySnapshotInstaller(
+                _mockModuleProvider.Object,
+                _mockStorage.Object,
+                _mockSnapshotComparer.Object,
+                _mockSnapshotContentLogger.Object);
         }
 
         private void VerifyLoggedOnce(IEnumerable<string> messageParts)

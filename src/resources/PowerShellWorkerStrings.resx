@@ -292,4 +292,10 @@
   <data name="FunctionInvocationStarting" xml:space="preserve">
     <value>Invoking function '{0}' code {1} ms after receiving request. Invocation performance details: {2}</value>
   </data>
+  <data name="DependencyShapshotContent" xml:space="preserve">
+    <value>Dependency snapshot '{0}' contains module '{1}' version '{2}'.</value>
+  </data>
+  <data name="FailedToEnumerateDependencySnapshotContent" xml:space="preserve">
+    <value>Failed to enumerate dependency snapshot '{0}' content: {1}</value>
+  </data>
 </root>
