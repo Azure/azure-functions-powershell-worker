@@ -73,7 +73,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 using (var pwsh = pwshFactory())
                 {
-                    _installer.InstallSnapshot(_dependencyManifest, nextSnapshotPath, pwsh, logger);
+                    _installer.InstallSnapshot(
+                        _dependencyManifest,
+                        nextSnapshotPath,
+                        pwsh,
+                        removeIfEquivalentToLatest: true,
+                        logger);
                 }
 
                 // Now that a new snapshot has been installed, there is a chance an old snapshot can be purged.

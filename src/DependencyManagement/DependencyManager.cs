@@ -206,7 +206,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             try
             {
-                _installer.InstallSnapshot(_dependenciesFromManifest, _currentSnapshotPath, pwsh, logger);
+                _installer.InstallSnapshot(
+                    _dependenciesFromManifest,
+                    _currentSnapshotPath,
+                    pwsh,
+                    removeIfEquivalentToLatest: false,
+                    logger);
             }
             catch (Exception e)
             {

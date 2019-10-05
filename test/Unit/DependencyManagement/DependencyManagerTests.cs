@@ -137,6 +137,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                         "NewSnapshot",
                         // Must run on the same runspace
                         It.Is<PowerShell>(powerShell => ReferenceEquals(firstPowerShellRunspace, powerShell)),
+                        false, // removeIfEquivalentToLatest
                         _mockLogger.Object));
 
             _mockStorage.Setup(_ => _.SnapshotExists("NewSnapshot")).Returns(false);
@@ -201,6 +202,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                         "NewSnapshot",
                         // Must run on the same runspace
                         It.Is<PowerShell>(powerShell => ReferenceEquals(firstPowerShellRunspace, powerShell)),
+                        false, // removeIfEquivalentToLatest
                         _mockLogger.Object));
 
             _mockStorage.Setup(_ => _.SnapshotExists("NewSnapshot")).Returns(false);
@@ -239,7 +241,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
                 _mockInstaller.Setup(
                     _ => _.InstallSnapshot(
-                            It.IsAny<IEnumerable<DependencyManifestEntry>>(), It.IsAny<string>(), It.IsAny<PowerShell>(), It.IsAny<ILogger>()))
+                            It.IsAny<IEnumerable<DependencyManifestEntry>>(),
+                            It.IsAny<string>(),
+                            It.IsAny<PowerShell>(),
+                            It.IsAny<bool>(),
+                            It.IsAny<ILogger>()))
                     .Throws(injectedException);
 
                 _mockStorage.Setup(_ => _.SnapshotExists(dependenciesPath)).Returns(false);
@@ -264,7 +270,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         {
             _mockInstaller.Verify(
                 _ => _.InstallSnapshot(
-                    It.IsAny<IEnumerable<DependencyManifestEntry>>(), It.IsAny<string>(), It.IsAny<PowerShell>(), It.IsAny<ILogger>()),
+                    It.IsAny<IEnumerable<DependencyManifestEntry>>(),
+                    It.IsAny<string>(),
+                    It.IsAny<PowerShell>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<ILogger>()),
                 Times.Once());
 
             _mockInstaller.VerifyNoOtherCalls();
