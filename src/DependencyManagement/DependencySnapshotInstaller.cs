@@ -59,24 +59,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 if (removeIfEquivalentToLatest)
                 {
-                    var latestSnapshot = _storage.GetLatestInstalledSnapshot();
-                    if (latestSnapshot != null && _snapshotComparer.AreEquivalent(installingPath, latestSnapshot, logger))
-                    {
-                        logger.Log(
-                            isUserOnlyLog: false,
-                            LogLevel.Trace,
-                            string.Format(PowerShellWorkerStrings.RemovingEquivalentDependencySnapshot, installingPath, latestSnapshot));
-
-                        // The new snapshot is not better than the latest installed snapshot,
-                        // so remove the new snapshot and update the timestamp of the latest snapshot
-                        // in order to avoid unnecessary worker restarts.
-                        _storage.RemoveSnapshot(installingPath);
-                        _storage.SetSnapshotCreationTimeToUtcNow(latestSnapshot);
-                    }
-                    else
-                    {
-                        PromoteToInstalled(installingPath, targetPath, logger);
-                    }
+                    PromoteToInstalledOrRemove(installingPath, targetPath, logger);
                 }
                 else
                 {
@@ -144,6 +127,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 Thread.Sleep(waitTimeSpan);
 
                 tries++;
+            }
+        }
+
+        private void PromoteToInstalledOrRemove(string installingPath, string installedPath, ILogger logger)
+        {
+            var latestSnapshot = _storage.GetLatestInstalledSnapshot();
+            if (latestSnapshot != null && _snapshotComparer.AreEquivalent(installingPath, latestSnapshot, logger))
+            {
+                logger.Log(
+                    isUserOnlyLog: false,
+                    LogLevel.Trace,
+                    string.Format(PowerShellWorkerStrings.RemovingEquivalentDependencySnapshot, installingPath, latestSnapshot));
+
+                // The new snapshot is not better than the latest installed snapshot,
+                // so remove the new snapshot and update the timestamp of the latest snapshot
+                // in order to avoid unnecessary worker restarts.
+                _storage.RemoveSnapshot(installingPath);
+                _storage.SetSnapshotCreationTimeToUtcNow(latestSnapshot);
+            }
+            else
+            {
+                PromoteToInstalled(installingPath, installedPath, logger);
             }
         }
 
