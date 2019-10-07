@@ -40,6 +40,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             IEnumerable<DependencyManifestEntry> dependencies,
             string targetPath,
             PowerShell pwsh,
+            bool removeIfEquivalentToLatest,
             ILogger logger)
         {
             var installingPath = CreateInstallingSnapshot(targetPath);
@@ -56,30 +57,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     InstallModule(module, installingPath, pwsh, logger);
                 }
 
-                var latestSnapshot = _storage.GetLatestInstalledSnapshot();
-                if (latestSnapshot != null && _snapshotComparer.AreEquivalent(installingPath, latestSnapshot, logger))
+                if (removeIfEquivalentToLatest)
                 {
-                    logger.Log(
-                        isUserOnlyLog: false,
-                        LogLevel.Trace,
-                        string.Format(PowerShellWorkerStrings.RemovingEquivalentDependencySnapshot, installingPath, latestSnapshot));
-
-                    // The new snapshot is not better than the latest installed snapshot,
-                    // so remove the new snapshot and update the timestamp of the latest snapshot
-                    // in order to avoid unnecessary worker restarts.
-                    _storage.RemoveSnapshot(installingPath);
-                    _storage.SetSnapshotCreationTimeToUtcNow(latestSnapshot);
+                    PromoteToInstalledOrRemove(installingPath, targetPath, logger);
                 }
                 else
                 {
-                    _storage.PromoteInstallingSnapshotToInstalledAtomically(targetPath);
-
-                    logger.Log(
-                        isUserOnlyLog: false,
-                        LogLevel.Trace,
-                        string.Format(PowerShellWorkerStrings.PromotedDependencySnapshot, installingPath, targetPath));
-
-                    _snapshotContentLogger.LogDependencySnapshotContent(targetPath, logger);
+                    PromoteToInstalled(installingPath, targetPath, logger);
                 }
             }
             catch (Exception e)
@@ -144,6 +128,40 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 tries++;
             }
+        }
+
+        private void PromoteToInstalledOrRemove(string installingPath, string installedPath, ILogger logger)
+        {
+            var latestSnapshot = _storage.GetLatestInstalledSnapshot();
+            if (latestSnapshot != null && _snapshotComparer.AreEquivalent(installingPath, latestSnapshot, logger))
+            {
+                logger.Log(
+                    isUserOnlyLog: false,
+                    LogLevel.Trace,
+                    string.Format(PowerShellWorkerStrings.RemovingEquivalentDependencySnapshot, installingPath, latestSnapshot));
+
+                // The new snapshot is not better than the latest installed snapshot,
+                // so remove the new snapshot and update the timestamp of the latest snapshot
+                // in order to avoid unnecessary worker restarts.
+                _storage.RemoveSnapshot(installingPath);
+                _storage.SetSnapshotCreationTimeToUtcNow(latestSnapshot);
+            }
+            else
+            {
+                PromoteToInstalled(installingPath, installedPath, logger);
+            }
+        }
+
+        private void PromoteToInstalled(string installingPath, string installedPath, ILogger logger)
+        {
+            _storage.PromoteInstallingSnapshotToInstalledAtomically(installedPath);
+
+            logger.Log(
+                isUserOnlyLog: false,
+                LogLevel.Trace,
+                string.Format(PowerShellWorkerStrings.PromotedDependencySnapshot, installingPath, installedPath));
+
+            _snapshotContentLogger.LogDependencySnapshotContent(installedPath, logger);
         }
 
         /// <summary>
