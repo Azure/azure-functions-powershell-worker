@@ -77,6 +77,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         _dependencyManifest,
                         nextSnapshotPath,
                         pwsh,
+                        // If the new snapshot turns out to be equivalent to the latest one,
+                        // removing it helps us save storage space and avoid unnecessary worker restarts.
+                        // It is ok to do that during background upgrade because the current
+                        // worker already has a good enough snapshot, and nothing depends on
+                        // the new snapshot yet.
                         removeIfEquivalentToLatest: true,
                         logger);
                 }
