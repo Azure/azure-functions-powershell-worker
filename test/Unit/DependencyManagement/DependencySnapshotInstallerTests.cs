@@ -114,7 +114,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockSnapshotComparer.Setup(_ => _.AreEquivalent(_targetPathInstalling, "snapshot", _mockLogger.Object)).Returns(false);
 
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
-            installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), removeIfEquivalentToLatest: true, _mockLogger.Object);
+            installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), removeIfEquivalentToLatest: true, logger: _mockLogger.Object);
 
             _mockStorage.Verify(_ => _.CreateInstallingSnapshot(_targetPathInstalled), Times.Once);
             _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled), Times.Once);
@@ -130,7 +130,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockStorage.Setup(_ => _.GetLatestInstalledSnapshot()).Returns("snapshot");
 
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
-            installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), removeIfEquivalentToLatest: false, _mockLogger.Object);
+            installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), removeIfEquivalentToLatest: false, logger: _mockLogger.Object);
 
             _mockSnapshotComparer.VerifyNoOtherCalls();
             _mockStorage.Verify(_ => _.CreateInstallingSnapshot(_targetPathInstalled), Times.Once);
@@ -255,7 +255,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockStorage.Setup(_ => _.SetSnapshotCreationTimeToUtcNow("snapshot"));
 
             var installer = CreateDependenciesSnapshotInstallerWithMocks();
-            installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), removeIfEquivalentToLatest: true, _mockLogger.Object);
+            installer.InstallSnapshot(manifestEntries, _targetPathInstalled, PowerShell.Create(), removeIfEquivalentToLatest: true, logger: _mockLogger.Object);
 
             _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(It.IsAny<string>()), Times.Never);
             _mockStorage.Verify(_ => _.RemoveSnapshot(_targetPathInstalling), Times.Once);
