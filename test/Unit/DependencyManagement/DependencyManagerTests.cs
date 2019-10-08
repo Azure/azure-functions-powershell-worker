@@ -184,6 +184,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     _ => _.InstallAndPurgeSnapshots(powerShellFactory, _mockLogger.Object),
                     Times.Once);
             }
+
+            _mockLogger.Verify(
+                _ => _.Log(
+                    false,
+                    LogLevel.Trace,
+                    It.Is<string>(message => message.Contains(PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled)),
+                    It.IsAny<Exception>()),
+                Times.Once);
         }
 
         [Fact]

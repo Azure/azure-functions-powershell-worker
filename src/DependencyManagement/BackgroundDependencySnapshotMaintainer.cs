@@ -56,11 +56,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             try
             {
-                logger.Log(
-                    isUserOnlyLog: false,
-                    RpcLog.Types.Level.Trace,
-                    PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled);
-
                 // Purge before installing a new snapshot, as we may be able to free some space.
                 _purger.Purge(logger);
 

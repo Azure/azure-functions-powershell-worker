@@ -185,6 +185,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             if (AreAcceptableDependenciesAlreadyInstalled())
             {
+                logger.Log(
+                    isUserOnlyLog: false,
+                    RpcLog.Types.Level.Trace,
+                    PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled);
+
                 // Background installation: can't use the firstPwsh runspace because it belongs
                 // to the pool used to run functions code, so create a new runspace.
                 _nextSnapshotPath = _backgroundSnapshotMaintainer.InstallAndPurgeSnapshots(pwshFactory, logger);

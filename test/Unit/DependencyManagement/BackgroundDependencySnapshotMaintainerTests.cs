@@ -71,14 +71,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
                 _mockPurger.Verify(_ => _.Purge(_mockLogger.Object), Times.Exactly(2));
             }
-
-            _mockLogger.Verify(
-                _ => _.Log(
-                    false,
-                    LogLevel.Trace,
-                    It.Is<string>(message => message.Contains(PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled)),
-                    It.IsAny<Exception>()),
-                Times.Once);
         }
 
         [Fact]
@@ -97,14 +89,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
                 _mockPurger.Verify(_ => _.Purge(_mockLogger.Object), Times.Once);
             }
-
-            _mockLogger.Verify(
-                _ => _.Log(
-                    false,
-                    LogLevel.Trace,
-                    It.Is<string>(message => message.Contains(PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled)),
-                    It.IsAny<Exception>()),
-                Times.Once);
         }
 
         [Fact]
