@@ -215,13 +215,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     _dependenciesFromManifest,
                     _currentSnapshotPath,
                     pwsh,
-                    // Even if the new snapshot turns out to be equivalent to the latest one,
-                    // removing it would not be safe because the current worker already depends
-                    // on it, as it has the path to this snapshot already added to PSModulePath.
-                    // As opposed to the background upgrade case, this snapshot is *required* for
-                    // this worker to run, even though it occupies some space (until the workers
-                    // restart and the redundant snapshots are purged).
-                    removeIfEquivalentToLatest: false,
+                    // As opposed to the background upgrade case, the worker does not have an acceptable
+                    // snapshot to use yet, so the initial snapshot is *required* for this worker to run.
+                    DependencySnapshotInstallationMode.Required,
                     logger);
             }
             catch (Exception e)

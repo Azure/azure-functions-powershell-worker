@@ -137,7 +137,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                         "NewSnapshot",
                         // Must run on the same runspace
                         It.Is<PowerShell>(powerShell => ReferenceEquals(firstPowerShellRunspace, powerShell)),
-                        false, // removeIfEquivalentToLatest
+                        DependencySnapshotInstallationMode.Required,
                         _mockLogger.Object));
 
             _mockStorage.Setup(_ => _.SnapshotExists("NewSnapshot")).Returns(false);
@@ -210,7 +210,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                         "NewSnapshot",
                         // Must run on the same runspace
                         It.Is<PowerShell>(powerShell => ReferenceEquals(firstPowerShellRunspace, powerShell)),
-                        false, // removeIfEquivalentToLatest
+                        DependencySnapshotInstallationMode.Required,
                         _mockLogger.Object));
 
             _mockStorage.Setup(_ => _.SnapshotExists("NewSnapshot")).Returns(false);
@@ -252,7 +252,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                             It.IsAny<IEnumerable<DependencyManifestEntry>>(),
                             It.IsAny<string>(),
                             It.IsAny<PowerShell>(),
-                            It.IsAny<bool>(),
+                            It.IsAny<DependencySnapshotInstallationMode>(),
                             It.IsAny<ILogger>()))
                     .Throws(injectedException);
 
@@ -281,7 +281,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     It.IsAny<IEnumerable<DependencyManifestEntry>>(),
                     It.IsAny<string>(),
                     It.IsAny<PowerShell>(),
-                    It.IsAny<bool>(),
+                    It.IsAny<DependencySnapshotInstallationMode>(),
                     It.IsAny<ILogger>()),
                 Times.Once());
 

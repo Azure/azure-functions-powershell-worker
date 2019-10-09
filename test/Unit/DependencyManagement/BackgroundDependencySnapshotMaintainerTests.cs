@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                         It.IsAny<DependencyManifestEntry[]>(),
                         It.IsAny<string>(),
                         It.IsAny<PowerShell>(),
-                        It.IsAny<bool>(),
+                        It.IsAny<DependencySnapshotInstallationMode>(),
                         It.IsAny<ILogger>()));
 
             using (var dummyPowerShell = PowerShell.Create())
@@ -66,7 +66,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
                 // ReSharper disable once AccessToDisposedClosure
                 _mockInstaller.Verify(
-                    _ => _.InstallSnapshot(_dependencyManifest, "new snapshot path", dummyPowerShell, true, _mockLogger.Object),
+                    _ => _.InstallSnapshot(_dependencyManifest, "new snapshot path", dummyPowerShell, DependencySnapshotInstallationMode.Optional, _mockLogger.Object),
                     Times.Once);
 
                 _mockPurger.Verify(_ => _.Purge(_mockLogger.Object), Times.Exactly(2));
@@ -107,7 +107,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                         It.IsAny<DependencyManifestEntry[]>(),
                         It.IsAny<string>(),
                         It.IsAny<PowerShell>(),
-                        It.IsAny<bool>(),
+                        It.IsAny<DependencySnapshotInstallationMode>(),
                         It.IsAny<ILogger>()))
                 .Throws(injectedException);
 

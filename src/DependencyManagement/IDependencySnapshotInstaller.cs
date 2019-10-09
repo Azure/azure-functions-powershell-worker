@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             IEnumerable<DependencyManifestEntry> dependencies,
             string targetPath,
             PowerShell pwsh,
-            bool removeIfEquivalentToLatest,
+            DependencySnapshotInstallationMode installationMode,
             ILogger logger);
     }
 }

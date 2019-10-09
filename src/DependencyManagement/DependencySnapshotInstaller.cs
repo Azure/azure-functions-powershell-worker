@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             IEnumerable<DependencyManifestEntry> dependencies,
             string targetPath,
             PowerShell pwsh,
-            bool removeIfEquivalentToLatest,
+            DependencySnapshotInstallationMode installationMode,
             ILogger logger)
         {
             var installingPath = CreateInstallingSnapshot(targetPath);
@@ -57,13 +57,29 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     InstallModule(module, installingPath, pwsh, logger);
                 }
 
-                if (removeIfEquivalentToLatest)
+                switch (installationMode)
                 {
-                    PromoteToInstalledOrRemove(installingPath, targetPath, logger);
-                }
-                else
-                {
-                    PromoteToInstalled(installingPath, targetPath, logger);
+                    case DependencySnapshotInstallationMode.Optional:
+                        // If the new snapshot turns out to be equivalent to the latest one,
+                        // removing it helps us save storage space and avoid unnecessary worker restarts.
+                        // It is ok to do that during background upgrade because the current
+                        // worker already has a good enough snapshot, and nothing depends on
+                        // the new snapshot yet.
+                        PromoteToInstalledOrRemove(installingPath, targetPath, logger);
+                        break;
+
+                    case DependencySnapshotInstallationMode.Required:
+                        // Even if the new snapshot turns out to be equivalent to the latest one,
+                        // removing it would not be safe because the current worker already depends
+                        // on it, as it has the path to this snapshot already added to PSModulePath.
+                        // As opposed to the background upgrade case, this snapshot is *required* for
+                        // this worker to run, even though it occupies some space (until the workers
+                        // restart and the redundant snapshots are purged).
+                        PromoteToInstalled(installingPath, targetPath, logger);
+                        break;
+
+                    default:
+                        throw new ArgumentException($"Unexpected installation mode: {installationMode}", nameof(installationMode));
                 }
             }
             catch (Exception e)
