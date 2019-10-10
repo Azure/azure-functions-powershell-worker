@@ -255,7 +255,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 {
                     if (e is CommandNotFoundException commandNotFound)
                     {
-                        _logger.Log(isUserOnlyLog: false, LogLevel.Warning, "Command not found");
+                        _logger.Log(isUserOnlyLog: false, LogLevel.Warning, PowerShellWorkerStrings.CommandNotFoundException_Exception);
                     }
 
                     Logger.Log(isUserOnlyLog: true, LogLevel.Error, GetFunctionExceptionMessage(e));

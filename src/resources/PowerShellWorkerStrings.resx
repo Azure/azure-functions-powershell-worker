@@ -298,4 +298,10 @@
   <data name="FailedToEnumerateDependencySnapshotContent" xml:space="preserve">
     <value>Failed to enumerate dependency snapshot '{0}' content: {1}</value>
   </data>
+  <data name="CommandNotFoundException_Error" xml:space="preserve">
+    <value>CommandNotFoundException detected (error).</value>
+  </data>
+  <data name="CommandNotFoundException_Exception" xml:space="preserve">
+    <value>CommandNotFoundException detected (exception).</value>
+  </data>
 </root>
