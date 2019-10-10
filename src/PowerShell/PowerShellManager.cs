@@ -253,7 +253,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
                 catch (RuntimeException e)
                 {
-                    if (e is CommandNotFoundException commandNotFound)
+                    if (e.ErrorRecord.FullyQualifiedErrorId == "CommandNotFoundException")
                     {
                         _logger.Log(isUserOnlyLog: false, LogLevel.Warning, PowerShellWorkerStrings.CommandNotFoundException_Exception);
                     }
