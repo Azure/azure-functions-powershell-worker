@@ -87,7 +87,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
             catch (Exception e)
             {
-                var message = string.Format(PowerShellWorkerStrings.FailedToInstallDependenciesSnapshot, targetPath);
+                var message = string.Format(
+                                PowerShellWorkerStrings.FailedToInstallDependenciesSnapshot,
+                                targetPath,
+                                installationMode);
+
                 logger.Log(isUserOnlyLog: false, LogLevel.Warning, message, e);
                 _storage.RemoveSnapshot(installingPath);
                 throw;
