@@ -68,7 +68,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         // It is ok to do that during background upgrade because the current
                         // worker already has a good enough snapshot, and nothing depends on
                         // the new snapshot yet.
-                        PromoteToInstalledOrRemove(installingPath, targetPath, logger);
+                        PromoteToInstalledOrRemove(installingPath, targetPath, installationMode, logger);
                         break;
 
                     case DependencySnapshotInstallationMode.Required:
@@ -78,7 +78,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         // As opposed to the background upgrade case, this snapshot is *required* for
                         // this worker to run, even though it occupies some space (until the workers
                         // restart and the redundant snapshots are purged).
-                        PromoteToInstalled(installingPath, targetPath, logger);
+                        PromoteToInstalled(installingPath, targetPath, installationMode, logger);
                         break;
 
                     default:
@@ -153,7 +153,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
         }
 
-        private void PromoteToInstalledOrRemove(string installingPath, string installedPath, ILogger logger)
+        private void PromoteToInstalledOrRemove(
+            string installingPath,
+            string installedPath,
+            DependencySnapshotInstallationMode installationMode,
+            ILogger logger)
         {
             var latestSnapshot = _storage.GetLatestInstalledSnapshot();
             if (latestSnapshot != null && _snapshotComparer.AreEquivalent(installingPath, latestSnapshot, logger))
@@ -171,18 +175,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
             else
             {
-                PromoteToInstalled(installingPath, installedPath, logger);
+                PromoteToInstalled(installingPath, installedPath, installationMode, logger);
             }
         }
 
-        private void PromoteToInstalled(string installingPath, string installedPath, ILogger logger)
+        private void PromoteToInstalled(
+            string installingPath,
+            string installedPath,
+            DependencySnapshotInstallationMode installationMode,
+            ILogger logger)
         {
             _storage.PromoteInstallingSnapshotToInstalledAtomically(installedPath);
 
             logger.Log(
                 isUserOnlyLog: false,
                 LogLevel.Trace,
-                string.Format(PowerShellWorkerStrings.PromotedDependencySnapshot, installingPath, installedPath));
+                string.Format(PowerShellWorkerStrings.PromotedDependencySnapshot, installingPath, installedPath, installationMode));
 
             _snapshotContentLogger.LogDependencySnapshotContent(installedPath, logger);
         }

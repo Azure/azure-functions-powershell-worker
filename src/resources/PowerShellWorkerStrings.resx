@@ -269,7 +269,7 @@
     <value>Removing dependency snapshot '{0}' because it is equivalent to '{1}'.</value>
   </data>
   <data name="PromotedDependencySnapshot" xml:space="preserve">
-    <value>Promoted dependency snapshot '{0}' to '{1}'.</value>
+    <value>Promoted dependency snapshot '{0}' to '{1}' (installation mode: {2}).</value>
   </data>
   <data name="LookingForNewerDependencySnapshot" xml:space="preserve">
     <value>Looking for a dependency snapshot newer than {0}.</value>
