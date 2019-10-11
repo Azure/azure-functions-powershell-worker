@@ -3,11 +3,13 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System.Collections;
-using System.Management.Automation;
+#pragma warning disable 1591 // Missing XML comment for publicly visible type or member 'member'
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
+    using System.Collections;
+    using System.Management.Automation;
+
     /// <summary>
     /// Set the orchestration context.
     /// </summary>
@@ -15,38 +17,33 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
     public class SetFunctionInvocationContextCommand : PSCmdlet
     {
         internal const string ContextKey = "OrchestrationContext";
-        internal const string StarterKey = "OrchestrationStarter";
+        private const string StarterKey = "OrchestrationStarter";
 
-        /// <summary>
-        /// Gets and sets the orchestration context.
-        /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = ContextKey)]
         public OrchestrationContext OrchestrationContext { get; set; }
 
         /// <summary>
-        /// Gets and sets the orchestration client output binding name.
+        /// The orchestration client output binding name.
         /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = StarterKey)]
         public string OrchestrationStarter { get; set; }
 
-        /// <summary>
-        /// Gets and sets the orchestration context.
-        /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = "Clear")]
         public SwitchParameter Clear { get; set; }
 
-        /// <summary>
-        /// EndProcessing
-        /// </summary>
         protected override void EndProcessing()
         {
-            var privateData = (Hashtable)this.MyInvocation.MyCommand.Module.PrivateData;
-            switch (this.ParameterSetName)
+            var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
+            switch (ParameterSetName)
             {
                 case ContextKey:
-                    privateData[ContextKey] = OrchestrationContext; break;
+                    privateData[ContextKey] = OrchestrationContext;
+                    break;
+
                 case StarterKey:
-                    privateData[StarterKey] = OrchestrationStarter; break;
+                    privateData[StarterKey] = OrchestrationStarter;
+                    break;
+
                 default:
                     if (Clear.IsPresent)
                     {

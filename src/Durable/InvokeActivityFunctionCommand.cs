@@ -3,19 +3,17 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Management.Automation;
-using System.Threading;
+#pragma warning disable 1591 // Missing XML comment for publicly visible type or member 'member'
 
-using Newtonsoft.Json;
-using Microsoft.Azure.Functions.PowerShellWorker.Action;
-using Microsoft.Azure.Functions.PowerShellWorker.History;
-using Microsoft.Azure.Functions.PowerShellWorker.Utility;
-
-namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Management.Automation;
+    using System.Threading;
+    using Microsoft.Azure.Functions.PowerShellWorker.Utility;
+
     /// <summary>
     /// Invoke a function asynchronously.
     /// </summary>
@@ -31,35 +29,32 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
         /// <summary>
         /// Gets and sets the input for an activity function.
         /// </summary>
-        /// <remarks>
-        /// Copy the default value from durable-js, in case that it's a magic value for specifying no input value.
-        /// </remarks>
         [Parameter]
         [ValidateNotNull]
-        public object Input { get; set; } = "__activity__default";
+        public object Input { get; set; }
 
         // Used for waiting on the pipeline to be stopped.
-        private ManualResetEvent waitForStop = new ManualResetEvent(initialState: false);
-        private OrchestrationContext context;
+        private readonly ManualResetEvent _waitForStop = new ManualResetEvent(initialState: false);
 
-        /// <summary>
-        /// Implement the EndProcessing method.
-        /// </summary>
+        private OrchestrationContext _context;
+
         protected override void EndProcessing()
         {
-            var privateData = (Hashtable)this.MyInvocation.MyCommand.Module.PrivateData;
-            context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
+            var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
+            _context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
 
-            context.Actions.Add(new List<AzAction>() { new CallActivityAction(FunctionName, Input) });
+            _context.Actions.Add(new List<OrchestrationAction> { new CallActivityAction(FunctionName, Input) });
 
-            HistoryEvent taskScheduled = context.History
-                .FirstOrDefault(e => e.EventType == EventType.TaskScheduled &&
-                                e.Name == FunctionName &&
-                                !e.IsProcessed);
+            var taskScheduled = _context.History.FirstOrDefault(
+                                    e => e.EventType == HistoryEventType.TaskScheduled &&
+                                         e.Name == FunctionName &&
+                                         !e.IsProcessed);
 
-            HistoryEvent taskCompleted = taskScheduled == null ? null : context.History
-                .FirstOrDefault(e => e.EventType == EventType.TaskCompleted &&
-                                e.TaskScheduledId == taskScheduled.EventId);
+            var taskCompleted = taskScheduled == null
+                                    ? null
+                                    : _context.History.FirstOrDefault(
+                                        e => e.EventType == HistoryEventType.TaskCompleted &&
+                                             e.TaskScheduledId == taskScheduled.EventId);
 
             if (taskCompleted != null)
             {
@@ -69,17 +64,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
             }
             else
             {
-                context.ActionEvent.Set();
-                waitForStop.WaitOne();
+                _context.ActionEvent.Set();
+                _waitForStop.WaitOne();
             }
         }
 
-        /// <summary>
-        /// Implement the StopProcessing method.
-        /// </summary>
         protected override void StopProcessing()
         {
-            waitForStop.Set();
+            _waitForStop.Set();
         }
     }
 }

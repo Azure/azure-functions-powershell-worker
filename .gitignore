@@ -63,6 +63,8 @@ PowerShell.sln.DotSettings.user
 StyleCop.Cache
 
 examples/PSCoreApp/Modules
+src/Modules
+!src/Modules/Microsoft.Azure.Functions.PowerShellWorker
 
 # protobuf
 protobuf/*
@@ -70,3 +72,7 @@ src/Messaging/protobuf
 
 # pulled in for tests
 Azure.Functions.Cli
+
+# Azure Functions artifacts
+appsettings.json
+local.settings.json
