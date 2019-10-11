@@ -352,7 +352,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                         Assert.Contains(currentAttempt, relevantLogs[index]);
                     }
 
-                    Assert.Matches("Warning: Failed to install dependencies into '(.+?)', removing the folder", relevantLogs[4]);
+                    Assert.Matches("Warning: Failed to install dependencies into '(.+?)'", relevantLogs[4]);
 
                     // Lastly, DependencyError should get set after unsuccessfully retrying 3 times.
                     Assert.NotNull(dependencyError);

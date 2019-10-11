@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             IEnumerable<DependencyManifestEntry> dependencies,
             string targetPath,
             PowerShell pwsh,
-            bool removeIfEquivalentToLatest,
+            DependencySnapshotInstallationMode installationMode,
             ILogger logger)
         {
             var installingPath = CreateInstallingSnapshot(targetPath);
@@ -48,7 +48,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             logger.Log(
                 isUserOnlyLog: false,
                 LogLevel.Trace,
-                string.Format(PowerShellWorkerStrings.InstallingFunctionAppRequiredModules, installingPath));
+                string.Format(
+                    PowerShellWorkerStrings.InstallingFunctionAppRequiredModules,
+                    installingPath,
+                    installationMode));
 
             try
             {
@@ -57,18 +60,38 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     InstallModule(module, installingPath, pwsh, logger);
                 }
 
-                if (removeIfEquivalentToLatest)
+                switch (installationMode)
                 {
-                    PromoteToInstalledOrRemove(installingPath, targetPath, logger);
-                }
-                else
-                {
-                    PromoteToInstalled(installingPath, targetPath, logger);
+                    case DependencySnapshotInstallationMode.Optional:
+                        // If the new snapshot turns out to be equivalent to the latest one,
+                        // removing it helps us save storage space and avoid unnecessary worker restarts.
+                        // It is ok to do that during background upgrade because the current
+                        // worker already has a good enough snapshot, and nothing depends on
+                        // the new snapshot yet.
+                        PromoteToInstalledOrRemove(installingPath, targetPath, installationMode, logger);
+                        break;
+
+                    case DependencySnapshotInstallationMode.Required:
+                        // Even if the new snapshot turns out to be equivalent to the latest one,
+                        // removing it would not be safe because the current worker already depends
+                        // on it, as it has the path to this snapshot already added to PSModulePath.
+                        // As opposed to the background upgrade case, this snapshot is *required* for
+                        // this worker to run, even though it occupies some space (until the workers
+                        // restart and the redundant snapshots are purged).
+                        PromoteToInstalled(installingPath, targetPath, installationMode, logger);
+                        break;
+
+                    default:
+                        throw new ArgumentException($"Unexpected installation mode: {installationMode}", nameof(installationMode));
                 }
             }
             catch (Exception e)
             {
-                var message = string.Format(PowerShellWorkerStrings.FailedToInstallDependenciesSnapshot, targetPath);
+                var message = string.Format(
+                                PowerShellWorkerStrings.FailedToInstallDependenciesSnapshot,
+                                targetPath,
+                                installationMode);
+
                 logger.Log(isUserOnlyLog: false, LogLevel.Warning, message, e);
                 _storage.RemoveSnapshot(installingPath);
                 throw;
@@ -130,7 +153,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
         }
 
-        private void PromoteToInstalledOrRemove(string installingPath, string installedPath, ILogger logger)
+        private void PromoteToInstalledOrRemove(
+            string installingPath,
+            string installedPath,
+            DependencySnapshotInstallationMode installationMode,
+            ILogger logger)
         {
             var latestSnapshot = _storage.GetLatestInstalledSnapshot();
             if (latestSnapshot != null && _snapshotComparer.AreEquivalent(installingPath, latestSnapshot, logger))
@@ -148,18 +175,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
             else
             {
-                PromoteToInstalled(installingPath, installedPath, logger);
+                PromoteToInstalled(installingPath, installedPath, installationMode, logger);
             }
         }
 
-        private void PromoteToInstalled(string installingPath, string installedPath, ILogger logger)
+        private void PromoteToInstalled(
+            string installingPath,
+            string installedPath,
+            DependencySnapshotInstallationMode installationMode,
+            ILogger logger)
         {
             _storage.PromoteInstallingSnapshotToInstalledAtomically(installedPath);
 
             logger.Log(
                 isUserOnlyLog: false,
                 LogLevel.Trace,
-                string.Format(PowerShellWorkerStrings.PromotedDependencySnapshot, installingPath, installedPath));
+                string.Format(PowerShellWorkerStrings.PromotedDependencySnapshot, installingPath, installedPath, installationMode));
 
             _snapshotContentLogger.LogDependencySnapshotContent(installedPath, logger);
         }
