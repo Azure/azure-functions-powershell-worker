@@ -7,7 +7,6 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
-    using System;
     using System.Collections.Generic;
     using System.Runtime.Serialization;
     using System.Threading;
@@ -36,15 +35,5 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         internal AutoResetEvent ActionEvent { get; set; }
 
         internal List<List<OrchestrationAction>> Actions { get; } = new List<List<OrchestrationAction>>();
-
-        /// <summary>
-        /// Gets the current date/time in a way that is safe for use by orchestrator functions.
-        /// </summary>
-        /// <remarks>
-        /// This date/time value is derived from the orchestration history. It always returns the same value
-        /// at specific points in the orchestrator function code, making it deterministic and safe for replay.
-        /// </remarks>
-        /// <value>The orchestration's current date/time in UTC.</value>
-        public DateTime CurrentUtcDateTime { get; internal set; }
     }
 }
