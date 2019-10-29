@@ -31,6 +31,7 @@ function Start-NewOrchestration {
             Mandatory=$true,
             Position=0,
             ValueFromPipelineByPropertyName=$true)]
+        [ValidateNotNullOrEmpty()]
         [string] $FunctionName,
 
         [Parameter(
