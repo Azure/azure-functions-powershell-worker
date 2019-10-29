@@ -113,7 +113,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
         }
 
-        private static object ConvertFromJson(string json)
+        public static object ConvertFromJson(string json)
         {
             object retObj = JsonObject.ConvertFromJson(json, returnHashtable: true, error: out _);
 

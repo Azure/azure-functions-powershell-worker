@@ -5,11 +5,8 @@
 
 @{
 
-# Script module or binary module file associated with this manifest.
-RootModule = 'Microsoft.Azure.Functions.PowerShellWorker.dll'
-
 # Version number of this module.
-ModuleVersion = '0.1.0'
+ModuleVersion = '0.2.0'
 
 # Supported PSEditions
 CompatiblePSEditions = @('Core')
@@ -48,13 +45,13 @@ TypesToProcess = @()
 FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @()
+NestedModules = @('Microsoft.Azure.Functions.PowerShellWorker.psm1', 'Microsoft.Azure.Functions.PowerShellWorker.dll')
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @()
+FunctionsToExport = @('Start-NewOrchestration', 'New-OrchestrationCheckStatusResponse')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = @('Push-OutputBinding', 'Get-OutputBinding', 'Trace-PipelineObject')
+CmdletsToExport = @('Push-OutputBinding', 'Get-OutputBinding', 'Trace-PipelineObject', 'Set-FunctionInvocationContext', 'Invoke-ActivityFunctionAsync')
 
 # Variables to export from this module
 VariablesToExport = @()

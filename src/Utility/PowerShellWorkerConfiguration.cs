@@ -14,6 +14,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             return Environment.GetEnvironmentVariable(name);
         }
 
+        public static bool? GetBoolean(string name)
+        {
+            var value = GetString(name);
+            return string.IsNullOrEmpty(value) ? default(bool?) : bool.Parse(value);
+        }
+
         public static int? GetInt(string name)
         {
             var value = GetString(name);

@@ -43,7 +43,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 }
 
                 s_iss = InitialSessionState.CreateDefault();
-                s_iss.ThreadOptions = PSThreadOptions.UseCurrentThread;
+
+                if (!AreDurableFunctionsEnabled())
+                {
+                    // TODO: This is probably not necessary, but this is how it was
+                    // before introducing durable functions, so leaving it here until we test thoroughly.
+                    s_iss.ThreadOptions = PSThreadOptions.UseCurrentThread;
+                }
+
                 s_iss.EnvironmentVariables.Add(
                     new SessionStateVariableEntry(
                         "PSModulePath",
@@ -209,6 +216,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
 
             return value;
+        }
+
+        internal static bool AreDurableFunctionsEnabled()
+        {
+            return PowerShellWorkerConfiguration.GetBoolean("PSWorkerEnableExperimentalDurableFunctions") ?? false;
         }
     }
 }
