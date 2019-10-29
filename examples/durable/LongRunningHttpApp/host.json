@@ -1,7 +1,4 @@
 {
   "version": "2.0",
-  "managedDependency": {
-    "enabled": true
-  },
   "functionTimeout": "02:00:00"
 }
