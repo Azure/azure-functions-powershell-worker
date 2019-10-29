@@ -80,6 +80,7 @@ function GetUrlOrigin([uri]$Url) {
 }
 
 function New-OrchestrationCheckStatusResponse($Request, $OrchestrationClientData, $InstanceId) {
+    
 	CheckIfDurableFunctionsEnabled
 
     [uri]$requestUrl = $Request.Url
