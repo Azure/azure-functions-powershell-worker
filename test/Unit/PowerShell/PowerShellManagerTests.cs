@@ -15,6 +15,7 @@ using Xunit;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
+    using System.Collections.ObjectModel;
     using System.Management.Automation;
 
     internal class TestUtils
@@ -285,8 +286,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             s_testLogger.FullLog.Clear();
             testManager.InvokeProfile(profilePath);
 
-            Assert.Single(s_testLogger.FullLog);
-            Assert.Equal("Information: INFORMATION: Hello PROFILE", s_testLogger.FullLog[0]);
+            var relevantLogs = s_testLogger.FullLog.Where(message => !message.StartsWith("Trace:")).ToList();
+            Assert.Single(relevantLogs);
+            Assert.Equal("Information: INFORMATION: Hello PROFILE", relevantLogs[0]);
+        }
+
+        [Fact]
+        public void ProfileExecutionTimeShouldBeLogged()
+        {
+            var profilePath = Path.Join(s_funcDirectory, "ProfileBasic", "profile.ps1");
+            var testManager = NewTestPowerShellManager(s_testLogger);
+            
+            s_testLogger.FullLog.Clear();
+            testManager.InvokeProfile(profilePath);
+
+            Assert.Equal(1, s_testLogger.FullLog.Count(
+                                message => message.StartsWith("Trace")
+                                           && message.Contains("Profile invocation completed in")));
         }
 
         [Fact]
@@ -299,8 +315,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             s_testLogger.FullLog.Clear();
 
             Assert.Throws<CmdletInvocationException>(() => testManager.InvokeProfile(profilePath));
-            Assert.Single(s_testLogger.FullLog);
-            Assert.Matches("Error: Failed to run profile.ps1. See logs for detailed errors. Profile location: ", s_testLogger.FullLog[0]);
+            var relevantLogs = s_testLogger.FullLog.Where(message => !message.StartsWith("Trace:")).ToList();
+            Assert.Single(relevantLogs);
+            Assert.Matches("Error: Failed to run profile.ps1. See logs for detailed errors. Profile location: ", relevantLogs[0]);
         }
 
         [Fact]
@@ -313,10 +330,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             s_testLogger.FullLog.Clear();
             testManager.InvokeProfile(profilePath);
 
-            Assert.Equal(2, s_testLogger.FullLog.Count);
-            Assert.StartsWith("Error: ERROR: ", s_testLogger.FullLog[0]);
-            Assert.Contains("help me!", s_testLogger.FullLog[0]);
-            Assert.Matches("Error: Failed to run profile.ps1. See logs for detailed errors. Profile location: ", s_testLogger.FullLog[1]);
+            var relevantLogs = s_testLogger.FullLog.Where(message => !message.StartsWith("Trace:")).ToList();
+            Assert.Equal(2, relevantLogs.Count);
+            Assert.StartsWith("Error: ERROR: ", relevantLogs[0]);
+            Assert.Contains("help me!", relevantLogs[0]);
+            Assert.Matches("Error: Failed to run profile.ps1. See logs for detailed errors. Profile location: ", relevantLogs[1]);
         }
 
         [Fact]
