@@ -549,17 +549,17 @@ We had a prototype of Durable Functions in PowerShell worker to enable the '_Fun
 2. Make the orchestrator function able to be stopped at certain point safely.
 3. Make the PowerShell worker able to replay an orchestrator function, namely skipping the actions that are done in previous runs/replays based on the save logs.
 
-They were solved by introducing the new cmdlet "_Invoke-ActivityFunctionAsync_" plus having the worker invoke the orchestrator function with the async PowerShell API.
+They were solved by introducing the new cmdlet "_Invoke-ActivityFunction_" plus having the worker invoke the orchestrator function with the async PowerShell API.
 
 Internally, the worker shares context information with the cmdlet, including _the existing saved logs_ sent from the host about the running orchestrator function and _a wait handler_ - let's call it A - which the cmdlet will set after it triggers an activity function. The async API used to start the orchestrator function returns _another wait handler_ - let's call it B - which will be set when the invocation finishes. Then the invoking thread will call '_WaitHandler.WaitAny_' on those two wait handlers.
 
 - If the call to '_WaitAny_' returns because the wait handler A was set, then that means an activity function was just triggered, and the orchestrator function should be stopped now (it will be triggered again later after the activity function finishes). So, in this case, the invoking thread will stop the orchestrator function that is running asynchronously.
 - If the call to '_WaitAny_' returns because the wait handler B was set, then that means the orchestrator function has run to its completion.
 
-The cmdlet '_Invoke-ActivityFunctionAsync_' has the following syntax, the '_-FunctionName_' being the name of the activity function to invoke and '_-Input_' being the argument to the activity function.
+The cmdlet '_Invoke-ActivityFunction_' has the following syntax, the '_-FunctionName_' being the name of the activity function to invoke and '_-Input_' being the argument to the activity function.
 
 ```powershell
-Invoke-ActivityFunctionAsync [-FunctionName] <string> [[-Input] <Object>] [<CommonParameters>]
+Invoke-ActivityFunction [-FunctionName] <string> [[-Input] <Object>] [<CommonParameters>]
 ```
 
 When it's invoked to trigger an activity function, it first checks the existing logs shared by the worker to see if this invocation of the activity function has already done previously. If so, the cmdlet simply returns the result. If not, the cmdlet will
@@ -568,7 +568,7 @@ When it's invoked to trigger an activity function, it first checks the existing 
 - set the wait handler shared by the worker to notify the worker that the activity function is triggered;
 - wait on a private wait handler that will only be set when the '_StopProcessing_' method of the cmdlet is called. That method gets called only when the pipeline where this cmdlet is running in is being stopped.
 
-The third step is very important in this stop-and-replay model of Durable Functions, because when stopping an invocation that is running asynchronously, we don't want that to interrupt arbitrary code execution that is happening in the pipeline. By having the cmdlet '_Invoke-ActivityFunctionAsync_' wait for '_StopProcessing_' to be called, we know for sure that the pipeline execution pauses at a safe place, ready for being stopped by the invoking thread.
+The third step is very important in this stop-and-replay model of Durable Functions, because when stopping an invocation that is running asynchronously, we don't want that to interrupt arbitrary code execution that is happening in the pipeline. By having the cmdlet '_Invoke-ActivityFunction_' wait for '_StopProcessing_' to be called, we know for sure that the pipeline execution pauses at a safe place, ready for being stopped by the invoking thread.
 
 The following is an example of PowerShell Durable Function that runs in the Function Chaining pattern:
 
@@ -581,9 +581,9 @@ param($context)
 
 $output = @()
 
-$output += Invoke-ActivityFunctionAsync -FunctionName "E1_SayHello" -Input "Tokyo"
-$output += Invoke-ActivityFunctionAsync -FunctionName "E1_SayHello" -Input "Seattle"
-$output += Invoke-ActivityFunctionAsync -FunctionName "E1_SayHello" -Input "London"
+$output += Invoke-ActivityFunction -FunctionName "E1_SayHello" -Input "Tokyo"
+$output += Invoke-ActivityFunction -FunctionName "E1_SayHello" -Input "Seattle"
+$output += Invoke-ActivityFunction -FunctionName "E1_SayHello" -Input "London"
 
 return $output
 ```

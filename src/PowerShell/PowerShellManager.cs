@@ -213,12 +213,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 if (Utils.AreDurableFunctionsEnabled())
                 {
-                    // If the function has a output binding of the 'orchestrationClient' type, then we set the binding name
-                    // in the module context for the 'Start-NewOrchestration' function to use.
+                    // If the function has a binding of the 'orchestrationClient' type, then we set
+                    // the OrchestrationClient in the module context for the 'Start-NewOrchestration' function to use.
                     if (!string.IsNullOrEmpty(functionInfo.OrchestrationClientBindingName))
                     {
+                        var orchestrationClient =
+                            inputData.First(item => item.Name == functionInfo.OrchestrationClientBindingName).Data.ToObject();
+
                         _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext")
-                            .AddParameter("OrchestrationStarter", functionInfo.OrchestrationClientBindingName)
+                            .AddParameter("OrchestrationClient", orchestrationClient)
                             .InvokeAndClearCommands();
                         hasSetInvocationContext = true;
                     }
