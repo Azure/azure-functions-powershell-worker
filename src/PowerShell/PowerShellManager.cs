@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using Microsoft.Azure.Functions.PowerShellWorker.Durable;
@@ -163,6 +164,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             try
             {
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+
                 // Import-Module on a .ps1 file will evaluate the script in the global scope.
                 _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
                         .AddParameter("Name", profilePath)
@@ -171,6 +175,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                         .AddParameter("Force", Utils.BoxedTrue)
                         .AddParameter("ErrorAction", "SilentlyContinue")
                      .InvokeAndClearCommands();
+
+                Logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.ProfileInvocationCompleted, stopwatch.ElapsedMilliseconds));
             }
             catch (Exception e)
             {
