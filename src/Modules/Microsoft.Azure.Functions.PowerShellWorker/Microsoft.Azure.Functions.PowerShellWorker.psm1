@@ -42,7 +42,7 @@ function Start-NewOrchestration {
         [string] $FunctionName,
 
         [Parameter(
-            Position=2,
+            Position=1,
             ValueFromPipelineByPropertyName=$true)]
         [object] $InputObject,
 
