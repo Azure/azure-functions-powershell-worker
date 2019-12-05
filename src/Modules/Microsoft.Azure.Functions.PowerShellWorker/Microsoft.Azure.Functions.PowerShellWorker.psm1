@@ -11,7 +11,9 @@ function CheckIfDurableFunctionsEnabled {
 
 function GetOrchestrationClientFromModulePrivateData {
     $PrivateData = $PSCmdlet.MyInvocation.MyCommand.Module.PrivateData
-    $PrivateData['OrchestrationClient']
+    if ($PrivateData) {
+        $PrivateData['OrchestrationClient']
+    }
 }
 
 <#
