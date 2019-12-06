@@ -17,16 +17,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     public class SetFunctionInvocationContextCommand : PSCmdlet
     {
         internal const string ContextKey = "OrchestrationContext";
-        private const string StarterKey = "OrchestrationStarter";
+        private const string OrchestrationClientKey = "OrchestrationClient";
 
         [Parameter(Mandatory = true, ParameterSetName = ContextKey)]
         public OrchestrationContext OrchestrationContext { get; set; }
 
         /// <summary>
-        /// The orchestration client output binding name.
+        /// The orchestration client.
         /// </summary>
-        [Parameter(Mandatory = true, ParameterSetName = StarterKey)]
-        public string OrchestrationStarter { get; set; }
+        [Parameter(Mandatory = true, ParameterSetName = OrchestrationClientKey)]
+        public object OrchestrationClient { get; set; }
 
         [Parameter(Mandatory = true, ParameterSetName = "Clear")]
         public SwitchParameter Clear { get; set; }
@@ -40,15 +40,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     privateData[ContextKey] = OrchestrationContext;
                     break;
 
-                case StarterKey:
-                    privateData[StarterKey] = OrchestrationStarter;
+                case OrchestrationClientKey:
+                    privateData[OrchestrationClientKey] = OrchestrationClient;
                     break;
 
                 default:
                     if (Clear.IsPresent)
                     {
                         privateData.Remove(ContextKey);
-                        privateData.Remove(StarterKey);
+                        privateData.Remove(OrchestrationClientKey);
                     }
                     break;
             }

@@ -9,20 +9,27 @@ function CheckIfDurableFunctionsEnabled {
 	}
 }
 
+function GetOrchestrationClientFromModulePrivateData {
+    $PrivateData = $PSCmdlet.MyInvocation.MyCommand.Module.PrivateData
+    if ($PrivateData) {
+        $PrivateData['OrchestrationClient']
+    }
+}
+
 <#
 .SYNOPSIS
     Start an orchestration Azure Function.
 .DESCRIPTION
     Start an orchestration Azure Function with the given function name and input value.
-    It requires an output binding of the type 'orchestrationClient' is defined for the caller Azure Function.
-    If no such output binding is defined, this function throws an exception.
 .EXAMPLE
-    PS > Start-NewOrchestration -FunctionName starter -InputObject "input value for the orchestration function"
+    PS > Start-NewOrchestration -OrchestrationClient Starter -FunctionName OrchestratorFunction -InputObject "input value for the orchestration function"
     Return the instance id of the new orchestration.
 .PARAMETER FunctionName
     The name of the orchestration Azure Function you want to start.
 .PARAMETER InputObject
     The input value that will be passed to the orchestration Azure Function.
+.PARAMETER OrchestrationClient
+    The orchestration client object.
 #>
 function Start-NewOrchestration {
     [CmdletBinding()]
@@ -35,36 +42,33 @@ function Start-NewOrchestration {
         [string] $FunctionName,
 
         [Parameter(
-            Position=2,
+            Position=1,
             ValueFromPipelineByPropertyName=$true)]
-        [object] $InputObject
+        [object] $InputObject,
+
+		[Parameter(
+            ValueFromPipelineByPropertyName=$true)]
+        [object] $OrchestrationClient
     )
 
-	CheckIfDurableFunctionsEnabled
-
-    $privateData = $PSCmdlet.MyInvocation.MyCommand.Module.PrivateData
-    if ($privateData -is [hashtable])
-    {
-        $starterName = $privateData["OrchestrationStarter"]
-    }
-
-    if ($null -ne $starterName)
-    {
-        $instanceId = (New-Guid).Guid
-        $value = ,@{
-            FunctionName = $FunctionName
-            Input = $InputObject
-            InstanceId = $instanceId
+    CheckIfDurableFunctionsEnabled
+    
+    if ($null -eq $OrchestrationClient) {
+        $OrchestrationClient = GetOrchestrationClientFromModulePrivateData
+        if ($null -eq $OrchestrationClient) {
+            throw "Cannot start an orchestration function. No binding of the type 'orchestrationClient' was defined."
         }
+    }
 
-        $value = ConvertTo-Json -InputObject $value -Depth 10 -Compress
-        Push-OutputBinding -Name $starterName -Value $value
-        return $instanceId
-    }
-    else
-    {
-        throw "Cannot start an orchestration function. No output binding of the type 'orchestrationClient' was defined."
-    }
+    $InstanceId = (New-Guid).Guid
+
+    $UriTemplate = $OrchestrationClient.creationUrls.createNewInstancePostUri
+    $Uri = $UriTemplate.Replace('{functionName}', $FunctionName).Replace('[/{instanceId}]', "/$InstanceId")
+    $Body = $InputObject | ConvertTo-Json -Compress
+              
+    $null = Invoke-RestMethod -Uri $Uri -Method 'POST' -ContentType 'application/json' -Body $Body
+    
+    return $instanceId
 }
 
 function IsValidUrl([uri]$Url) {
@@ -79,16 +83,39 @@ function GetUrlOrigin([uri]$Url) {
     $fixedOriginUrl.ToString()
 }
 
-function New-OrchestrationCheckStatusResponse($Request, $OrchestrationClientData, $InstanceId) {
+function New-OrchestrationCheckStatusResponse {
+    [CmdletBinding()]
+    param(
+        [Parameter(
+            Mandatory=$true,
+            ValueFromPipelineByPropertyName=$true)]
+        [object] $Request,
+
+        [Parameter(
+            Mandatory=$true,
+            ValueFromPipelineByPropertyName=$true)]
+        [string] $InstanceId,
+
+		[Parameter(
+            ValueFromPipelineByPropertyName=$true)]
+        [object] $OrchestrationClient
+    )
     
 	CheckIfDurableFunctionsEnabled
+
+    if ($null -eq $OrchestrationClient) {
+        $OrchestrationClient = GetOrchestrationClientFromModulePrivateData
+        if ($null -eq $OrchestrationClient) {
+            throw "Cannot create orchestration check status response. No binding of the type 'orchestrationClient' was defined."
+        }
+    }
 
     [uri]$requestUrl = $Request.Url
     $requestHasValidUrl = IsValidUrl $requestUrl
     $requestUrlOrigin = GetUrlOrigin $requestUrl
     
     $httpManagementPayload = @{ }
-    foreach ($entry in $OrchestrationClientData.managementUrls.GetEnumerator()) {
+    foreach ($entry in $OrchestrationClient.managementUrls.GetEnumerator()) {
         $value = $entry.Value
     
         if ($requestHasValidUrl -and (IsValidUrl $value)) {
@@ -96,7 +123,7 @@ function New-OrchestrationCheckStatusResponse($Request, $OrchestrationClientData
             $value = $value.Replace($dataOrigin, $requestUrlOrigin)
         }
       
-        $value = $value.Replace($OrchestrationClientData.managementUrls.id, $InstanceId)
+        $value = $value.Replace($OrchestrationClient.managementUrls.id, $InstanceId)
         $httpManagementPayload.Add($entry.Name, $value)
     }
     

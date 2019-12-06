@@ -96,20 +96,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     Type = GetAzFunctionType(bindingInfo);
                     inputBindings.Add(bindingName, bindingInfo);
 
+                    var isOrchestrationClient = string.Compare(bindingInfo.Type, OrchestrationClient, StringComparison.OrdinalIgnoreCase) == 0;
+                    if (isOrchestrationClient)
+                    {
+                        OrchestrationClientBindingName = bindingName;
+                    }
+
                     // If the input binding name is in the set, we remove it;
                     // otherwise, the binding name is missing from the params.
-                    if (!parametersCopy.Remove(bindingName))
+                    if (!parametersCopy.Remove(bindingName)
+                        && !isOrchestrationClient) // but don't require a parameter declaration for orchestration client
                     {
                         inputsMissingFromParams.Add(bindingName);
                     }
                 }
                 else if (bindingInfo.Direction == BindingInfo.Types.Direction.Out)
                 {
-                    if (bindingInfo.Type == OrchestrationClient)
-                    {
-                        OrchestrationClientBindingName = bindingName;
-                    }
-                    
                     outputBindings.Add(bindingName, bindingInfo);
                 }
                 else

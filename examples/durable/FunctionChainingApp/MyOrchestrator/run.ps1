@@ -6,9 +6,9 @@ Write-Host "MyOrchestrator: started. Input: $($Context.Input)"
 
 $output = @()
 
-$output += Invoke-ActivityFunctionAsync -FunctionName "SayHello" -Input "Tokyo"
-$output += Invoke-ActivityFunctionAsync -FunctionName "SayHello" -Input "Seattle" -Verbose
-$output += Invoke-ActivityFunctionAsync -FunctionName "SayHello" -Input "London" -Verbose
+$output += Invoke-ActivityFunction -FunctionName "SayHello" -Input "Tokyo"
+$output += Invoke-ActivityFunction -FunctionName "SayHello" -Input "Seattle"
+$output += Invoke-ActivityFunction -FunctionName "SayHello" -Input "London"
 
 Write-Host "MyOrchestrator: finished."
 

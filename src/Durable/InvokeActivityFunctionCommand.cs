@@ -15,9 +15,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 
     /// <summary>
-    /// Invoke a function asynchronously.
+    /// Invoke an activity function.
     /// </summary>
-    [Cmdlet("Invoke", "ActivityFunctionAsync")]
+    [Cmdlet("Invoke", "ActivityFunction")]
     public class InvokeActivityFunctionCommand : PSCmdlet
     {
         /// <summary>
