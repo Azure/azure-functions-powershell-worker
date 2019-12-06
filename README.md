@@ -84,7 +84,7 @@ On macOS if you installed via `brew`
 
 Copy the result of the `publish` directory into a `powershell` folder under `workers`:
 ```powershell
-Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp2.1/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell"
+Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp3.1/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell"
 ```
 
 > NOTE: if the powershell folder already exists, you should delete it or debugging won't work.
@@ -118,12 +118,12 @@ of your test functions app.
 
 Then copy the `publish` directory to `workers`:
 ```powershell
-Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp2.1/publish/ "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/netcoreapp2.1/workers/powershell"
+Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp3.1/publish/ "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/netcoreapp3.1/workers/powershell"
 ```
 
 Then you can start the host but running:
 ```sh
-dotnet ./src/WebJobs.Script.WebHost/bin/Debug/netcoreapp2.1/Microsoft.Azure.WebJobs.Script.WebHost.dll
+dotnet ./src/WebJobs.Script.WebHost/bin/Debug/netcoreapp3.1/Microsoft.Azure.WebJobs.Script.WebHost.dll
 ```
 
 > Note: Remember to remove `"AzureWebJobsScriptRoot"`
@@ -145,6 +145,6 @@ That will place a `Microsoft.Azure.Functions.PowerShellWorker.*.nupkg` in:
 
 It pulls the contents of the publish folder in:
 
-`azure-functions-powershell-worker/src/bin/Debug/netcoreapp2.1/publish`
+`azure-functions-powershell-worker/src/bin/Debug/netcoreapp3.1/publish`
 
 if you specify a different Configuration or TargetFramework that will be honored.
