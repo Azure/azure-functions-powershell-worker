@@ -27,3 +27,7 @@ func extensions install
 Configure the following app setting:
 
 `PSWorkerEnableExperimentalDurableFunctions` = `"true"`
+
+## 4. Start
+
+Start the HttpTrigger function. The HTTP trigger invocation will return the HTTP 202 response with the orchestration management URLs, so you can start invoking statusQueryGetUri.
