@@ -27,18 +27,3 @@ func extensions install
 Configure the following app setting:
 
 `PSWorkerEnableExperimentalDurableFunctions` = `"true"`
-
-## 4. (Optional) Increase the function timeout
-
-If you want to run a function for up to one hour, set the functionTimeout value in `host.json` accordingly:
-
-``` json
-{
-    ...
-    "functionTimeout": "01:00:00"
-}
-```
-
-and either use **Premium** or run the Functions host locally.
-
-However, if you just want to see the HTTP 202 pattern and don't need the function to take more than 5-10 min, this will work on **Consumption** as well.
