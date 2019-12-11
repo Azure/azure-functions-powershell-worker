@@ -533,6 +533,8 @@ In this design, upgrading dependencies is conceptually decoupled from executing 
 
 ## Durable Functions Prototype
 
+> See [How to try experimental Durable PowerShell functions](../durable-experimental-instructions.md) to try this out.
+
 The [Durable Functions](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-concepts) is essentially the stateful workflow in a serverless environment. It consists of an orchestrator function and one or more activity functions. Durable Functions runs in a completely asynchronous way: the orchestrator function will stop after triggering an activity function, and later gets restarted once the activity function finishes execution. The actions of triggering activity functions and the activity function results will be saved along the way. After the orchestrator function is restarted, it replays the execution from the very beginning, but will skip the actions that are already done and use the results directly from the saved logs.
 
 The Durable Functions targets five use patterns that usually require long-running jobs, and they are:
