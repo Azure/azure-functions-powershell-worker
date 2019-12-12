@@ -29,7 +29,7 @@ function Find-Dotnet
             $env:PATH = $LocalDotnetDirPath + [IO.Path]::PathSeparator + $env:PATH
         }
         else {
-            throw "Cannot find the dotnet SDK for .NET Core 2.1. Please specify '-Bootstrap' to install build dependencies."
+            throw "Cannot find the dotnet SDK for .NET Core 2.2. Please specify '-Bootstrap' to install build dependencies."
         }
     }
 }
