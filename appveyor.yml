@@ -5,8 +5,7 @@ pull_requests:
 
 branches:
   only:
-  - dev
-  - master
+  - v2.x
 
 image:
 - Ubuntu
