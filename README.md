@@ -2,14 +2,11 @@
 
 |Branch|Status|
 |---|---|
-|master|[![master-build-status][]][master-build-site]|
-|dev|[![dev-build-status][]][dev-build-site]|
+|v2.x|[![v2.x-build-status][]][v2.x-build-site]|
 
 [azure-functions-logo]: https://raw.githubusercontent.com/Azure/azure-functions-cli/master/src/Azure.Functions.Cli/npm/assets/azure-functions-logo-color-raster.png
-[master-build-status]: https://ci.appveyor.com/api/projects/status/github/Azure/azure-functions-powershell-worker?branch=master&svg=true
-[dev-build-status]: https://ci.appveyor.com/api/projects/status/github/Azure/azure-functions-powershell-worker?branch=dev&svg=true
-[master-build-site]: https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=master
-[dev-build-site]: https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=dev
+[v2.x-build-status]: https://ci.appveyor.com/api/projects/status/github/Azure/azure-functions-powershell-worker?branch=v2.x&svg=true
+[v2.x-build-site]: https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=v2.x
 
 # Azure Functions PowerShell Language Worker
 
@@ -49,7 +46,7 @@ with any additional questions or comments.
 
 ### Prereqs
 
-* [.NET 2.1 SDK](https://www.microsoft.com/net/download/visual-studio-sdks)
+* [.NET 2.2 SDK](https://www.microsoft.com/net/download/visual-studio-sdks)
 
 ### Build
 
@@ -118,12 +115,12 @@ of your test functions app.
 
 Then copy the `publish` directory to `workers`:
 ```powershell
-Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp2.1/publish/ "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/netcoreapp2.1/workers/powershell"
+Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp2.2/publish/ "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/netcoreapp2.2/workers/powershell"
 ```
 
 Then you can start the host but running:
 ```sh
-dotnet ./src/WebJobs.Script.WebHost/bin/Debug/netcoreapp2.1/Microsoft.Azure.WebJobs.Script.WebHost.dll
+dotnet ./src/WebJobs.Script.WebHost/bin/Debug/netcoreapp2.2/Microsoft.Azure.WebJobs.Script.WebHost.dll
 ```
 
 > Note: Remember to remove `"AzureWebJobsScriptRoot"`
@@ -145,6 +142,6 @@ That will place a `Microsoft.Azure.Functions.PowerShellWorker.*.nupkg` in:
 
 It pulls the contents of the publish folder in:
 
-`azure-functions-powershell-worker/src/bin/Debug/netcoreapp2.1/publish`
+`azure-functions-powershell-worker/src/bin/Debug/netcoreapp2.2/publish`
 
 if you specify a different Configuration or TargetFramework that will be honored.
