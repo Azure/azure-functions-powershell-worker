@@ -24,6 +24,7 @@ steps:
     AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
     FUNCTIONS_WORKER_RUNTIME : "powershell"
     FunctionAppUrl: $(FunctionAppUrl)
+    PSWorkerEnableExperimentalDurableFunctions: "true"
   continueOnError: true
   displayName: 'Running E2ETest'
   
