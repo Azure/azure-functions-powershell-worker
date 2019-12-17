@@ -28,6 +28,10 @@ Configure the following app setting:
 
 `PSWorkerEnableExperimentalDurableFunctions` = `"true"`
 
-## 4. Start
+## 4. Configure AzureWebJobsStorage
+
+Make sure [AzureWebJobsStorage](https://docs.microsoft.com/azure/azure-functions/functions-app-settings#azurewebjobsstorage) points to a valid storage account. This storage is required for data persisted by Durable Functions.
+
+## 5. Start
 
 Start the HttpTrigger function. The HTTP trigger invocation will return the HTTP 202 response with the orchestration management URLs, so you can start invoking statusQueryGetUri.
