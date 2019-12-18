@@ -1,3 +1,5 @@
+using namespace System.Net
+
 param($Request, $TriggerMetadata)
 
 Write-Host "DurableClient started"
