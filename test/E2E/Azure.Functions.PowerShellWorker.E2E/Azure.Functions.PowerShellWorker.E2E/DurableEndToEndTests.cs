@@ -53,7 +53,10 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                         case HttpStatusCode.Accepted:
                         {
                             var statusResponseBody = await GetResponseBodyAsync(statusResponse);
-                            Assert.Equal("Running", (string)statusResponseBody.runtimeStatus);
+                            var runtimeStatus = (string)statusResponseBody.runtimeStatus;
+                            Assert.True(
+                                runtimeStatus == "Running" || runtimeStatus == "Pending",
+                                $"Unexpected runtime status: {runtimeStatus}");
 
                             if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
                             {
