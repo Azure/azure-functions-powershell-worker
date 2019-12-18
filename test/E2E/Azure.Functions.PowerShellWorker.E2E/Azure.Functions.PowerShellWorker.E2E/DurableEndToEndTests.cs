@@ -9,7 +9,6 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
     using System.Net.Http;
     using Newtonsoft.Json;
-    using Xunit.Abstractions;
 
     [Collection(Constants.FunctionAppCollectionName)]
     public class DurableEndToEndTests
@@ -43,8 +42,36 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             using (var httpClient = new HttpClient())
             {
                 var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
-                Assert.Equal(HttpStatusCode.Accepted, statusResponse.StatusCode);
+                switch (statusResponse.StatusCode)
+                {
+                    case HttpStatusCode.Accepted:
+                    {
+                        var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                        Assert.Equal("Running", statusResponseBody.runtimeStatus);
+                        break;
+                    }
+
+                    case HttpStatusCode.OK:
+                    {
+                        var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                        Assert.Equal("Completed", statusResponseBody.runtimeStatus);
+                        Assert.Equal("Hello Tokyo", statusResponseBody.output[0].ToString());
+                        Assert.Equal("Hello Seattle", statusResponseBody.output[1].ToString());
+                        Assert.Equal("Hello London", statusResponseBody.output[2].ToString());
+                        return;
+                    }
+
+                    default:
+                        Assert.True(false, $"Unexpected orchestration status code: {statusResponse.StatusCode}");
+                        break;
+                }
             }
+        }
+
+        private static async Task<dynamic> GetResponseBodyAsync(HttpResponseMessage response)
+        {
+            var responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject(responseBody);
         }
     }
 }
