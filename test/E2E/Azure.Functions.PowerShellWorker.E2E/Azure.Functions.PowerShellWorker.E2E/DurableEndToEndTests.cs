@@ -3,6 +3,7 @@
 
 namespace Azure.Functions.PowerShell.Tests.E2E
 {
+    using System;
     using System.Net;
     using System.Threading.Tasks;
     using Xunit;
@@ -39,6 +40,9 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             Assert.NotNull(initialResponseBodyObject.terminatePostUri);
             Assert.NotNull(initialResponseBodyObject.rewindPostUri);
 
+            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(60);
+            var startTime = DateTime.UtcNow;
+
             using (var httpClient = new HttpClient())
             {
                 var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
@@ -48,6 +52,12 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     {
                         var statusResponseBody = await GetResponseBodyAsync(statusResponse);
                         Assert.Equal("Running", statusResponseBody.runtimeStatus);
+
+                        if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                        {
+                            Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                        }
+
                         break;
                     }
 
