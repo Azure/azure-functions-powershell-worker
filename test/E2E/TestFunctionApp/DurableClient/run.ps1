@@ -2,6 +2,8 @@ param($Request, $TriggerMetadata)
 
 Write-Host "DurableClient started"
 
+$ErrorActionPreference = 'Stop'
+
 $InstanceId = Start-NewOrchestration -FunctionName 'DurableOrchestrator' -InputObject 'Hello'
 Write-Host "Started orchestration with ID = '$InstanceId'"
 
