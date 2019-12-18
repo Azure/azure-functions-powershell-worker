@@ -45,35 +45,38 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
             using (var httpClient = new HttpClient())
             {
-                var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
-                switch (statusResponse.StatusCode)
+                while (true)
                 {
-                    case HttpStatusCode.Accepted:
+                    var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
+                    switch (statusResponse.StatusCode)
                     {
-                        var statusResponseBody = await GetResponseBodyAsync(statusResponse);
-                        Assert.Equal("Running", (string)statusResponseBody.runtimeStatus);
-
-                        if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                        case HttpStatusCode.Accepted:
                         {
-                            Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                            var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                            Assert.Equal("Running", (string)statusResponseBody.runtimeStatus);
+
+                            if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                            {
+                                Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                            }
+
+                            break;
                         }
 
-                        break;
-                    }
+                        case HttpStatusCode.OK:
+                        {
+                            var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                            Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
+                            Assert.Equal("Hello Tokyo", statusResponseBody.output[0].ToString());
+                            Assert.Equal("Hello Seattle", statusResponseBody.output[1].ToString());
+                            Assert.Equal("Hello London", statusResponseBody.output[2].ToString());
+                            return;
+                        }
 
-                    case HttpStatusCode.OK:
-                    {
-                        var statusResponseBody = await GetResponseBodyAsync(statusResponse);
-                        Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
-                        Assert.Equal("Hello Tokyo", statusResponseBody.output[0].ToString());
-                        Assert.Equal("Hello Seattle", statusResponseBody.output[1].ToString());
-                        Assert.Equal("Hello London", statusResponseBody.output[2].ToString());
-                        return;
+                        default:
+                            Assert.True(false, $"Unexpected orchestration status code: {statusResponse.StatusCode}");
+                            break;
                     }
-
-                    default:
-                        Assert.True(false, $"Unexpected orchestration status code: {statusResponse.StatusCode}");
-                        break;
                 }
             }
         }
