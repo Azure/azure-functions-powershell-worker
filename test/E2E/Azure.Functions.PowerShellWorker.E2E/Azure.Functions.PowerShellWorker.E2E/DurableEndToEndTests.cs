@@ -15,12 +15,10 @@ namespace Azure.Functions.PowerShell.Tests.E2E
     public class DurableEndToEndTests
     {
         private readonly FunctionAppFixture _fixture;
-        private readonly ITestOutputHelper _testOutputHelper;
 
-        public DurableEndToEndTests(FunctionAppFixture fixture, ITestOutputHelper testOutputHelper)
+        public DurableEndToEndTests(FunctionAppFixture fixture)
         {
             this._fixture = fixture;
-            this._testOutputHelper = testOutputHelper;
         }
 
         [Fact]
@@ -44,7 +42,6 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
             using (var httpClient = new HttpClient())
             {
-                _testOutputHelper.WriteLine($"statusQueryGetUri: '{statusQueryGetUri}'");
                 var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
                 Assert.Equal(HttpStatusCode.Accepted, statusResponse.StatusCode);
             }
