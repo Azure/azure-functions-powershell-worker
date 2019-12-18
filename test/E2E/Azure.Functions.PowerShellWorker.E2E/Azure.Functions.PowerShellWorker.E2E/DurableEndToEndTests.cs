@@ -60,6 +60,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                                 Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
                             }
 
+                            await Task.Delay(TimeSpan.FromSeconds(2));
                             break;
                         }
 
