@@ -51,7 +51,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     case HttpStatusCode.Accepted:
                     {
                         var statusResponseBody = await GetResponseBodyAsync(statusResponse);
-                        Assert.Equal("Running", statusResponseBody.runtimeStatus);
+                        Assert.Equal("Running", (string)statusResponseBody.runtimeStatus);
 
                         if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
                         {
@@ -64,7 +64,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     case HttpStatusCode.OK:
                     {
                         var statusResponseBody = await GetResponseBodyAsync(statusResponse);
-                        Assert.Equal("Completed", statusResponseBody.runtimeStatus);
+                        Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
                         Assert.Equal("Hello Tokyo", statusResponseBody.output[0].ToString());
                         Assert.Equal("Hello Seattle", statusResponseBody.output[1].ToString());
                         Assert.Equal("Hello London", statusResponseBody.output[2].ToString());
