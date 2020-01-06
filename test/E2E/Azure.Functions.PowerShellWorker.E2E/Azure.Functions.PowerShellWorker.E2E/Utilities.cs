@@ -59,7 +59,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             return await response.Content.ReadAsStringAsync();
         }
 
-        private static async Task<HttpResponseMessage> GetHttpTriggerResponse(string functionName, string queryString)
+        public static async Task<HttpResponseMessage> GetHttpTriggerResponse(string functionName, string queryString)
         {
             string uri = $"api/{functionName}{queryString}";
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
