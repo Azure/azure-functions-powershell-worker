@@ -5,10 +5,10 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
 -->
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
-    <id>Microsoft.Azure.Functions.PowerShellWorker</id>
+    <id>Microsoft.Azure.Functions.PowerShellWorker.PS6</id>
     <!-- Needed to specify the version here for the nuspec to be valid -->
     <version>$version$</version>
-    <title>Azure Function PowerShell Language Worker</title>
+    <title>Azure Function PowerShell Language Worker (PowerShell 6)</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
