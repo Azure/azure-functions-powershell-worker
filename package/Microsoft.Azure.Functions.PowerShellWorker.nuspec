@@ -26,7 +26,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     </contentFiles>
   </metadata>
   <files>
-    <file src="..\src\bin\$configuration$\$targetFramework$\publish\**\*" target="contentFiles\any\any\workers\powershell" />
+    <file src="..\src\bin\$configuration$\$targetFramework$\publish\**\*" target="contentFiles\any\any\workers\powershell\7" />
     <file src="..\images\Powershell_black_64.png" target="images\" />
   </files>
 </package>
