@@ -5,8 +5,7 @@ pull_requests:
 
 branches:
   only:
-  - dev
-  - master
+  - v3.x/ps7
 
 image:
 - Ubuntu
