@@ -26,6 +26,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// </summary>
         public string Format(ErrorRecord errorRecord, int maxSize = 1 * 1024 * 1024)
         {
+            _pwsh.AddScript("$ErrorView = 'NormalView'").InvokeAndClearCommands();
             var errorDetails = _pwsh.AddCommand("Microsoft.PowerShell.Utility\\Out-String")
                                     .AddParameter("InputObject", errorRecord)
                                     .InvokeAndClearCommands<string>();
