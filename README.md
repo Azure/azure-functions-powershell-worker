@@ -19,9 +19,9 @@ Please feel free to leave comments about any of the features and design patterns
 
 ## Overview
 
-PowerShell support for Functions is based on [PowerShell Core 6.1](https://github.com/powershell/powershell),
+PowerShell support for Functions is based on [PowerShell Core 7](https://github.com/powershell/powershell),
 [Functions on Linux](https://blogs.msdn.microsoft.com/appserviceteam/2017/11/15/functions-on-linux-preview/),
-and the [Azure Functions runtime V2](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions).
+and the [Azure Functions runtime V3](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions).
 
 ## What's available?
 
@@ -49,7 +49,7 @@ with any additional questions or comments.
 
 ### Prereqs
 
-* [.NET 2.1 SDK](https://www.microsoft.com/net/download/visual-studio-sdks)
+* [.NET 3.1 SDK](https://www.microsoft.com/net/download/visual-studio-sdks)
 
 ### Build
 
