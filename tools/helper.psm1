@@ -7,7 +7,7 @@ using namespace System.Runtime.InteropServices
 
 $IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
 $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
-$MinimalSDKVersion = '2.2.0'
+$MinimalSDKVersion = '3.1.1'
 $LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
 
 function Find-Dotnet
@@ -29,7 +29,7 @@ function Find-Dotnet
             $env:PATH = $LocalDotnetDirPath + [IO.Path]::PathSeparator + $env:PATH
         }
         else {
-            throw "Cannot find the dotnet SDK for .NET Core 2.1. Please specify '-Bootstrap' to install build dependencies."
+            throw "Cannot find the dotnet SDK for .NET Core 3.1. Please specify '-Bootstrap' to install build dependencies."
         }
     }
 }
@@ -49,7 +49,7 @@ function Install-Dotnet {
     [CmdletBinding()]
     param(
         [string]$Channel = 'release',
-        [string]$Version = '2.1.401'
+        [string]$Version = '3.1.101'
     )
 
     try {

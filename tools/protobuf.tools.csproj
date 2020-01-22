@@ -6,7 +6,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <NoBuild>true</NoBuild>
   </PropertyGroup>
 
