@@ -49,7 +49,7 @@ Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/netcoreapp
 Write-Host "Staring Functions Host..."
 
 $Env:FUNCTIONS_WORKER_RUNTIME = "powershell"
-$Env:FUNCTIONS_WORKER_RUNTIME_VERSION = "~$POWERSHELL_VERSION"
+$Env:FUNCTIONS_WORKER_RUNTIME_VERSION = "$POWERSHELL_VERSION"
 $Env:AZURE_FUNCTIONS_ENVIRONMENT = "development"
 $Env:Path = "$Env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
 $funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
