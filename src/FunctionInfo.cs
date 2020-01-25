@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     /// </summary>
     internal class AzFunctionInfo
     {
-        private const string OrchestrationClient = "orchestrationClient";
+        private const string OrchestrationClient = "durableClient";
         private const string OrchestrationTrigger = "orchestrationTrigger";
         private const string ActivityTrigger = "activityTrigger";
 

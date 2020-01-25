@@ -213,7 +213,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 if (Utils.AreDurableFunctionsEnabled())
                 {
-                    // If the function has a binding of the 'orchestrationClient' type, then we set
+                    // If the function has a binding of the 'durableClient' type, then we set
                     // the OrchestrationClient in the module context for the 'Start-NewOrchestration' function to use.
                     if (!string.IsNullOrEmpty(functionInfo.OrchestrationClientBindingName))
                     {
