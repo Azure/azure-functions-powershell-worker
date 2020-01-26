@@ -3,6 +3,9 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.	
 #
 
+$NETCOREAPP_VERSION = '2.1'
+$POWERSHELL_VERSION = '6'
+
 $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 if ($IsWindows) {
     $FUNC_EXE_NAME = "func.exe"
@@ -41,11 +44,12 @@ Write-Host "Copying azure-functions-powershell-worker to Functions Host workers 
 
 $configuration = if ($env:CONFIGURATION) { $env:CONFIGURATION } else { 'Debug' }
 Remove-Item -Recurse -Force -Path "$FUNC_CLI_DIRECTORY/workers/powershell"
-Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/netcoreapp2.1/publish/" "$FUNC_CLI_DIRECTORY/workers/powershell"
+Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/netcoreapp$NETCOREAPP_VERSION/publish/" "$FUNC_CLI_DIRECTORY/workers/powershell/$POWERSHELL_VERSION"
 
 Write-Host "Staring Functions Host..."
 
 $Env:FUNCTIONS_WORKER_RUNTIME = "powershell"
+$Env:FUNCTIONS_WORKER_RUNTIME_VERSION = $POWERSHELL_VERSION
 $Env:AZURE_FUNCTIONS_ENVIRONMENT = "development"
 $Env:Path = "$Env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
 $funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
