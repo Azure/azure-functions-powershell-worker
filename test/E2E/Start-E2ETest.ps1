@@ -27,7 +27,7 @@ Remove-Item -Recurse -Force $FUNC_CLI_DIRECTORY -ErrorAction Ignore
 
 if (-not $env:CORE_TOOLS_URL)
 {
-    $env:CORE_TOOLS_URL = 'https://functionsclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest'
+    $env:CORE_TOOLS_URL = "https://functionsclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest"
 }
 
 $version = Invoke-RestMethod -Uri "$env:CORE_TOOLS_URL/version.txt"
