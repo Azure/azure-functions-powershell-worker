@@ -3,6 +3,8 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.	
 #
 
+$FUNC_RUNTIME_VERSION = '3'
+
 $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 if ($IsWindows) {
     $FUNC_EXE_NAME = "func.exe"
@@ -16,7 +18,7 @@ if ($IsWindows) {
     }
 }
 
-$FUNC_CLI_DOWNLOAD_URL = "https://functionsclibuilds.blob.core.windows.net/builds/2/latest/Azure.Functions.Cli.$os-$arch.zip"
+$FUNC_CLI_DOWNLOAD_URL = "https://functionsclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/Azure.Functions.Cli.$os-$arch.zip"
 $FUNC_CLI_DIRECTORY = Join-Path $PSScriptRoot 'Azure.Functions.Cli'
 
 Write-Host 'Deleting Functions Core Tools if exists...'
@@ -25,7 +27,7 @@ Remove-Item -Recurse -Force $FUNC_CLI_DIRECTORY -ErrorAction Ignore
 
 if (-not $env:CORE_TOOLS_URL)
 {
-    $env:CORE_TOOLS_URL = 'https://functionsclibuilds.blob.core.windows.net/builds/2/latest'
+    $env:CORE_TOOLS_URL = "https://functionsclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest"
 }
 
 $version = Invoke-RestMethod -Uri "$env:CORE_TOOLS_URL/version.txt"
