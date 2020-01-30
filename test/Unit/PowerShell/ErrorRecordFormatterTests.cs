@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var resultLines = result.Split(Environment.NewLine);
             Assert.Contains(resultLines, line => Regex.IsMatch(line, @"\bCategoryInfo\b[:\s]*?\bInvalidOperation\b"));
             Assert.Contains(resultLines, line => Regex.IsMatch(line, @"\bFullyQualifiedErrorId\b[:\s]*?\berror id\b"));
-            Assert.Contains(resultLines, line => line == "System.Management.Automation.RuntimeException: My exception");
+            Assert.Contains(resultLines, line => Regex.IsMatch(line, @"\bSystem.Management.Automation.RuntimeException\b"));
         }
 
         [Fact]
@@ -44,9 +44,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var result = s_errorRecordFormatter.Format(errorRecord);
 
             var resultLines = result.Split(Environment.NewLine);
-            Assert.Contains(resultLines, line => line == "Inner exception: System.Exception: My exception 1");
-            Assert.Contains(resultLines, line => line == "Inner exception: System.Exception: My exception 2");
-            Assert.Equal(2, resultLines.Count(line => line.Contains("Inner exception:")));
+            Assert.Contains(resultLines, line => line.Contains(exception1.Message));
+            Assert.Contains(resultLines, line => line.Contains(exception2.Message));
+            Assert.Equal(2, resultLines.Count(line => Regex.IsMatch(line, @"\binner", RegexOptions.IgnoreCase)));
         }
 
         [Fact]
@@ -64,13 +64,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var result = s_errorRecordFormatter.Format(errorRecord);
 
             var resultLines = result.Split(Environment.NewLine);
-            Assert.Contains(resultLines, line => line == "Inner exception: System.Exception: My exception 1");
-            Assert.Contains(resultLines, line => line == "Inner exception: System.Exception: My exception 2");
-            Assert.Contains(resultLines, line => line.StartsWith("Inner exception: System.AggregateException: My exception 3"));
-            Assert.Contains(resultLines, line => line == "Inner exception: System.Exception: My exception 4");
-            Assert.Contains(resultLines, line => line == "Inner exception: System.Exception: My exception 5");
-            Assert.Contains(resultLines, line => line.StartsWith("Inner exception: System.AggregateException: My exception 6"));
-            Assert.Contains(resultLines, line => line == "System.Exception: My exception 7");
+            Assert.Contains(resultLines, line => line.Contains(exception1.Message));
+            Assert.Contains(resultLines, line => line.Contains(exception2.Message));
+            Assert.Contains(resultLines, line => line.Contains(exception3.Message));
+            Assert.Contains(resultLines, line => line.Contains(exception4.Message));
+            Assert.Contains(resultLines, line => line.Contains(exception5.Message));
+            Assert.Contains(resultLines, line => line.Contains(exception6.Message));
+            Assert.Contains(resultLines, line => line.Contains(exception7.Message));
         }
 
         [Fact]
@@ -89,6 +89,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.InRange(truncatedResult.Length, ExpectedPostfix.Length + 1, maxSize);
             Assert.EndsWith(ExpectedPostfix, truncatedResult);
             Assert.StartsWith(fullResult.Substring(0, truncatedResult.Length - ExpectedPostfix.Length), truncatedResult);
+            Assert.Equal(maxSize, truncatedResult.Length);
         }
     }
 }
