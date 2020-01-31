@@ -198,6 +198,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     // This PowerShell instance is shared by the first PowerShellManager instance created in the pool,
                     // and the dependency manager (used to download dependent modules if needed).
                     var pwsh = Utils.NewPwshInstance();
+                    LogPowerShellVersion(rpcLogger, pwsh);
                     _powershellPool.Initialize(pwsh);
 
                     // Start the download asynchronously if needed.
@@ -490,6 +491,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 default:
                     throw new InvalidOperationException("Unreachable code.");
             }
+        }
+
+        private static void LogPowerShellVersion(RpcLogger rpcLogger, System.Management.Automation.PowerShell pwsh)
+        {
+            var message = string.Format(PowerShellWorkerStrings.PowerShellVersion, Utils.GetPowerShellVersion(pwsh));
+            rpcLogger.Log(isUserOnlyLog: false, LogLevel.Information, message);
         }
 
         #endregion
