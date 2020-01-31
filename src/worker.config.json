@@ -6,6 +6,6 @@
         "defaultWorkerPath":"%FUNCTIONS_WORKER_RUNTIME_VERSION%/Microsoft.Azure.Functions.PowerShellWorker.dll",
         "supportedRuntimeVersions":["6", "7"],
         "defaultRuntimeVersion":"6",
-        "sanitizeRuntimeVersion":"\\d+"
+        "sanitizeRuntimeVersionRegex":"\\d+"
     }
 }
