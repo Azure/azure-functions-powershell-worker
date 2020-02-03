@@ -307,4 +307,7 @@
   <data name="CommandNotFoundException_Exception" xml:space="preserve">
     <value>CommandNotFoundException detected (exception).</value>
   </data>
+  <data name="PowerShellVersion" xml:space="preserve">
+    <value>PowerShell version: '{0}'.</value>
+  </data>
 </root>

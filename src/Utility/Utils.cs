@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
-using System.Threading;
 using Microsoft.PowerShell.Commands;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
@@ -221,6 +221,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         internal static bool AreDurableFunctionsEnabled()
         {
             return PowerShellWorkerConfiguration.GetBoolean("PSWorkerEnableExperimentalDurableFunctions") ?? false;
+        }
+
+        internal static string GetPowerShellVersion(PowerShell pwsh)
+        {
+            const string versionTableVariableName = "PSVersionTable";
+            const string versionPropertyName = "PSVersion";
+
+            var versionTableVariable = GetGlobalVariables(pwsh).First(v => string.CompareOrdinal(v.Name, versionTableVariableName) == 0);
+            var versionTable = (PSVersionHashTable)versionTableVariable.Value;
+            return versionTable[versionPropertyName].ToString();
         }
     }
 }
