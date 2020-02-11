@@ -82,9 +82,10 @@ On macOS if you installed via `brew`
 /usr/local/Cellar/azure-functions-core-tools/<version>/workers/
 ```
 
-Copy the result of the `publish` directory into a `powershell` folder under `workers`:
+Under the `workers/powershell` folder, create a folder with the name `7` if it does not exist yet. Copy the result of the `publish` directory into the `workers/powershell/7` folder, and copy the `publish/worker.config.json` file into the `workers/powershell` folder:
 ```powershell
-Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp3.1/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell"
+Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp3.1/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell/7"
+Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp3.1/publish/worker.config.json "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell"
 ```
 
 > NOTE: if the powershell folder already exists, you should delete it or debugging won't work.
@@ -116,12 +117,13 @@ set the environment variable `"AzureWebJobsScriptRoot"`
 to the root folder path (the folder which contains the `host.json`)
 of your test functions app.
 
-Then copy the `publish` directory to `workers`:
+Under the `workers/powershell` folder, create a folder with the name `7` if it does not exist yet. Then copy the `publish` directory to `workers/powershell/7`, and the `publish/worker.config.json` to `workers/powershell`:
 ```powershell
-Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp3.1/publish/ "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/netcoreapp3.1/workers/powershell"
+Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp3.1/publish/ "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/netcoreapp3.1/workers/powershell/7"
+Copy-Item -Force ./src/bin/Debug/netcoreapp3.1/publish/worker.config.json "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/netcoreapp3.1/workers/powershell"
 ```
 
-Then you can start the host but running:
+Then you can start the host by running:
 ```sh
 dotnet ./src/WebJobs.Script.WebHost/bin/Debug/netcoreapp3.1/Microsoft.Azure.WebJobs.Script.WebHost.dll
 ```
