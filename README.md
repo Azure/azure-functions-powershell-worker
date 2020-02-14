@@ -93,6 +93,8 @@ Copy-Item -Recurse -Force ./src/bin/Debug/netcoreapp3.1/publish/worker.config.js
 Then `cd` into a Function App with PowerShell as the worker runtime 
 (NOTE: There's an example PowerShell Function App in the `examples` folder).
 
+Set the environment variable `FUNCTIONS_WORKER_RUNTIME_VERSION` to `7`, or add this as an app setting to the `local.settings.json` file.
+
 Lastly, run:
 
 ```
