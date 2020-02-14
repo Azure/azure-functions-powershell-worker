@@ -59,8 +59,8 @@
             : using a System.ComponentModel.TypeConverter
             : and then encoded with base64 encoding.
     -->
-  <xsd:schema id="root" xmlns="" xmlns:xsd="https://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
-    <xsd:import namespace="https://www.w3.org/XML/1998/namespace" />
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
     <xsd:element name="root" msdata:IsDataSet="true">
       <xsd:complexType>
         <xsd:choice maxOccurs="unbounded">
@@ -209,7 +209,7 @@
     <value>A new PowerShell manager instance is added to the pool. Current pool size '{0}'.</value>
   </data>
   <data name="DependencyDownloadInProgress" xml:space="preserve">
-    <value>Managed dependency download is in progress, function execution will continue when it's done.</value>
+    <value>The first managed dependency download is in progress, function execution will continue when it's done. Subsequent updates will be performed in the background.</value>
   </data>
   <data name="OutputBindingAlreadySet" xml:space="preserve">
     <value>The output binding '{0}' is already set with a value. The type of the output binding is '{1}'. It only accepts one message/record/file per a Function invocation. To override the value, use '-Clobber'.</value>
