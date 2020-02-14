@@ -152,7 +152,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
 
             var logger = getLogger();
-            logger.Log(isUserOnlyLog: true, LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress);
+            logger.Log(isUserOnlyLog: true, LogLevel.Warning, PowerShellWorkerStrings.DependencyDownloadInProgress);
             WaitOnDependencyInstallationTask();
             return true;
         }

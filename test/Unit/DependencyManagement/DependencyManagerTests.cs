@@ -150,7 +150,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 var hadToWait = dependencyManager.WaitForDependenciesAvailability(() => _mockLogger.Object);
 
                 Assert.True(hadToWait);
-                VerifyMessageLogged(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, expectedIsUserLog: true);
+                VerifyMessageLogged(LogLevel.Warning, PowerShellWorkerStrings.DependencyDownloadInProgress, expectedIsUserLog: true);
                 VerifyExactlyOneSnapshotInstalled();
             }
         }
@@ -225,7 +225,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 var hadToWait = dependencyManager.WaitForDependenciesAvailability(() => _mockLogger.Object);
 
                 Assert.True(hadToWait);
-                VerifyMessageLogged(LogLevel.Information, PowerShellWorkerStrings.DependencyDownloadInProgress, expectedIsUserLog: true);
+                VerifyMessageLogged(LogLevel.Warning, PowerShellWorkerStrings.DependencyDownloadInProgress, expectedIsUserLog: true);
                 VerifyExactlyOneSnapshotInstalled();
             }
         }
