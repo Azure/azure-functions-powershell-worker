@@ -108,7 +108,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
             if (_storage.SnapshotExists(path))
             {
-                _storage.SetSnapshotAccessTimeToUtcNow(path);
+                try
+                {
+                    _storage.SetSnapshotAccessTimeToUtcNow(path);
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
             }
         }
 
