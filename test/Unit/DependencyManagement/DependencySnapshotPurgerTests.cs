@@ -259,6 +259,32 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
+        public void Heartbeat_Tolerates_IOException()
+        {
+            _mockStorage.Setup(_ => _.SnapshotExists("Current")).Returns(true);
+            _mockStorage.Setup(_ => _.SetSnapshotAccessTimeToUtcNow("Current"))
+                .Throws(new IOException("Injected error"));
+
+            using (var purger = new DependencySnapshotPurger(_mockStorage.Object))
+            {
+                purger.Heartbeat("Current", _mockLogger.Object);
+            }
+        }
+
+        [Fact]
+        public void Heartbeat_Tolerates_UnauthorizedAccessException()
+        {
+            _mockStorage.Setup(_ => _.SnapshotExists("Current")).Returns(true);
+            _mockStorage.Setup(_ => _.SetSnapshotAccessTimeToUtcNow("Current"))
+                .Throws(new UnauthorizedAccessException("Injected error"));
+
+            using (var purger = new DependencySnapshotPurger(_mockStorage.Object))
+            {
+                purger.Heartbeat("Current", _mockLogger.Object);
+            }
+        }
+
+        [Fact]
         public void SetCurrentlyUsedSnapshot_UpdatesCurrentSnapshotAccessTimeImmediately()
         {
             _mockStorage.Setup(_ => _.SnapshotExists("Current")).Returns(true);
