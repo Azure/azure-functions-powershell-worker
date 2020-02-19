@@ -14,6 +14,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Utility
         [Theory]
         [InlineData(null)]
         [InlineData("")]
+        [InlineData(" ")]
         [InlineData("6")]
         [InlineData("~6")]
         [InlineData("  6  ")]
