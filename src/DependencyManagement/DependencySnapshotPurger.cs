@@ -21,6 +21,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private readonly TimeSpan _oldHeartbeatAgeMargin;
         private readonly int _minNumberOfSnapshotsToKeep;
 
+        private string _currentlyUsedSnapshotPath;
         private Timer _heartbeat;
 
         public DependencySnapshotPurger(
@@ -42,6 +43,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// </summary>
         public void SetCurrentlyUsedSnapshot(string path, ILogger logger)
         {
+            _currentlyUsedSnapshotPath = path;
+
             Heartbeat(path, logger);
 
             _heartbeat = new Timer(
@@ -65,6 +68,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             var threshold = DateTime.UtcNow - _heartbeatPeriod - _oldHeartbeatAgeMargin;
 
             var pathSortedByAccessTime = allSnapshotPaths
+                                            .Where(path => string.CompareOrdinal(path, _currentlyUsedSnapshotPath) != 0)
                                             .Select(path => Tuple.Create(path, GetSnapshotAccessTimeUtc(path, logger)))
                                             .OrderBy(entry => entry.Item2)
                                             .ToArray();
@@ -108,7 +112,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
             if (_storage.SnapshotExists(path))
             {
-                _storage.SetSnapshotAccessTimeToUtcNow(path);
+                try
+                {
+                    _storage.SetSnapshotAccessTimeToUtcNow(path);
+                }
+                // The files in the snapshot may be read-only in some scenarios, so updating
+                // the timestamp may fail. However, the snapshot can still be used, and
+                // we should not prevent function executions because of that.
+                // So, just log and move on.
+                catch (IOException e)
+                {
+                    LogHeartbeatUpdateFailure(logger, path, e);
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    LogHeartbeatUpdateFailure(logger, path, e);
+                }
             }
         }
 
@@ -139,6 +158,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private static int GetMinNumberOfSnapshotsToKeep()
         {
             return PowerShellWorkerConfiguration.GetInt("MDMinNumberOfSnapshotsToKeep") ?? 1;
+        }
+
+        private static void LogHeartbeatUpdateFailure(ILogger logger, string path, Exception exception)
+        {
+            var message = string.Format(
+                                PowerShellWorkerStrings.FailedToUpdateManagedDependencySnapshotHeartbeat,
+                                path,
+                                exception.GetType().FullName,
+                                exception.Message);
+
+            logger.Log(isUserOnlyLog: false, LogLevel.Warning, message);
         }
     }
 }
