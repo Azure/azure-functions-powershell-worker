@@ -4,10 +4,10 @@
 //
 
 using System;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using CommandLine;
-using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -30,6 +30,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 LogLevel.Information,
                 string.Format(PowerShellWorkerStrings.PowerShellWorkerVersion, typeof(Worker).Assembly.GetName().Version));
 
+            ValidateFunctionsWorkerRuntimeVersion();
+
             WorkerArguments arguments = null;
             Parser.Default.ParseArguments<WorkerArguments>(args)
                 .WithParsed(ops => arguments = ops)
@@ -46,6 +48,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             msgStream.Write(startedMessage);
             await requestProcessor.ProcessRequestLoop();
+        }
+
+        private static void ValidateFunctionsWorkerRuntimeVersion()
+        {
+            var requestedVersion = Environment.GetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME_VERSION");
+            if (requestedVersion != null
+                // Assuming this code is running on Functions runtime v2, allow
+                // PowerShell version 6 only (ignoring leading and trailing spaces, and the optional ~ in front of 6)
+                && !Regex.IsMatch(requestedVersion, @"^\s*~?6\s*$"))
+            {
+                throw new InvalidOperationException($"Invalid FUNCTIONS_WORKER_RUNTIME_VERSION specified: {requestedVersion}");
+            }
         }
     }
 
