@@ -58,7 +58,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 // PowerShell version 6 only (ignoring leading and trailing spaces, and the optional ~ in front of 6)
                 && !Regex.IsMatch(requestedVersion, @"^\s*~?6\s*$"))
             {
-                throw new InvalidOperationException($"Invalid FUNCTIONS_WORKER_RUNTIME_VERSION specified: {requestedVersion}");
+                var message = string.Format(PowerShellWorkerStrings.InvalidFunctionsWorkerRuntimeVersion, requestedVersion);
+                RpcLogger.WriteSystemLog(LogLevel.Critical, message);
+                Environment.Exit(1);
             }
         }
     }
