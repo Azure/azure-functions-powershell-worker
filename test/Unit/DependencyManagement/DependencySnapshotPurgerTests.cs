@@ -258,37 +258,35 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockStorage.Verify(_ => _.SetSnapshotAccessTimeToUtcNow(It.IsAny<string>()), Times.Never);
         }
 
-        [Fact]
-        public void Heartbeat_Tolerates_IOException()
+        public static IEnumerable<object[]> GetFileAccessExceptions()
         {
-            _mockStorage.Setup(_ => _.SnapshotExists("Current")).Returns(true);
-            _mockStorage.Setup(_ => _.SetSnapshotAccessTimeToUtcNow("Current"))
-                .Throws(new IOException("Injected error"));
-
-            using (var purger = new DependencySnapshotPurger(_mockStorage.Object))
-            {
-                purger.Heartbeat("Current", _mockLogger.Object);
-            }
-
-            _mockLogger.Verify(
-                _ => _.Log(false, LogLevel.Warning, It.Is<string>(message => message.Contains("IOException")), It.IsAny<Exception>()),
-                Times.AtLeastOnce);
+            yield return new object[] { new IOException("Injected error") };
+            yield return new object[] { new UnauthorizedAccessException("Injected error") };
         }
 
-        [Fact]
-        public void Heartbeat_Tolerates_UnauthorizedAccessException()
+        [Theory]
+        [MemberData(nameof(GetFileAccessExceptions))]
+        public void Heartbeat_Tolerates_FileAccessFailures(Exception exception)
         {
-            _mockStorage.Setup(_ => _.SnapshotExists("Current")).Returns(true);
-            _mockStorage.Setup(_ => _.SetSnapshotAccessTimeToUtcNow("Current"))
-                .Throws(new UnauthorizedAccessException("Injected error"));
+            const string snapshotPath = "FakeSnapshotPath";
+            _mockStorage.Setup(_ => _.SnapshotExists(snapshotPath)).Returns(true);
+            _mockStorage.Setup(_ => _.SetSnapshotAccessTimeToUtcNow(snapshotPath))
+                .Throws(exception);
 
             using (var purger = new DependencySnapshotPurger(_mockStorage.Object))
             {
-                purger.Heartbeat("Current", _mockLogger.Object);
+                purger.Heartbeat(snapshotPath, _mockLogger.Object);
             }
 
             _mockLogger.Verify(
-                _ => _.Log(false, LogLevel.Warning, It.Is<string>(message => message.Contains("UnauthorizedAccessException")), It.IsAny<Exception>()),
+                _ => _.Log(
+                    false,
+                    LogLevel.Warning,
+                    It.Is<string>(
+                        message => message.Contains(exception.GetType().FullName)
+                                    && message.Contains(exception.Message)
+                                    && message.Contains(snapshotPath)),
+                    null),
                 Times.AtLeastOnce);
         }
 
