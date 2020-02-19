@@ -72,6 +72,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
+        public void DoesNotRemoveCurrentlyUsedSnapshotEvenIfNotAccessedForLongTime()
+        {
+            _mockStorage.Setup(_ => _.GetInstalledAndInstallingSnapshots()).Returns(new[] { "snapshot" });
+            _mockStorage.Setup(_ => _.SnapshotExists("snapshot")).Returns(true);
+            _mockStorage.Setup(_ => _.GetSnapshotAccessTimeUtc("snapshot")).Returns(DateTime.UtcNow - TimeSpan.FromMinutes(300));
+            _mockStorage.Setup(_ => _.SetSnapshotAccessTimeToUtcNow("snapshot"));
+
+            using (var purger = new DependencySnapshotPurger(
+                                        _mockStorage.Object,
+                                        heartbeatPeriod: TimeSpan.FromMinutes(10),
+                                        oldHeartbeatAgeMargin: TimeSpan.FromMinutes(5),
+                                        minNumberOfSnapshotsToKeep: 0))
+            {
+                purger.SetCurrentlyUsedSnapshot("snapshot",  _mockLogger.Object);
+
+                purger.Purge(_mockLogger.Object);
+            }
+
+            _mockStorage.Verify(_ => _.RemoveSnapshot(It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
         public void RemovesMultipleSnapshotNotUsedForLongTime()
         {
             _mockStorage.Setup(_ => _.GetInstalledAndInstallingSnapshots())

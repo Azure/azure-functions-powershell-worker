@@ -21,6 +21,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private readonly TimeSpan _oldHeartbeatAgeMargin;
         private readonly int _minNumberOfSnapshotsToKeep;
 
+        private string _currentlyUsedSnapshotPath;
         private Timer _heartbeat;
 
         public DependencySnapshotPurger(
@@ -42,6 +43,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         /// </summary>
         public void SetCurrentlyUsedSnapshot(string path, ILogger logger)
         {
+            _currentlyUsedSnapshotPath = path;
+
             Heartbeat(path, logger);
 
             _heartbeat = new Timer(
@@ -65,6 +68,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             var threshold = DateTime.UtcNow - _heartbeatPeriod - _oldHeartbeatAgeMargin;
 
             var pathSortedByAccessTime = allSnapshotPaths
+                                            .Where(path => string.CompareOrdinal(path, _currentlyUsedSnapshotPath) != 0)
                                             .Select(path => Tuple.Create(path, GetSnapshotAccessTimeUtc(path, logger)))
                                             .OrderBy(entry => entry.Item2)
                                             .ToArray();
