@@ -52,13 +52,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         private static void ValidateFunctionsWorkerRuntimeVersion()
         {
-            var requestedVersion = Environment.GetEnvironmentVariable("FUNCTIONS_WORKER_RUNTIME_VERSION");
+            const string versionVariableName = "FUNCTIONS_WORKER_RUNTIME_VERSION";
+            var requestedVersion = Environment.GetEnvironmentVariable(versionVariableName);
             if (requestedVersion != null
                 // Assuming this code is running on Functions runtime v2, allow
                 // PowerShell version 6 only (ignoring leading and trailing spaces, and the optional ~ in front of 6)
                 && !Regex.IsMatch(requestedVersion, @"^\s*~?6\s*$"))
             {
-                var message = string.Format(PowerShellWorkerStrings.InvalidFunctionsWorkerRuntimeVersion, requestedVersion);
+                var message = string.Format(PowerShellWorkerStrings.InvalidFunctionsWorkerRuntimeVersion, versionVariableName, requestedVersion);
                 RpcLogger.WriteSystemLog(LogLevel.Critical, message);
                 Environment.Exit(1);
             }
