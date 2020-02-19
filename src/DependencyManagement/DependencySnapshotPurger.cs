@@ -112,6 +112,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 {
                     _storage.SetSnapshotAccessTimeToUtcNow(path);
                 }
+                // The files in the snapshot may be read-only in some scenarios, so updating
+                // the timestamp may fail. However, the snapshot can still be used, and
+                // we should not prevent function executions because of that.
+                // So, just log and move on.
                 catch (IOException e)
                 {
                     LogHeartbeatUpdateFailure(logger, path, e);
