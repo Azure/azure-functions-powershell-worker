@@ -10,14 +10,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
     internal static class FunctionsWorkerRuntimeVersionValidator
     {
+        private const string VersionVariableName = "FUNCTIONS_WORKER_RUNTIME_VERSION";
+
         public static string GetErrorMessage()
         {
-            const string versionVariableName = "FUNCTIONS_WORKER_RUNTIME_VERSION";
-            var requestedVersion = Environment.GetEnvironmentVariable(versionVariableName);
-            return GetErrorMessage(requestedVersion, versionVariableName);
+            var requestedVersion = Environment.GetEnvironmentVariable(VersionVariableName);
+            return GetErrorMessage(requestedVersion);
         }
 
-        private static string GetErrorMessage(string requestedVersion, string versionVariableName)
+        internal static string GetErrorMessage(string requestedVersion)
         {
             if (requestedVersion != null
                 // Assuming this code is running on Functions runtime v2, allow
@@ -26,7 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             {
                 return string.Format(
                             PowerShellWorkerStrings.InvalidFunctionsWorkerRuntimeVersion,
-                            versionVariableName,
+                            VersionVariableName,
                             requestedVersion);
             }
 
