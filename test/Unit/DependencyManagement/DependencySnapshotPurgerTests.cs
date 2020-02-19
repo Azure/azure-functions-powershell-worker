@@ -269,6 +269,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             {
                 purger.Heartbeat("Current", _mockLogger.Object);
             }
+
+            _mockLogger.Verify(
+                _ => _.Log(false, LogLevel.Warning, It.Is<string>(message => message.Contains("IOException")), It.IsAny<Exception>()),
+                Times.AtLeastOnce);
         }
 
         [Fact]
@@ -282,6 +286,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             {
                 purger.Heartbeat("Current", _mockLogger.Object);
             }
+
+            _mockLogger.Verify(
+                _ => _.Log(false, LogLevel.Warning, It.Is<string>(message => message.Contains("UnauthorizedAccessException")), It.IsAny<Exception>()),
+                Times.AtLeastOnce);
         }
 
         [Fact]
