@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-namespace Microsoft.Azure.Functions.PowerShellWorker
+namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     using System;
     using System.Text.RegularExpressions;
