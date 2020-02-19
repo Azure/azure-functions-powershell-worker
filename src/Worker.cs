@@ -61,7 +61,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             {
                 var message = string.Format(PowerShellWorkerStrings.InvalidFunctionsWorkerRuntimeVersion, versionVariableName, requestedVersion);
                 RpcLogger.WriteSystemLog(LogLevel.Critical, message);
-                Environment.Exit(1);
             }
         }
     }
