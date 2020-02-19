@@ -112,11 +112,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 {
                     _storage.SetSnapshotAccessTimeToUtcNow(path);
                 }
-                catch (IOException)
+                catch (IOException e)
                 {
+                    LogHeartbeatUpdateFailure(logger, path, e);
                 }
-                catch (UnauthorizedAccessException)
+                catch (UnauthorizedAccessException e)
                 {
+                    LogHeartbeatUpdateFailure(logger, path, e);
                 }
             }
         }
@@ -148,6 +150,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private static int GetMinNumberOfSnapshotsToKeep()
         {
             return PowerShellWorkerConfiguration.GetInt("MDMinNumberOfSnapshotsToKeep") ?? 1;
+        }
+
+        private static void LogHeartbeatUpdateFailure(ILogger logger, string path, Exception exception)
+        {
+            var message = string.Format(
+                                PowerShellWorkerStrings.FailedToUpdateManagedDependencySnapshotHeartbeat,
+                                path,
+                                exception.GetType().FullName,
+                                exception.Message);
+
+            logger.Log(isUserOnlyLog: false, LogLevel.Warning, message);
         }
     }
 }
