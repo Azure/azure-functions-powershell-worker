@@ -256,6 +256,9 @@
   <data name="UpdatingManagedDependencySnapshotHeartbeat" xml:space="preserve">
     <value>Updating dependencies folder heartbeat for '{0}''.</value>
   </data>
+  <data name="FailedToUpdateManagedDependencySnapshotHeartbeat" xml:space="preserve">
+    <value>Failed to update dependencies folder heartbeat for '{0}'. Exception {1}: '{2}'.</value>
+  </data>
   <data name="FailedToInstallDependenciesSnapshot" xml:space="preserve">
     <value>Failed to install dependencies into '{0}' (installation mode: {1}), removing the folder.</value>
   </data>
