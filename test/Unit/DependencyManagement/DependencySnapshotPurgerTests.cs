@@ -258,14 +258,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockStorage.Verify(_ => _.SetSnapshotAccessTimeToUtcNow(It.IsAny<string>()), Times.Never);
         }
 
-        public static IEnumerable<object[]> GetFileAccessExceptions()
-        {
-            yield return new object[] { new IOException("Injected error") };
-            yield return new object[] { new UnauthorizedAccessException("Injected error") };
-        }
-
         [Theory]
-        [MemberData(nameof(GetFileAccessExceptions))]
+        [MemberData(nameof(GetNonFatalFileSystemExceptions))]
         public void Heartbeat_Tolerates_FileAccessFailures(Exception exception)
         {
             const string snapshotPath = "FakeSnapshotPath";
