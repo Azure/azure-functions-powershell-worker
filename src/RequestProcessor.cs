@@ -39,6 +39,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         internal RequestProcessor(MessagingStream msgStream)
         {
+            var invalidVersionMessage = FunctionsWorkerRuntimeVersionValidator.GetErrorMessage();
+            if (invalidVersionMessage != null)
+            {
+                _initTerminatingError = new InvalidOperationException(invalidVersionMessage);
+            }
+
             _msgStream = msgStream;
             _powershellPool = new PowerShellManagerPool(msgStream);
 

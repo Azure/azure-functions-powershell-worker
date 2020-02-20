@@ -310,4 +310,7 @@
   <data name="CommandNotFoundException_Exception" xml:space="preserve">
     <value>CommandNotFoundException detected (exception).</value>
   </data>
+  <data name="InvalidFunctionsWorkerRuntimeVersion" xml:space="preserve">
+    <value>Invalid PowerShell version specified in the {0} environment variable: {1}. This version is not supported on Azure Functions Runtime v2.</value>
+  </data>
 </root>
