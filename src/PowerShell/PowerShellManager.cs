@@ -194,7 +194,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 if (profileExecutionHadErrors || _pwsh.HadErrors)
                 {
-                    string errorMsg = string.Format(PowerShellWorkerStrings.FailToRunProfile, profilePath);
+                    string errorMsg = string.Format(PowerShellWorkerStrings.ErrorsWhileExecutingProfile, profilePath);
                     Logger.Log(isUserOnlyLog: true, LogLevel.Error, errorMsg, exception);
                 }
             }

@@ -317,7 +317,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Throws<CmdletInvocationException>(() => testManager.InvokeProfile(profilePath));
             var relevantLogs = s_testLogger.FullLog.Where(message => !message.StartsWith("Trace:")).ToList();
             Assert.Single(relevantLogs);
-            Assert.Matches("Error: Failed to run profile.ps1. See logs for detailed errors. Profile location: ", relevantLogs[0]);
+            Assert.Matches("Error: Errors reported while executing profile.ps1. See logs for detailed errors. Profile location: ", relevantLogs[0]);
         }
 
         [Fact]
@@ -334,7 +334,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(2, relevantLogs.Count);
             Assert.StartsWith("Error: ERROR: ", relevantLogs[0]);
             Assert.Contains("help me!", relevantLogs[0]);
-            Assert.Matches("Error: Failed to run profile.ps1. See logs for detailed errors. Profile location: ", relevantLogs[1]);
+            Assert.Matches("Error: Errors reported while executing profile.ps1. See logs for detailed errors. Profile location: ", relevantLogs[1]);
         }
 
         [Fact]
