@@ -90,13 +90,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
             }
 
+            psManager.Logger.SetContext(requestId, invocationId);
+
             // Finish the initialization if not yet.
             // This applies only to the very first PowerShellManager instance, whose initialization was deferred.
             psManager.Initialize();
 
             // Register the function with the Runspace before returning the idle PowerShellManager.
             FunctionMetadata.RegisterFunctionMetadata(psManager.InstanceId, outputBindings);
-            psManager.Logger.SetContext(requestId, invocationId);
 
             return psManager;
         }
