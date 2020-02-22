@@ -358,9 +358,44 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Empty(s_testLogger.FullLog);
         }
 
+        [Fact]
+        public void LoggerContextIsSet()
+        {
+            var dummyBindingInfo = new Dictionary<string, ReadOnlyBindingInfo>();
+            var outputBindings = new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(dummyBindingInfo);
+
+            var powerShellManagerPool = new PowerShellManagerPool(() => new ContextValidatingLogger());
+            var pwsh = Utils.NewPwshInstance();
+            powerShellManagerPool.Initialize(pwsh);
+
+            var worker = powerShellManagerPool.CheckoutIdleWorker("requestId", "invocationId", "FuncName", outputBindings);
+
+            powerShellManagerPool.ReclaimUsedWorker(worker);
+        }
+
         private static Hashtable InvokeFunction(PowerShellManager powerShellManager, AzFunctionInfo functionInfo, Hashtable triggerMetadata = null)
         {
             return powerShellManager.InvokeFunction(functionInfo, triggerMetadata, null, s_testInputData, new FunctionInvocationPerformanceStopwatch());
+        }
+
+        private class ContextValidatingLogger : ILogger
+        {
+            private bool _isContextSet = false;
+
+            public void Log(bool isUserOnlyLog, RpcLog.Types.Level logLevel, string message, Exception exception = null)
+            {
+                Assert.True(_isContextSet);
+            }
+
+            public void SetContext(string requestId, string invocationId)
+            {
+                _isContextSet = true;
+            }
+
+            public void ResetContext()
+            {
+                _isContextSet = false;
+            }
         }
     }
 }
