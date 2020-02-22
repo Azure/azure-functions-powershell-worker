@@ -105,7 +105,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
@@ -130,7 +130,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
@@ -155,7 +155,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
@@ -186,7 +186,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
 
                 Hashtable result = InvokeFunction(testManager, functionInfo, triggerMetadata);
 
@@ -212,7 +212,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
@@ -236,7 +236,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
 
                 Hashtable result1 = InvokeFunction(testManager, functionInfo);
                 Assert.Equal("is not set", result1[TestOutputBindingName]);
@@ -266,7 +266,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             string path = Path.Join(s_funcDirectory, "testBasicFunction.ps1");
             var (functionInfo, testManager) = PrepareFunction(path, string.Empty);
 
-            FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+            FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
             var outBindingMap = FunctionMetadata.GetOutputBindingInfo(testManager.InstanceId);
             Assert.Single(outBindingMap);
             Assert.Equal(TestOutputBindingName, outBindingMap.First().Key);

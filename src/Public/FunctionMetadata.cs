@@ -42,9 +42,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// <summary>
         /// Helper method to set the output binding metadata for the function that is about to run.
         /// </summary>
-        internal static void RegisterFunctionMetadata(Guid instanceId, AzFunctionInfo functionInfo)
+        internal static void RegisterFunctionMetadata(Guid instanceId, ReadOnlyDictionary<string, ReadOnlyBindingInfo> outputBindings)
         {
-            var outputBindings = functionInfo.OutputBindings;
             OutputBindingCache.AddOrUpdate(instanceId, outputBindings, (key, value) => outputBindings);
         }
 
