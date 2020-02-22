@@ -21,7 +21,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
 
   <ItemGroup>
     <PackageReference Include="Grpc.Core" Version="1.20.1" />
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.0-rc.2" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.0-rc.3" />
     <PackageReference Include="CommandLineParser" Version="2.3.0" />
     <PackageReference Include="Google.Protobuf" Version="3.7.0" />
   </ItemGroup>
