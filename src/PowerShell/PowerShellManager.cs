@@ -162,6 +162,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 return;
             }
 
+            var profileExecutionHadErrors = false;
+
             try
             {
                 var stopwatch = new Stopwatch();
@@ -170,8 +172,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 // Import-Module on a .ps1 file will evaluate the script in the global scope.
                 _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
                         .AddParameter("Name", profilePath)
-                        .AddParameter("PassThru", Utils.BoxedTrue)
-                     .AddCommand(Utils.RemoveModuleCmdletInfo)
+                     .AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject")
+                     .InvokeAndClearCommands();
+
+                profileExecutionHadErrors = _pwsh.HadErrors;
+
+                _pwsh.AddCommand(Utils.RemoveModuleCmdletInfo)
+                        .AddParameter("FullyQualifiedName", profilePath)
                         .AddParameter("Force", Utils.BoxedTrue)
                         .AddParameter("ErrorAction", "SilentlyContinue")
                      .InvokeAndClearCommands();
@@ -185,9 +192,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
             finally
             {
-                if (_pwsh.HadErrors)
+                if (profileExecutionHadErrors || _pwsh.HadErrors)
                 {
-                    string errorMsg = string.Format(PowerShellWorkerStrings.FailToRunProfile, profilePath);
+                    string errorMsg = string.Format(PowerShellWorkerStrings.ErrorsWhileExecutingProfile, profilePath);
                     Logger.Log(isUserOnlyLog: true, LogLevel.Error, errorMsg, exception);
                 }
             }
