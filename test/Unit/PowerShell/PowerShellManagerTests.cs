@@ -105,7 +105,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
@@ -130,7 +130,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
@@ -155,7 +155,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
@@ -186,7 +186,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
 
                 Hashtable result = InvokeFunction(testManager, functionInfo, triggerMetadata);
 
@@ -212,7 +212,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
                 Hashtable result = InvokeFunction(testManager, functionInfo);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
@@ -236,7 +236,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             try
             {
-                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
 
                 Hashtable result1 = InvokeFunction(testManager, functionInfo);
                 Assert.Equal("is not set", result1[TestOutputBindingName]);
@@ -266,7 +266,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             string path = Path.Join(s_funcDirectory, "testBasicFunction.ps1");
             var (functionInfo, testManager) = PrepareFunction(path, string.Empty);
 
-            FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo);
+            FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
             var outBindingMap = FunctionMetadata.GetOutputBindingInfo(testManager.InstanceId);
             Assert.Single(outBindingMap);
             Assert.Equal(TestOutputBindingName, outBindingMap.First().Key);
@@ -317,7 +317,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Throws<CmdletInvocationException>(() => testManager.InvokeProfile(profilePath));
             var relevantLogs = s_testLogger.FullLog.Where(message => !message.StartsWith("Trace:")).ToList();
             Assert.Single(relevantLogs);
-            Assert.Matches("Error: Failed to run profile.ps1. See logs for detailed errors. Profile location: ", relevantLogs[0]);
+            Assert.Matches("Error: Errors reported while executing profile.ps1. See logs for detailed errors. Profile location: ", relevantLogs[0]);
         }
 
         [Fact]
@@ -334,7 +334,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(2, relevantLogs.Count);
             Assert.StartsWith("Error: ERROR: ", relevantLogs[0]);
             Assert.Contains("help me!", relevantLogs[0]);
-            Assert.Matches("Error: Failed to run profile.ps1. See logs for detailed errors. Profile location: ", relevantLogs[1]);
+            Assert.Matches("Error: Errors reported while executing profile.ps1. See logs for detailed errors. Profile location: ", relevantLogs[1]);
         }
 
         [Fact]
@@ -358,9 +358,44 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Empty(s_testLogger.FullLog);
         }
 
+        [Fact]
+        public void LoggerContextIsSet()
+        {
+            var dummyBindingInfo = new Dictionary<string, ReadOnlyBindingInfo>();
+            var outputBindings = new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(dummyBindingInfo);
+
+            var powerShellManagerPool = new PowerShellManagerPool(() => new ContextValidatingLogger());
+            var pwsh = Utils.NewPwshInstance();
+            powerShellManagerPool.Initialize(pwsh);
+
+            var worker = powerShellManagerPool.CheckoutIdleWorker("requestId", "invocationId", "FuncName", outputBindings);
+
+            powerShellManagerPool.ReclaimUsedWorker(worker);
+        }
+
         private static Hashtable InvokeFunction(PowerShellManager powerShellManager, AzFunctionInfo functionInfo, Hashtable triggerMetadata = null)
         {
             return powerShellManager.InvokeFunction(functionInfo, triggerMetadata, null, s_testInputData, new FunctionInvocationPerformanceStopwatch());
+        }
+
+        private class ContextValidatingLogger : ILogger
+        {
+            private bool _isContextSet = false;
+
+            public void Log(bool isUserOnlyLog, RpcLog.Types.Level logLevel, string message, Exception exception = null)
+            {
+                Assert.True(_isContextSet);
+            }
+
+            public void SetContext(string requestId, string invocationId)
+            {
+                _isContextSet = true;
+            }
+
+            public void ResetContext()
+            {
+                _isContextSet = false;
+            }
         }
     }
 }
