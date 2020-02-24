@@ -3,11 +3,11 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using System;
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Threading;
-using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
-using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
@@ -19,7 +19,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     /// </summary>
     internal class PowerShellManagerPool
     {
-        private readonly MessagingStream _msgStream;
+        private readonly Func<ILogger> _createLogger;
         private readonly BlockingCollection<PowerShellManager> _pool;
         private int _poolSize;
 
@@ -31,9 +31,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Constructor of the pool.
         /// </summary>
-        internal PowerShellManagerPool(MessagingStream msgStream)
+        internal PowerShellManagerPool(Func<ILogger> createLogger)
         {
-            _msgStream = msgStream;
+            _createLogger = createLogger;
             _pool = new BlockingCollection<PowerShellManager>(UpperBound);
             RpcLogger.WriteSystemLog(LogLevel.Information, string.Format(PowerShellWorkerStrings.LogConcurrencyUpperBound, UpperBound.ToString()));
         }
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// </summary>
         internal void Initialize(PowerShell pwsh)
         {
-            var logger = new RpcLogger(_msgStream);
+            var logger = _createLogger();
             var psManager = new PowerShellManager(logger, pwsh);
             _pool.Add(psManager);
             _poolSize = 1;
@@ -53,11 +53,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Checkout an idle PowerShellManager instance in a non-blocking asynchronous way.
         /// </summary>
-        internal PowerShellManager CheckoutIdleWorker(StreamingMessage request, AzFunctionInfo functionInfo)
+        internal PowerShellManager CheckoutIdleWorker(
+            string requestId,
+            string invocationId,
+            string functionName,
+            ReadOnlyDictionary<string, ReadOnlyBindingInfo> outputBindings)
         {
             PowerShellManager psManager = null;
-            string requestId = request.RequestId;
-            string invocationId = request.InvocationRequest?.InvocationId;
 
             // If the pool has an idle one, just use it.
             if (!_pool.TryTake(out psManager))
@@ -80,7 +82,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 if (psManager == null)
                 {
                     var logger = CreateLoggerWithContext(requestId, invocationId);
-                    logger.Log(isUserOnlyLog: true, LogLevel.Warning, string.Format(PowerShellWorkerStrings.FunctionQueuingRequest, functionInfo.FuncName));
+                    logger.Log(isUserOnlyLog: true, LogLevel.Warning, string.Format(PowerShellWorkerStrings.FunctionQueuingRequest, functionName));
 
                     // If the pool has reached its bounded capacity, then the thread
                     // should be blocked until an idle one becomes available.
@@ -88,13 +90,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
             }
 
+            psManager.Logger.SetContext(requestId, invocationId);
+
             // Finish the initialization if not yet.
             // This applies only to the very first PowerShellManager instance, whose initialization was deferred.
             psManager.Initialize();
 
             // Register the function with the Runspace before returning the idle PowerShellManager.
-            FunctionMetadata.RegisterFunctionMetadata(psManager.InstanceId, functionInfo);
-            psManager.Logger.SetContext(requestId, invocationId);
+            FunctionMetadata.RegisterFunctionMetadata(psManager.InstanceId, outputBindings);
 
             return psManager;
         }
@@ -113,9 +116,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
-        private RpcLogger CreateLoggerWithContext(string requestId, string invocationId)
+        private ILogger CreateLoggerWithContext(string requestId, string invocationId)
         {
-            var logger = new RpcLogger(_msgStream);
+            var logger = _createLogger();
             logger.SetContext(requestId, invocationId);
             return logger;
         }

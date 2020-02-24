@@ -154,8 +154,8 @@
   <data name="FileNotFound" xml:space="preserve">
     <value>No '{0}' is found at the function app root folder: {1}.</value>
   </data>
-  <data name="FailToRunProfile" xml:space="preserve">
-    <value>Failed to run profile.ps1. See logs for detailed errors. Profile location: {0}.</value>
+  <data name="ErrorsWhileExecutingProfile" xml:space="preserve">
+    <value>Errors reported while executing profile.ps1. See logs for detailed errors. Profile location: {0}.</value>
   </data>
   <data name="UnsupportedMessage" xml:space="preserve">
     <value>Unsupported message type: {0}.</value>
