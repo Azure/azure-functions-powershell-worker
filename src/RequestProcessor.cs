@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         internal RequestProcessor(MessagingStream msgStream)
         {
             _msgStream = msgStream;
-            _powershellPool = new PowerShellManagerPool(msgStream);
+            _powershellPool = new PowerShellManagerPool(() => new RpcLogger(msgStream));
 
             // Host sends capabilities/init data to worker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.WorkerInitRequest, ProcessWorkerInitRequest);
@@ -255,7 +255,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.DependenciesAvailable);
 
                 AzFunctionInfo functionInfo = FunctionLoader.GetFunctionInfo(request.InvocationRequest.FunctionId);
-                PowerShellManager psManager = _powershellPool.CheckoutIdleWorker(request, functionInfo);
+
+                PowerShellManager psManager = _powershellPool.CheckoutIdleWorker(
+                                                request.RequestId,
+                                                request.InvocationRequest?.InvocationId,
+                                                functionInfo.FuncName,
+                                                functionInfo.OutputBindings);
+
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.RunspaceAvailable);
 
                 // When the concurrency upper bound is more than 1, we have to handle the invocation in a worker
