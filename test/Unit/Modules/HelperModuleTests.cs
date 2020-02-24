@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         public HelperModuleTests()
         {
-            FunctionMetadata.RegisterFunctionMetadata(s_pwsh.Runspace.InstanceId, s_funcInfo);
+            FunctionMetadata.RegisterFunctionMetadata(s_pwsh.Runspace.InstanceId, s_funcInfo.OutputBindings);
         }
 
         public void Dispose()
