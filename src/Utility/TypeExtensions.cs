@@ -185,7 +185,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             // Allow the user to set content-type in the Headers
             if (!rpcHttp.Headers.ContainsKey(ContentTypeHeaderKey))
             {
-                rpcHttp.Headers.Add(ContentTypeHeaderKey, DeriveContentType(httpResponseContext, rpcHttp));
+                var derivedContentType = DeriveContentType(httpResponseContext, rpcHttp);
+                if (derivedContentType != null)
+                {
+                    rpcHttp.Headers.Add(ContentTypeHeaderKey, derivedContentType);
+                }
             }
 
             return rpcHttp;
@@ -193,10 +197,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
         private static string DeriveContentType(HttpResponseContext httpResponseContext, RpcHttp rpcHttp)
         {
-            return httpResponseContext.ContentType ??
-                                (rpcHttp.Body?.DataCase == TypedData.DataOneofCase.Json
-                                    ? ApplicationJsonMediaType
-                                    : TextPlainMediaType);
+            if (httpResponseContext.ContentType != null)
+            {
+                return httpResponseContext.ContentType;
+            }
+
+            if (rpcHttp.Body == null)
+            {
+                return null;
+            }
+
+            return rpcHttp.Body.DataCase == TypedData.DataOneofCase.Json
+                    ? ApplicationJsonMediaType
+                    : TextPlainMediaType;
         }
 
         internal static TypedData ToTypedData(this object value)
