@@ -594,7 +594,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 StatusCode = statusCode,
             };
 
-            Assert.Null(input.ToTypedData().Http.Body);
+            var result = input.ToTypedData().Http;
+            Assert.Null(result.Body);
+            if (contentType == null)
+            {
+                Assert.False(result.Headers.ContainsKey("content-type"));
+            }
+            else
+            {
+                Assert.Equal(contentType, result.Headers["content-type"]);
+            }
         }
 
         [Fact]
