@@ -166,10 +166,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 StatusCode = httpResponseContext.StatusCode.ToString("d")
             };
 
-            if (httpResponseContext.Body != null)
-            {
-                rpcHttp.Body = httpResponseContext.Body.ToTypedData();
-            }
+            rpcHttp.Body = httpResponseContext.Body == null
+                            ? string.Empty.ToTypedData()
+                            : httpResponseContext.Body.ToTypedData();
 
             rpcHttp.EnableContentNegotiation = httpResponseContext.EnableContentNegotiation;
 
@@ -185,11 +184,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             // Allow the user to set content-type in the Headers
             if (!rpcHttp.Headers.ContainsKey(ContentTypeHeaderKey))
             {
-                var derivedContentType = DeriveContentType(httpResponseContext, rpcHttp);
-                if (derivedContentType != null)
-                {
-                    rpcHttp.Headers.Add(ContentTypeHeaderKey, derivedContentType);
-                }
+                rpcHttp.Headers.Add(ContentTypeHeaderKey, DeriveContentType(httpResponseContext, rpcHttp));
             }
 
             return rpcHttp;
@@ -197,19 +192,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
         private static string DeriveContentType(HttpResponseContext httpResponseContext, RpcHttp rpcHttp)
         {
-            if (httpResponseContext.ContentType != null)
-            {
-                return httpResponseContext.ContentType;
-            }
-
-            if (rpcHttp.Body == null)
-            {
-                return null;
-            }
-
-            return rpcHttp.Body.DataCase == TypedData.DataOneofCase.Json
-                    ? ApplicationJsonMediaType
-                    : TextPlainMediaType;
+            return httpResponseContext.ContentType ??
+                                (rpcHttp.Body.DataCase == TypedData.DataOneofCase.Json
+                                    ? ApplicationJsonMediaType
+                                    : TextPlainMediaType);
         }
 
         internal static TypedData ToTypedData(this object value)

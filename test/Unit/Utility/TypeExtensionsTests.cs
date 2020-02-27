@@ -595,15 +595,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             };
 
             var result = input.ToTypedData().Http;
-            Assert.Null(result.Body);
-            if (contentType == null)
-            {
-                Assert.False(result.Headers.ContainsKey("content-type"));
-            }
-            else
-            {
-                Assert.Equal(contentType, result.Headers["content-type"]);
-            }
+
+            Assert.Equal(string.Empty, result.Body.String);
+            var expectedContentType = contentType ?? "text/plain";
+            Assert.Equal(expectedContentType, result.Headers["content-type"]);
         }
 
         [Fact]
