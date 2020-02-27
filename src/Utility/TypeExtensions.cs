@@ -194,7 +194,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         private static string DeriveContentType(HttpResponseContext httpResponseContext, RpcHttp rpcHttp)
         {
             return httpResponseContext.ContentType ??
-                                (rpcHttp.Body.DataCase == TypedData.DataOneofCase.Json
+                                (rpcHttp.Body?.DataCase == TypedData.DataOneofCase.Json
                                     ? ApplicationJsonMediaType
                                     : TextPlainMediaType);
         }
