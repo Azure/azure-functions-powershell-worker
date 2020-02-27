@@ -576,6 +576,27 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal("text/html", input.ToTypedData().Http.Headers["content-type"]);
         }
 
+        [Theory]
+        [InlineData(null, HttpStatusCode.OK)]
+        [InlineData("text/plain", HttpStatusCode.OK)]
+        [InlineData("application/json", HttpStatusCode.OK)]
+        [InlineData("anything/else", HttpStatusCode.OK)]
+        [InlineData(null, HttpStatusCode.NoContent)]
+        [InlineData("text/plain", HttpStatusCode.NoContent)]
+        [InlineData("application/json", HttpStatusCode.NoContent)]
+        [InlineData("anything/else", HttpStatusCode.NoContent)]
+        public void TestObjectToTypedData_WhenBodyIsNull(string contentType, HttpStatusCode statusCode)
+        {
+            var input = new HttpResponseContext
+            {
+                Body = null,
+                ContentType = contentType,
+                StatusCode = statusCode,
+            };
+
+            Assert.Null(input.ToTypedData().Http.Body);
+        }
+
         [Fact]
         public void TestObjectToTypedDataInt()
         {
