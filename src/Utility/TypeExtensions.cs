@@ -166,10 +166,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 StatusCode = httpResponseContext.StatusCode.ToString("d")
             };
 
-            if (httpResponseContext.Body != null)
-            {
-                rpcHttp.Body = httpResponseContext.Body.ToTypedData();
-            }
+            rpcHttp.Body = httpResponseContext.Body == null
+                            ? string.Empty.ToTypedData()
+                            : httpResponseContext.Body.ToTypedData();
 
             rpcHttp.EnableContentNegotiation = httpResponseContext.EnableContentNegotiation;
 
