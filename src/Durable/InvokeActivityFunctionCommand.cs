@@ -8,11 +8,7 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     using System.Collections;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Management.Automation;
-    using System.Threading;
-    using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 
     /// <summary>
     /// Invoke an activity function.
@@ -34,44 +30,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         public object Input { get; set; }
 
         // Used for waiting on the pipeline to be stopped.
-        private readonly ManualResetEvent _waitForStop = new ManualResetEvent(initialState: false);
-
-        private OrchestrationContext _context;
+        private readonly ActivityInvocationTracker _activityInvocationTracker = new ActivityInvocationTracker();
 
         protected override void EndProcessing()
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
-            _context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
-
-            _context.Actions.Add(new List<OrchestrationAction> { new CallActivityAction(FunctionName, Input) });
-
-            var taskScheduled = _context.History.FirstOrDefault(
-                                    e => e.EventType == HistoryEventType.TaskScheduled &&
-                                         e.Name == FunctionName &&
-                                         !e.IsProcessed);
-
-            var taskCompleted = taskScheduled == null
-                                    ? null
-                                    : _context.History.FirstOrDefault(
-                                        e => e.EventType == HistoryEventType.TaskCompleted &&
-                                             e.TaskScheduledId == taskScheduled.EventId);
-
-            if (taskCompleted != null)
-            {
-                taskScheduled.IsProcessed = true;
-                taskCompleted.IsProcessed = true;
-                WriteObject(TypeExtensions.ConvertFromJson(taskCompleted.Result));
-            }
-            else
-            {
-                _context.ActionEvent.Set();
-                _waitForStop.WaitOne();
-            }
+            var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
+            _activityInvocationTracker.ReplayActivityOrStop(FunctionName, Input, context, WriteObject);
         }
 
         protected override void StopProcessing()
         {
-            _waitForStop.Set();
+            _activityInvocationTracker.Stop();
         }
     }
 }

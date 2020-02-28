@@ -15,15 +15,13 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
+    using Durable;
+
     /// <summary>
     /// This type represents the metadata of an Azure PowerShell Function.
     /// </summary>
     internal class AzFunctionInfo
     {
-        private const string OrchestrationClient = "orchestrationClient";
-        private const string OrchestrationTrigger = "orchestrationTrigger";
-        private const string ActivityTrigger = "activityTrigger";
-
         internal const string TriggerMetadata = "TriggerMetadata";
         internal const string TraceContext = "TraceContext";
         internal const string DollarReturn = "$return";
@@ -35,14 +33,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         internal readonly string FuncName;
         internal readonly string EntryPoint;
         internal readonly string ScriptPath;
-        internal readonly string OrchestrationClientBindingName;
         internal readonly string DeployedPSFuncName;
-        internal readonly AzFunctionType Type;
         internal readonly ScriptBlock FuncScriptBlock;
         internal readonly ReadOnlyDictionary<string, PSScriptParamInfo> FuncParameters;
         internal readonly ReadOnlyDictionary<string, ReadOnlyBindingInfo> AllBindings;
         internal readonly ReadOnlyDictionary<string, ReadOnlyBindingInfo> InputBindings;
         internal readonly ReadOnlyDictionary<string, ReadOnlyBindingInfo> OutputBindings;
+
+        public DurableFunctionInfo DurableFunctionInfo { get; }
 
         /// <summary>
         /// Construct an object of AzFunctionInfo from the 'RpcFunctionMetadata'.
@@ -83,6 +81,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             var inputBindings = new Dictionary<string, ReadOnlyBindingInfo>(StringComparer.OrdinalIgnoreCase);
             var outputBindings = new Dictionary<string, ReadOnlyBindingInfo>(StringComparer.OrdinalIgnoreCase);
 
+            DurableFunctionInfo = DurableFunctionInfoFactory.Create(metadata.Bindings);
+
             var inputsMissingFromParams = new List<string>();
             foreach (var binding in metadata.Bindings)
             {
@@ -93,19 +93,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
                 if (bindingInfo.Direction == BindingInfo.Types.Direction.In)
                 {
-                    Type = GetAzFunctionType(bindingInfo);
                     inputBindings.Add(bindingName, bindingInfo);
-
-                    var isOrchestrationClient = string.Compare(bindingInfo.Type, OrchestrationClient, StringComparison.OrdinalIgnoreCase) == 0;
-                    if (isOrchestrationClient)
-                    {
-                        OrchestrationClientBindingName = bindingName;
-                    }
 
                     // If the input binding name is in the set, we remove it;
                     // otherwise, the binding name is missing from the params.
                     if (!parametersCopy.Remove(bindingName)
-                        && !isOrchestrationClient) // but don't require a parameter declaration for orchestration client
+                        && !DurableBindings.CanParameterDeclarationBeOmitted(bindingInfo.Type))
                     {
                         inputsMissingFromParams.Add(bindingName);
                     }
@@ -150,20 +143,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             AllBindings = new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(allBindings);
             InputBindings = new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(inputBindings);
             OutputBindings = new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(outputBindings);
-        }
-
-        private AzFunctionType GetAzFunctionType(ReadOnlyBindingInfo bindingInfo)
-        {
-            switch (bindingInfo.Type)
-            {
-                case OrchestrationTrigger:
-                    return AzFunctionType.OrchestrationFunction;
-                case ActivityTrigger:
-                    return AzFunctionType.ActivityFunction;
-                default:
-                    // All other triggers are considered regular functions
-                    return AzFunctionType.RegularFunction;
-            }
         }
 
         private Dictionary<string, PSScriptParamInfo> GetParameters(string scriptFile, string entryPoint, out ScriptBlockAst scriptAst)
@@ -218,17 +197,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             return parameters;
         }
-    }
-
-    /// <summary>
-    /// Type of the Azure Function.
-    /// </summary>
-    internal enum AzFunctionType
-    {
-        None = 0,
-        RegularFunction = 1,
-        OrchestrationFunction = 2,
-        ActivityFunction = 3
     }
 
     /// <summary>

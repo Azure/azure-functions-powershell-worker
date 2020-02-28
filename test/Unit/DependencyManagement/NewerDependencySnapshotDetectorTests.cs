@@ -9,7 +9,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
     using Xunit;
 
     using PowerShellWorker.DependencyManagement;
-    using Utility;
+    using PowerShellWorker.Utility;
 
     public class NewerDependencySnapshotDetectorTests
     {
