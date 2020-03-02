@@ -17,6 +17,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     using PowerShellWorker.Utility;
 
+    /// <summary>
+    /// The main entry point for durable functions support.
+    /// </summary>
     internal class DurableController
     {
         private readonly bool _durableEnabled;
