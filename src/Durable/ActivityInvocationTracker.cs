@@ -41,7 +41,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             else
             {
-                context.OrchestrationActionCollector.StopEvent.Set();
+                context.OrchestrationActionCollector.Stop();
                 _waitForStop.WaitOne();
             }
         }

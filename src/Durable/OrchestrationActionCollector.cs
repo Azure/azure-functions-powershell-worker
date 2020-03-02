@@ -13,7 +13,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         private readonly List<List<OrchestrationAction>> _actions = new List<List<OrchestrationAction>>();
 
-        public AutoResetEvent StopEvent { get; } = new AutoResetEvent(initialState: false);
+        private readonly AutoResetEvent _stopEvent = new AutoResetEvent(initialState: false);
 
         public void Add(OrchestrationAction action)
         {
@@ -22,11 +22,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public Tuple<bool, List<List<OrchestrationAction>>> WaitForActions(WaitHandle completionWaitHandle)
         {
-            var waitHandles = new[] { StopEvent, completionWaitHandle };
+            var waitHandles = new[] { _stopEvent, completionWaitHandle };
             var signaledHandleIndex = WaitHandle.WaitAny(waitHandles);
             var signaledHandle = waitHandles[signaledHandleIndex];
-            var shouldStop = ReferenceEquals(signaledHandle, StopEvent);
+            var shouldStop = ReferenceEquals(signaledHandle, _stopEvent);
             return Tuple.Create(shouldStop, _actions);
+        }
+
+        public void Stop()
+        {
+            _stopEvent.Set();
         }
     }
 }

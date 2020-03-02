@@ -162,7 +162,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         private void SignalToStopInvocation()
         {
-            _orchestrationBindingInfo.Context.OrchestrationActionCollector.StopEvent.Set();
+            _orchestrationBindingInfo.Context.OrchestrationActionCollector.Stop();
         }
     }
 }
