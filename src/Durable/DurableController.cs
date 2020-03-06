@@ -1,0 +1,143 @@
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+{
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.Linq;
+    using System.Management.Automation;
+
+    using Newtonsoft.Json;
+    using WebJobs.Script.Grpc.Messages;
+
+    using PowerShellWorker.Utility;
+
+    /// <summary>
+    /// The main entry point for durable functions support.
+    /// </summary>
+    internal class DurableController
+    {
+        private readonly bool _durableEnabled;
+        private readonly DurableFunctionInfo _durableFunctionInfo;
+        private readonly IPowerShellServices _powerShellServices;
+        private readonly IOrchestrationInvoker _orchestrationInvoker;
+        private OrchestrationBindingInfo _orchestrationBindingInfo;
+
+        public DurableController(
+            DurableFunctionInfo durableDurableFunctionInfo,
+            PowerShell pwsh)
+            : this(
+                Utils.AreDurableFunctionsEnabled(),
+                durableDurableFunctionInfo,
+                new PowerShellServices(pwsh),
+                new OrchestrationInvoker())
+        {
+        }
+
+        internal DurableController(
+            bool durableEnabled,
+            DurableFunctionInfo durableDurableFunctionInfo,
+            IPowerShellServices powerShellServices,
+            IOrchestrationInvoker orchestrationInvoker)
+        {
+            _durableEnabled = durableEnabled;
+            _durableFunctionInfo = durableDurableFunctionInfo;
+            _powerShellServices = powerShellServices;
+            _orchestrationInvoker = orchestrationInvoker;
+        }
+
+        public void BeforeFunctionInvocation(IList<ParameterBinding> inputData)
+        {
+            // If the function is an orchestration client, then we set the OrchestrationClient
+            // in the module context for the 'Start-NewOrchestration' function to use.
+            if (_durableFunctionInfo.IsOrchestrationClient)
+            {
+                ThrowIfDurableNotEnabled();
+
+                var orchestrationClient =
+                    inputData.First(item => item.Name == _durableFunctionInfo.OrchestrationClientBindingName)
+                        .Data.ToObject();
+
+                _powerShellServices.SetOrchestrationClient(orchestrationClient);
+            }
+            else if (_durableFunctionInfo.IsOrchestrationFunction)
+            {
+                ThrowIfDurableNotEnabled();
+
+                _orchestrationBindingInfo = CreateOrchestrationBindingInfo(inputData);
+                _powerShellServices.SetOrchestrationContext(_orchestrationBindingInfo.Context);
+            }
+        }
+
+        public void AfterFunctionInvocation()
+        {
+            _powerShellServices.ClearOrchestrationContext();
+        }
+
+        public bool TryGetInputBindingParameterValue(string bindingName, out object value)
+        {
+            if (_orchestrationInvoker != null
+                && _orchestrationBindingInfo != null
+                && string.CompareOrdinal(bindingName, _orchestrationBindingInfo.ParameterName) == 0)
+            {
+                value = _orchestrationBindingInfo.Context;
+                return true;
+            }
+
+            value = null;
+            return false;
+        }
+
+        public void AddPipelineOutputIfNecessary(Collection<object> pipelineItems, Hashtable result)
+        {
+            var shouldAddPipelineOutput =
+                _durableEnabled && _durableFunctionInfo.Type == DurableFunctionType.ActivityFunction;
+
+            if (shouldAddPipelineOutput)
+            {
+                var returnValue = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(pipelineItems);
+                result.Add(AzFunctionInfo.DollarReturn, returnValue);
+            }
+        }
+
+        public bool TryInvokeOrchestrationFunction(out Hashtable result)
+        {
+            if (!_durableFunctionInfo.IsOrchestrationFunction)
+            {
+                result = null;
+                return false;
+            }
+
+            result = _orchestrationInvoker.Invoke(_orchestrationBindingInfo, _powerShellServices);
+            return true;
+        }
+
+        private static OrchestrationBindingInfo CreateOrchestrationBindingInfo(IList<ParameterBinding> inputData)
+        {
+            // Quote from https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings:
+            //
+            // "Orchestrator functions should never use any input or output bindings other than the orchestration trigger binding.
+            //  Doing so has the potential to cause problems with the Durable Task extension because those bindings may not obey the single-threading and I/O rules."
+            //
+            // Therefore, it's by design that input data contains only one item, which is the metadata of the orchestration context.
+            var context = inputData[0];
+
+            return new OrchestrationBindingInfo(
+                context.Name,
+                JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String));
+        }
+
+        private void ThrowIfDurableNotEnabled()
+        {
+            if (!_durableEnabled)
+            {
+                throw new NotImplementedException(PowerShellWorkerStrings.DurableFunctionNotSupported);
+            }
+        }
+    }
+}

@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Management.Automation.Remoting;
 using System.Threading.Tasks;
 
-using Newtonsoft.Json;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
@@ -305,9 +304,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             try
             {
                 // Invoke the function and return a hashtable of out binding data
-                Hashtable results = functionInfo.Type == AzFunctionType.OrchestrationFunction
-                    ? InvokeOrchestrationFunction(psManager, functionInfo, invocationRequest, stopwatch)
-                    : InvokeSingleActivityFunction(psManager, functionInfo, invocationRequest, stopwatch);
+                Hashtable results = InvokeFunction(functionInfo, psManager, stopwatch, invocationRequest);
 
                 BindOutputFromResult(response.InvocationResponse, functionInfo, results);
             }
@@ -322,6 +319,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
 
             _msgStream.Write(response);
+        }
+
+        private Hashtable InvokeFunction(
+            AzFunctionInfo functionInfo,
+            PowerShellManager psManager,
+            FunctionInvocationPerformanceStopwatch stopwatch,
+            InvocationRequest invocationRequest)
+        {
+            var triggerMetadata = GetTriggerMetadata(functionInfo, invocationRequest);
+            var traceContext = GetTraceContext(functionInfo, invocationRequest);
+            stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.MetadataAndTraceContextReady);
+
+            return psManager.InvokeFunction(functionInfo, triggerMetadata, traceContext, invocationRequest.InputData, stopwatch);
         }
 
         internal StreamingMessage ProcessInvocationCancelRequest(StreamingMessage request)
@@ -374,128 +384,93 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             return response;
         }
 
-        /// <summary>
-        /// Invoke an orchestration function.
-        /// </summary>
-        private Hashtable InvokeOrchestrationFunction(
-            PowerShellManager psManager,
-            AzFunctionInfo functionInfo,
-            InvocationRequest invocationRequest,
-            FunctionInvocationPerformanceStopwatch stopwatch)
+        private static Hashtable GetTriggerMetadata(AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
         {
-            if (!Utils.AreDurableFunctionsEnabled())
+            if (!functionInfo.HasTriggerMetadataParam)
             {
-                throw new NotImplementedException(PowerShellWorkerStrings.DurableFunctionNotSupported);
+                return null;
             }
 
-            // Quote from https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings:
-            //
-            // "Orchestrator functions should never use any input or output bindings other than the orchestration trigger binding.
-            //  Doing so has the potential to cause problems with the Durable Task extension because those bindings may not obey the single-threading and I/O rules."
-            //
-            // Therefore, it's by design that 'InputData' contains only one item, which is the metadata of the orchestration context.
-            var context = invocationRequest.InputData[0];
-
-            var durableFuncContext = JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String);
-            return psManager.InvokeOrchestrationFunction(functionInfo, context.Name, durableFuncContext);
-        }
-
-        /// <summary>
-        /// Invoke a regular function or an activity function.
-        /// </summary>
-        private Hashtable InvokeSingleActivityFunction(
-            PowerShellManager psManager,
-            AzFunctionInfo functionInfo,
-            InvocationRequest invocationRequest,
-            FunctionInvocationPerformanceStopwatch stopwatch)
-        {
             const string InvocationId = "InvocationId";
             const string FunctionDirectory = "FunctionDirectory";
             const string FunctionName = "FunctionName";
 
-            // Bundle all TriggerMetadata into Hashtable to send down to PowerShell
-            Hashtable triggerMetadata = null;
-            TraceContext traceContext = null;
-
-            if (functionInfo.HasTriggerMetadataParam)
+            var triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase);
+            foreach (var dataItem in invocationRequest.TriggerMetadata)
             {
-                triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase);
-                foreach (var dataItem in invocationRequest.TriggerMetadata)
+                // MapField<K, V> is case-sensitive, but powershell is case-insensitive,
+                // so for keys differ only in casing, the first wins.
+                if (!triggerMetadata.ContainsKey(dataItem.Key))
                 {
-                    // MapField<K, V> is case-sensitive, but powershell is case-insensitive,
-                    // so for keys differ only in casing, the first wins.
-                    if (!triggerMetadata.ContainsKey(dataItem.Key))
-                    {
-                        triggerMetadata.Add(dataItem.Key, dataItem.Value.ToObject());
-                    }
-                }
-
-                if (!triggerMetadata.ContainsKey(InvocationId))
-                {
-                    triggerMetadata.Add(InvocationId, invocationRequest.InvocationId);
-                }
-                if (!triggerMetadata.ContainsKey(FunctionDirectory))
-                {
-                    triggerMetadata.Add(FunctionDirectory, functionInfo.FuncDirectory);
-                }
-                if (!triggerMetadata.ContainsKey(FunctionName))
-                {
-                    triggerMetadata.Add(FunctionName, functionInfo.FuncName);
+                    triggerMetadata.Add(dataItem.Key, dataItem.Value.ToObject());
                 }
             }
 
-            if (functionInfo.HasTraceContextParam)
+            if (!triggerMetadata.ContainsKey(InvocationId))
             {
-                traceContext = new TraceContext(invocationRequest.TraceContext.TraceParent, invocationRequest.TraceContext.TraceState, invocationRequest.TraceContext.Attributes);
+                triggerMetadata.Add(InvocationId, invocationRequest.InvocationId);
             }
 
-            stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.MetadataAndTraceContextReady);
+            if (!triggerMetadata.ContainsKey(FunctionDirectory))
+            {
+                triggerMetadata.Add(FunctionDirectory, functionInfo.FuncDirectory);
+            }
 
-            return psManager.InvokeFunction(functionInfo, triggerMetadata, traceContext, invocationRequest.InputData, stopwatch);
+            if (!triggerMetadata.ContainsKey(FunctionName))
+            {
+                triggerMetadata.Add(FunctionName, functionInfo.FuncName);
+            }
+
+            return triggerMetadata;
+        }
+
+        private static TraceContext GetTraceContext(AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
+        {
+            if (!functionInfo.HasTraceContextParam)
+            {
+                return null;
+            }
+
+            return new TraceContext(
+                invocationRequest.TraceContext.TraceParent,
+                invocationRequest.TraceContext.TraceState,
+                invocationRequest.TraceContext.Attributes);
         }
 
         /// <summary>
         /// Set the 'ReturnValue' and 'OutputData' based on the invocation results appropriately.
         /// </summary>
-        private void BindOutputFromResult(InvocationResponse response, AzFunctionInfo functionInfo, Hashtable results)
+        private static void BindOutputFromResult(InvocationResponse response, AzFunctionInfo functionInfo, IDictionary results)
         {
-            switch (functionInfo.Type)
+            if (functionInfo.DurableFunctionInfo.Type == DurableFunctionType.None) // TODO: but let activity functions have output bindings, too
             {
-                case AzFunctionType.RegularFunction:
-                    // Set out binding data and return response to be sent back to host
-                    foreach (KeyValuePair<string, ReadOnlyBindingInfo> binding in functionInfo.OutputBindings)
+                // Set out binding data and return response to be sent back to host
+                foreach (var (bindingName, bindingInfo) in functionInfo.OutputBindings)
+                {
+                    var outValue = results[bindingName];
+                    var transformedValue = Utils.TransformOutBindingValueAsNeeded(bindingName, bindingInfo, outValue);
+                    var dataToUse = transformedValue.ToTypedData();
+
+                    // if one of the bindings is '$return' we need to set the ReturnValue
+                    if (string.Equals(bindingName, AzFunctionInfo.DollarReturn, StringComparison.OrdinalIgnoreCase))
                     {
-                        string outBindingName = binding.Key;
-                        ReadOnlyBindingInfo bindingInfo = binding.Value;
-
-                        object outValue = results[outBindingName];
-                        object transformedValue = Utils.TransformOutBindingValueAsNeeded(outBindingName, bindingInfo, outValue);
-                        TypedData dataToUse = transformedValue.ToTypedData();
-
-                        // if one of the bindings is '$return' we need to set the ReturnValue
-                        if (string.Equals(outBindingName, AzFunctionInfo.DollarReturn, StringComparison.OrdinalIgnoreCase))
-                        {
-                            response.ReturnValue = dataToUse;
-                            continue;
-                        }
-
-                        ParameterBinding paramBinding = new ParameterBinding()
-                        {
-                            Name = outBindingName,
-                            Data = dataToUse
-                        };
-
-                        response.OutputData.Add(paramBinding);
+                        response.ReturnValue = dataToUse;
+                        continue;
                     }
-                    break;
 
-                case AzFunctionType.OrchestrationFunction:
-                case AzFunctionType.ActivityFunction:
-                    response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData();
-                    break;
+                    var paramBinding = new ParameterBinding()
+                    {
+                        Name = bindingName,
+                        Data = dataToUse
+                    };
 
-                default:
-                    throw new InvalidOperationException("Unreachable code.");
+                    response.OutputData.Add(paramBinding);
+                }
+            }
+
+            if (functionInfo.DurableFunctionInfo.ProvidesForcedDollarReturnValue)
+            {
+                response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData();
             }
         }
 

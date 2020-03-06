@@ -7,9 +7,7 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
-    using System.Collections.Generic;
     using System.Runtime.Serialization;
-    using System.Threading;
 
     /// <summary>
     /// Represent the context of an execution of an orchestration function.
@@ -32,8 +30,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         [DataMember]
         internal HistoryEvent[] History { get; set; }
 
-        internal AutoResetEvent ActionEvent { get; set; }
-
-        internal List<List<OrchestrationAction>> Actions { get; } = new List<List<OrchestrationAction>>();
+        internal OrchestrationActionCollector OrchestrationActionCollector { get; } = new OrchestrationActionCollector();
     }
 }

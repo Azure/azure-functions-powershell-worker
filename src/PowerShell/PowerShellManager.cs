@@ -6,10 +6,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Reflection;
-using System.Threading;
 using Microsoft.Azure.Functions.PowerShellWorker.Durable;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -17,7 +15,6 @@ using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
-    using System.Linq;
     using System.Management.Automation;
     using System.Text;
 
@@ -36,7 +33,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
         private readonly PowerShell _pwsh;
         private bool _runspaceInited;
-        private readonly AutoResetEvent _actionEvent;
 
         private readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
 
@@ -70,7 +66,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             Logger = logger;
             _pwsh = pwsh;
             _pwsh.Runspace.Name = $"PowerShellManager{id}";
-            _actionEvent = new AutoResetEvent(initialState: false);
         }
 
         /// <summary>
@@ -200,91 +195,37 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
         }
 
-        /// <summary>
-        /// Execution a function fired by a trigger or an activity function scheduled by an orchestration.
-        /// </summary>
-        internal Hashtable InvokeFunction(
+        public Hashtable InvokeFunction(
             AzFunctionInfo functionInfo,
             Hashtable triggerMetadata,
             TraceContext traceContext,
             IList<ParameterBinding> inputData,
             FunctionInvocationPerformanceStopwatch stopwatch)
         {
-            string scriptPath = functionInfo.ScriptPath;
-            string entryPoint = functionInfo.EntryPoint;
-            var hasSetInvocationContext = false;
+            var outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
 
-            Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
+            var durableController = new DurableController(functionInfo.DurableFunctionInfo, _pwsh);
 
             try
             {
-                if (Utils.AreDurableFunctionsEnabled())
-                {
-                    // If the function has a binding of the 'orchestrationClient' type, then we set
-                    // the OrchestrationClient in the module context for the 'Start-NewOrchestration' function to use.
-                    if (!string.IsNullOrEmpty(functionInfo.OrchestrationClientBindingName))
-                    {
-                        var orchestrationClient =
-                            inputData.First(item => item.Name == functionInfo.OrchestrationClientBindingName).Data.ToObject();
+                durableController.BeforeFunctionInvocation(inputData);
 
-                        _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext")
-                            .AddParameter("OrchestrationClient", orchestrationClient)
-                            .InvokeAndClearCommands();
-                        hasSetInvocationContext = true;
-                    }
-                }
-
-                if (string.IsNullOrEmpty(entryPoint))
-                {
-                    _pwsh.AddCommand(functionInfo.DeployedPSFuncName ?? scriptPath);
-                }
-                else
-                {
-                    // If an entry point is defined, we import the script module.
-                    _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
-                            .AddParameter("Name", scriptPath)
-                         .InvokeAndClearCommands();
-
-                    _pwsh.AddCommand(entryPoint);
-                }
-
+                AddEntryPointInvocationCommand(functionInfo);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.FunctionCodeReady);
 
-                // Set arguments for each input binding parameter
-                foreach (ParameterBinding binding in inputData)
-                {
-                    string bindingName = binding.Name;
-                    if (functionInfo.FuncParameters.TryGetValue(bindingName, out PSScriptParamInfo paramInfo))
-                    {
-                        var bindingInfo = functionInfo.InputBindings[bindingName];
-                        var valueToUse = Utils.TransformInBindingValueAsNeeded(paramInfo, bindingInfo, binding.Data.ToObject());
-                        _pwsh.AddParameter(bindingName, valueToUse);
-                    }
-                }
-
+                SetInputBindingParameterValues(functionInfo, inputData, durableController, triggerMetadata, traceContext);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InputBindingValuesReady);
-
-                // Gives access to additional Trigger Metadata if the user specifies TriggerMetadata
-                if(functionInfo.HasTriggerMetadataParam)
-                {
-                    _pwsh.AddParameter(AzFunctionInfo.TriggerMetadata, triggerMetadata);
-                }
-                if(functionInfo.HasTraceContextParam)
-                {
-                    _pwsh.AddParameter(AzFunctionInfo.TraceContext, traceContext);
-                }
 
                 _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
 
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InvokingFunctionCode);
-
                 Logger.Log(isUserOnlyLog: false, LogLevel.Trace, CreateInvocationPerformanceReportMessage(functionInfo.FuncName, stopwatch));
-
-                Collection<object> pipelineItems = null;
 
                 try
                 {
-                    pipelineItems = _pwsh.InvokeAndClearCommands<object>();
+                    return durableController.TryInvokeOrchestrationFunction(out var result)
+                                ? result
+                                : InvokeNonOrchestrationFunction(durableController, outputBindings);
                 }
                 catch (RuntimeException e)
                 {
@@ -296,82 +237,73 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     Logger.Log(isUserOnlyLog: true, LogLevel.Error, GetFunctionExceptionMessage(e));
                     throw;
                 }
-
-                Hashtable result = new Hashtable(outputBindings, StringComparer.OrdinalIgnoreCase);
-
-                if (Utils.AreDurableFunctionsEnabled() && functionInfo.Type == AzFunctionType.ActivityFunction)
-                {
-                    var returnValue = CreateReturnValueFromFunctionOutput(pipelineItems);
-                    result.Add(AzFunctionInfo.DollarReturn, returnValue);
-                }
-
-                return result;
             }
             finally
             {
-                if (hasSetInvocationContext)
-                {
-                    ClearInvocationContext();
-                }
-
+                durableController.AfterFunctionInvocation();
                 outputBindings.Clear();
                 ResetRunspace();
             }
         }
 
-        internal Hashtable InvokeOrchestrationFunction(
+        private void SetInputBindingParameterValues(
             AzFunctionInfo functionInfo,
-            string contextParamName,
-            OrchestrationContext context)
+            IEnumerable<ParameterBinding> inputData,
+            DurableController durableController,
+            Hashtable triggerMetadata,
+            TraceContext traceContext)
         {
-            context.ActionEvent = _actionEvent;
-
-            try
+            foreach (var binding in inputData)
             {
-                if (!functionInfo.FuncParameters.ContainsKey(contextParamName))
+                if (functionInfo.FuncParameters.TryGetValue(binding.Name, out var paramInfo))
                 {
-                    // TODO: we should do more analysis in FunctionLoadRequest phase
-                    throw new InvalidOperationException($"Orchestration function should define the parameter '-{contextParamName}'");
+                    if (!durableController.TryGetInputBindingParameterValue(binding.Name, out var valueToUse))
+                    {
+                        var bindingInfo = functionInfo.InputBindings[binding.Name];
+                        valueToUse = Utils.TransformInBindingValueAsNeeded(paramInfo, bindingInfo, binding.Data.ToObject());
+                    }
+
+                    _pwsh.AddParameter(binding.Name, valueToUse);
                 }
-
-                _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext")
-                     .AddParameter("OrchestrationContext", context)
-                     .InvokeAndClearCommands();
-
-                _pwsh.AddCommand(string.IsNullOrEmpty(functionInfo.EntryPoint) ? functionInfo.ScriptPath : functionInfo.EntryPoint)
-                     .AddParameter(contextParamName, context);
-
-                var outputBuffer = new PSDataCollection<object>();
-                var asyncResult = _pwsh.BeginInvoke<object, object>(input: null, output: outputBuffer);
-
-                var waitHandles = new[] { _actionEvent, asyncResult.AsyncWaitHandle };
-                var signaledHandleIndex = WaitHandle.WaitAny(waitHandles);
-                var signaledHandle = waitHandles[signaledHandleIndex];
-
-                OrchestrationMessage retResult = null;
-                if (ReferenceEquals(signaledHandle, _actionEvent))
-                {
-                    // _actionEvent signaled
-                    _pwsh.Stop();
-                    retResult = new OrchestrationMessage(isDone: false, actions: context.Actions, output: null);
-                }
-                else
-                {
-                    // asyncResult.AsyncWaitHandle signaled
-                    _pwsh.EndInvoke(asyncResult);
-                    var result = CreateReturnValueFromFunctionOutput(outputBuffer);
-                    retResult = new OrchestrationMessage(isDone: true, actions: context.Actions, output: result);
-                }
-
-                return new Hashtable { { AzFunctionInfo.DollarReturn, retResult } };
             }
-            finally
-            {
-                _pwsh.Streams.ClearStreams();
-                _pwsh.Commands.Clear();
 
-                ClearInvocationContext();
-                ResetRunspace();
+            // Gives access to additional Trigger Metadata if the user specifies TriggerMetadata
+            if (functionInfo.HasTriggerMetadataParam)
+            {
+                _pwsh.AddParameter(AzFunctionInfo.TriggerMetadata, triggerMetadata);
+            }
+
+            if (functionInfo.HasTraceContextParam)
+            {
+                _pwsh.AddParameter(AzFunctionInfo.TraceContext, traceContext);
+            }
+        }
+
+        /// <summary>
+        /// Execution a function fired by a trigger or an activity function scheduled by an orchestration.
+        /// </summary>
+        private Hashtable InvokeNonOrchestrationFunction(DurableController durableController, IDictionary outputBindings)
+        {
+            var pipelineItems = _pwsh.InvokeAndClearCommands<object>();
+            var result = new Hashtable(outputBindings, StringComparer.OrdinalIgnoreCase);
+            durableController.AddPipelineOutputIfNecessary(pipelineItems, result);
+            return result;
+        }
+
+        private void AddEntryPointInvocationCommand(AzFunctionInfo functionInfo)
+        {
+            if (string.IsNullOrEmpty(functionInfo.EntryPoint))
+            {
+                _pwsh.AddCommand(functionInfo.DeployedPSFuncName ?? functionInfo.ScriptPath);
+            }
+            else
+            {
+                // If an entry point is defined, we import the script module.
+                _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
+                    .AddParameter("Name", functionInfo.ScriptPath)
+                    .InvokeAndClearCommands();
+
+                _pwsh.AddCommand(functionInfo.EntryPoint);
             }
         }
 
@@ -404,16 +336,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             return $"EXCEPTION: {_errorRecordFormatter.Format(exception.ErrorRecord)}";
         }
 
-        private static object CreateReturnValueFromFunctionOutput(IList<object> pipelineItems)
-        {
-            if (pipelineItems == null || pipelineItems.Count <= 0)
-            {
-                return null;
-            }
-
-            return pipelineItems.Count == 1 ? pipelineItems[0] : pipelineItems.ToArray();
-        }
-
         private static string CreateInvocationPerformanceReportMessage(string functionName, FunctionInvocationPerformanceStopwatch stopwatch)
         {
             var performanceDetails = FormatPerformanceDetails(stopwatch);
@@ -437,13 +359,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
 
             return performanceDetails;
-        }
-
-        private void ClearInvocationContext()
-        {
-            _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext")
-                 .AddParameter("Clear", true)
-                 .InvokeAndClearCommands();
         }
     }
 }
