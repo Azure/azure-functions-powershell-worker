@@ -11,6 +11,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     internal class PowerShellServices : IPowerShellServices
     {
+        private const string SetFunctionInvocationContextCommand =
+            "Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext";
+
         private readonly PowerShell _pwsh;
         private bool _hasSetOrchestrationContext = false;
 
@@ -21,7 +24,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void SetOrchestrationClient(object orchestrationClient)
         {
-            _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext")
+            _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                 .AddParameter("OrchestrationClient", orchestrationClient)
                 .InvokeAndClearCommands();
 
@@ -30,7 +33,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void SetOrchestrationContext(OrchestrationContext orchestrationContext)
         {
-            _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext")
+            _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                 .AddParameter("OrchestrationContext", orchestrationContext)
                 .InvokeAndClearCommands();
 
@@ -41,7 +44,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             if (_hasSetOrchestrationContext)
             {
-                _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext")
+                _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                     .AddParameter("Clear", true)
                     .InvokeAndClearCommands();
             }
