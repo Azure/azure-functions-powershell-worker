@@ -4,12 +4,18 @@
 |---|---|
 |dev|[![dev-build-status][]][dev-build-site]|
 |v3.x/ps7|[![v3.x-ps7-build-status][]][v3.x-ps7-build-site]|
+|v3.x/ps6|[![v3.x-ps6-build-status][]][v3.x-ps6-build-site]|
+|v2.x|[![v2.x-build-status][]][v2.x-build-site]|
 
 [azure-functions-logo]: https://raw.githubusercontent.com/Azure/azure-functions-cli/master/src/Azure.Functions.Cli/npm/assets/azure-functions-logo-color-raster.png
 [dev-build-status]: https://ci.appveyor.com/api/projects/status/github/Azure/azure-functions-powershell-worker?branch=dev&svg=true
 [dev-build-site]: https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=dev
 [v3.x-ps7-build-status]: https://ci.appveyor.com/api/projects/status/github/Azure/azure-functions-powershell-worker?branch=v3.x/ps7&svg=true
 [v3.x-ps7-build-site]: https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=v3.x/ps7
+[v3.x-ps6-build-status]: https://ci.appveyor.com/api/projects/status/github/Azure/azure-functions-powershell-worker?branch=v3.x/ps6&svg=true
+[v3.x-ps6-build-site]: https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=v3.x/ps6
+[v2.x-build-status]: https://ci.appveyor.com/api/projects/status/github/Azure/azure-functions-powershell-worker?branch=v2.x&svg=true
+[v2.x-build-site]: https://ci.appveyor.com/project/appsvc/azure-functions-powershell-worker?branch=v2.x
 
 # Azure Functions PowerShell Language Worker
 
