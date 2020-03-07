@@ -21,7 +21,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             this._fixture = fixture;
         }
 
-        [Fact]
+        [Fact(Skip = "Skip Durable tests until migration to Durable Functions v2")]
         public async Task DurableClientFollowsAsyncPattern()
         {
             var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClient", queryString: string.Empty);
