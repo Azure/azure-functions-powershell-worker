@@ -37,7 +37,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .WithParsed(ops => arguments = ops)
                 .WithNotParsed(err => Environment.Exit(1));
 
-            var msgStream = new MessagingStream(arguments.Host, arguments.Port, arguments.MaxMessageLength);
+            var msgStream = new MessagingStream(arguments.Host, arguments.Port);
             var requestProcessor = new RequestProcessor(msgStream);
 
             // Send StartStream message
@@ -74,7 +74,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         [Option("requestId", Required = true, HelpText = "Request ID used for gRPC communication with the Host.")]
         public string RequestId { get; set; }
 
-        [Option("grpcMaxMessageLength", Required = true, HelpText = "gRPC Maximum message size.")]
+        [Option("grpcMaxMessageLength", Required = false, HelpText = "[Deprecated and ignored] gRPC Maximum message size.")]
         public int MaxMessageLength { get; set; }
     }
 }
