@@ -29,14 +29,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         [ValidateNotNull]
         public object Input { get; set; }
 
-        // Used for waiting on the pipeline to be stopped.
+        [Parameter]
+        public SwitchParameter NoWait { get; set; }
+
         private readonly ActivityInvocationTracker _activityInvocationTracker = new ActivityInvocationTracker();
 
         protected override void EndProcessing()
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
-            _activityInvocationTracker.ReplayActivityOrStop(FunctionName, Input, context, WriteObject);
+            _activityInvocationTracker.ReplayActivityOrStop(FunctionName, Input, context, NoWait.IsPresent, WriteObject);
         }
 
         protected override void StopProcessing()

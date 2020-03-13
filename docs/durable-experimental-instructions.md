@@ -2,36 +2,98 @@
 
 ## **PLEASE READ THIS:**
 
-> This is an experimental feature. Do **not** enable or try to use it for production purposes. The programming model **will** change, so the sample code or any app code you come up with may not work in the next versions. The main purpose of making it available now is to enable experimentation and early feedback. **Your feedback is highly appreciated**, and please feel free to file GitHub issues. But don't expect backward compatibility or quick bugfixes at this point.
+> This is an experimental feature. Do **not** enable or try to use it for production purposes. The programming model may change, so the sample code or any app code you come up with may not work in the next versions. The main purpose of making it available now is to enable experimentation and early feedback. **Your feedback is highly appreciated**, and please feel free to file [GitHub issues](https://github.com/Azure/azure-functions-powershell-worker/issues/new).
 
-## 1. Function Chaining sample
+## 1. Sample app
 
-Start with the sample Function Chaining app at `examples/durable/FunctionChainingApp`.
+Start with the sample durable app at `examples/durable/DurableApp`.
 
-Please note:
+Note:
 
-- Please make sure you are using Azure Functions **v2** runtime. This does **not** currently work on Azure Functions **v3**, and will probably never work on **v1**.
-- Please make sure you are using the sample code version corresponding to the version of the PowerShell Worker. The programming model is still changing, so older or newer samples may not work. As of December 12, 2019, **v1.0.197** is deployed on Azure. So, if you are trying online, use the samples tagged with **v1.0.197** (<https://github.com/Azure/azure-functions-powershell-worker/tree/v1.0.197/examples/durable/FunctionChainingApp>). Alternatively, take the latest PowerShell Worker code from the **dev** branch, and rebuild and run the PowerShell Worker locally.
-- Function Chaining is the only implemented durable pattern at this point. We are currently working on the other patterns. Expect "Fan-Out/Fan-In" to be the next one.
+- Please make sure you are using Azure Functions **v3** runtime. There are no plans to support Durable PowerShell on Azure Functions **v1** or **v2**.
+- There is no support for Durable Functions **2.x** at this point, only Durable Functions **1.x** are supported (see [Durable Functions versions overview](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-versions)).
+- Please make sure you are using the sample code version corresponding to the version of the PowerShell Worker. The programming model is still changing, so older or newer samples may not work. So, if you are trying Durable PowerShell on Azure, use the samples tagged with the version of the PowerShell worker deployed to Azure. Alternatively, take the latest PowerShell Worker code from the **dev** branch, and rebuild and run the PowerShell Worker locally.
+- Only a limited number of patterns is enabled at this point:
+  - [Function chaining](https://docs.microsoft.com/azure/azure-functions/durable/durable-functions-overview?tabs=csharp#chaining)
+  - [Fan out/fan in](https://docs.microsoft.com/azure/azure-functions/durable/durable-functions-overview?tabs=csharp#fan-in-out)
+  - [Async HTTP APIs](https://docs.microsoft.com/azure/azure-functions/durable/durable-functions-overview?tabs=csharp#async-http)
 
 ## 2. Install the required extensions
 
 Before deploying your app, run the following command in the app directory:
 
 ``` bash
-func extensions install
+func extensions install --powershell
 ```
 
-## 3. Enable the experimental feature
+Please note that the Microsoft.Azure.WebJobs.Extensions.DurableTask package should be pinned to a 1.* version until Durable Functions 2.x support is added. For this reason, the extensions.csproj file already includes the following line:
 
-Configure the following app setting:
+``` xml
+<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="1.8.3" />
+```
 
-`PSWorkerEnableExperimentalDurableFunctions` = `"true"`
+## 3. App settings
 
-## 4. Configure AzureWebJobsStorage
+Set the following app settings (if running on Azure) or just use the sample local.settings.json (if running locally):
+
+``` json
+{
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "AzureWebJobsFeatureFlags": "AllowSynchronousIO",
+    "FUNCTIONS_WORKER_RUNTIME": "powershell",
+    "PSWorkerInProcConcurrencyUpperBound": 10,
+    "PSWorkerEnableExperimentalDurableFunctions": "true"
+  }
+}
+```
 
 Make sure [AzureWebJobsStorage](https://docs.microsoft.com/azure/azure-functions/functions-app-settings#azurewebjobsstorage) points to a valid storage account. This storage is required for data persisted by Durable Functions.
 
-## 5. Start
+You may need to adjust PSWorkerInProcConcurrencyUpperBound to increase concurrency for Fan-out/Fan-in pattern.
 
-Start the HttpTrigger function. The HTTP trigger invocation will return the HTTP 202 response with the orchestration management URLs, so you can start invoking statusQueryGetUri.
+## 4. Starting the app
+
+Configure the environment variable FUNCTIONS_WORKER_RUNTIME_VERSION to select PowerShell 7:
+
+``` PowerShell
+$env:FUNCTIONS_WORKER_RUNTIME_VERSION = '~7'
+```
+
+and start the app:
+
+``` bash
+func start
+```
+
+## 5. Function Chaining pattern
+
+Start the FunctionChainingStart function:
+
+``` PowerShell
+Invoke-RestMethod 'http://localhost:7071/api/FunctionChainingStart'
+```
+
+## 6. Fan-out/Fan-in pattern
+
+Start the FanOutFanInStart function:
+
+``` PowerShell
+Invoke-RestMethod 'http://localhost:7071/api/FanOutFanInStart'
+```
+
+## 7. Async HTTP APIs
+
+When you invoke FunctionChainingStart or FanOutFanInStart, it returns an HTTP 202 response with the orchestration management URLs, so you can start invoking statusQueryGetUri and wait for the orchestration to complete:
+
+``` PowerShell
+$invokeResponse = Invoke-RestMethod 'http://localhost:7071/api/FunctionChainingStart'
+while ($true) {
+    $status = Invoke-RestMethod $invokeResponse.statusQueryGetUri
+    $status
+    Start-Sleep -Seconds 2
+    if ($status.runtimeStatus -eq 'Completed') {
+        break;
+    }
+}
+```
