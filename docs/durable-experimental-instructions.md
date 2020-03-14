@@ -48,11 +48,15 @@ Set the following app settings (if running on Azure) or just use the sample loca
 }
 ```
 
-Make sure [AzureWebJobsStorage](https://docs.microsoft.com/azure/azure-functions/functions-app-settings#azurewebjobsstorage) points to a valid storage account. This storage is required for data persisted by Durable Functions.
-
-You may need to adjust PSWorkerInProcConcurrencyUpperBound to increase concurrency for Fan-out/Fan-in pattern.
+- Make sure `AzureWebJobsStorage` [points to a valid Azure storage account](https://docs.microsoft.com/azure/azure-functions/functions-app-settings#azurewebjobsstorage). This storage is required for data persisted by Durable Functions.
+- `AzureWebJobsFeatureFlags` must contain `AllowSynchronousIO`. Don't ask.
+- `FUNCTIONS_WORKER_RUNTIME` must be set to `powershell`.
+- You may need to adjust `PSWorkerInProcConcurrencyUpperBound` to increase [concurrency](https://docs.microsoft.com/azure/azure-functions/functions-reference-powershell#concurrency) for the Fan-out/Fan-in pattern.
+- `PSWorkerEnableExperimentalDurableFunctions` is a feature flag that enables PowerShell Durable Functions. It is turned off by default for now.
 
 ## 4. Starting the app
+
+If you have `UseDevelopmentStorage=true` as the `AzureWebJobsStorage` value, remember to start the Azure Storage Emulator.
 
 Configure the environment variable FUNCTIONS_WORKER_RUNTIME_VERSION to select PowerShell 7:
 
