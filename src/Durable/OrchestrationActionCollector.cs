@@ -11,16 +11,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     internal class OrchestrationActionCollector
     {
-        private readonly List<List<OrchestrationAction>> _actions = new List<List<OrchestrationAction>>();
+        private readonly List<OrchestrationAction> _actions = new List<OrchestrationAction>();
 
         private readonly AutoResetEvent _stopEvent = new AutoResetEvent(initialState: false);
 
         public void Add(OrchestrationAction action)
         {
-            _actions.Add(new List<OrchestrationAction> { action });
+            _actions.Add(action);
         }
 
-        public Tuple<bool, List<List<OrchestrationAction>>> WaitForActions(WaitHandle completionWaitHandle)
+        public Tuple<bool, List<OrchestrationAction>> WaitForActions(WaitHandle completionWaitHandle)
         {
             var waitHandles = new[] { _stopEvent, completionWaitHandle };
             var signaledHandleIndex = WaitHandle.WaitAny(waitHandles);

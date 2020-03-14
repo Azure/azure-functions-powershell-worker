@@ -6,11 +6,15 @@ $ErrorActionPreference = 'Stop'
 
 Write-Host "DurableOrchestrator: started. Input: $($Context.Input)"
 
+# Function chaining
 $output = @()
-
 $output += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "Tokyo"
-$output += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "Seattle"
-$output += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "London"
+
+# Fan-out/Fan-in
+$tasks = @()
+$tasks += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "Seattle" -NoWait
+$tasks += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "London" -NoWait
+$output +=  Wait-ActivityFunction -Task $tasks
 
 Write-Host "DurableOrchestrator: finished."
 

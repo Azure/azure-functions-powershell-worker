@@ -93,9 +93,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             Assert.Single(result);
             var returnOrchestrationMessage = (OrchestrationMessage)result["$return"];
-            Assert.Equal(actions.Length, returnOrchestrationMessage.Actions.Count);
-            Assert.All(returnOrchestrationMessage.Actions, actionEntry => Assert.Single(actionEntry));
-            Assert.Equal(actions, returnOrchestrationMessage.Actions.SelectMany(x => x));
+            Assert.Single(returnOrchestrationMessage.Actions);
+            Assert.Equal(actions.Length, returnOrchestrationMessage.Actions.Single().Count);
+            Assert.Equal(actions, returnOrchestrationMessage.Actions.Single());
         }
 
         [Fact]
