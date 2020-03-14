@@ -134,8 +134,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         {
             var history = new[]
             {
+                // Emulate invoking the same function (FunctionA) twice. This is to make sure that
+                // both invocations are accounted for, and both results are preserved separately.
+                // Without this test, the history lookup algorithm in the WaitForActivityTasks method
+                // could just look for the the first history event by function name, and this error
+                // would not be detected.
                 CreateHistory("FunctionA", scheduled: scheduled, completed: completed, output: "\"Result1\""),
                 CreateHistory("FunctionA", scheduled: scheduled, completed: completed, output: "\"Result2\""),
+
                 CreateHistory("FunctionB", scheduled: scheduled, completed: completed, output: "\"Result3\"")
             }.Aggregate((a, b) => a.Concat(b).ToArray());
 
