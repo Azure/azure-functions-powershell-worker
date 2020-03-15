@@ -4,7 +4,15 @@
 
 > This is an experimental feature. Do **not** enable or try to use it for production purposes. The programming model may change, so the sample code or any app code you come up with may not work in the next versions. The main purpose of making it available now is to enable experimentation and early feedback. **Your feedback is highly appreciated**, and please feel free to file [GitHub issues](https://github.com/Azure/azure-functions-powershell-worker/issues/new).
 
-## 1. Sample app
+## 1. PowerShell worker version
+
+At the moment of writing this (March 14, 2020), the Durable PowerShell implementation deployed to Azure is outdated. If you want to follow the instructions below, please install a more recent version locally:
+- Install [Azure Functions Core Tools](https://docs.microsoft.com/azure/azure-functions/functions-run-local?tabs=windows%2Ccsharp%2Cbash#install-the-azure-functions-core-tools) **v3.x** (if not installed yet).
+- Download the [PowerShell worker package](7o8dueat6aj7d2qc/artifacts/Microsoft.Azure.Functions.PowerShellWorker.PS7.3.0.261.nupkg), rename it to .zip, and extract the content of the `contentFiles\any\any\workers\powershell` folder to `workers\powershell` under the [Core Tools](https://github.com/Azure/azure-functions-powershell-worker/blob/dev/README.md#published-host), overwriting the existing files.
+
+If you want to try this on Azure, you will have to wait a bit longer.
+
+## 2. Sample app
 
 Start with the sample durable app at `examples/durable/DurableApp`.
 
@@ -18,7 +26,7 @@ Note:
   - [Fan out/fan in](https://docs.microsoft.com/azure/azure-functions/durable/durable-functions-overview?tabs=csharp#fan-in-out)
   - [Async HTTP APIs](https://docs.microsoft.com/azure/azure-functions/durable/durable-functions-overview?tabs=csharp#async-http)
 
-## 2. Install the required extensions
+## 3. Install the required extensions
 
 Before deploying your app, run the following command in the app directory:
 
@@ -32,7 +40,7 @@ Please note that the Microsoft.Azure.WebJobs.Extensions.DurableTask package shou
 <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="1.8.3" />
 ```
 
-## 3. App settings
+## 4. App settings
 
 Set the following app settings (if running on Azure) or just use the sample local.settings.json (if running locally):
 
@@ -54,7 +62,7 @@ Set the following app settings (if running on Azure) or just use the sample loca
 - You may need to adjust `PSWorkerInProcConcurrencyUpperBound` to increase [concurrency](https://docs.microsoft.com/azure/azure-functions/functions-reference-powershell#concurrency) for the Fan-out/Fan-in pattern.
 - `PSWorkerEnableExperimentalDurableFunctions` is a feature flag that enables PowerShell Durable Functions. It is turned off by default for now.
 
-## 4. Starting the app
+## 5. Starting the app
 
 If you have `UseDevelopmentStorage=true` as the `AzureWebJobsStorage` value, remember to start the Azure Storage Emulator.
 
@@ -70,7 +78,7 @@ and start the app:
 func start
 ```
 
-## 5. Function Chaining pattern
+## 6. Function Chaining pattern
 
 Start the FunctionChainingStart function:
 
@@ -78,7 +86,7 @@ Start the FunctionChainingStart function:
 Invoke-RestMethod 'http://localhost:7071/api/FunctionChainingStart'
 ```
 
-## 6. Fan-out/Fan-in pattern
+## 7. Fan-out/Fan-in pattern
 
 Start the FanOutFanInStart function:
 
@@ -86,7 +94,7 @@ Start the FanOutFanInStart function:
 Invoke-RestMethod 'http://localhost:7071/api/FanOutFanInStart'
 ```
 
-## 7. Async HTTP APIs
+## 8. Async HTTP APIs
 
 When you invoke FunctionChainingStart or FanOutFanInStart, it returns an HTTP 202 response with the orchestration management URLs, so you can start invoking statusQueryGetUri and wait for the orchestration to complete:
 
