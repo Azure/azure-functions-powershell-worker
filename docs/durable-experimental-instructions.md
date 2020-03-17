@@ -8,7 +8,7 @@
 
 At the moment of writing this (March 14, 2020), the Durable PowerShell implementation deployed to Azure is outdated. If you want to follow the instructions below, please install a more recent version locally:
 - Install [Azure Functions Core Tools](https://docs.microsoft.com/azure/azure-functions/functions-run-local?tabs=windows%2Ccsharp%2Cbash#install-the-azure-functions-core-tools) **v3.x** (if not installed yet).
-- Download the [PowerShell worker package](7o8dueat6aj7d2qc/artifacts/Microsoft.Azure.Functions.PowerShellWorker.PS7.3.0.261.nupkg), rename it to .zip, and extract the content of the `contentFiles\any\any\workers\powershell` folder to `workers\powershell` under the [Core Tools](https://github.com/Azure/azure-functions-powershell-worker/blob/dev/README.md#published-host), overwriting the existing files.
+- Download the [PowerShell worker package](https://ci.appveyor.com/api/buildjobs/7o8dueat6aj7d2qc/artifacts/Microsoft.Azure.Functions.PowerShellWorker.PS7.3.0.261.nupkg), rename it to .zip, and extract the content of the `contentFiles\any\any\workers\powershell` folder to `workers\powershell` under the [Core Tools](https://github.com/Azure/azure-functions-powershell-worker/blob/dev/README.md#published-host), overwriting the existing files.
 
 If you want to try this on Azure, you will have to wait a bit longer.
 
