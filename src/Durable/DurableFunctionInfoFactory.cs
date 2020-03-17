@@ -18,7 +18,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 bindings.FirstOrDefault(
                     binding => !string.IsNullOrEmpty(binding.Key)
                                && binding.Value.Direction == BindingInfo.Types.Direction.In
-                               && DurableBindings.IsOrchestrationClient(binding.Value.Type));
+                               && DurableBindings.IsDurableClient(binding.Value.Type));
 
             var durableFunctionType = GetDurableFunctionType(bindings);
 

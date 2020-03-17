@@ -9,13 +9,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     internal static class DurableBindings
     {
-        private const string OrchestrationClient = "orchestrationClient";
+        private const string DurableClient = "durableClient";
         private const string OrchestrationTrigger = "orchestrationTrigger";
         private const string ActivityTrigger = "activityTrigger";
 
-        public static bool IsOrchestrationClient(string bindingType)
+        public static bool IsDurableClient(string bindingType)
         {
-            return string.Compare(bindingType, OrchestrationClient, StringComparison.OrdinalIgnoreCase) == 0;
+            return string.Compare(bindingType, DurableClient, StringComparison.OrdinalIgnoreCase) == 0;
         }
 
         public static bool IsOrchestrationTrigger(string bindingType)
@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         public static bool CanParameterDeclarationBeOmitted(string bindingType)
         {
             // Declaring a function parameter for the orchestration client binding is allowed but not mandatory
-            return IsOrchestrationClient(bindingType);
+            return IsDurableClient(bindingType);
         }
     }
 }

@@ -22,10 +22,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _pwsh = pwsh;
         }
 
-        public void SetOrchestrationClient(object orchestrationClient)
+        public void SetDurableClient(object durableClient)
         {
             _pwsh.AddCommand(SetFunctionInvocationContextCommand)
-                .AddParameter("OrchestrationClient", orchestrationClient)
+                .AddParameter("DurableClient", durableClient)
                 .InvokeAndClearCommands();
 
             _hasSetOrchestrationContext = true;
