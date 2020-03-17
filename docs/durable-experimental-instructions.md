@@ -34,10 +34,10 @@ Before deploying your app, run the following command in the app directory:
 func extensions install --powershell
 ```
 
-Please note that the Microsoft.Azure.WebJobs.Extensions.DurableTask package should be pinned to a 1.* version until Durable Functions 2.x support is added. For this reason, the extensions.csproj file already includes the following line:
+Please note that the Microsoft.Azure.WebJobs.Extensions.DurableTask package should be pinned to version 2.0.0 until [the fix for a known issue](https://github.com/Azure/azure-functions-durable-extension/pull/1164) is released. For this reason, the extensions.csproj file already includes the following line:
 
 ``` xml
-<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="1.8.3" />
+<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="2.0.0" />
 ```
 
 ## 4. App settings
