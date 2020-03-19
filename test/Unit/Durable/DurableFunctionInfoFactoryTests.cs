@@ -15,24 +15,24 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     public class DurableFunctionInfoFactoryTests
     {
         [Fact]
-        public void ContainsOrchestrationClientName()
+        public void ContainsDurableClientName()
         {
             var bindings = new MapField<string, BindingInfo>
             {
                 {
                     "TestBindingName",
-                    new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "orchestrationClient" }
+                    new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "durableClient" }
                 }
             };
 
             var durableFunctionInfo = DurableFunctionInfoFactory.Create(bindings);
 
-            Assert.True(durableFunctionInfo.IsOrchestrationClient);
-            Assert.Equal("TestBindingName", durableFunctionInfo.OrchestrationClientBindingName);
+            Assert.True(durableFunctionInfo.IsDurableClient);
+            Assert.Equal("TestBindingName", durableFunctionInfo.DurableClientBindingName);
         }
 
         [Fact]
-        public void ContainsFirstInputOrchestrationClientName()
+        public void ContainsFirstInputDurableClientName()
         {
             var bindings = new MapField<string, BindingInfo>
             {
@@ -42,15 +42,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 },
                 {
                     "Binding2",
-                    new BindingInfo { Direction = BindingInfo.Types.Direction.Out, Type = "orchestrationClient" }
+                    new BindingInfo { Direction = BindingInfo.Types.Direction.Out, Type = "durableClient" }
                 },
                 {
                     "Binding3",
-                    new BindingInfo { Direction = BindingInfo.Types.Direction.Inout, Type = "orchestrationClient" }
+                    new BindingInfo { Direction = BindingInfo.Types.Direction.Inout, Type = "durableClient" }
                 },
                 {
                     "Binding4",
-                    new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "orchestrationClient" }
+                    new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "durableClient" }
                 },
                 {
                     "Binding5",
@@ -60,43 +60,43 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             var durableFunctionInfo = DurableFunctionInfoFactory.Create(bindings);
 
-            Assert.True(durableFunctionInfo.IsOrchestrationClient);
-            Assert.Equal("Binding4", durableFunctionInfo.OrchestrationClientBindingName);
+            Assert.True(durableFunctionInfo.IsDurableClient);
+            Assert.Equal("Binding4", durableFunctionInfo.DurableClientBindingName);
         }
 
         [Fact]
-        public void ContainsNoOrchestrationClientNameIfNoBindings()
+        public void ContainsNoDurableClientNameIfNoBindings()
         {
             var durableFunctionInfo = DurableFunctionInfoFactory.Create(new MapField<string, BindingInfo>());
 
-            Assert.False(durableFunctionInfo.IsOrchestrationClient);
-            Assert.Null(durableFunctionInfo.OrchestrationClientBindingName);
+            Assert.False(durableFunctionInfo.IsDurableClient);
+            Assert.Null(durableFunctionInfo.DurableClientBindingName);
         }
 
         [Fact]
-        public void ContainsNoOrchestrationClientNameIfNoInputOrchestrationClientBindings()
+        public void ContainsNoDurableClientNameIfNoInputDurableClientBindings()
         {
             var durableFunctionInfo = DurableFunctionInfoFactory.Create(new MapField<string, BindingInfo>());
 
-            Assert.False(durableFunctionInfo.IsOrchestrationClient);
-            Assert.Null(durableFunctionInfo.OrchestrationClientBindingName);
+            Assert.False(durableFunctionInfo.IsDurableClient);
+            Assert.Null(durableFunctionInfo.DurableClientBindingName);
         }
 
         [Fact]
-        public void ContainsNoOrchestrationClientNameIfBindingNameIsEmpty()
+        public void ContainsNoDurableClientNameIfBindingNameIsEmpty()
         {
             var bindings = new MapField<string, BindingInfo>
             {
                 {
                     string.Empty,
-                    new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "orchestrationClient" }
+                    new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "durableClient" }
                 }
             };
 
             var durableFunctionInfo = DurableFunctionInfoFactory.Create(bindings);
 
-            Assert.False(durableFunctionInfo.IsOrchestrationClient);
-            Assert.Null(durableFunctionInfo.OrchestrationClientBindingName);
+            Assert.False(durableFunctionInfo.IsDurableClient);
+            Assert.Null(durableFunctionInfo.DurableClientBindingName);
         }
 
         [Fact]
@@ -138,7 +138,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             {
                 {
                     "Binding1",
-                    new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "orchestrationClient" }
+                    new BindingInfo { Direction = BindingInfo.Types.Direction.In, Type = "durableClient" }
                 },
                 {
                     // orchestrationTrigger, but not Direction.In

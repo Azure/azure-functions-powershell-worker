@@ -24,25 +24,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private readonly Mock<IOrchestrationInvoker> _mockOrchestrationInvoker = new Mock<IOrchestrationInvoker>(MockBehavior.Strict);
 
         [Fact]
-        public void BeforeFunctionInvocation_SetsOrchestrationClient_ForOrchestrationClientFunction()
+        public void BeforeFunctionInvocation_SetsDurableClient_ForDurableClientFunction()
         {
-            var durableController = CreateDurableController(DurableFunctionType.None, "OrchestrationClientBindingName");
+            var durableController = CreateDurableController(DurableFunctionType.None, "DurableClientBindingName");
 
-            var orchestrationClient = new { FakeClientProperty = "FakeClientPropertyValue" };
+            var durableClient = new { FakeClientProperty = "FakeClientPropertyValue" };
             var inputData = new[]
             {
                 CreateParameterBinding("AnotherParameter", "IgnoredValue"),
-                CreateParameterBinding("OrchestrationClientBindingName", orchestrationClient),
+                CreateParameterBinding("DurableClientBindingName", durableClient),
                 CreateParameterBinding("YetAnotherParameter", "IgnoredValue")
             };
 
-            _mockPowerShellServices.Setup(_ => _.SetOrchestrationClient(It.IsAny<object>()));
+            _mockPowerShellServices.Setup(_ => _.SetDurableClient(It.IsAny<object>()));
 
             durableController.BeforeFunctionInvocation(inputData);
 
             _mockPowerShellServices.Verify(
-                _ => _.SetOrchestrationClient(
-                    It.Is<object>(c => (string)((Hashtable)c)["FakeClientProperty"] == orchestrationClient.FakeClientProperty)),
+                _ => _.SetDurableClient(
+                    It.Is<object>(c => (string)((Hashtable)c)["FakeClientProperty"] == durableClient.FakeClientProperty)),
                 Times.Once);
         }
 
@@ -233,9 +233,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         private DurableController CreateDurableController(
             DurableFunctionType durableFunctionType,
-            string orchestrationClientBindingName = null)
+            string durableClientBindingName = null)
         {
-            var durableFunctionInfo = new DurableFunctionInfo(durableFunctionType, orchestrationClientBindingName);
+            var durableFunctionInfo = new DurableFunctionInfo(durableFunctionType, durableClientBindingName);
 
             return new DurableController(
                             durableEnabled: true,

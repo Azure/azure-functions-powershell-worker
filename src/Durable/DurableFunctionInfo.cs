@@ -7,17 +7,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     internal class DurableFunctionInfo
     {
-        public DurableFunctionInfo(DurableFunctionType type, string orchestrationClientBindingName)
+        public DurableFunctionInfo(DurableFunctionType type, string durableClientBindingName)
         {
             Type = type;
-            OrchestrationClientBindingName = orchestrationClientBindingName;
+            DurableClientBindingName = durableClientBindingName;
         }
 
-        public bool IsOrchestrationClient => OrchestrationClientBindingName != null;
+        public bool IsDurableClient => DurableClientBindingName != null;
 
         public bool IsOrchestrationFunction => Type == DurableFunctionType.OrchestrationFunction;
 
-        public string OrchestrationClientBindingName { get; }
+        public string DurableClientBindingName { get; }
 
         public DurableFunctionType Type { get; }
 

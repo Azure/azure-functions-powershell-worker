@@ -25,7 +25,7 @@ Start with the sample durable app at `examples/durable/DurableApp`.
 Note:
 
 - Please make sure you are using Azure Functions **v3** runtime. There are no plans to support Durable PowerShell on Azure Functions **v1** or **v2**.
-- There is no support for Durable Functions **2.x** at this point, only Durable Functions **1.x** are supported (see [Durable Functions versions overview](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-versions)).
+- Only Durable Functions **2.x** are supported (see [Durable Functions versions overview](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-versions)). There is no plan to keep Durable Functions **1.x** support.
 - Please make sure you are using the sample code version corresponding to the version of the PowerShell Worker. The programming model is still changing, so older or newer samples may not work. So, if you are trying Durable PowerShell on Azure, use the samples tagged with the version of the PowerShell worker deployed to Azure. Alternatively, take the latest PowerShell Worker code from the **dev** branch, and rebuild and run the PowerShell Worker locally.
 - Only a limited number of patterns is enabled at this point:
   - [Function chaining](https://docs.microsoft.com/azure/azure-functions/durable/durable-functions-overview?tabs=csharp#chaining)
@@ -40,10 +40,10 @@ Before deploying your app, run the following command in the app directory:
 func extensions install --powershell
 ```
 
-Please note that the Microsoft.Azure.WebJobs.Extensions.DurableTask package should be pinned to a 1.* version until Durable Functions 2.x support is added. For this reason, the extensions.csproj file already includes the following line:
+Please note that the Microsoft.Azure.WebJobs.Extensions.DurableTask package should be pinned to version 2.0.0 until [the fix for a known issue](https://github.com/Azure/azure-functions-durable-extension/pull/1164) is released. For this reason, the extensions.csproj file already includes the following line:
 
 ``` xml
-<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="1.8.3" />
+<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="2.0.0" />
 ```
 
 ## 4. App settings

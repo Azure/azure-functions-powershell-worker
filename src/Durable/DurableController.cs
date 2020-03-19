@@ -53,17 +53,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void BeforeFunctionInvocation(IList<ParameterBinding> inputData)
         {
-            // If the function is an orchestration client, then we set the OrchestrationClient
+            // If the function is an orchestration client, then we set the DurableClient
             // in the module context for the 'Start-NewOrchestration' function to use.
-            if (_durableFunctionInfo.IsOrchestrationClient)
+            if (_durableFunctionInfo.IsDurableClient)
             {
                 ThrowIfDurableNotEnabled();
 
-                var orchestrationClient =
-                    inputData.First(item => item.Name == _durableFunctionInfo.OrchestrationClientBindingName)
+                var durableClient =
+                    inputData.First(item => item.Name == _durableFunctionInfo.DurableClientBindingName)
                         .Data.ToObject();
 
-                _powerShellServices.SetOrchestrationClient(orchestrationClient);
+                _powerShellServices.SetDurableClient(durableClient);
             }
             else if (_durableFunctionInfo.IsOrchestrationFunction)
             {
