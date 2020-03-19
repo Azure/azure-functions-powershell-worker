@@ -4,11 +4,17 @@
 
 > This is an experimental feature. Do **not** enable or try to use it for production purposes. The programming model may change, so the sample code or any app code you come up with may not work in the next versions. The main purpose of making it available now is to enable experimentation and early feedback. **Your feedback is highly appreciated**, and please feel free to file [GitHub issues](https://github.com/Azure/azure-functions-powershell-worker/issues/new).
 
+> If you want to try the latest version locally, consider following these instructions as they automate and simplify the steps below: https://gist.github.com/JustinGrote/63983c9a53b4085d4710befea17bc913
+
 ## 1. PowerShell worker version
 
 At the moment of writing this (March 14, 2020), the Durable PowerShell implementation deployed to Azure is outdated. If you want to follow the instructions below, please install a more recent version locally:
 - Install [Azure Functions Core Tools](https://docs.microsoft.com/azure/azure-functions/functions-run-local?tabs=windows%2Ccsharp%2Cbash#install-the-azure-functions-core-tools) **v3.x** (if not installed yet).
-- Download the [PowerShell worker package](https://ci.appveyor.com/api/buildjobs/7o8dueat6aj7d2qc/artifacts/Microsoft.Azure.Functions.PowerShellWorker.PS7.3.0.261.nupkg), rename it to .zip, and extract the content of the `contentFiles\any\any\workers\powershell` folder to `workers\powershell` under the [Core Tools](https://github.com/Azure/azure-functions-powershell-worker/blob/dev/README.md#published-host), overwriting the existing files.
+- Download the latest PowerShell worker package:
+``` PowerShell
+Save-Package -Name 'Microsoft.Azure.Functions.PowershellWorker.PS7' -Source 'https://ci.appveyor.com/nuget/azure-functions-powershell-wor-0842fakagqy6/' -ProviderName NuGet -Path ~\Downloads\
+```
+- Rename the downloaded .nuget file to .zip and extract the content of the `contentFiles\any\any\workers\powershell` folder to `workers\powershell` under the [Core Tools](https://github.com/Azure/azure-functions-powershell-worker/blob/dev/README.md#published-host), overwriting the existing files.
 
 If you want to try this on Azure, you will have to wait a bit longer.
 
