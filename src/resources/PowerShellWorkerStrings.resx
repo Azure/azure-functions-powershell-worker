@@ -313,4 +313,7 @@
   <data name="PowerShellVersion" xml:space="preserve">
     <value>PowerShell version: '{0}'.</value>
   </data>
+  <data name="EnvironmentReloadCompleted" xml:space="preserve">
+    <value>Environment reload completed in {0} ms.</value>
+  </data>
 </root>

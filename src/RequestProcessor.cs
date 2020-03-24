@@ -344,6 +344,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         internal StreamingMessage ProcessFunctionEnvironmentReloadRequest(StreamingMessage request)
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            var environmentReloadRequest = request.FunctionEnvironmentReloadRequest;
+            foreach (var (name, value) in environmentReloadRequest.EnvironmentVariables)
+            {
+                Environment.SetEnvironmentVariable(name, value);
+            }
+
+            var rpcLogger = new RpcLogger(_msgStream);
+            rpcLogger.SetContext(request.RequestId, null);
+            rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.EnvironmentReloadCompleted, stopwatch.ElapsedMilliseconds));
+
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse,
