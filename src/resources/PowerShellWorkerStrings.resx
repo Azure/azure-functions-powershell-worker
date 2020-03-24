@@ -313,4 +313,7 @@
   <data name="InvalidFunctionsWorkerRuntimeVersion" xml:space="preserve">
     <value>Invalid PowerShell version specified in the {0} environment variable: {1}. This version is not supported on Azure Functions Runtime v2.</value>
   </data>
+  <data name="EnvironmentReloadCompleted" xml:space="preserve">
+    <value>Environment reload completed in {0} ms.</value>
+  </data>
 </root>
