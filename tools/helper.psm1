@@ -10,6 +10,8 @@ $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 $MinimalSDKVersion = '2.2.110'
 $DefaultSDKVersion = '2.2.110'
 $LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
+$GrpcToolsVersion = '2.27.0' # grpc.tools
+$GoogleProtobufToolsVersion = '3.11.4' # google.protobuf.tools
 
 function Find-Dotnet
 {
@@ -150,29 +152,24 @@ function Resolve-ProtoBufToolPath
         }
 
         $Script:protoc_Path =
-            Get-ChildItem "$nugetPath/grpc.tools/*/$protoc_Name" -Recurse |
-            Where-Object FullName -Like "*$plat_arch_Name*" |
-            Sort-Object -Property FullName -Descending |
-            Select-Object -First 1 | ForEach-Object FullName
+            Resolve-Path "$nugetPath/grpc.tools/$GrpcToolsVersion/tools/$plat_arch_Name/$protoc_Name" |
+            ForEach-Object Path
 
         if (-not $Script:protoc_Path) {
             throw "Couldn't find the executable 'protoc'. Check if the package 'grpc.tools' has been restored."
         }
 
         $Script:grpc_csharp_plugin_Path =
-            Get-ChildItem "$nugetPath/grpc.tools/*/$grpc_csharp_plugin_Name" -Recurse |
-            Where-Object FullName -Like "*$plat_arch_Name*" |
-            Sort-Object -Property FullName -Descending |
-            Select-Object -First 1 | ForEach-Object FullName
+            Resolve-Path "$nugetPath/grpc.tools/$GrpcToolsVersion/tools/$plat_arch_Name/$grpc_csharp_plugin_Name" |
+            ForEach-Object Path
 
         if (-not $Script:grpc_csharp_plugin_Path) {
             throw "Couldn't find the executable 'grpc_csharp_plugin'. Check if the package 'grpc.tools' has been restored."
         }
 
         $Script:google_protobuf_tools_Path =
-            Get-ChildItem "$nugetPath/google.protobuf.tools/*/tools" |
-            Sort-Object -Property FullName -Descending |
-            Select-Object -First 1 | ForEach-Object FullName
+            Resolve-Path "$nugetPath/google.protobuf.tools/$GoogleProtobufToolsVersion/tools" |
+            ForEach-Object Path
 
         if (-not $Script:google_protobuf_tools_Path) {
             throw "Couldn't find the protobuf tools. Check if the package 'google.protobuf.tools' has been restored."
