@@ -4,7 +4,7 @@
 
 > This is an experimental feature. Do **not** enable or try to use it for production purposes. The programming model may change, so the sample code or any app code you come up with may not work in the next versions. The main purpose of making it available now is to enable experimentation and early feedback. **Your feedback is highly appreciated**, and please feel free to file [GitHub issues](https://github.com/Azure/azure-functions-powershell-worker/issues/new).
 
-> If you want to try the latest version locally, consider following these instructions as they automate and simplify the steps below: https://gist.github.com/JustinGrote/63983c9a53b4085d4710befea17bc913
+> If you want to try the latest version locally, consider following these instructions as they automate and simplify the steps below: https://git.io/PS7DurableFunctionsNow
 
 ## 1. PowerShell worker version
 
