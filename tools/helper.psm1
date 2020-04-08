@@ -40,7 +40,7 @@ function Test-DotnetSDK
 
     if (Test-Path $dotnetExePath) {
         $installedVersion = & $dotnetExePath --version
-        return $installedVersion -ge $MinimalSDKVersion
+        return [version]$installedVersion -ge [version]$MinimalSDKVersion
     }
     return $false
 }
