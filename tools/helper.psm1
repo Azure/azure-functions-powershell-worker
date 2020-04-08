@@ -7,7 +7,8 @@ using namespace System.Runtime.InteropServices
 
 $IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
 $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
-$MinimalSDKVersion = '3.1.1'
+$MinimalSDKVersion = '3.1.201'
+$DefaultSDKVersion = '3.1.201'
 $LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
 $GrpcToolsVersion = '2.27.0' # grpc.tools
 $GoogleProtobufToolsVersion = '3.11.4' # google.protobuf.tools
@@ -51,7 +52,7 @@ function Install-Dotnet {
     [CmdletBinding()]
     param(
         [string]$Channel = 'release',
-        [string]$Version = '3.1.101'
+        [string]$Version = $DefaultSDKVersion
     )
 
     try {
