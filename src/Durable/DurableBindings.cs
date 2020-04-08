@@ -13,9 +13,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private const string OrchestrationTrigger = "orchestrationTrigger";
         private const string ActivityTrigger = "activityTrigger";
 
+        // For Durable v1 only
+        private const string OrchestrationClient = "orchestrationClient";
+
         public static bool IsDurableClient(string bindingType)
         {
-            return string.Compare(bindingType, DurableClient, StringComparison.OrdinalIgnoreCase) == 0;
+            return string.Compare(bindingType, DurableClient, StringComparison.OrdinalIgnoreCase) == 0
+                   || string.Compare(bindingType, OrchestrationClient, StringComparison.OrdinalIgnoreCase) == 0;
         }
 
         public static bool IsOrchestrationTrigger(string bindingType)
