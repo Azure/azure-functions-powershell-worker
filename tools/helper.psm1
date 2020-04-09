@@ -7,7 +7,8 @@ using namespace System.Runtime.InteropServices
 
 $IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
 $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
-$MinimalSDKVersion = '2.2.0'
+$MinimalSDKVersion = '2.1.805'
+$DefaultSDKVersion = '2.1.805'
 $LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
 
 function Find-Dotnet
@@ -34,13 +35,21 @@ function Find-Dotnet
     }
 }
 
+function Get-VersionCore($Version) {
+    if ($Version -match '^\d+\.\d+\.\d+') {
+        $Matches.0
+    } else {
+        throw "Unexpected version: '$Version'"
+    }
+}
+
 function Test-DotnetSDK
 {
     param($dotnetExePath)
 
     if (Test-Path $dotnetExePath) {
-        $installedVersion = & $dotnetExePath --version
-        return $installedVersion -ge $MinimalSDKVersion
+        $installedVersion = Get-VersionCore (& $dotnetExePath --version)
+        return [version]$installedVersion -ge [version]$MinimalSDKVersion
     }
     return $false
 }
@@ -49,7 +58,7 @@ function Install-Dotnet {
     [CmdletBinding()]
     param(
         [string]$Channel = 'release',
-        [string]$Version = '2.1.401'
+        [string]$Version = $DefaultSDKVersion
     )
 
     try {
