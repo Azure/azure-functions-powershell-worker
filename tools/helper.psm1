@@ -35,12 +35,20 @@ function Find-Dotnet
     }
 }
 
+function Get-VersionCore($Version) {
+    if ($Version -match '^\d+\.\d+\.\d+') {
+        $Matches.0
+    } else {
+        throw "Unexpected version: '$Version'"
+    }
+}
+
 function Test-DotnetSDK
 {
     param($dotnetExePath)
 
     if (Test-Path $dotnetExePath) {
-        $installedVersion = & $dotnetExePath --version
+        $installedVersion = Get-VersionCore (& $dotnetExePath --version)
         return [version]$installedVersion -ge [version]$MinimalSDKVersion
     }
     return $false
