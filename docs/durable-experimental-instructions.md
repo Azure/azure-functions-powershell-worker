@@ -6,6 +6,8 @@
 
 > If you want to try the latest version locally, consider following these instructions as they automate and simplify the steps below: https://git.io/PS7DurableFunctionsNow
 
+> You can also get started using a dev container with Visual Studio Code Remote for Containers or Visual Studio Online: https://github.com/anthonychu/powershell-durable-preview
+
 ## 1. PowerShell worker version
 
 At the moment of writing this (March 14, 2020), the Durable PowerShell implementation deployed to Azure is outdated. If you want to follow the instructions below, please install a more recent version locally:
