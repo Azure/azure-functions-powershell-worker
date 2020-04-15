@@ -11,6 +11,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Threading;
 
     using Utility;
+    using WebJobs.Script.Grpc.Messages;
 
     internal class ActivityInvocationTracker
     {
@@ -20,9 +21,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             string functionName,
             object functionInput,
             OrchestrationContext context,
+            IEnumerable<AzFunctionInfo> loadedFunctions,
             bool noWait,
             Action<object> output)
         {
+            ValidateActivityFunction(functionName, loadedFunctions);
+
             context.OrchestrationActionCollector.Add(new CallActivityAction(functionName, functionInput));
 
             if (noWait)
@@ -113,6 +117,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private static object GetEventResult(HistoryEvent historyEvent)
         {
             return TypeExtensions.ConvertFromJson(historyEvent.Result);
+        }
+
+        private static void ValidateActivityFunction(string functionName, IEnumerable<AzFunctionInfo> loadedFunctions)
+        {
+            var functionInfo = loadedFunctions.FirstOrDefault(fi => fi.FuncName == functionName);
+            if (functionInfo == null)
+            {
+                var message = string.Format(PowerShellWorkerStrings.FunctionNotFound, functionName);
+                throw new InvalidOperationException(message);
+            }
+
+            var activityTriggerBinding = functionInfo.InputBindings.FirstOrDefault(
+                                            entry => DurableBindings.IsActivityTrigger(entry.Value.Type)
+                                                     && entry.Value.Direction == BindingInfo.Types.Direction.In);
+            if (activityTriggerBinding.Key == null)
+            {
+                var message = string.Format(PowerShellWorkerStrings.FunctionDoesNotHaveProperActivityFunctionBinding, functionName);
+                throw new InvalidOperationException(message);
+            }
         }
     }
 }
