@@ -145,6 +145,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             OutputBindings = new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(outputBindings);
         }
 
+        // For testing purposes only
+        // TODO: Extract a constructor that just takes the field values directly, and move the RpcFunctionMetadata
+        //       parsing logic to a separate constructor or a factory method. When this is done, the new
+        //       simple constructor can be used for testing instead of this one.
+        internal AzFunctionInfo(string funcName, ReadOnlyDictionary<string, ReadOnlyBindingInfo> inputBindings)
+        {
+            FuncName = funcName;
+            InputBindings = inputBindings;
+        }
+
         private Dictionary<string, PSScriptParamInfo> GetParameters(string scriptFile, string entryPoint, out ScriptBlockAst scriptAst)
         {
             scriptAst = Parser.ParseFile(scriptFile, out _, out ParseError[] errors);
@@ -220,9 +230,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     public class ReadOnlyBindingInfo
     {
         internal ReadOnlyBindingInfo(BindingInfo bindingInfo)
+            : this(bindingInfo.Type, bindingInfo.Direction)
         {
-            Type = bindingInfo.Type;
-            Direction = bindingInfo.Direction;
+        }
+
+        internal ReadOnlyBindingInfo(string type, BindingInfo.Types.Direction direction)
+        {
+            Type = type;
+            Direction = direction;
         }
 
         /// <summary>

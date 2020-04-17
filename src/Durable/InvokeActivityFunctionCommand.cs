@@ -38,7 +38,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
-            _activityInvocationTracker.ReplayActivityOrStop(FunctionName, Input, context, NoWait.IsPresent, WriteObject);
+            var loadedFunctions = FunctionLoader.GetLoadedFunctions();
+            _activityInvocationTracker.ReplayActivityOrStop(
+                FunctionName, Input, context, loadedFunctions, NoWait.IsPresent, WriteObject);
         }
 
         protected override void StopProcessing()

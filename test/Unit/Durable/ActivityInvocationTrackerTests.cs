@@ -12,6 +12,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     using System.Linq;
     using System.Threading;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
+    using WebJobs.Script.Grpc.Messages;
     using Xunit;
 
     public class ActivityInvocationTrackerTests
@@ -20,6 +21,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private const string FunctionInput = "function input";
         private const string InvocationResult = "Invocation result";
         private const string InvocationResultJson = "\"Invocation result\"";
+
+        private const string ActivityTriggerBindingType = "activityTrigger";
+
+        private readonly IEnumerable<AzFunctionInfo> _loadedFunctions =
+            new[] { CreateFakeActivityTriggerAzFunctionInfo(FunctionName) };
 
         private int _nextEventId = 1;
 
@@ -33,8 +39,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var allOutput = new List<object>();
 
             var activityInvocationTracker = new ActivityInvocationTracker();
-            activityInvocationTracker.ReplayActivityOrStop(FunctionName, FunctionInput, orchestrationContext, noWait: false,
-                                                           output => { allOutput.Add(output); });
+            activityInvocationTracker.ReplayActivityOrStop(
+                FunctionName, FunctionInput, orchestrationContext, _loadedFunctions, noWait: false,
+                output => { allOutput.Add(output); });
 
             VerifyCallActivityActionAdded(orchestrationContext);
             Assert.Equal(InvocationResult, allOutput.Single());
@@ -53,8 +60,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var activityInvocationTracker = new ActivityInvocationTracker();
             EmulateStop(activityInvocationTracker);
 
-            activityInvocationTracker.ReplayActivityOrStop(FunctionName, FunctionInput, orchestrationContext, noWait: false,
-                                                           _ => { Assert.True(false, "Unexpected output"); });
+            activityInvocationTracker.ReplayActivityOrStop(
+                FunctionName, FunctionInput, orchestrationContext, _loadedFunctions, noWait: false,
+                _ => { Assert.True(false, "Unexpected output"); });
 
             VerifyCallActivityActionAdded(orchestrationContext);
         }
@@ -77,13 +85,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 () =>
                 {
                     activityInvocationTracker.ReplayActivityOrStop(
-                        FunctionName, FunctionInput, orchestrationContext, noWait: false, _ => { });
+                        FunctionName, FunctionInput, orchestrationContext, _loadedFunctions, noWait: false, _ => { });
                 });
         }
 
         [Fact]
         public void ReplayActivityOrStop_ReplaysMultipleActivitiesWithTheSameName()
         {
+             var loadedFunctions = new[]
+                {
+                    CreateFakeActivityTriggerAzFunctionInfo("FunctionA"),
+                    CreateFakeActivityTriggerAzFunctionInfo("FunctionB")
+                };
+
             var history = MergeHistories(
                 CreateHistory("FunctionA", scheduled: true, completed: true, output: "\"Result1\""),
                 CreateHistory("FunctionB", scheduled: true, completed: true, output: "\"Result2\""),
@@ -98,7 +112,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             for (var i = 0; i < 2; ++i)
             {
                 activityInvocationTracker.ReplayActivityOrStop(
-                    "FunctionA", FunctionInput, orchestrationContext, noWait: false,
+                    "FunctionA", FunctionInput, orchestrationContext, loadedFunctions, noWait: false,
                     output => { allOutput.Add(output); });
             }
 
@@ -120,11 +134,66 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             var activityInvocationTracker = new ActivityInvocationTracker();
             activityInvocationTracker.ReplayActivityOrStop(
-                FunctionName, FunctionInput, orchestrationContext, noWait: true,
+                FunctionName, FunctionInput, orchestrationContext, _loadedFunctions, noWait: true,
                 output => { allOutput.Add((ActivityInvocationTask)output); });
 
             VerifyCallActivityActionAdded(orchestrationContext);
             Assert.Equal(FunctionName, allOutput.Single().Name);
+        }
+
+        [Fact]
+        public void ReplayActivityOrStop_Throws_WhenActivityFunctionDoesNotExist()
+        {
+            var history = CreateHistory(scheduled: false, completed: false, output: InvocationResultJson);
+            var orchestrationContext = new OrchestrationContext { History = history };
+
+            var loadedFunctions = new[]
+            {
+                CreateFakeAzFunctionInfo(FunctionName, "fakeTriggerBindingName", ActivityTriggerBindingType, BindingInfo.Types.Direction.In)
+            };
+
+            const string wrongFunctionName = "AnotherFunction";
+
+            var activityInvocationTracker = new ActivityInvocationTracker();
+
+            var exception =
+                Assert.Throws<InvalidOperationException>(
+                    () => activityInvocationTracker.ReplayActivityOrStop(
+                                wrongFunctionName, FunctionInput, orchestrationContext, loadedFunctions, noWait: false,
+                                _ => { Assert.True(false, "Unexpected output"); }));
+
+            Assert.Contains(wrongFunctionName, exception.Message);
+            Assert.DoesNotContain(ActivityTriggerBindingType, exception.Message);
+
+            VerifyNoCallActivityActionAdded(orchestrationContext);
+        }
+
+        [Theory]
+        [InlineData("IncorrectBindingType", BindingInfo.Types.Direction.In)]
+        [InlineData(ActivityTriggerBindingType, BindingInfo.Types.Direction.Out)]
+        public void ReplayActivityOrStop_Throws_WhenActivityFunctionHasNoProperBinding(
+            string bindingType, BindingInfo.Types.Direction bindingDirection)
+        {
+            var history = CreateHistory(scheduled: false, completed: false, output: InvocationResultJson);
+            var orchestrationContext = new OrchestrationContext { History = history };
+
+            var loadedFunctions = new[]
+            {
+                CreateFakeAzFunctionInfo(FunctionName, "fakeTriggerBindingName", bindingType, bindingDirection)
+            };
+
+            var activityInvocationTracker = new ActivityInvocationTracker();
+
+            var exception =
+                Assert.Throws<InvalidOperationException>(
+                    () => activityInvocationTracker.ReplayActivityOrStop(
+                                FunctionName, FunctionInput, orchestrationContext, loadedFunctions, noWait: false,
+                                _ => { Assert.True(false, "Unexpected output"); }));
+
+            Assert.Contains(FunctionName, exception.Message);
+            Assert.Contains(ActivityTriggerBindingType, exception.Message);
+
+            VerifyNoCallActivityActionAdded(orchestrationContext);
         }
 
         [Theory]
@@ -218,6 +287,29 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     activityInvocationTracker.WaitForActivityTasks(tasksToWaitFor, orchestrationContext, _ => { });
                 });
+        }
+
+        private static AzFunctionInfo CreateFakeActivityTriggerAzFunctionInfo(string functionName)
+        {
+            return CreateFakeAzFunctionInfo(functionName, "fakeTriggerBindingName", ActivityTriggerBindingType, BindingInfo.Types.Direction.In);
+        }
+
+        private static AzFunctionInfo CreateFakeAzFunctionInfo(
+            string functionName,
+            string bindingName,
+            string bindingType,
+            BindingInfo.Types.Direction bindingDirection)
+        {
+            return new AzFunctionInfo(
+                functionName,
+                new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(
+                    new Dictionary<string, ReadOnlyBindingInfo>
+                    {
+                        {
+                            bindingName,
+                            new ReadOnlyBindingInfo(bindingType, bindingDirection)
+                        }
+                    }));
         }
 
         private HistoryEvent[] CreateHistory(bool scheduled, bool completed, string output)

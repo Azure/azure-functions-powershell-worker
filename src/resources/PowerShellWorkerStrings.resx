@@ -316,4 +316,10 @@
   <data name="EnvironmentReloadCompleted" xml:space="preserve">
     <value>Environment reload completed in {0} ms.</value>
   </data>
+  <data name="FunctionNotFound" xml:space="preserve">
+    <value>Function '{0}' is not found.</value>
+  </data>
+  <data name="FunctionDoesNotHaveProperActivityFunctionBinding" xml:space="preserve">
+    <value>Function '{0}' does not have an activityTrigger input binding.</value>
+  </data>
 </root>
