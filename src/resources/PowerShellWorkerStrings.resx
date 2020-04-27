@@ -209,7 +209,7 @@
     <value>A new PowerShell manager instance is added to the pool. Current pool size '{0}'.</value>
   </data>
   <data name="DependencyDownloadInProgress" xml:space="preserve">
-    <value>The first managed dependency download is in progress, function execution will continue when it's done. Subsequent updates will be performed in the background.</value>
+    <value>The first managed dependency download is in progress, function execution will continue when it's done. Depending on the content of requirements.psd1, this can take a few minutes. Subsequent function executions will not block and updates will be performed in the background.</value>
   </data>
   <data name="OutputBindingAlreadySet" xml:space="preserve">
     <value>The output binding '{0}' is already set with a value. The type of the output binding is '{1}'. It only accepts one message/record/file per a Function invocation. To override the value, use '-Clobber'.</value>
