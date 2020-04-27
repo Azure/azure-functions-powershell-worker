@@ -220,7 +220,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
         internal static bool AreDurableFunctionsEnabled()
         {
-            return PowerShellWorkerConfiguration.GetBoolean("PSWorkerEnableExperimentalDurableFunctions") ?? false;
+            return PowerShellWorkerConfiguration.GetBoolean("PSWorkerEnableExperimentalDurableFunctions") ?? true;
         }
 
         internal static string GetPowerShellVersion(PowerShell pwsh)

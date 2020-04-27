@@ -4,7 +4,6 @@
     "AzureWebJobsEventHubSender":"",
     "AzureWebJobsCosmosDBConnectionString":"",
     "AzureWebJobsFeatureFlags": "AllowSynchronousIO",
-    "FUNCTIONS_WORKER_RUNTIME": "powershell",
-    "PSWorkerEnableExperimentalDurableFunctions": "true"
+    "FUNCTIONS_WORKER_RUNTIME": "powershell"
   }
 }
