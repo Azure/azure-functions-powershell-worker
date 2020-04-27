@@ -136,7 +136,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             if (!_durableEnabled)
             {
-                throw new NotImplementedException(PowerShellWorkerStrings.DurableFunctionNotSupported);
+                throw new NotImplementedException(PowerShellWorkerStrings.DurableFunctionsDisabled);
             }
         }
     }

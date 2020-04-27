@@ -160,8 +160,8 @@
   <data name="UnsupportedMessage" xml:space="preserve">
     <value>Unsupported message type: {0}.</value>
   </data>
-  <data name="DurableFunctionNotSupported" xml:space="preserve">
-    <value>Durable function is not yet supported for PowerShell.</value>
+  <data name="DurableFunctionsDisabled" xml:space="preserve">
+    <value>Durable PowerShell Functions are disabled (check the PSWorkerEnableExperimentalDurableFunctions environment variable).</value>
   </data>
   <data name="FailToConvertToHttpResponseContext" xml:space="preserve">
     <value>The given value for the 'http' output binding '{0}' cannot be converted to the type 'HttpResponseContext'. The conversion failed with the following error: {1}</value>
