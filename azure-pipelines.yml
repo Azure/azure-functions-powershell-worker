@@ -32,7 +32,6 @@ steps:
     AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
     AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)    
     FUNCTIONS_WORKER_RUNTIME : "powershell"
-    PSWorkerEnableExperimentalDurableFunctions: "true"
   displayName: 'Running E2ETest'
 
 - task: CopyFiles@2

@@ -58,8 +58,7 @@ Set the following app settings (if running on Azure) or just use the sample loca
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "AzureWebJobsFeatureFlags": "AllowSynchronousIO",
     "FUNCTIONS_WORKER_RUNTIME": "powershell",
-    "PSWorkerInProcConcurrencyUpperBound": 10,
-    "PSWorkerEnableExperimentalDurableFunctions": "true"
+    "PSWorkerInProcConcurrencyUpperBound": 10
   }
 }
 ```
@@ -68,7 +67,6 @@ Set the following app settings (if running on Azure) or just use the sample loca
 - `AzureWebJobsFeatureFlags` must contain `AllowSynchronousIO`. Don't ask.
 - `FUNCTIONS_WORKER_RUNTIME` must be set to `powershell`.
 - You may need to adjust `PSWorkerInProcConcurrencyUpperBound` to increase [concurrency](https://docs.microsoft.com/azure/azure-functions/functions-reference-powershell#concurrency) for the Fan-out/Fan-in pattern.
-- `PSWorkerEnableExperimentalDurableFunctions` is a feature flag that enables PowerShell Durable Functions. It is turned off by default for now.
 
 ## 5. Starting the app
 
