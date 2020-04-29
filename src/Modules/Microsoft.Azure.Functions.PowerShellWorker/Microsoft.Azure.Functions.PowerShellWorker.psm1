@@ -6,7 +6,7 @@
 function CheckIfDurableFunctionsEnabled {
     if (($null -ne $env:PSWorkerEnableExperimentalDurableFunctions) -and
             (-not [bool]::Parse($env:PSWorkerEnableExperimentalDurableFunctions))) {
-		throw 'PowerShell Durable Functions are disabled (check the PSWorkerEnableExperimentalDurableFunctions environment variable)Durable PowerShell Functions are disabled (check the PSWorkerEnableExperimentalDurableFunctions environment variable).'
+		throw 'PowerShell Durable Functions are disabled (check the PSWorkerEnableExperimentalDurableFunctions environment variable).'
 	}
 }
 
