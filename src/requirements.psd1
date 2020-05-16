@@ -9,7 +9,7 @@
         Target = 'src/Modules'
     }
     'PowerShellGet' = @{
-        Version = '2.2.3'
+        Version = '2.2.4'
         Target = 'src/Modules'
     }
     'PackageManagement' = @{
