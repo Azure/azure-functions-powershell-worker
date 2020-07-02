@@ -1,3 +1,3 @@
 param($name)
 
-Write-Host "Alert! $name completed successfully."
+"Alert! $name completed successfully."

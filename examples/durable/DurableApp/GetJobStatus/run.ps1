@@ -1,8 +1,9 @@
 param($name)
 
-if ((Get-Date).ToUniversalTime() -lt $name) {
-    Write-Host "Not Completed"
+$randomNumber = Get-Random -Maximum 100
+if ($randomNumber -lt 60) {
+    "Not Completed"
 }
 else {
-    Write-Host "Completed"
+    "Completed"
 }

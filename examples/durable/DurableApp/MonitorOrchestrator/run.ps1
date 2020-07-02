@@ -1,5 +1,3 @@
-using namespace System.Net
-
 param($Context)
 
 Write-Host 'MonitorOrchestrator: started.'
@@ -12,12 +10,12 @@ while ($Context.CurrentUtcDateTime -lt $expiryTime) {
     $jobStatus = Invoke-ActivityFunction -FunctionName 'GetJobStatus' -Input $jobId
     if ($jobStatus -eq "Completed") {
         # Perform an action when a condition is met.
-        $output = Invoke-ActivityFunction -FunctionName 'SendAlert' -Input $machineId
+        $output = Invoke-ActivityFunction -FunctionName 'SendAlert' -Input "foo"
         break
     }
 
     # Orchestration sleeps until this time.
-    Start-Sleep -Seconds $pollingInterval
+    Start-DurableTimer -Seconds $pollingInterval
 }
 
 # Perform more work here, or let the orchestration end.
