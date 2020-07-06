@@ -2,7 +2,7 @@ param($Request, $TriggerMetadata)
 
 Write-Host 'MonitorStart started'
 
-$OrchestratorInputs = @{ JobId = $null; MachineId = 1; PollingInterval = 10; ExpiryTime = (Get-Date).ToUniversalTime().addSeconds(60) }
+$OrchestratorInputs = @{ JobId = $null; MachineId = 1; PollingInterval = 10; ExpiryTime = (Get-Date).ToUniversalTime().AddSeconds(60) }
 
 $InstanceId = Start-NewOrchestration -FunctionName 'MonitorOrchestrator' -InputObject $OrchestratorInputs
 Write-Host "Started orchestration with ID = '$InstanceId'"
