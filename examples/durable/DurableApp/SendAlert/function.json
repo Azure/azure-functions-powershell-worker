@@ -1,7 +1,7 @@
 {
     "bindings": [
       {
-        "name": "name",
+        "name": "machineId",
         "type": "activityTrigger",
         "direction": "in"
       }

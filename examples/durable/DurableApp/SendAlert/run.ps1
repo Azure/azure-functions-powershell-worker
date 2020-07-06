@@ -1,3 +1,3 @@
-param($name)
+param($machineId)
 
-"Alert! $name completed successfully."
+"Successfully sent alert to machine $machineId!"
