@@ -1,0 +1,10 @@
+{
+    "bindings": [
+      {
+        "name": "machineId",
+        "type": "activityTrigger",
+        "direction": "in"
+      }
+    ]
+  }
+  
