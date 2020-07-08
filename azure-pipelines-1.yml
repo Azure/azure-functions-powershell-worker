@@ -41,13 +41,15 @@ steps:
 - pwsh: |
     if (-not (get-module -list Az.Storage))
     {
-        Install-Module Az.Storage -Force -Verbose -Scope CurrentUser
+        write-host "Installing Az.Storage"
+        Install-Module Az.Storage -Repository PSGallery -Force -Verbose
     }
 
     write-host "Creating context"
     $context = New-AzStorageContext -StorageAccountName $(StorageAccountName) `
                                     -StorageAccountKey $(StorageAccountKey) `
                                     -Verbose
+    
     # Make sure the containter is present
     if (-not (Get-AzStorageContainer -Name $ -Context $context))
     {
