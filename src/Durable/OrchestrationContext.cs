@@ -7,6 +7,7 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
+    using System;
     using System.Runtime.Serialization;
 
     /// <summary>
@@ -29,6 +30,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         [DataMember]
         internal HistoryEvent[] History { get; set; }
+
+        [DataMember]
+        public DateTime CurrentUtcDateTime {get; internal set; }
 
         internal OrchestrationActionCollector OrchestrationActionCollector { get; } = new OrchestrationActionCollector();
     }

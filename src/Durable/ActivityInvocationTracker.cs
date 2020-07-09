@@ -39,7 +39,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 var taskCompleted = GetTaskCompletedHistoryEvent(context, taskScheduled);
 
                 if (taskCompleted != null)
-                {
+                {                         
+                    var newOrchestrationStart = context.History.FirstOrDefault(
+                        (e) => e.EventType == HistoryEventType.OrchestratorStarted &&
+                        e.Timestamp > context.CurrentUtcDateTime
+                    );
+                    
+                    // Updates CurrentUtcDateTime if a new orchestration began
+                    if (newOrchestrationStart != null)
+                    {
+                        context.CurrentUtcDateTime = newOrchestrationStart.Timestamp.ToUniversalTime();
+                    }
+
                     taskScheduled.IsProcessed = true;
                     taskCompleted.IsProcessed = true;
                     output(GetEventResult(taskCompleted));
@@ -75,6 +86,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var allTasksCompleted = completedEvents.Count == tasksToWaitFor.Count;
             if (allTasksCompleted)
             {
+                var newOrchestrationStart = context.History.FirstOrDefault(
+                    (e) => e.EventType == HistoryEventType.OrchestratorStarted &&
+                    e.Timestamp > context.CurrentUtcDateTime
+                );
+                
+                // Updates CurrentUtcDateTime if all tasks have completed
+                if (newOrchestrationStart != null) 
+                {
+                    context.CurrentUtcDateTime = newOrchestrationStart.Timestamp.ToUniversalTime();
+                }
                 foreach (var completedEvent in completedEvents)
                 {
                     output(GetEventResult(completedEvent));
