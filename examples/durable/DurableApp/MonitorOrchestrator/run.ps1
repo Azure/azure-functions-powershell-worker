@@ -10,10 +10,10 @@ $pollingInterval = $Context.Input.PollingInterval
 $expiryTime = $Context.Input.ExpiryTime
 
 while ($Context.CurrentUtcDateTime -lt $expiryTime) {
-    $jobStatus = Invoke-ActivityFunction -FunctionName 'GetJobStatus' -Input $completionTime
+    $jobStatus = Invoke-ActivityFunction -FunctionName 'GetJobStatus' -Input $jobId
     if ($jobStatus -eq "Completed") {
         # Perform an action when a condition is met.
-        $output = Invoke-ActivityFunction -FunctionName 'SendAlert' -Input "foo"
+        $output = Invoke-ActivityFunction -FunctionName 'SendAlert' -Input $machineId
         break
     }
 
