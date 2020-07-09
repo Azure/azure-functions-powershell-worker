@@ -31,6 +31,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         [DataMember]
         internal HistoryEvent[] History { get; set; }
 
+<<<<<<< HEAD
+=======
+        [DataMember]
+>>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
         public DateTime CurrentUtcDateTime {get; internal set; }
 
         internal OrchestrationActionCollector OrchestrationActionCollector { get; } = new OrchestrationActionCollector();
