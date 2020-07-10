@@ -29,42 +29,5 @@ steps:
     AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
     AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
     FUNCTIONS_WORKER_RUNTIME : "powershell"
-  continueOnError: true
+  continueOnError: false
   displayName: 'Running E2ETest'
-
-- pwsh: |
-      $null = New-Item -Path ./E2ETestArtifacts -ItemType Directory -Force
-      Compress-Archive -Path ./src/bin/Release/netcoreapp3.1/publish/* -DestinationPath ./E2ETestArtifacts/powershellworker.zip -Verbose
-      Compress-Archive -Path ./test/E2E/TestFunctionApp/* -DestinationPath ./E2ETestArtifacts/e2etestspowershell.zip -Verbose
-  displayName: 'Create test app zip file'
-
-- pwsh: |
-    if (-not (get-module -list Az.Storage))
-    {
-        write-host "Installing Az.Storage"
-        Install-Module Az.Storage -Repository PSGallery -Force -Verbose
-    }
-
-    write-host "Creating context"
-    $context = New-AzStorageContext -StorageAccountName $(StorageAccountName) `
-                                    -StorageAccountKey $(StorageAccountKey) `
-                                    -Verbose
-    
-    # Make sure the containter is present
-    if (-not (Get-AzStorageContainer -Name $ -Context $context))
-    {
-        write-host "Creating container for worker and test artifacts."
-        New-AzStorageContainer -Name $(ContainerName) -context -Context $context -Verbose
-    }
-
-    foreach ($fileName in @("e2etestspowershell.zip", "powershellworker.zip"))
-    {
-        write-host "Uploading file to Azure Blob"
-        Set-AzStorageBlobContent -File ./E2ETestArtifacts/$fileName `
-                                 -Container $(ContainerName) `
-                                 -Blob $fileName `
-                                 -Context $context `
-                                 -Force `
-                                 -Verbose
-    }
-  displayName: 'Copying test app zip artifacts to blob'
