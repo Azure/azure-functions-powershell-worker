@@ -20,19 +20,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             try
             {
                 var outputBuffer = new PSDataCollection<object>();
-
-                // Initialize CurrentUtcDateTime
                 var context = orchestrationBindingInfo.Context;
-                var orchestrationStart = context.History.FirstOrDefault(
-                    (e) => e.EventType == HistoryEventType.OrchestratorStarted);
 
-                // OrchestrationStart should never be null
-                if (orchestrationStart == null)
+                // context.History should never be null when initializing CurrentUtcDateTime
+                if (context.History != null)
                 {
-                    throw new ArgumentNullException(nameof(orchestrationStart));
-                }
-                else
-                {
+                    var orchestrationStart = context.History.FirstOrDefault(
+                        (e) => e.EventType == HistoryEventType.OrchestratorStarted);
                     context.CurrentUtcDateTime = orchestrationStart.Timestamp.ToUniversalTime();
                 }
                 
