@@ -31,3 +31,9 @@ steps:
     FUNCTIONS_WORKER_RUNTIME : "powershell"
   continueOnError: false
   displayName: 'Running E2ETest'
+- task: NuGetCommand@2
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+    nuGetFeedType: 'internal'
+    publishVstsFeed: '38971840-434a-4bcc-87cf-218cc186092e'
