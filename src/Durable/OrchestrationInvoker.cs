@@ -20,7 +20,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             try
             {
                 var outputBuffer = new PSDataCollection<object>();
-<<<<<<< HEAD
                 var context = orchestrationBindingInfo.Context;
 
                 // context.History should never be null when initializing CurrentUtcDateTime
@@ -30,23 +29,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
                 // Marks the first OrchestratorStarted event as processed
                 orchestrationStart.IsProcessed = true;
-=======
-
-                // Initialize CurrentUtcDateTime
-                var context = orchestrationBindingInfo.Context;
-                var orchestrationStart = context.History.FirstOrDefault(
-                    (e) => e.EventType == HistoryEventType.OrchestratorStarted);
-
-                // OrchestrationStart should never be null
-                if (orchestrationStart == null)
-                {
-                    throw new ArgumentNullException(nameof(orchestrationStart));
-                }
-                else
-                {
-                    context.CurrentUtcDateTime = orchestrationStart.Timestamp.ToUniversalTime();
-                }
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
                 
                 var asyncResult = pwsh.BeginInvoke(outputBuffer);
 

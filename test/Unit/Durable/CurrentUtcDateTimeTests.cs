@@ -6,19 +6,11 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 {
     using System;
-<<<<<<< HEAD
     using System.Collections;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.Management.Automation;
     using System.Threading;
-=======
-    using System.Threading;
-    using System.Management.Automation;
-    using System.Collections;
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
     using System.Linq;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Moq;
@@ -33,23 +25,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private const string InvocationResultJson = "\"Invocation result\"";
         private const DateTimeKind utc = DateTimeKind.Utc;
         private DateTime time = new DateTime(2020, 1, 1, 0, 0, 0, 0, utc);
-<<<<<<< HEAD
         private int intervalMilliseconds = 5;
-=======
-        private int longIntervalMilliseconds = 5;
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
         private int _nextEventId = 1;
         private readonly IEnumerable<AzFunctionInfo> _loadedFunctions =
             new[] { CreateFakeActivityTriggerAzFunctionInfo(FunctionName) };
 
         readonly OrchestrationInvoker _orchestrationInvoker = new OrchestrationInvoker();
 
-<<<<<<< HEAD
         private OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo("ContextParametername",
                                                                                                    new OrchestrationContext());
-=======
-        OrchestrationBindingInfo _orchestrationBindingInfo;
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
 
         private readonly Mock<IPowerShellServices> _mockPowerShellServices = new Mock<IPowerShellServices>();
 
@@ -65,17 +49,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             {
                 _orchestrationBindingInfo = new OrchestrationBindingInfo(
                     "ContextParameterName",
-<<<<<<< HEAD
                     new OrchestrationContext { History = CreateOrchestratorStartedHistory(date: time, isProcessed: false) }
-=======
-                    new OrchestrationContext { History = CreateOrchestratorStartedHistory(time) }
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
                     );
             }
             else
             {
                 DateTime startTime = time;
-<<<<<<< HEAD
                 DateTime restartTime = startTime.AddMilliseconds(intervalMilliseconds);
                 // Assumes that a context, when passed to OrchestrationInvoker, has all HistoryEvents' IsProcessed reset to false
                 var history = MergeHistories(
@@ -86,12 +65,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                                           output: InvocationResultJson,
                                           date: restartTime,
                                           orchestratorStartedIsProcessed: false)
-=======
-                DateTime restartTime = startTime.AddMilliseconds(longIntervalMilliseconds);
-                var history = MergeHistories(
-                    CreateOrchestratorStartedHistory(time),
-                    CreateActivityHistory(name: FunctionName, scheduled: true, completed: true, output: InvocationResultJson, restartTime)
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
                 );
                 var context = new OrchestrationContext { History = history, CurrentUtcDateTime = restartTime };
                 _orchestrationBindingInfo = new OrchestrationBindingInfo("ContextParameterName", context);
@@ -114,7 +87,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfActivityFunctionCompleted(bool completed)
         {
             DateTime startTime = time;
-<<<<<<< HEAD
             DateTime restartTime = startTime.AddMilliseconds(intervalMilliseconds);
             DateTime shouldNotHitTime = restartTime.AddMilliseconds(intervalMilliseconds);
             var history = MergeHistories(
@@ -126,19 +98,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                     output: InvocationResultJson,
                     date: restartTime,
                     orchestratorStartedIsProcessed: false)
-=======
-            DateTime restartTime = startTime.AddMilliseconds(longIntervalMilliseconds);
-            DateTime shouldNotHitTime = restartTime.AddMilliseconds(longIntervalMilliseconds);
-            var history = MergeHistories(
-                CreateOrchestratorStartedHistory(date: startTime),
-                CreateActivityHistory(name: FunctionName, scheduled: true, completed: completed, output: InvocationResultJson, restartTime)
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
             );
 
             var _activityInvocationTracker = new ActivityInvocationTracker();
             if (completed)
             {
-<<<<<<< HEAD
                 history = MergeHistories(history, CreateActivityHistory(
                     name: FunctionName,
                     scheduled: true,
@@ -146,9 +110,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                     output: InvocationResultJson,
                     date: shouldNotHitTime,
                     orchestratorStartedIsProcessed: false));
-=======
-                history = MergeHistories(history, CreateActivityHistory(name: FunctionName, scheduled: true, completed: true, output: InvocationResultJson, shouldNotHitTime));
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
             }
             else
             {
@@ -169,7 +130,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             }
         }
 
-<<<<<<< HEAD
         // Verifies that in the case of identical Timestamps for consecutive OrchestratorStarted events, CurrentUtcDateTime does not jump ahead
         [Fact]
         public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfTimestampsAreIdentical()
@@ -214,8 +174,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.True(willHitEvent.IsProcessed);
             Assert.False(shouldNotHitEvent.IsProcessed);
         }
-=======
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
 
         [Theory]
         [InlineData(true)]
@@ -227,27 +185,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfAllActivitiesCompleted(bool allCompleted)
         {
             DateTime startTime = time;
-<<<<<<< HEAD
             DateTime restartTime = startTime.AddMilliseconds(intervalMilliseconds);
             DateTime shouldNotHitTime = restartTime.AddMilliseconds(intervalMilliseconds);
-=======
-            DateTime restartTime = startTime.AddMilliseconds(longIntervalMilliseconds);
-            DateTime shouldNotHitTime = restartTime.AddMilliseconds(longIntervalMilliseconds);
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
             var activityFunctions = new Dictionary<string, bool>();
             activityFunctions.Add("FunctionA", true);
             activityFunctions.Add("FunctionB", allCompleted);
             activityFunctions.Add("FunctionC", true);
             var history = MergeHistories(
-<<<<<<< HEAD
                 CreateOrchestratorStartedHistory(date: startTime, isProcessed: true),
                 CreateNoWaitActivityHistory(scheduled: activityFunctions, restartTime: restartTime, orchestratorStartedIsProcessed: false),
                 CreateOrchestratorStartedHistory(date: shouldNotHitTime, isProcessed: false)
-=======
-                CreateOrchestratorStartedHistory(date: startTime),
-                CreateNoWaitActivityHistory(scheduled: activityFunctions, restartTime: restartTime),
-                CreateOrchestratorStartedHistory(date: shouldNotHitTime)
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
             );
             OrchestrationContext context = new OrchestrationContext { History = history, CurrentUtcDateTime = startTime };
             var tasksToWaitFor = new ReadOnlyCollection<ActivityInvocationTask>(
@@ -273,11 +220,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         // Creates a history containing an OrchestratorStarted event
-<<<<<<< HEAD
         private HistoryEvent[] CreateOrchestratorStartedHistory(DateTime date, bool isProcessed)
-=======
-        private HistoryEvent[] CreateOrchestratorStartedHistory(DateTime date)
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
         {
             var history = new List<HistoryEvent>();
             // Add an OrchestratorStarted event
@@ -288,19 +231,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     EventType = HistoryEventType.OrchestratorStarted,
                     EventId = orchestrationStartedEventId,
-<<<<<<< HEAD
                     Timestamp = date,
                     IsProcessed = isProcessed
-=======
-                    Timestamp = date
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
                 });
 
             return history.ToArray();
         }
 
         // Creates a history containing a TaskScheduled and OrchestratorStarted event and/or a TaskCompleted event
-<<<<<<< HEAD
         private HistoryEvent[] CreateActivityHistory(
             string name,
             bool scheduled,
@@ -308,9 +246,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             string output,
             DateTime date,
             bool orchestratorStartedIsProcessed)
-=======
-        private HistoryEvent[] CreateActivityHistory(string name, bool scheduled, bool completed, string output, DateTime date)
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
         {
             var history = new List<HistoryEvent>();
             
@@ -335,12 +270,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     EventType = HistoryEventType.OrchestratorStarted,
                     EventId = orchestrationStartedEventId,
-<<<<<<< HEAD
                     Timestamp = date,
                     IsProcessed = orchestratorStartedIsProcessed
-=======
-                    Timestamp = date
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
                 });
 
                 history.Add(
@@ -356,14 +287,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             return history.ToArray();
         }
 
-<<<<<<< HEAD
         private HistoryEvent[] CreateNoWaitActivityHistory(
             Dictionary<string, bool> scheduled,
             DateTime restartTime,
             bool orchestratorStartedIsProcessed)
-=======
-        private HistoryEvent[] CreateNoWaitActivityHistory(Dictionary<string, bool> scheduled, DateTime restartTime)
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
         {
             var history = new List<HistoryEvent>();
             var completedEvents = new Dictionary<string, int>();
@@ -393,12 +320,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     EventType = HistoryEventType.OrchestratorStarted,
                     EventId = orchestrationStartedEventId,
-<<<<<<< HEAD
                     Timestamp = restartTime,
                     IsProcessed = orchestratorStartedIsProcessed
-=======
-                    Timestamp = restartTime
->>>>>>> 9fd7379... Added CurrentUtcDateTime instance property to OrchestrationContext and CurrentUtcDateTime unit tests
                 });
 
             // Add completed tasks to the history if all completed
