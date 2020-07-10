@@ -25,14 +25,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private const string InvocationResultJson = "\"Invocation result\"";
         private const DateTimeKind utc = DateTimeKind.Utc;
         private DateTime time = new DateTime(2020, 1, 1, 0, 0, 0, 0, utc);
-        private int longIntervalMilliseconds = 5;
+        private int intervalMilliseconds = 5;
         private int _nextEventId = 1;
         private readonly IEnumerable<AzFunctionInfo> _loadedFunctions =
             new[] { CreateFakeActivityTriggerAzFunctionInfo(FunctionName) };
 
         readonly OrchestrationInvoker _orchestrationInvoker = new OrchestrationInvoker();
 
-        OrchestrationBindingInfo _orchestrationBindingInfo;
+        private OrchestrationBindingInfo _orchestrationBindingInfo;
 
         private readonly Mock<IPowerShellServices> _mockPowerShellServices = new Mock<IPowerShellServices>();
 
@@ -54,7 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             else
             {
                 DateTime startTime = time;
-                DateTime restartTime = startTime.AddMilliseconds(longIntervalMilliseconds);
+                DateTime restartTime = startTime.AddMilliseconds(intervalMilliseconds);
                 var history = MergeHistories(
                     CreateOrchestratorStartedHistory(time),
                     CreateActivityHistory(name: FunctionName, scheduled: true, completed: true, output: InvocationResultJson, restartTime)
@@ -80,8 +80,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfActivityFunctionCompleted(bool completed)
         {
             DateTime startTime = time;
-            DateTime restartTime = startTime.AddMilliseconds(longIntervalMilliseconds);
-            DateTime shouldNotHitTime = restartTime.AddMilliseconds(longIntervalMilliseconds);
+            DateTime restartTime = startTime.AddMilliseconds(intervalMilliseconds);
+            DateTime shouldNotHitTime = restartTime.AddMilliseconds(intervalMilliseconds);
             var history = MergeHistories(
                 CreateOrchestratorStartedHistory(date: startTime),
                 CreateActivityHistory(name: FunctionName, scheduled: true, completed: completed, output: InvocationResultJson, restartTime)
@@ -122,8 +122,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfAllActivitiesCompleted(bool allCompleted)
         {
             DateTime startTime = time;
-            DateTime restartTime = startTime.AddMilliseconds(longIntervalMilliseconds);
-            DateTime shouldNotHitTime = restartTime.AddMilliseconds(longIntervalMilliseconds);
+            DateTime restartTime = startTime.AddMilliseconds(intervalMilliseconds);
+            DateTime shouldNotHitTime = restartTime.AddMilliseconds(intervalMilliseconds);
             var activityFunctions = new Dictionary<string, bool>();
             activityFunctions.Add("FunctionA", true);
             activityFunctions.Add("FunctionB", allCompleted);
