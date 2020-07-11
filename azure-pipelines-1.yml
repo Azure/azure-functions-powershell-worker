@@ -22,15 +22,15 @@ steps:
       ./build.ps1 -Clean -Configuration Release
   displayName: './build.ps1 -Clean -Configuration Release'
 
-- pwsh: ./test/E2E/Start-E2ETest.ps1
-  env:
-    AzureWebJobsStorage: $(AzureWebJobsStorage)
-    AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
-    AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
-    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
-    FUNCTIONS_WORKER_RUNTIME : "powershell"
-  continueOnError: false
-  displayName: 'Running E2ETest'
+#- pwsh: ./test/E2E/Start-E2ETest.ps1
+#  env:
+#    AzureWebJobsStorage: $(AzureWebJobsStorage)
+#    AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
+#    AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
+#    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
+#    FUNCTIONS_WORKER_RUNTIME : "powershell"
+#  continueOnError: false
+#  displayName: 'Running E2ETest'
 - task: NuGetCommand@2
   inputs:
     command: 'push'
