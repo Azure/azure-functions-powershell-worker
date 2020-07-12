@@ -48,16 +48,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             {
                 _orchestrationBindingInfo = new OrchestrationBindingInfo(
                     "ContextParameterName",
-                    new OrchestrationContext { History = CreateOrchestratorStartedHistory(time) }
+                    new OrchestrationContext { History = CreateOrchestratorStartedHistory(date: time, isProcessed: false) }
                     );
             }
             else
             {
                 DateTime startTime = time;
                 DateTime restartTime = startTime.AddMilliseconds(intervalMilliseconds);
+                // Assumes that a context, when passed to OrchestrationInvoker, has all HistoryEvents' IsProcessed reset to false
                 var history = MergeHistories(
-                    CreateOrchestratorStartedHistory(time),
-                    CreateActivityHistory(name: FunctionName, scheduled: true, completed: true, output: InvocationResultJson, restartTime)
+                    CreateOrchestratorStartedHistory(date: time, isProcessed: false),
+                    CreateActivityHistory(name: FunctionName,
+                                          scheduled: true,
+                                          completed: true,
+                                          output: InvocationResultJson,
+                                          date: restartTime,
+                                          orchestratorStartedIsProcessed: false)
                 );
                 var context = new OrchestrationContext { History = history, CurrentUtcDateTime = restartTime };
                 _orchestrationBindingInfo = new OrchestrationBindingInfo("ContextParameterName", context);
@@ -83,14 +89,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             DateTime restartTime = startTime.AddMilliseconds(intervalMilliseconds);
             DateTime shouldNotHitTime = restartTime.AddMilliseconds(intervalMilliseconds);
             var history = MergeHistories(
-                CreateOrchestratorStartedHistory(date: startTime),
-                CreateActivityHistory(name: FunctionName, scheduled: true, completed: completed, output: InvocationResultJson, restartTime)
+                CreateOrchestratorStartedHistory(date: startTime, isProcessed: true),
+                CreateActivityHistory(
+                    name: FunctionName,
+                    scheduled: true,
+                    completed: completed,
+                    output: InvocationResultJson,
+                    date: restartTime,
+                    orchestratorStartedIsProcessed: false)
             );
 
             var _activityInvocationTracker = new ActivityInvocationTracker();
             if (completed)
             {
-                history = MergeHistories(history, CreateActivityHistory(name: FunctionName, scheduled: true, completed: true, output: InvocationResultJson, shouldNotHitTime));
+                history = MergeHistories(history, CreateActivityHistory(
+                    name: FunctionName,
+                    scheduled: true,
+                    completed: true,
+                    output: InvocationResultJson,
+                    date: shouldNotHitTime,
+                    orchestratorStartedIsProcessed: false));
             }
             else
             {
@@ -111,6 +129,51 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             }
         }
 
+        // Verifies that in the case of identical Timestamps for consecutive OrchestratorStarted events, CurrentUtcDateTime does not jump ahead
+        [Fact]
+        public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfTimestampsAreIdentical()
+        {
+            DateTime startTime = time;
+            DateTime shouldNotHitTime = startTime.AddMilliseconds(intervalMilliseconds);
+            var history = MergeHistories(
+                CreateActivityHistory(
+                    name: FunctionName,
+                    scheduled: true,
+                    completed: true,
+                    date: startTime,
+                    output: InvocationResultJson,
+                    orchestratorStartedIsProcessed: true),
+                CreateActivityHistory(
+                    name: FunctionName,
+                    scheduled: true,
+                    completed: true,
+                    date: startTime,
+                    output: InvocationResultJson,
+                    orchestratorStartedIsProcessed: false),
+                CreateActivityHistory(
+                    name: FunctionName,
+                    scheduled: true,
+                    completed: true,
+                    date: shouldNotHitTime,
+                    output: InvocationResultJson,
+                    orchestratorStartedIsProcessed: false)
+                    );
+            var context = new OrchestrationContext { History = history, CurrentUtcDateTime = startTime };
+            var willHitEvent = context.History.First(
+                e => e.EventType == HistoryEventType.OrchestratorStarted &&
+                     e.IsProcessed);
+            var allOutput = new List<object>();
+            var _activityInvocationTracker = new ActivityInvocationTracker();
+
+            _activityInvocationTracker.ReplayActivityOrStop(FunctionName, FunctionInput, context, _loadedFunctions, noWait: false, output => allOutput.Add(output));
+
+            Assert.Equal(startTime, context.CurrentUtcDateTime);
+            var shouldNotHitEvent = context.History.First(
+                e => e.Timestamp.Equals(shouldNotHitTime));
+            Assert.Equal(true, willHitEvent.IsProcessed);
+            Assert.Equal(false, shouldNotHitEvent.IsProcessed);
+        }
+
 
         [Theory]
         [InlineData(true)]
@@ -129,9 +192,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             activityFunctions.Add("FunctionB", allCompleted);
             activityFunctions.Add("FunctionC", true);
             var history = MergeHistories(
-                CreateOrchestratorStartedHistory(date: startTime),
-                CreateNoWaitActivityHistory(scheduled: activityFunctions, restartTime: restartTime),
-                CreateOrchestratorStartedHistory(date: shouldNotHitTime)
+                CreateOrchestratorStartedHistory(date: startTime, isProcessed: true),
+                CreateNoWaitActivityHistory(scheduled: activityFunctions, restartTime: restartTime, orchestratorStartedIsProcessed: false),
+                CreateOrchestratorStartedHistory(date: shouldNotHitTime, isProcessed: false)
             );
             OrchestrationContext context = new OrchestrationContext { History = history, CurrentUtcDateTime = startTime };
             var tasksToWaitFor = new ReadOnlyCollection<ActivityInvocationTask>(
@@ -157,7 +220,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         // Creates a history containing an OrchestratorStarted event
-        private HistoryEvent[] CreateOrchestratorStartedHistory(DateTime date)
+        private HistoryEvent[] CreateOrchestratorStartedHistory(DateTime date, bool isProcessed)
         {
             var history = new List<HistoryEvent>();
             // Add an OrchestratorStarted event
@@ -168,14 +231,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     EventType = HistoryEventType.OrchestratorStarted,
                     EventId = orchestrationStartedEventId,
-                    Timestamp = date
+                    Timestamp = date,
+                    IsProcessed = isProcessed
                 });
 
             return history.ToArray();
         }
 
         // Creates a history containing a TaskScheduled and OrchestratorStarted event and/or a TaskCompleted event
-        private HistoryEvent[] CreateActivityHistory(string name, bool scheduled, bool completed, string output, DateTime date)
+        private HistoryEvent[] CreateActivityHistory(
+            string name,
+            bool scheduled,
+            bool completed,
+            string output,
+            DateTime date,
+            bool orchestratorStartedIsProcessed)
         {
             var history = new List<HistoryEvent>();
             
@@ -200,7 +270,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     EventType = HistoryEventType.OrchestratorStarted,
                     EventId = orchestrationStartedEventId,
-                    Timestamp = date
+                    Timestamp = date,
+                    IsProcessed = orchestratorStartedIsProcessed
                 });
 
                 history.Add(
@@ -216,7 +287,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             return history.ToArray();
         }
 
-        private HistoryEvent[] CreateNoWaitActivityHistory(Dictionary<string, bool> scheduled, DateTime restartTime)
+        private HistoryEvent[] CreateNoWaitActivityHistory(
+            Dictionary<string, bool> scheduled,
+            DateTime restartTime,
+            bool orchestratorStartedIsProcessed)
         {
             var history = new List<HistoryEvent>();
             var completedEvents = new Dictionary<string, int>();
@@ -246,7 +320,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     EventType = HistoryEventType.OrchestratorStarted,
                     EventId = orchestrationStartedEventId,
-                    Timestamp = restartTime
+                    Timestamp = restartTime,
+                    IsProcessed = orchestratorStartedIsProcessed
                 });
 
             // Add completed tasks to the history if all completed

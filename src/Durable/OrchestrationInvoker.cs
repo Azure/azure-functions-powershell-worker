@@ -23,12 +23,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 var context = orchestrationBindingInfo.Context;
 
                 // context.History should never be null when initializing CurrentUtcDateTime
-                if (context.History != null)
-                {
-                    var orchestrationStart = context.History.FirstOrDefault(
-                        (e) => e.EventType == HistoryEventType.OrchestratorStarted);
-                    context.CurrentUtcDateTime = orchestrationStart.Timestamp.ToUniversalTime();
-                }
+                var orchestrationStart = context.History.First(
+                    e => e.EventType == HistoryEventType.OrchestratorStarted);
+                context.CurrentUtcDateTime = orchestrationStart.Timestamp.ToUniversalTime();
+
+                // Marks the first OrchestratorStarted event as processed
+                orchestrationStart.IsProcessed = true;
                 
                 var asyncResult = pwsh.BeginInvoke(outputBuffer);
 
