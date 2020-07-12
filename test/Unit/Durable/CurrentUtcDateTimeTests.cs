@@ -32,7 +32,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         readonly OrchestrationInvoker _orchestrationInvoker = new OrchestrationInvoker();
 
-        private OrchestrationBindingInfo _orchestrationBindingInfo;
+        private OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo("ContextParametername",
+                                                                                                   new OrchestrationContext());
 
         private readonly Mock<IPowerShellServices> _mockPowerShellServices = new Mock<IPowerShellServices>();
 
