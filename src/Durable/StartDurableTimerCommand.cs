@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
             DateTime fireAt = context.CurrentUtcDateTime.AddSeconds(Seconds);
-            _durableTimer.CreateTimerOrContinue(context, fireAt, WriteObject);
+            _durableTimer.CreateTimerOrContinue(context, fireAt);
         }
 
         protected override void StopProcessing()

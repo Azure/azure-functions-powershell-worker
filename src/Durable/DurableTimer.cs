@@ -8,13 +8,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System;
     using System.Linq;
     using System.Threading;
-    using Utility;
 
     internal class DurableTimer
     {
         private readonly ManualResetEvent _waitForStop = new ManualResetEvent(initialState: false);
 
-        public void CreateTimerOrContinue(OrchestrationContext context, DateTime fireAt, Action<object> output)
+        public void CreateTimerOrContinue(OrchestrationContext context, DateTime fireAt)
         {
             context.OrchestrationActionCollector.Add(new CreateDurableTimerAction(fireAt));
 
@@ -25,14 +24,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 CreateTimerAndWaitUntilFired(context);
             }
+            else if (timerFired != null)
+            {
+                // Update CurrentUtcDateTime if the timer has fired
+                var newOrchestrationStart = context.History.FirstOrDefault(
+                        e => e.EventType == HistoryEventType.OrchestratorStarted &&
+                            !e.IsProcessed
+                    );
+                
+                if (newOrchestrationStart != null)
+                {
+                    context.CurrentUtcDateTime = newOrchestrationStart.Timestamp.ToUniversalTime();
+                    newOrchestrationStart.IsProcessed = true;
+                }
 
+                timerCreated.IsProcessed = true;
+                timerFired.IsProcessed = true;
+            }
         }
 
         private static HistoryEvent GetTimerCreated(OrchestrationContext context, DateTime fireAt)
         {
             return context.History.FirstOrDefault(
-                (e) => e.EventType == HistoryEventType.TimerCreated &&
-                e.FireAt.Equals(fireAt)
+                e => e.EventType == HistoryEventType.TimerCreated &&
+                     e.FireAt.Equals(fireAt) &&
+                    !e.IsProcessed
                 );
         }
 
@@ -41,8 +57,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             if (timerCreated != null)
             {
                 return context.History.FirstOrDefault(
-                    (e) => e.EventType == HistoryEventType.TimerFired &&
-                    e.TimerId == timerCreated.EventId
+                    e => e.EventType == HistoryEventType.TimerFired &&
+                         e.TimerId == timerCreated.EventId
                     );
             }
             return null;
