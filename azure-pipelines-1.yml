@@ -31,15 +31,7 @@ steps:
 #    FUNCTIONS_WORKER_RUNTIME : "powershell"
 #  continueOnError: false
 #  displayName: 'Running E2ETest'
-
 - pwsh: |
-      write-host "Current path"
-      ls
-      write-host "Package folder "
-      ls ./package/bin
-      write-host "Package path "
-      ls ./package/bin/**/*.nupkg
-      
       $sourcePath  = (ls package/**/*/Microsoft.Azure.Functions.PowerShellWorker*.nupkg).FullName
       if (-not (test-path $sourcePath))
       {
@@ -47,11 +39,11 @@ steps:
       }
       Copy-Item -Path $sourcePath -Destination $(Build.ArtifactStagingDirectory) -ErrorAction Stop -Verbose -Force
   displayName: 'Copy package to ArtifactStagingDirectory' 
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
+#- task: PublishBuildArtifacts@1
+#  inputs:
+#    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+#    ArtifactName: 'drop'
+#    publishLocation: 'Container'
 - task: NuGetCommand@2
   inputs:
     command: 'push'
