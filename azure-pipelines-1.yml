@@ -38,9 +38,9 @@ steps:
       write-host "Package folder "
       ls ./package/bin
       write-host "Package path "
-      ls ./package/bin/**/*/Microsoft.Azure.Functions.PowerShellWorker*.nupkg
+      ls ./package/bin/**/*.nupkg
       
-      $sourcePath  = (ls ./package/bin/**/*/Microsoft.Azure.Functions.PowerShellWorker*.nupkg).FullName
+      $sourcePath  = (ls package/**/*/Microsoft.Azure.Functions.PowerShellWorker*.nupkg).FullName
       if (-not (test-path $sourcePath))
       {
         throw 'Unable to find Microsoft.Azure.Functions.PowerShellWorker*.nupkg at ./package'
