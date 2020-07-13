@@ -33,15 +33,17 @@ steps:
 #  displayName: 'Running E2ETest'
 
 - pwsh: |
+      <#
       write-host "Current path"
       ls
       write-host "Package folder "
-      ls ./package
-      $sourcePath  = (ls ./package/**/*/Microsoft.Azure.Functions.PowerShellWorker*.nupkg).FullName
-      if (test-path $sourcePath)
+      ls ./package/bin
+      $sourcePath  = (ls ./package/bin/**/*/Microsoft.Azure.Functions.PowerShellWorker*.nupkg).FullName
+      if (-not test-path $sourcePath)
       {
         throw 'Unable to find Microsoft.Azure.Functions.PowerShellWorker*.nupkg at ./package'
       }
+      #>
       Copy-Item -Path $sourcePath -Destination $(Build.ArtifactStagingDirectory) -ErrorAction Stop -Verbose -Force
   displayName: 'Copy package to ArtifactStagingDirectory' 
 - task: PublishBuildArtifacts@1
