@@ -33,6 +33,10 @@ steps:
 #  displayName: 'Running E2ETest'
 
 - pwsh: |
+      write-host "Current path"
+      ls
+      write-host "Package folder "
+      ls ./package
       $sourcePath  = (ls ./package/**/*/Microsoft.Azure.Functions.PowerShellWorker*.nupkg).FullName
       if (test-path $sourcePath)
       {
