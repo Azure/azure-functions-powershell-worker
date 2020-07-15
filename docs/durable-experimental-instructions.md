@@ -48,23 +48,17 @@ Start with the sample app at `examples/durable/DurableApp` in this repository.
 
 ### 1. Install extensions
 
-Before deploying or starting it, run the following command in the app directory:
+Before deploying or starting it, run the following commands in the app directory:
 
 ``` bash
+dotnet add package Microsoft.Azure.WebJobs.Extensions.DurableTask
 func extensions install --powershell
-```
-
-Please note that the Microsoft.Azure.WebJobs.Extensions.DurableTask package should be pinned to version 2.0.0 until [the fix for a known issue](https://github.com/Azure/azure-functions-durable-extension/pull/1164) is released. For this reason, the extensions.csproj file already includes the following line:
-
-``` xml
-<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="2.0.0" />
 ```
 
 ### 2. Configure app settings
 
 Set the following app settings (if running on Azure) or just use the sample local.settings.json (if running locally):
 - Make sure `AzureWebJobsStorage` [points to a valid Azure storage account](https://docs.microsoft.com/azure/azure-functions/functions-app-settings#azurewebjobsstorage). This storage is required for data persisted by Durable Functions. When you create a new Function app on Azure, it normally points to an automatically provisioned storage account. If you intend to run the app locally, you can either keep the "UseDevelopmentStorage=true" value in the sample local.settings.json (in this case you will also need to install and start Azure Storage Emulator), or replace it with a connection string pointing to a real Azure storage account.
-- `AzureWebJobsFeatureFlags` must contain `AllowSynchronousIO`. Don't ask.
 - You may need to adjust `PSWorkerInProcConcurrencyUpperBound` to increase [concurrency](https://docs.microsoft.com/azure/azure-functions/functions-reference-powershell#concurrency) for the Fan-out/Fan-in pattern.
 
 ### 3. Deploy the app
