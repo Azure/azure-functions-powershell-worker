@@ -48,16 +48,11 @@ Start with the sample app at `examples/durable/DurableApp` in this repository.
 
 ### 1. Install extensions
 
-Before deploying or starting it, run the following command in the app directory:
+Before deploying or starting it, run the following commands in the app directory:
 
 ``` bash
+dotnet add package Microsoft.Azure.WebJobs.Extensions.DurableTask
 func extensions install --powershell
-```
-
-Please note that the Microsoft.Azure.WebJobs.Extensions.DurableTask package should be pinned to version 2.0.0 until [the fix for a known issue](https://github.com/Azure/azure-functions-durable-extension/pull/1164) is released. For this reason, the extensions.csproj file already includes the following line:
-
-``` xml
-<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="2.0.0" />
 ```
 
 ### 2. Configure app settings

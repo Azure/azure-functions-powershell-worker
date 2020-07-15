@@ -59,6 +59,8 @@ $funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
 Write-Host "Installing extensions..."
 Push-Location "$PSScriptRoot\TestFunctionApp"
 
+dotnet add package Microsoft.Azure.WebJobs.Extensions.DurableTask
+
 if ($IsMacOS -or $IsLinux) {
     chmod +x $funcExePath
 }
