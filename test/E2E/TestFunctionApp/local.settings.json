@@ -3,7 +3,6 @@
   "Values": {
     "AzureWebJobsEventHubSender":"",
     "AzureWebJobsCosmosDBConnectionString":"",
-    "AzureWebJobsFeatureFlags": "AllowSynchronousIO",
     "FUNCTIONS_WORKER_RUNTIME": "powershell"
   }
 }

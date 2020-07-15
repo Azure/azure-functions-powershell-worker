@@ -59,7 +59,6 @@ func extensions install --powershell
 
 Set the following app settings (if running on Azure) or just use the sample local.settings.json (if running locally):
 - Make sure `AzureWebJobsStorage` [points to a valid Azure storage account](https://docs.microsoft.com/azure/azure-functions/functions-app-settings#azurewebjobsstorage). This storage is required for data persisted by Durable Functions. When you create a new Function app on Azure, it normally points to an automatically provisioned storage account. If you intend to run the app locally, you can either keep the "UseDevelopmentStorage=true" value in the sample local.settings.json (in this case you will also need to install and start Azure Storage Emulator), or replace it with a connection string pointing to a real Azure storage account.
-- `AzureWebJobsFeatureFlags` must contain `AllowSynchronousIO`. Don't ask.
 - You may need to adjust `PSWorkerInProcConcurrencyUpperBound` to increase [concurrency](https://docs.microsoft.com/azure/azure-functions/functions-reference-powershell#concurrency) for the Fan-out/Fan-in pattern.
 
 ### 3. Deploy the app
