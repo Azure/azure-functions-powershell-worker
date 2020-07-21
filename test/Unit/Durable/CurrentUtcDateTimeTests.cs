@@ -6,11 +6,11 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 {
     using System;
-    using System.Threading;
-    using System.Management.Automation;
     using System.Collections;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
+    using System.Management.Automation;
+    using System.Threading;
     using System.Linq;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Moq;
@@ -171,8 +171,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Equal(startTime, context.CurrentUtcDateTime);
             var shouldNotHitEvent = context.History.First(
                 e => e.Timestamp.Equals(shouldNotHitTime));
-            Assert.Equal(true, willHitEvent.IsProcessed);
-            Assert.Equal(false, shouldNotHitEvent.IsProcessed);
+            Assert.True(willHitEvent.IsProcessed);
+            Assert.False(shouldNotHitEvent.IsProcessed);
         }
 
 
