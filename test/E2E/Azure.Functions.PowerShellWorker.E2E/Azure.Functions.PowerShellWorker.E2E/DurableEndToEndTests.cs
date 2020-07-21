@@ -86,6 +86,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             }
         }
 
+<<<<<<< HEAD
         /*
             Verifies that the Durable execution model correctly replays the same collection of CurrentUtcDateTimes.
             The orchestrator writes CurrentUtcDateTime values to a temporary file. File contents are expected to
@@ -116,16 +117,35 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                                         20    <Timestamp2>
                                         21    <Timestamp3>
         */
+=======
+>>>>>>> 751b9f5... Added CurrentUtcDateTime E2E tests
         [Fact]
         public async Task DurableExecutionReplaysCurrentUtcDateTime()
         {
             var initialResponse = await Utilities.GetHttpTriggerResponse("CurrentUtcDateTimeStart", queryString: string.Empty);
+<<<<<<< HEAD
 
             var location = initialResponse.Headers.Location;
 
             var initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
             dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
             var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
+=======
+            Assert.Equal(HttpStatusCode.Accepted, initialResponse.StatusCode);
+
+            var location = initialResponse.Headers.Location;
+            Assert.NotNull(location);
+
+            var initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+            dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
+            Assert.NotNull(initialResponseBodyObject.id);
+            var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
+            Assert.Equal(location.ToString(), statusQueryGetUri);
+            Assert.NotNull(initialResponseBodyObject.sendEventPostUri);
+            Assert.NotNull(initialResponseBodyObject.purgeHistoryDeleteUri);
+            Assert.NotNull(initialResponseBodyObject.terminatePostUri);
+            Assert.NotNull(initialResponseBodyObject.rewindPostUri);
+>>>>>>> 751b9f5... Added CurrentUtcDateTime E2E tests
 
             var orchestrationCompletionTimeout = TimeSpan.FromSeconds(60);
             var startTime = DateTime.UtcNow;
@@ -139,6 +159,20 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     {
                         case HttpStatusCode.Accepted:
                         {
+<<<<<<< HEAD
+=======
+                            var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                            var runtimeStatus = (string)statusResponseBody.runtimeStatus;
+                            Assert.True(
+                                runtimeStatus == "Running" || runtimeStatus == "Pending",
+                                $"Unexpected runtime status: {runtimeStatus}");
+
+                            if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                            {
+                                Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                            }
+
+>>>>>>> 751b9f5... Added CurrentUtcDateTime E2E tests
                             await Task.Delay(TimeSpan.FromSeconds(2));
                             break;
                         }
@@ -148,6 +182,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                             Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
                             string path = statusResponseBody.output.ToString();
                             string[] lines = System.IO.File.ReadAllLines(path);
+<<<<<<< HEAD
                             // Expect the format to be as in Case 1
                             var delineatorLines = new List<int>(new int[] { 0, 3, 9 });
                             var timestamp1Lines = new List<int>(new int[] { 1, 2, 4, 5, 10, 11 });
@@ -170,6 +205,20 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                             Assert.NotEqual(lines[timestamp3Line], lines[delineatorLines[0]]);
                             Assert.NotEqual(lines[timestamp3Line], lines[timestamp1Lines[0]]);
                             Assert.NotEqual(lines[timestamp3Line], lines[timestamp2Lines[0]]);
+=======
+                            Assert.Equal("---", lines[0]);
+                            int[] delineatorIndices = { 0, 3, 9, 15 };
+                            int[] timestamp1Indices = { 1, 2, 4, 5, 10, 11, 16, 17 };
+                            int[] timestamp2Indices = { 6, 7, 8, 12, 13, 14, 18, 19, 20 };
+
+                            // See the CurrentUtcDateTimeOrchestrator in the TestFunctionApp to see why these results are expected
+                            VerifyLinesEqual(lines: lines, equalIndices: delineatorIndices);
+                            VerifyLinesEqual(lines: lines, equalIndices: timestamp1Indices);
+                            VerifyLinesEqual(lines: lines, equalIndices: timestamp2Indices);
+                            Assert.NotEqual(lines[21], lines[0]);
+                            Assert.NotEqual(lines[21], lines[1]);
+                            Assert.NotEqual(lines[21], lines[6]);
+>>>>>>> 751b9f5... Added CurrentUtcDateTime E2E tests
                             return;
                         }
                         default:
@@ -183,6 +232,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             
         }
         
+<<<<<<< HEAD
         private void VerifyArrayItemsAreEqual(string[] array, List<int> indices)
         {
             if (indices.Capacity > 0)
@@ -191,6 +241,16 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                 for (int i = 1; i < indices.Capacity; i++)
                 {
                     Assert.Equal(expected, array[indices[i]]);
+=======
+        private void VerifyLinesEqual(string[] lines, int[] equalIndices)
+        {
+            if (equalIndices.Length > 0)
+            {
+                var expected = lines[equalIndices[0]];
+                for (int i = 1; i < equalIndices.Length; i++)
+                {
+                    Assert.Equal(expected, lines[equalIndices[i]]);
+>>>>>>> 751b9f5... Added CurrentUtcDateTime E2E tests
                 }
             }
         }
