@@ -22,49 +22,27 @@ steps:
       ./build.ps1 -Clean -Configuration Release
   displayName: './build.ps1 -Clean -Configuration Release'
 
-- pwsh: ./test/E2E/Start-E2ETest.ps1
-  env:
-    AzureWebJobsStorage: $(AzureWebJobsStorage)
-    AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
-    AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
-    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
-    FUNCTIONS_WORKER_RUNTIME : "powershell"
-  continueOnError: true
-  displayName: 'Running E2ETest'
-
+#- pwsh: ./test/E2E/Start-E2ETest.ps1
+#  env:
+#    AzureWebJobsStorage: $(AzureWebJobsStorage)
+#    AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
+#    AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
+#    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
+#    FUNCTIONS_WORKER_RUNTIME : "powershell"
+#  continueOnError: false
+#  displayName: 'Running E2ETest'
 - pwsh: |
-      $null = New-Item -Path ./E2ETestArtifacts -ItemType Directory -Force
-      Compress-Archive -Path ./src/bin/Release/netcoreapp3.1/publish/* -DestinationPath ./E2ETestArtifacts/powershellworker.zip -Verbose
-      Compress-Archive -Path ./test/E2E/TestFunctionApp/* -DestinationPath ./E2ETestArtifacts/e2etestspowershell.zip -Verbose
-  displayName: 'Create test app zip file'
-
-- pwsh: |
-    if (-not (get-module -list Az.Storage))
-    {
-        write-host "Installing Az.Storage"
-        Install-Module Az.Storage -Repository PSGallery -Force -Verbose
-    }
-
-    write-host "Creating context"
-    $context = New-AzStorageContext -StorageAccountName $(StorageAccountName) `
-                                    -StorageAccountKey $(StorageAccountKey) `
-                                    -Verbose
-    
-    # Make sure the containter is present
-    if (-not (Get-AzStorageContainer -Name $ -Context $context))
-    {
-        write-host "Creating container for worker and test artifacts."
-        New-AzStorageContainer -Name $(ContainerName) -context -Context $context -Verbose
-    }
-
-    foreach ($fileName in @("e2etestspowershell.zip", "powershellworker.zip"))
-    {
-        write-host "Uploading file to Azure Blob"
-        Set-AzStorageBlobContent -File ./E2ETestArtifacts/$fileName `
-                                 -Container $(ContainerName) `
-                                 -Blob $fileName `
-                                 -Context $context `
-                                 -Force `
-                                 -Verbose
-    }
-  displayName: 'Copying test app zip artifacts to blob'
+      $sourcePath  = (ls package/**/*/Microsoft.Azure.Functions.PowerShellWorker*.nupkg).FullName
+      if (-not (test-path $sourcePath))
+      {
+        throw 'Unable to find Microsoft.Azure.Functions.PowerShellWorker*.nupkg at ./package'
+      }
+      Copy-Item -Path $sourcePath -Destination $(Build.ArtifactStagingDirectory) -ErrorAction Stop -Verbose -Force
+  displayName: 'Copy package to ArtifactStagingDirectory' 
+- task: NuGetCommand@2
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+    nuGetFeedType: 'internal'
+    publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df'
+    allowPackageConflicts: true

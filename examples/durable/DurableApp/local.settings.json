@@ -2,7 +2,6 @@
   "IsEncrypted": false,
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "AzureWebJobsFeatureFlags": "AllowSynchronousIO",
     "FUNCTIONS_WORKER_RUNTIME": "powershell",
     "PSWorkerInProcConcurrencyUpperBound": 10
   }
