@@ -39,14 +39,10 @@ steps:
       }
       Copy-Item -Path $sourcePath -Destination $(Build.ArtifactStagingDirectory) -ErrorAction Stop -Verbose -Force
   displayName: 'Copy package to ArtifactStagingDirectory' 
-#- task: PublishBuildArtifacts@1
-#  inputs:
-#    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-#    ArtifactName: 'drop'
-#    publishLocation: 'Container'
 - task: NuGetCommand@2
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
     nuGetFeedType: 'internal'
-    publishVstsFeed: '38971840-434a-4bcc-87cf-218cc186092e'
+    publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df'
+    allowPackageConflicts: true
