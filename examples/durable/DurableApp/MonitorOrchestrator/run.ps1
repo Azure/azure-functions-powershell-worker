@@ -1,3 +1,5 @@
+using namespace System.Net
+
 param($Context)
 
 Write-Host 'MonitorOrchestrator: started.'
