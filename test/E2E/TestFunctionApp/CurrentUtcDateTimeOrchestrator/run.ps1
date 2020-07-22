@@ -53,7 +53,6 @@ Write-Host "CurrentUtcDateTimeOrchestrator: finished."
 return $path
 
 <#
-<<<<<<< HEAD
 Contents of the file should resemble one of the following two cases:
 Case 1                      Case 2
 Line                        Line
@@ -79,5 +78,4 @@ Line                        Line
                             19    <Timestamp2>
                             20    <Timestamp2>
                             21    <Timestamp3>
-<<<<<<< HEAD
 #>
