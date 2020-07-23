@@ -49,7 +49,6 @@ $activityResults += Wait-ActivityFunction -Task $tasks
 Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 
 Write-Host "CurrentUtcDateTimeOrchestrator: finished."
-Write-Host (Get-Content -Path $path)
 
 return $path
 
