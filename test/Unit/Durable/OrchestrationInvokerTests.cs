@@ -7,6 +7,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 {
     using System;
     using System.Collections;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Management.Automation;
     using System.Threading;
@@ -20,9 +21,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     {
         readonly OrchestrationInvoker _orchestrationInvoker = new OrchestrationInvoker();
 
+        private static readonly HistoryEvent[] _history = { new HistoryEvent { 
+                                                                            EventType = HistoryEventType.OrchestratorStarted,
+                                                                            Timestamp = new DateTime() } };
         readonly OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo(
                                                                         "ContextParameterName",
-                                                                        new OrchestrationContext());
+                                                                        new OrchestrationContext { History = _history });
 
         private readonly Mock<IPowerShellServices> _mockPowerShellServices = new Mock<IPowerShellServices>();
 

@@ -8,6 +8,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System;
     using System.Collections;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Management.Automation;
 
     using PowerShellWorker.Utility;
@@ -19,6 +20,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             try
             {
                 var outputBuffer = new PSDataCollection<object>();
+                var context = orchestrationBindingInfo.Context;
+
+                // context.History should never be null when initializing CurrentUtcDateTime
+                var orchestrationStart = context.History.First(
+                    e => e.EventType == HistoryEventType.OrchestratorStarted);
+                context.CurrentUtcDateTime = orchestrationStart.Timestamp.ToUniversalTime();
+
+                // Marks the first OrchestratorStarted event as processed
+                orchestrationStart.IsProcessed = true;
+                
                 var asyncResult = pwsh.BeginInvoke(outputBuffer);
 
                 var (shouldStop, actions) =

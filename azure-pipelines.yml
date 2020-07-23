@@ -12,6 +12,7 @@ pool:
 
 variables:
   Configuration: Release
+  buildNumber: $[ counter('build', 400) ] # Start higher than our AppVeyor versions. Every build (pr or branch) will increment.
 
 steps:
 - pwsh: ./build.ps1 -NoBuild -Bootstrap
@@ -19,8 +20,8 @@ steps:
 
 - pwsh: |
       $ErrorActionPreference = "Stop"
-      ./build.ps1 -Clean -Configuration Release
-  displayName: './build.ps1 -Clean -Configuration Release'
+      ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)"
+  displayName: 'Build worker code'
 
 - pwsh: ./build.ps1 -NoBuild -Test
   displayName: 'Running UnitTest'
@@ -58,6 +59,7 @@ steps:
   displayName: 'Copy package to ArtifactStagingDirectory'
 
 - task: NuGetCommand@2
+  condition: ne(variables['Build.Reason'], 'PullRequest')
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
