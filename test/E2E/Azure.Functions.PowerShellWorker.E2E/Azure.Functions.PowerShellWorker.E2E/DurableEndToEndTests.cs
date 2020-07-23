@@ -148,18 +148,23 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                             Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
                             string path = statusResponseBody.output.ToString();
                             string[] lines = System.IO.File.ReadAllLines(path);
+
                             // Expect the format to be as in Case 1
-                            var delineatorLines = new List<int>(new int[] { 0, 3, 9 });
-                            var timestamp1Lines = new List<int>(new int[] { 1, 2, 4, 5, 10, 11 });
-                            var timestamp2Lines = new List<int>(new int[] { 6, 7, 8, 12, 13, 14 });
+                            var delineatorLines = new int[] { 0, 3, 9 };
+                            var timestamp1Lines = new int[] { 1, 2, 4, 5, 10, 11 };
+                            var timestamp2Lines = new int[] { 6, 7, 8, 12, 13, 14 };
                             int timestamp3Line = 15;
                             
                             // Updates the expected format to be Case 2 if it is not Case 1
                             if (lines[timestamp3Line] == "---") {
+                                delineatorLines = new int[] { 0, 3, 9, 15 };
+                                timestamp1Lines = new int[] { 1, 2, 4, 5, 10, 11, 16, 17 };
+                                timestamp2Lines = new int[] { 6, 7, 8, 12, 13, 14, 18, 19, 20 };
                                 timestamp3Line = 21;
-                                delineatorLines.Add(15);
-                                timestamp1Lines.AddRange(new int[] { 16, 17 });
-                                timestamp2Lines.AddRange(new int[] { 18, 19, 20 });
+
+                                Assert.True(delineatorLines.Length == 4);
+                                Assert.True(timestamp1Lines.Length == 8);
+                                Assert.True(timestamp2Lines.Length == 9);
                             }
 
                             Assert.Equal("---", lines[delineatorLines[0]]);
@@ -183,13 +188,14 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             
         }
         
-        private void VerifyArrayItemsAreEqual(string[] array, List<int> indices)
+        private void VerifyArrayItemsAreEqual(string[] array, int[] indices)
         {
-            if (indices.Capacity > 0)
+            if (indices.Length > 0)
             {
                 var expected = array[indices[0]];
-                for (int i = 1; i < indices.Capacity; i++)
+                for (int i = 1; i < indices.Length; i++)
                 {
+                    Assert.True(indices[i] < array.Length, $"Array length is {array.Length} but index is {indices[i]}");
                     Assert.Equal(expected, array[indices[i]]);
                 }
             }
