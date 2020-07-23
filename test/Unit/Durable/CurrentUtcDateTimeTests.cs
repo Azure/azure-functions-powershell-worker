@@ -130,6 +130,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             }
         }
 
+        // Verifies that in the case of identical Timestamps for consecutive OrchestratorStarted events, CurrentUtcDateTime does not jump ahead
         [Fact]
         public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfTimestampsAreIdentical()
         {
@@ -174,7 +175,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.False(shouldNotHitEvent.IsProcessed);
         }
 
-
+        [Theory]
+        [InlineData(true)]
         [InlineData(false)]
         // Verifies that CurrentUtcDateTime updates to the next OrchestratorStarted event (not a later OrchestratorStartedEvent) if all activity functions complete
         // If any activity is not complete, CurrentUtcDateTime does not update
