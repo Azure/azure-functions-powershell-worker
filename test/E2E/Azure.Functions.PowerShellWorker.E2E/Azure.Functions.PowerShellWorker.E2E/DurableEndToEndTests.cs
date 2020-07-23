@@ -190,6 +190,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                 var expected = array[indices[0]];
                 for (int i = 1; i < indices.Capacity; i++)
                 {
+                    Assert.True(array.Length > indices[i], $"Array length is {array.Length} but index is {indices[i]}");
                     Assert.Equal(expected, array[indices[i]]);
                 }
             }
