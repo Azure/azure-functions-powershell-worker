@@ -3,6 +3,7 @@
 |Branch|Status|
 |---|---|
 |dev|[![dev-build-status][]][dev-build-site]|
+|dev|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=dev)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=dev)|
 |v3.x/ps7|[![v3.x-ps7-build-status][]][v3.x-ps7-build-site]|
 |v3.x/ps6|[![v3.x-ps6-build-status][]][v3.x-ps6-build-site]|
 |v2.x|[![v2.x-build-status][]][v2.x-build-site]|
