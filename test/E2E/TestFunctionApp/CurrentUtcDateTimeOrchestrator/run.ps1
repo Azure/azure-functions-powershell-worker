@@ -53,10 +53,6 @@ Write-Host "CurrentUtcDateTimeOrchestrator: finished."
 return $path
 
 <#
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 90a4f2a... Adjusted expected format for the CurrentUtcDateTime E2E test
 Contents of the file should resemble one of the following two cases:
 Case 1                      Case 2
 Line                        Line
