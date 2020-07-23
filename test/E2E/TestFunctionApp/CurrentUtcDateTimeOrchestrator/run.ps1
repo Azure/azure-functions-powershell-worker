@@ -8,8 +8,11 @@ Write-Host "CurrentUtcDateTimeOrchestrator started. Input: $($Context.Input)"
 
 $activityResults = @()
 
-$fileName = "$("{0:MM_dd_yyyy_hh_mm_ss.ff_zz}" -f $Context.CurrentUtcDateTime)test.txt"
-$path = "$($env:TEMP)\$fileName"
+$tempFile = New-TemporaryFile
+$tempDir = $tempFile.Directory.FullName
+Remove-Item $tempFile
+$fileName = "$("{0:MM_dd_yyyy_hh_mm_ss.ff}" -f $Context.CurrentUtcDateTime)test.txt"
+$path = "$($tempDir)\$fileName"
 
 Add-Content -Value '---' -Path $path
 
