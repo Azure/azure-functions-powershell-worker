@@ -175,7 +175,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.False(shouldNotHitEvent.IsProcessed);
         }
 
-
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
