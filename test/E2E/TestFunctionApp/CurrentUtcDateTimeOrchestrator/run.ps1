@@ -6,8 +6,6 @@ $ErrorActionPreference = 'Stop'
 
 Write-Host "CurrentUtcDateTimeOrchestrator started. Input: $($Context.Input)"
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 $activityResults = @()
 
 $tempFile = New-TemporaryFile
@@ -15,15 +13,6 @@ $tempDir = $tempFile.Directory.FullName
 Remove-Item $tempFile
 $fileName = "$("{0:MM_dd_yyyy_hh_mm_ss.ff}" -f $Context.CurrentUtcDateTime)test.txt"
 $path = Join-Path -Path $tempDir -ChildPath $fileName
-=======
-$output = @()
-=======
-$activityResults = @()
->>>>>>> 90a4f2a... Adjusted expected format for the CurrentUtcDateTime E2E test
-
-$fileName = "$("{0:MM_dd_yyyy_hh_mm_ss.ff_zz}" -f $Context.CurrentUtcDateTime)test.txt"
-$path = "$($env:TEMP)\$fileName"
->>>>>>> 751b9f5... Added CurrentUtcDateTime E2E tests
 
 Add-Content -Value '---' -Path $path
 
@@ -36,15 +25,7 @@ Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 
 # Checks that CurrentUtcDateTime updates following a completed activity function
-<<<<<<< HEAD
-<<<<<<< HEAD
 $activityResults += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "Tokyo"
-=======
-$output += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "Tokyo"
->>>>>>> 751b9f5... Added CurrentUtcDateTime E2E tests
-=======
-$activityResults += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "Tokyo"
->>>>>>> 90a4f2a... Adjusted expected format for the CurrentUtcDateTime E2E test
 # <Timestamp2>
 Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 
@@ -63,18 +44,8 @@ Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 Write-Host "Finished the asynchronous calls."
 
 # Checks that CurrentUtcDateTime updates only after all awaited activity functions completed
-<<<<<<< HEAD
-<<<<<<< HEAD
 $activityResults += Wait-ActivityFunction -Task $tasks
 # <Timestamp3>
-=======
-# <Timestamp3>
-$output += Wait-ActivityFunction -Task $tasks
->>>>>>> 751b9f5... Added CurrentUtcDateTime E2E tests
-=======
-$activityResults += Wait-ActivityFunction -Task $tasks
-# <Timestamp3>
->>>>>>> 90a4f2a... Adjusted expected format for the CurrentUtcDateTime E2E test
 Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 
 Write-Host "CurrentUtcDateTimeOrchestrator: finished."
@@ -82,10 +53,6 @@ Write-Host "CurrentUtcDateTimeOrchestrator: finished."
 return $path
 
 <#
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 90a4f2a... Adjusted expected format for the CurrentUtcDateTime E2E test
 Contents of the file should resemble one of the following two cases:
 Case 1                      Case 2
 Line                        Line
@@ -111,34 +78,4 @@ Line                        Line
                             19    <Timestamp2>
                             20    <Timestamp2>
                             21    <Timestamp3>
-<<<<<<< HEAD
 #>
-=======
-Contents of the file should resemble:
-Line
-0     ---
-1     <Timestamp1>
-2     <Timestamp1>
-3     ---
-4     <Timestamp1>
-5     <Timestamp1>
-6     <Timestamp2>
-7     <Timestamp2>
-8     <Timestamp2>
-9     ---
-10    <Timestamp1>
-11    <Timestamp1>
-12    <Timestamp2>
-13    <Timestamp2>
-14    <Timestamp2>
-15    ---
-16    <Timestamp1>
-17    <Timestamp1>
-18    <Timestamp2>
-19    <Timestamp2>
-20    <Timestamp2>
-21    <Timestamp3>
-=======
->>>>>>> 90a4f2a... Adjusted expected format for the CurrentUtcDateTime E2E test
-#>
->>>>>>> 751b9f5... Added CurrentUtcDateTime E2E tests
