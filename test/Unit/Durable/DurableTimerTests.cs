@@ -53,7 +53,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 expectedWaitForStop: expectedWaitForStop,
                 () =>
                 {
-                    _durableTimer.CreateTimerOrContinue(context: context, fireAt: fireAt);
+                    _durableTimer.CreateTimerAndStop_OrContinue(context: context, fireAt: fireAt);
                 });
         }
 
@@ -80,7 +80,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 EmulateStop(_durableTimer);
             }
 
-            _durableTimer.CreateTimerOrContinue(context:context, fireAt: fireAt);
+            _durableTimer.CreateTimerAndStop_OrContinue(context:context, fireAt: fireAt);
 
             if (timerScheduledAndFired)
             {

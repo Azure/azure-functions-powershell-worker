@@ -13,7 +13,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         private readonly ManualResetEvent _waitForStop = new ManualResetEvent(initialState: false);
 
-        public void CreateTimerOrContinue(OrchestrationContext context, DateTime fireAt)
+        public void CreateTimerAndStop_OrContinue(OrchestrationContext context, DateTime fireAt)
         {
             context.OrchestrationActionCollector.Add(new CreateDurableTimerAction(fireAt));
 
