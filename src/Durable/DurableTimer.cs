@@ -13,7 +13,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         private readonly ManualResetEvent _waitForStop = new ManualResetEvent(initialState: false);
 
-        public void CreateTimerAndStop_OrContinue(OrchestrationContext context, DateTime fireAt)
+        public void StopAndCreateTimerOrContinue(OrchestrationContext context, DateTime fireAt)
         {
             context.OrchestrationActionCollector.Add(new CreateDurableTimerAction(fireAt));
 
@@ -26,17 +26,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             else if (timerFired != null)
             {
-                // Update CurrentUtcDateTime if the timer has fired
-                var newOrchestrationStart = context.History.FirstOrDefault(
-                        e => e.EventType == HistoryEventType.OrchestratorStarted &&
-                            !e.IsProcessed
-                    );
-                
-                if (newOrchestrationStart != null)
-                {
-                    context.CurrentUtcDateTime = newOrchestrationStart.Timestamp.ToUniversalTime();
-                    newOrchestrationStart.IsProcessed = true;
-                }
+                CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
 
                 timerCreated.IsProcessed = true;
                 timerFired.IsProcessed = true;

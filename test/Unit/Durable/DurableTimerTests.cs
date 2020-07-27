@@ -6,11 +6,7 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Management.Automation;
     using System.Threading;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Moq;
@@ -18,10 +14,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
     public class DurableTimerTests
     {
-        private const DateTimeKind utc = DateTimeKind.Utc;
-        private DateTime time = new DateTime(2020, 1, 1, 0, 0, 0, 0, utc);
-        private int longIntervalSeconds = 5;
-        private int shortIntervalSeconds = 3;
+        private const int LongIntervalSeconds = 5;
+        private const int ShortIntervalSeconds = 3;
+        private static readonly DateTime startTime = DateTime.UtcNow;
+        private readonly DateTime fireAt = startTime.AddSeconds(ShortIntervalSeconds);
+        private static readonly DateTime restartTime = startTime.AddSeconds(LongIntervalSeconds);
+        private static readonly DateTime shouldNotHitTime = restartTime.AddSeconds(LongIntervalSeconds);
         private OrchestrationInvoker _orchestrationInvoker = new OrchestrationInvoker();
         private OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo(
                                                                             "ContextParameterName",
@@ -36,12 +34,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [InlineData(false, true)]
         public void CreateTimerOrContinue_WaitsUntilTimerFires(bool timerScheduledAndFired, bool expectedWaitForStop)
         {
-            int durationSeconds = longIntervalSeconds;
-            DateTime startTime = time;
-            DateTime fireAt = startTime.AddSeconds(durationSeconds);
-            DateTime restartTime = fireAt.AddSeconds(shortIntervalSeconds);
-            
-            var history = MergeHistories(
+            var history = DurableTestUtilities.MergeHistories(
                 CreateOrchestratorStartedHistory(date: startTime, isProcessed: true),
                 CreateTimerFiredHistory(timerScheduledAndFired: timerScheduledAndFired, fireAt: fireAt, restartTime: restartTime, orchestratorStartedIsProcessed: false)
             );
@@ -49,11 +42,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             VerifyWaitForTimerFired(
                 durableTimer: _durableTimer,
-                durationSeconds: durationSeconds,
+                durationSeconds: LongIntervalSeconds,
                 expectedWaitForStop: expectedWaitForStop,
                 () =>
                 {
-                    _durableTimer.CreateTimerAndStop_OrContinue(context: context, fireAt: fireAt);
+                    _durableTimer.StopAndCreateTimerOrContinue(context: context, fireAt: fireAt);
                 });
         }
 
@@ -64,31 +57,24 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [InlineData(false)]
         public void CreateTimerOrContinue_UpdatesCurrentUtcDateTimeToNextOrchestratorStartedTimestamp_OnlyIfTimerCreatedAndFired(bool timerScheduledAndFired)
         {
-            DateTime startTime = time;
-            DateTime fireAt = startTime.AddSeconds(shortIntervalSeconds);
-            DateTime restartTime = startTime.AddSeconds(longIntervalSeconds);
-            DateTime shouldNotHitTime = restartTime.AddSeconds(longIntervalSeconds);
-            var history = MergeHistories(
+            var history = DurableTestUtilities.MergeHistories(
                 CreateOrchestratorStartedHistory(date: startTime, isProcessed: true),
                 CreateTimerFiredHistory(timerScheduledAndFired: timerScheduledAndFired, fireAt: fireAt, restartTime: restartTime, orchestratorStartedIsProcessed: false),
                 CreateOrchestratorStartedHistory(date: shouldNotHitTime, isProcessed: false)
             );
             OrchestrationContext context = new OrchestrationContext { History = history, CurrentUtcDateTime = startTime };
             _orchestrationBindingInfo = new OrchestrationBindingInfo("ContextParameterName", context);
+
             if (!timerScheduledAndFired)
             {
                 EmulateStop(_durableTimer);
-            }
-
-            _durableTimer.CreateTimerAndStop_OrContinue(context:context, fireAt: fireAt);
-
-            if (timerScheduledAndFired)
-            {
-                Assert.Equal(restartTime, context.CurrentUtcDateTime);
+                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: fireAt);
+                Assert.Equal(startTime, context.CurrentUtcDateTime);
             }
             else
             {
-                Assert.Equal(startTime, context.CurrentUtcDateTime);
+                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: fireAt);
+                Assert.Equal(restartTime, context.CurrentUtcDateTime);
             }
         }
 
@@ -152,52 +138,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             return history.ToArray();
         }
 
-        private static HistoryEvent[] MergeHistories(params HistoryEvent[][] histories)
-        {
-            return histories.Aggregate((a, b) => a.Concat(b).ToArray());
-        }
-
         private int GetUniqueEventId()
         {
             return _nextEventId++;
-        }
-
-        private Hashtable InvokeOrchestration(bool completed, PSDataCollection<object> output = null)
-        {
-            var invocationAsyncResult = CreateInvocationResult(completed);
-            ExpectBeginInvoke(invocationAsyncResult);
-            if (!completed)
-            {
-                SignalToStopInvocation();
-            }
-            
-            var result = _orchestrationInvoker.Invoke(_orchestrationBindingInfo, _mockPowerShellServices.Object);
-            return result;
-        }
-
-        private IAsyncResult CreateInvocationResult(bool completed)
-        {
-            var completionEvent = new AutoResetEvent(initialState: completed);
-            var result = new Mock<IAsyncResult>();
-            result.Setup(_ => _.AsyncWaitHandle).Returns(completionEvent);
-            return result.Object;
-        }
-
-        private void ExpectBeginInvoke(IAsyncResult invocationAsyncResult, PSDataCollection<object> output = null)
-        {
-            _mockPowerShellServices.Setup(_ => _.BeginInvoke(It.IsAny<PSDataCollection<object>>()))
-                .Returns((PSDataCollection<object> outputBuffer) =>
-                {
-                    if (output != null)
-                    {
-                        foreach(var item in output)
-                        {
-                            outputBuffer.Add(item);
-                        }
-                    }
-
-                    return invocationAsyncResult;
-                });
         }
 
         private void EmulateStop(DurableTimer durableTimer)
@@ -205,12 +148,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             durableTimer.Stop();
         }
 
-        private void SignalToStopInvocation()
-        {
-            _orchestrationBindingInfo.Context.OrchestrationActionCollector.Stop();
-        }
-
-        private static void VerifyWaitForTimerFired(
+        private void VerifyWaitForTimerFired(
             DurableTimer durableTimer,
             int durationSeconds,
             bool expectedWaitForStop,
@@ -228,7 +166,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             thread.Start();
             try
             {
-                var elapsedMilliseconds = MeasureExecutionTimeInMilliseconds(action);
+                var elapsedMilliseconds = DurableTestUtilities.MeasureExecutionTimeInMilliseconds(action);
 
                 // Check if CreateTimerOrContinue was actually blocked
                 if (expectedWaitForStop)
@@ -244,17 +182,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             {
                 thread.Join();
             }
-        }
-
-        private static long MeasureExecutionTimeInMilliseconds(Action action)
-        {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
-            action();
-
-            stopwatch.Stop();
-            return stopwatch.ElapsedMilliseconds;
         }
     }
 }
