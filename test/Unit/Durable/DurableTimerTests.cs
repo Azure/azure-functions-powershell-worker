@@ -16,15 +16,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     {
         private const int LongIntervalSeconds = 5;
         private const int ShortIntervalSeconds = 3;
-        private static readonly DateTime startTime = DateTime.UtcNow;
-        private readonly DateTime fireAt = startTime.AddSeconds(ShortIntervalSeconds);
-        private static readonly DateTime restartTime = startTime.AddSeconds(LongIntervalSeconds);
-        private static readonly DateTime shouldNotHitTime = restartTime.AddSeconds(LongIntervalSeconds);
-        private OrchestrationInvoker _orchestrationInvoker = new OrchestrationInvoker();
-        private OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo(
-                                                                            "ContextParameterName",
-                                                                            new OrchestrationContext());
-        private Mock<IPowerShellServices> _mockPowerShellServices = new Mock<IPowerShellServices>();
+        private static readonly DateTime _startTime = DateTime.UtcNow;
+        private static readonly DateTime _restartTime = _startTime.AddSeconds(LongIntervalSeconds);
+        private static readonly DateTime _shouldNotHitTime = _restartTime.AddSeconds(LongIntervalSeconds);
+        private readonly DateTime _fireAt = _startTime.AddSeconds(ShortIntervalSeconds);
+
         private DurableTimer _durableTimer = new DurableTimer();
         private int _nextEventId = 1;
 
@@ -35,10 +31,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void CreateTimerOrContinue_WaitsUntilTimerFires(bool timerScheduledAndFired, bool expectedWaitForStop)
         {
             var history = DurableTestUtilities.MergeHistories(
-                CreateOrchestratorStartedHistory(date: startTime, isProcessed: true),
-                CreateTimerFiredHistory(timerScheduledAndFired: timerScheduledAndFired, fireAt: fireAt, restartTime: restartTime, orchestratorStartedIsProcessed: false)
+                CreateOrchestratorStartedHistory(date: _startTime, isProcessed: true),
+                CreateTimerFiredHistory(timerScheduledAndFired: timerScheduledAndFired, fireAt: _fireAt, restartTime: _restartTime, orchestratorStartedIsProcessed: false)
             );
-            var context = new OrchestrationContext { History = history, CurrentUtcDateTime = startTime };
+            var context = new OrchestrationContext { History = history, CurrentUtcDateTime = _startTime };
 
             VerifyWaitForTimerFired(
                 durableTimer: _durableTimer,
@@ -46,7 +42,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 expectedWaitForStop: expectedWaitForStop,
                 () =>
                 {
-                    _durableTimer.StopAndCreateTimerOrContinue(context: context, fireAt: fireAt);
+                    _durableTimer.StopAndCreateTimerOrContinue(context: context, fireAt: _fireAt);
                 });
         }
 
@@ -58,23 +54,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void CreateTimerOrContinue_UpdatesCurrentUtcDateTimeToNextOrchestratorStartedTimestamp_OnlyIfTimerCreatedAndFired(bool timerScheduledAndFired)
         {
             var history = DurableTestUtilities.MergeHistories(
-                CreateOrchestratorStartedHistory(date: startTime, isProcessed: true),
-                CreateTimerFiredHistory(timerScheduledAndFired: timerScheduledAndFired, fireAt: fireAt, restartTime: restartTime, orchestratorStartedIsProcessed: false),
-                CreateOrchestratorStartedHistory(date: shouldNotHitTime, isProcessed: false)
+                CreateOrchestratorStartedHistory(date: _startTime, isProcessed: true),
+                CreateTimerFiredHistory(timerScheduledAndFired: timerScheduledAndFired, fireAt: _fireAt, restartTime: _restartTime, orchestratorStartedIsProcessed: false),
+                CreateOrchestratorStartedHistory(date: _shouldNotHitTime, isProcessed: false)
             );
-            OrchestrationContext context = new OrchestrationContext { History = history, CurrentUtcDateTime = startTime };
-            _orchestrationBindingInfo = new OrchestrationBindingInfo("ContextParameterName", context);
+            OrchestrationContext context = new OrchestrationContext { History = history, CurrentUtcDateTime = _startTime };
 
             if (!timerScheduledAndFired)
             {
                 EmulateStop(_durableTimer);
-                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: fireAt);
-                Assert.Equal(startTime, context.CurrentUtcDateTime);
+                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: _fireAt);
+                Assert.Equal(_startTime, context.CurrentUtcDateTime);
             }
             else
             {
-                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: fireAt);
-                Assert.Equal(restartTime, context.CurrentUtcDateTime);
+                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: _fireAt);
+                Assert.Equal(_restartTime, context.CurrentUtcDateTime);
             }
         }
 
