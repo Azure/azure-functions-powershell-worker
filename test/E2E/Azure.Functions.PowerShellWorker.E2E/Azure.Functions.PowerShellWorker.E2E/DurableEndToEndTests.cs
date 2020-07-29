@@ -185,7 +185,72 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     }
                 }
             }
+        }
+
+        /*
+            Verifies that the Start-DurableTimer cmdlet restarts the orchestrator and updates the CurrentUtcDateTime
+            after the timer is fired. The orchestrator writes CurrentUtcDateTime values to a temp file. File contents
+            are expected to take the following form:
             
+            Line
+            0     ---
+            1     <Timestamp1>
+            2     ---
+            3     <Timestamp1>
+            4     <Timestamp2>
+        */
+
+        [Fact]
+        private async Task DurableTimerClientStopsOrchestratorAndUpdatesCurrentUtcDateTime() {
+            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableTimerClient", queryString: string.Empty);
+
+            var initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+            dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
+            var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
+
+            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(60);
+            var startTime = DateTime.UtcNow;
+
+            using(var httpClient = new HttpClient())
+            {
+                while (true)
+                {
+                    var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
+                    switch (statusResponse.StatusCode)
+                    {
+                        case HttpStatusCode.Accepted:
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(2));
+                            break;
+                        }
+                        case HttpStatusCode.OK:
+                        {
+                            var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                            Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
+                            string path = statusResponseBody.output.ToString();
+                            string[] lines = System.IO.File.ReadAllLines(path);
+
+                            // Expect the format to be as in Case 1
+                            var delineatorLines = new int[] { 0, 2 };
+                            var timestamp1Lines = new int[] { 1, 3 };
+                            int timestamp2Line = 4;
+
+                            Assert.Equal("---", lines[delineatorLines[0]]);
+                            VerifyArrayItemsAreEqual(array: lines, indices: delineatorLines);
+                            VerifyArrayItemsAreEqual(array: lines, indices: timestamp1Lines);
+                            // Verifies that the Timestamp2 line is not a delineator or Timestamp1 line
+                            Assert.NotEqual(lines[timestamp2Line], lines[delineatorLines[0]]);
+                            Assert.NotEqual(lines[timestamp2Line], lines[timestamp1Lines[0]]);
+                            return;
+                        }
+                        default:
+                        {
+                            Assert.True(false, $"Unexpected orchestration status code: {statusResponse.StatusCode}");
+                            break;
+                        }
+                    }
+                }
+            }
         }
         
         private void VerifyArrayItemsAreEqual(string[] array, int[] indices)
