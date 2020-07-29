@@ -8,7 +8,7 @@ $output = @()
 
 $jobId = $Context.Input.JobId
 $machineId = $Context.Input.MachineId
-$pollingInterval = New-Timespan -Seconds $Context.Input.PollingInterval
+$pollingInterval = New-TimeSpan -Seconds $Context.Input.PollingInterval
 $expiryTime = $Context.Input.ExpiryTime
 
 while ($Context.CurrentUtcDateTime -lt $expiryTime) {
