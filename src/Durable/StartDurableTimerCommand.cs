@@ -22,7 +22,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         /// </summary>
         [Parameter(Mandatory = true)]
         [ValidateNotNullOrEmpty]
-        public int Seconds { get; set; }
+        public TimeSpan Duration { get; set; }
 
         private readonly DurableTimer _durableTimer = new DurableTimer();
 
@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
-            DateTime fireAt = context.CurrentUtcDateTime.AddSeconds(Seconds);
+            DateTime fireAt = context.CurrentUtcDateTime.Add(Duration);
             _durableTimer.StopAndCreateTimerOrContinue(context, fireAt);
         }
 

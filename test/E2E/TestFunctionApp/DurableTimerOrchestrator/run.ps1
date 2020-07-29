@@ -17,7 +17,7 @@ Add-Content -Value "---" -Path $path
 Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 # <Timestamp1>
 
-Start-DurableTimer -Seconds 5
+Start-DurableTimer -Duration (New-TimeSpan -Seconds 5)
 
 Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 # <Timestamp2>

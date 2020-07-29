@@ -14,12 +14,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
     public class DurableTimerTests
     {
-        private const int LongIntervalSeconds = 5;
-        private const int ShortIntervalSeconds = 3;
+        private static TimeSpan _longInterval = new TimeSpan(0, 0, 5);
+        private static TimeSpan _shortInterval = new TimeSpan(0, 0, 3);
         private static readonly DateTime _startTime = DateTime.UtcNow;
-        private static readonly DateTime _restartTime = _startTime.AddSeconds(LongIntervalSeconds);
-        private static readonly DateTime _shouldNotHitTime = _restartTime.AddSeconds(LongIntervalSeconds);
-        private readonly DateTime _fireAt = _startTime.AddSeconds(ShortIntervalSeconds);
+        private static readonly DateTime _restartTime = _startTime.Add(_longInterval);
+        private static readonly DateTime _shouldNotHitTime = _restartTime.Add(_longInterval);
+        private readonly DateTime _fireAt = _startTime.Add(_shortInterval);
 
         private DurableTimer _durableTimer = new DurableTimer();
         private int _nextEventId = 1;
@@ -38,7 +38,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             VerifyWaitForTimerFired(
                 durableTimer: _durableTimer,
-                durationSeconds: LongIntervalSeconds,
+                durationSeconds: _longInterval,
                 expectedWaitForStop: expectedWaitForStop,
                 () =>
                 {
@@ -145,12 +145,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         private void VerifyWaitForTimerFired(
             DurableTimer durableTimer,
-            int durationSeconds,
+            TimeSpan durationSeconds,
             bool expectedWaitForStop,
             Action action
         )
         {
-            var delayBeforeStopping = TimeSpan.FromSeconds(durationSeconds);
+            var delayBeforeStopping = durationSeconds;
 
             // action() call may block until Stop is invoked from another thread.
             var thread = new Thread(() =>

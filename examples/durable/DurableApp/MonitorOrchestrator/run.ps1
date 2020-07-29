@@ -8,7 +8,7 @@ $output = @()
 
 $jobId = $Context.Input.JobId
 $machineId = $Context.Input.MachineId
-$pollingInterval = $Context.Input.PollingInterval
+$pollingInterval = New-Timespan -Seconds $Context.Input.PollingInterval
 $expiryTime = $Context.Input.ExpiryTime
 
 while ($Context.CurrentUtcDateTime -lt $expiryTime) {
@@ -20,7 +20,7 @@ while ($Context.CurrentUtcDateTime -lt $expiryTime) {
     }
 
     # Orchestration sleeps until this time.
-    Start-DurableTimer -Seconds $pollingInterval
+    Start-DurableTimer -Duration $pollingInterval
 }
 
 # Perform more work here, or let the orchestration end.
