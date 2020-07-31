@@ -229,7 +229,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
                 catch (RuntimeException e)
                 {
-                    ErrorLogger.Log(Logger, e.ErrorRecord, isException: true);
+                    ErrorAnalysisLogger.Log(Logger, e.ErrorRecord, isException: true);
                     Logger.Log(isUserOnlyLog: true, LogLevel.Error, GetFunctionExceptionMessage(e));
                     throw;
                 }

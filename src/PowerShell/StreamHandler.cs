@@ -33,7 +33,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is ErrorRecord record)
             {
-                ErrorLogger.Log(_logger, record, isException: false);
+                ErrorAnalysisLogger.Log(_logger, record, isException: false);
                 _logger.Log(isUserOnlyLog: true, LogLevel.Error, $"ERROR: {_errorRecordFormatter.Format(record)}", record.Exception);
             }
         }
