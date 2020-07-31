@@ -42,7 +42,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 expectedWaitForStop: expectedWaitForStop,
                 () =>
                 {
-                    _durableTimer.StopAndCreateTimerOrContinue(context: context, fireAt: _fireAt);
+                    _durableTimer.StopAndCreateTimerOrContinue(context: context, fireAt: _fireAt, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
                 });
         }
 
@@ -63,12 +63,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             if (!timerScheduledAndFired)
             {
                 EmulateStop(_durableTimer);
-                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: _fireAt);
+                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: _fireAt, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
                 Assert.Equal(_startTime, context.CurrentUtcDateTime);
             }
             else
             {
-                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: _fireAt);
+                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: _fireAt, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
                 Assert.Equal(_restartTime, context.CurrentUtcDateTime);
             }
         }

@@ -13,23 +13,34 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         private readonly ManualResetEvent _waitForStop = new ManualResetEvent(initialState: false);
 
-        public void StopAndCreateTimerOrContinue(OrchestrationContext context, DateTime fireAt)
+        public void StopAndCreateTimerOrContinue(
+            OrchestrationContext context,
+            DateTime fireAt,
+            bool noWait,
+            Action<object> output)
         {
             context.OrchestrationActionCollector.Add(new CreateDurableTimerAction(fireAt));
 
-            var timerCreated = GetTimerCreated(context, fireAt);
-            var timerFired = GetTimerFired(context, timerCreated);
-
-            if (timerCreated == null)
+            if (noWait)
             {
-                CreateTimerAndWaitUntilFired(context);
+                output(new DurableTimerTask(fireAt: fireAt));
             }
-            else if (timerFired != null)
+            else
             {
-                CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
+                var timerCreated = GetTimerCreated(context, fireAt);
+                var timerFired = GetTimerFired(context, timerCreated); 
 
-                timerCreated.IsProcessed = true;
-                timerFired.IsProcessed = true;
+                if (timerCreated == null)
+                {
+                    CreateTimerAndWaitUntilFired(context);
+                }
+                else if (timerFired != null)
+                {
+                    CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
+
+                    timerCreated.IsProcessed = true;
+                    timerFired.IsProcessed = true;
+                }
             }
         }
 
