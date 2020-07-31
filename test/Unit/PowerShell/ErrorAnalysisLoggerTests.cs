@@ -21,7 +21,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         private readonly ErrorRecord _fakeErrorRecord =
             new ErrorRecord(
-                new CommandNotFoundException("Exception message") { CommandName = FakeUnknownCommand },
+                new Exception(),
                 "CommandNotFoundException",
                 ErrorCategory.ObjectNotFound,
                 FakeUnknownCommand);

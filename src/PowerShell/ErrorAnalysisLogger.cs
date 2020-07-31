@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 var userMessage = string.Format(
                     PowerShellWorkerStrings.CommandNotFoundUserWarning,
-                    (errorRecord.Exception as CommandNotFoundException)?.CommandName);
+                    errorRecord.CategoryInfo.TargetName);
 
                 logger.Log(isUserOnlyLog: true, LogLevel.Warning, userMessage);
             }
