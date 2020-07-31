@@ -231,7 +231,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 {
                     if (e.ErrorRecord.FullyQualifiedErrorId == "CommandNotFoundException")
                     {
-                        LogCommandNotFound(true);
+                        CommandNotFoundLogger.Log(Logger, isException: true);
                     }
 
                     Logger.Log(isUserOnlyLog: true, LogLevel.Error, GetFunctionExceptionMessage(e));
@@ -244,15 +244,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 outputBindings.Clear();
                 ResetRunspace();
             }
-        }
-
-        private void LogCommandNotFound(bool isException)
-        {
-            var message = isException
-                            ? PowerShellWorkerStrings.CommandNotFoundException_Exception
-                            : PowerShellWorkerStrings.CommandNotFoundException_Error;
-
-            Logger.Log(isUserOnlyLog: false, LogLevel.Warning, message);
         }
 
         private void SetInputBindingParameterValues(

@@ -35,7 +35,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 if (record.FullyQualifiedErrorId == "CommandNotFoundException")
                 {
-                    _logger.Log(isUserOnlyLog: false, LogLevel.Warning, PowerShellWorkerStrings.CommandNotFoundException_Error);
+                    CommandNotFoundLogger.Log(_logger, isException: false);
                 }
 
                 _logger.Log(isUserOnlyLog: true, LogLevel.Error, $"ERROR: {_errorRecordFormatter.Format(record)}", record.Exception);
