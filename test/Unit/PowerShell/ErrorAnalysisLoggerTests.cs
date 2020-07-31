@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 ErrorCategory.ObjectNotFound,
                 FakeUnknownCommand);
 
-        private Mock<ILogger> _mockLogger = new Mock<ILogger>();
+        private readonly Mock<ILogger> _mockLogger = new Mock<ILogger>();
 
         [Theory]
         [InlineData(true)]
