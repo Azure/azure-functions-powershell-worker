@@ -5,7 +5,6 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
-    using System;
     using System.Management.Automation;
 
     using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
