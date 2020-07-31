@@ -13,15 +13,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     {
         public static void Log(ILogger logger, ErrorRecord errorRecord, bool isException)
         {
-            var internalMessage = isException
+            var publicMessage = isException
                                     ? PowerShellWorkerStrings.CommandNotFoundException_Exception
                                     : PowerShellWorkerStrings.CommandNotFoundException_Error;
+
+            logger.Log(isUserOnlyLog: false, LogLevel.Warning, publicMessage);
 
             var userMessage = string.Format(
                 PowerShellWorkerStrings.CommandNotFoundUserWarning,
                 (errorRecord.Exception as CommandNotFoundException)?.CommandName);
 
-            logger.Log(isUserOnlyLog: false, LogLevel.Warning, internalMessage);
+            logger.Log(isUserOnlyLog: true, LogLevel.Warning, userMessage);
         }
     }
 }
