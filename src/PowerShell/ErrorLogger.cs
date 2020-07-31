@@ -9,7 +9,7 @@ using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
-    internal class CommandNotFoundLogger
+    internal class ErrorLogger
     {
         public static void Log(ILogger logger, ErrorRecord errorRecord, bool isException)
         {

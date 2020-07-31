@@ -14,7 +14,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
     using Moq;
     using Xunit;
 
-    public class CommandNotFoundLoggerTests
+    public class ErrorLoggerTests
     {
         private const string FakeUnknownCommand = "Unknown-Command";
 
@@ -32,7 +32,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [InlineData(false)]
         public void LogsCommandNotFoundToNonUserOnlyLog(bool isException)
         {
-            CommandNotFoundLogger.Log(_mockLogger.Object, _fakeErrorRecord, isException);
+            ErrorLogger.Log(_mockLogger.Object, _fakeErrorRecord, isException);
 
             _mockLogger.Verify(
                 _ => _.Log(
@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [InlineData(false)]
         public void LogsCommandNotFoundToUserOnlyLog(bool isException)
         {
-            CommandNotFoundLogger.Log(_mockLogger.Object, _fakeErrorRecord, isException);
+            ErrorLogger.Log(_mockLogger.Object, _fakeErrorRecord, isException);
 
             _mockLogger.Verify(
                 _ => _.Log(
