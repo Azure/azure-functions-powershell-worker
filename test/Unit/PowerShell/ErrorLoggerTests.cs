@@ -5,6 +5,7 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
+    using System;
     using System.Management.Automation;
 
     using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
@@ -26,6 +27,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 FakeUnknownCommand);
 
         private Mock<ILogger> _mockLogger = new Mock<ILogger>();
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void DoesNotLogUnknownErrors(bool isException)
+        {
+            var error = new ErrorRecord(
+                                new Exception(),
+                                "UnknownException",
+                                ErrorCategory.NotSpecified,
+                                "Dummy target object");
+
+            ErrorLogger.Log(_mockLogger.Object, error, isException);
+
+            _mockLogger.VerifyNoOtherCalls();
+        }
 
         [Theory]
         [InlineData(true)]

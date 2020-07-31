@@ -33,11 +33,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if(e.ItemAdded is ErrorRecord record)
             {
-                if (record.FullyQualifiedErrorId == "CommandNotFoundException")
-                {
-                    ErrorLogger.Log(_logger, record, isException: false);
-                }
-
+                ErrorLogger.Log(_logger, record, isException: false);
                 _logger.Log(isUserOnlyLog: true, LogLevel.Error, $"ERROR: {_errorRecordFormatter.Format(record)}", record.Exception);
             }
         }
