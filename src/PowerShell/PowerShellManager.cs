@@ -231,7 +231,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 {
                     if (e.ErrorRecord.FullyQualifiedErrorId == "CommandNotFoundException")
                     {
-                        CommandNotFoundLogger.Log(Logger, isException: true);
+                        CommandNotFoundLogger.Log(Logger, e.ErrorRecord, isException: true);
                     }
 
                     Logger.Log(isUserOnlyLog: true, LogLevel.Error, GetFunctionExceptionMessage(e));

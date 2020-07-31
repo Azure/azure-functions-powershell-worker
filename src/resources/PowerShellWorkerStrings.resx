@@ -322,4 +322,7 @@
   <data name="FunctionDoesNotHaveProperActivityFunctionBinding" xml:space="preserve">
     <value>Function '{0}' does not have an activityTrigger input binding.</value>
   </data>
+  <data name="CommandNotFoundUserWarning" xml:space="preserve">
+    <value>The app may be missing a module containing the '{0}' command definition. If this command belongs to a module available on the PowerShell gallery, add a reference to this module to requirements.psd1. Make sure this module is compatible with PowerShell 7. For more details, see https://aka.ms/functions-powershell-managed-dependency.</value>
+  </data>
 </root>
