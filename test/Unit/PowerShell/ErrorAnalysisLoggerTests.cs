@@ -119,11 +119,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         private static ErrorRecord CreateModuleNotFoundError(string moduleName)
         {
-            return new ErrorRecord(
-                        new Exception(),
-                        "Modules_ModuleNotFound,Microsoft.PowerShell.Commands.ImportModuleCommand",
-                        ErrorCategory.ResourceUnavailable,
-                        moduleName);
+            using var ps = PowerShell.Create();
+            ps.AddCommand("Import-Module");
+            ps.AddParameter("Name", moduleName);
+            ps.Invoke();
+            return ps.Streams.Error[0];
         }
     }
 }
