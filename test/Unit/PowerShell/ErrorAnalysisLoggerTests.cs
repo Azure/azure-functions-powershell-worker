@@ -40,11 +40,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             const string FakeUnknownCommand = "Unknown-Command";
 
-            var error = new ErrorRecord(
-                                new Exception(),
-                                "CommandNotFoundException",
-                                ErrorCategory.ObjectNotFound,
-                                FakeUnknownCommand);
+            var error = CreateCommandNotFoundError(FakeUnknownCommand);
 
             ErrorAnalysisLogger.Log(_mockLogger.Object, error, isException);
 
@@ -78,11 +74,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             const string FakeUnknownModule = "UnknownModule";
 
-            var error = new ErrorRecord(
-                                new Exception(),
-                                "Modules_ModuleNotFound,Microsoft.PowerShell.Commands.ImportModuleCommand",
-                                ErrorCategory.ResourceUnavailable,
-                                FakeUnknownModule);
+            var error = CreateModuleNotFoundError(FakeUnknownModule);
 
             ErrorAnalysisLogger.Log(_mockLogger.Object, error, isException);
 
@@ -107,6 +99,24 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Times.Once);
 
             _mockLogger.VerifyNoOtherCalls();
+        }
+
+        private static ErrorRecord CreateCommandNotFoundError(string commandName)
+        {
+            return new ErrorRecord(
+                        new Exception(),
+                        "CommandNotFoundException",
+                        ErrorCategory.ObjectNotFound,
+                        commandName);
+        }
+
+        private static ErrorRecord CreateModuleNotFoundError(string moduleName)
+        {
+            return new ErrorRecord(
+                        new Exception(),
+                        "Modules_ModuleNotFound,Microsoft.PowerShell.Commands.ImportModuleCommand",
+                        ErrorCategory.ResourceUnavailable,
+                        moduleName);
         }
     }
 }
