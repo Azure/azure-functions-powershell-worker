@@ -27,6 +27,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 logger.Log(isUserOnlyLog: true, LogLevel.Warning, userMessage);
             }
+            else if (errorRecord.FullyQualifiedErrorId == "Modules_ModuleNotFound,Microsoft.PowerShell.Commands.ImportModuleCommand")
+            {
+                var publicMessage = isException
+                                        ? PowerShellWorkerStrings.ModuleNotFound_Exception
+                                        : PowerShellWorkerStrings.ModuleNotFound_Error;
+
+                logger.Log(isUserOnlyLog: false, LogLevel.Warning, publicMessage);
+
+                var userMessage = string.Format(
+                    PowerShellWorkerStrings.ModuleNotFoundUserWarning,
+                    errorRecord.CategoryInfo.TargetName);
+
+                logger.Log(isUserOnlyLog: true, LogLevel.Warning, userMessage);
+            }
         }
     }
 }

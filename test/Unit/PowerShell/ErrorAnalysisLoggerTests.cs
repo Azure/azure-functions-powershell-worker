@@ -70,5 +70,43 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             _mockLogger.VerifyNoOtherCalls();
         }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void LogsModuleNotFound(bool isException)
+        {
+            const string FakeUnknownModule = "UnknownModule";
+
+            var error = new ErrorRecord(
+                                new Exception(),
+                                "Modules_ModuleNotFound,Microsoft.PowerShell.Commands.ImportModuleCommand",
+                                ErrorCategory.ResourceUnavailable,
+                                FakeUnknownModule);
+
+            ErrorAnalysisLogger.Log(_mockLogger.Object, error, isException);
+
+            _mockLogger.Verify(
+                _ => _.Log(
+                    false,
+                    LogLevel.Warning,
+                    It.Is<string>(
+                        message => message.Contains("ModuleNotFound")
+                                    && (isException && message.Contains("(exception)") && !message.Contains("(error)")
+                                        || !isException && message.Contains("(error)") && !message.Contains("(exception)"))
+                                    && !message.Contains(FakeUnknownModule)),
+                    null),
+                Times.Once);
+
+            _mockLogger.Verify(
+                _ => _.Log(
+                    true,
+                    LogLevel.Warning,
+                    It.Is<string>(message => message.Contains(FakeUnknownModule)),
+                    null),
+                Times.Once);
+
+            _mockLogger.VerifyNoOtherCalls();
+        }
     }
 }

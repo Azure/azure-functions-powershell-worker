@@ -310,6 +310,18 @@
   <data name="CommandNotFoundException_Exception" xml:space="preserve">
     <value>CommandNotFoundException detected (exception).</value>
   </data>
+  <data name="CommandNotFoundUserWarning" xml:space="preserve">
+    <value>The app may be missing a module containing the '{0}' command definition. If this command belongs to a module available on the PowerShell gallery, add a reference to this module to requirements.psd1. Make sure this module is compatible with PowerShell 7. For more details, see https://aka.ms/functions-powershell-managed-dependency.</value>
+  </data>
+  <data name="ModuleNotFound_Error" xml:space="preserve">
+    <value>ModuleNotFound detected (error).</value>
+  </data>
+  <data name="ModuleNotFound_Exception" xml:space="preserve">
+    <value>ModuleNotFound detected (exception).</value>
+  </data>
+  <data name="ModuleNotFoundUserWarning" xml:space="preserve">
+    <value>The app may is missing the '{0}' module. If module '{0}' is available on the PowerShell gallery, add a reference to this module to requirements.psd1. Make sure this module is compatible with PowerShell 7. For more details, see https://aka.ms/functions-powershell-managed-dependency.</value>
+  </data>
   <data name="PowerShellVersion" xml:space="preserve">
     <value>PowerShell version: '{0}'.</value>
   </data>
@@ -321,8 +333,5 @@
   </data>
   <data name="FunctionDoesNotHaveProperActivityFunctionBinding" xml:space="preserve">
     <value>Function '{0}' does not have an activityTrigger input binding.</value>
-  </data>
-  <data name="CommandNotFoundUserWarning" xml:space="preserve">
-    <value>The app may be missing a module containing the '{0}' command definition. If this command belongs to a module available on the PowerShell gallery, add a reference to this module to requirements.psd1. Make sure this module is compatible with PowerShell 7. For more details, see https://aka.ms/functions-powershell-managed-dependency.</value>
   </data>
 </root>
