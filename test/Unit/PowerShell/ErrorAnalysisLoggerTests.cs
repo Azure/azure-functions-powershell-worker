@@ -103,11 +103,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         private static ErrorRecord CreateCommandNotFoundError(string commandName)
         {
-            return new ErrorRecord(
-                        new Exception(),
-                        "CommandNotFoundException",
-                        ErrorCategory.ObjectNotFound,
-                        commandName);
+            using var ps = PowerShell.Create();
+            ps.AddCommand(commandName);
+            try
+            {
+                ps.Invoke();
+            }
+            catch (CommandNotFoundException e)
+            {
+                return e.ErrorRecord;
+            }
+
+            throw new Exception("Expected CommandNotFoundException is not thrown. Incompatible PowerShell version?");
         }
 
         private static ErrorRecord CreateModuleNotFoundError(string moduleName)
