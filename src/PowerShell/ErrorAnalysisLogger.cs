@@ -19,13 +19,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                                         ? PowerShellWorkerStrings.CommandNotFoundException_Exception
                                         : PowerShellWorkerStrings.CommandNotFoundException_Error;
 
-                logger.Log(isUserOnlyLog: false, LogLevel.Warning, publicMessage);
-
                 var userMessage = string.Format(
                     PowerShellWorkerStrings.CommandNotFoundUserWarning,
                     errorRecord.CategoryInfo.TargetName);
 
-                logger.Log(isUserOnlyLog: true, LogLevel.Warning, userMessage);
+                LogWarning(logger, publicMessage, userMessage);
             }
             else if (errorRecord.FullyQualifiedErrorId == KnownErrorId.ModuleNotFound)
             {
@@ -33,14 +31,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                                         ? PowerShellWorkerStrings.ModuleNotFound_Exception
                                         : PowerShellWorkerStrings.ModuleNotFound_Error;
 
-                logger.Log(isUserOnlyLog: false, LogLevel.Warning, publicMessage);
-
                 var userMessage = string.Format(
                     PowerShellWorkerStrings.ModuleNotFoundUserWarning,
                     errorRecord.CategoryInfo.TargetName);
 
-                logger.Log(isUserOnlyLog: true, LogLevel.Warning, userMessage);
+                LogWarning(logger, publicMessage, userMessage);
             }
+        }
+
+        private static void LogWarning(ILogger logger, string publicMessage, string userMessage)
+        {
+            logger.Log(isUserOnlyLog: false, LogLevel.Warning, publicMessage);
+            logger.Log(isUserOnlyLog: true, LogLevel.Warning, userMessage);
         }
 
         private static class KnownErrorId
