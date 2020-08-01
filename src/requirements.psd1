@@ -1,7 +1,7 @@
 @{
     # Modules bundled with the PowerShell Language Worker
     'Microsoft.PowerShell.Archive' = @{
-        Version = '1.2.3.0'
+        Version = '1.2.5'
         Target = 'src/Modules'
     }
     'ThreadJob' = @{
