@@ -17,15 +17,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
     public class ErrorAnalysisLoggerTests
     {
-        private const string FakeUnknownCommand = "Unknown-Command";
-
-        private readonly ErrorRecord _fakeErrorRecord =
-            new ErrorRecord(
-                new Exception(),
-                "CommandNotFoundException",
-                ErrorCategory.ObjectNotFound,
-                FakeUnknownCommand);
-
         private readonly Mock<ILogger> _mockLogger = new Mock<ILogger>();
 
         [Theory]
@@ -40,16 +31,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                                 "Dummy target object");
 
             ErrorAnalysisLogger.Log(_mockLogger.Object, error, isException);
-
-            _mockLogger.VerifyNoOtherCalls();
         }
 
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void LogsCommandNotFoundToNonUserOnlyLog(bool isException)
+        public void LogsCommandNotFound(bool isException)
         {
-            ErrorAnalysisLogger.Log(_mockLogger.Object, _fakeErrorRecord, isException);
+            const string FakeUnknownCommand = "Unknown-Command";
+
+            var error = new ErrorRecord(
+                                new Exception(),
+                                "CommandNotFoundException",
+                                ErrorCategory.ObjectNotFound,
+                                FakeUnknownCommand);
+
+            ErrorAnalysisLogger.Log(_mockLogger.Object, error, isException);
 
             _mockLogger.Verify(
                 _ => _.Log(
@@ -62,14 +59,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                                     && !message.Contains(FakeUnknownCommand)),
                     null),
                 Times.Once);
-        }
-
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void LogsCommandNotFoundToUserOnlyLog(bool isException)
-        {
-            ErrorAnalysisLogger.Log(_mockLogger.Object, _fakeErrorRecord, isException);
 
             _mockLogger.Verify(
                 _ => _.Log(
@@ -78,6 +67,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     It.Is<string>(message => message.Contains(FakeUnknownCommand)),
                     null),
                 Times.Once);
+
+            _mockLogger.VerifyNoOtherCalls();
         }
     }
 }
