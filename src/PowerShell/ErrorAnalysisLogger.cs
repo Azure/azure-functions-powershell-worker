@@ -55,6 +55,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             logger.Log(isUserOnlyLog: true, LogLevel.Warning, userMessage);
         }
 
+        // These error IDs is what PowerShell currently uses, even though this is not documented nor promised.
+        // If this ever changes in future, the ErrorAnalysisLogger tests are supposed to catch that,
+        // and these IDs or the detection logic will have to be updated.
         private static class KnownErrorId
         {
             public const string CommandNotFound = "CommandNotFoundException";
