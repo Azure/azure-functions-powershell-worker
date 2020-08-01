@@ -15,28 +15,38 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if (string.CompareOrdinal(errorRecord.FullyQualifiedErrorId, KnownErrorId.CommandNotFound) == 0)
             {
-                var publicMessage = isException
-                                        ? PowerShellWorkerStrings.CommandNotFoundException_Exception
-                                        : PowerShellWorkerStrings.CommandNotFoundException_Error;
-
-                var userMessage = string.Format(
-                    PowerShellWorkerStrings.CommandNotFoundUserWarning,
-                    errorRecord.CategoryInfo.TargetName);
-
-                LogWarning(logger, publicMessage, userMessage);
+                LogCommandNotFoundWarning(logger, errorRecord, isException);
             }
             else if (string.CompareOrdinal(errorRecord.FullyQualifiedErrorId, KnownErrorId.ModuleNotFound) == 0)
             {
-                var publicMessage = isException
-                                        ? PowerShellWorkerStrings.ModuleNotFound_Exception
-                                        : PowerShellWorkerStrings.ModuleNotFound_Error;
-
-                var userMessage = string.Format(
-                    PowerShellWorkerStrings.ModuleNotFoundUserWarning,
-                    errorRecord.CategoryInfo.TargetName);
-
-                LogWarning(logger, publicMessage, userMessage);
+                LogModuleNotFoundWarning(logger, errorRecord, isException);
             }
+        }
+
+        private static void LogCommandNotFoundWarning(ILogger logger, ErrorRecord errorRecord, bool isException)
+        {
+            var publicMessage = isException
+                                    ? PowerShellWorkerStrings.CommandNotFoundException_Exception
+                                    : PowerShellWorkerStrings.CommandNotFoundException_Error;
+
+            var userMessage = string.Format(
+                PowerShellWorkerStrings.CommandNotFoundUserWarning,
+                errorRecord.CategoryInfo.TargetName);
+
+            LogWarning(logger, publicMessage, userMessage);
+        }
+
+        private static void LogModuleNotFoundWarning(ILogger logger, ErrorRecord errorRecord, bool isException)
+        {
+            var publicMessage = isException
+                                    ? PowerShellWorkerStrings.ModuleNotFound_Exception
+                                    : PowerShellWorkerStrings.ModuleNotFound_Error;
+
+            var userMessage = string.Format(
+                PowerShellWorkerStrings.ModuleNotFoundUserWarning,
+                errorRecord.CategoryInfo.TargetName);
+
+            LogWarning(logger, publicMessage, userMessage);
         }
 
         private static void LogWarning(ILogger logger, string publicMessage, string userMessage)
