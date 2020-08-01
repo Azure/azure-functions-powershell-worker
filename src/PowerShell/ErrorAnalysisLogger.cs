@@ -13,7 +13,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     {
         public static void Log(ILogger logger, ErrorRecord errorRecord, bool isException)
         {
-            if (errorRecord.FullyQualifiedErrorId == KnownErrorId.CommandNotFound)
+            if (string.CompareOrdinal(errorRecord.FullyQualifiedErrorId, KnownErrorId.CommandNotFound) == 0)
             {
                 var publicMessage = isException
                                         ? PowerShellWorkerStrings.CommandNotFoundException_Exception
@@ -25,7 +25,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 LogWarning(logger, publicMessage, userMessage);
             }
-            else if (errorRecord.FullyQualifiedErrorId == KnownErrorId.ModuleNotFound)
+            else if (string.CompareOrdinal(errorRecord.FullyQualifiedErrorId, KnownErrorId.ModuleNotFound) == 0)
             {
                 var publicMessage = isException
                                         ? PowerShellWorkerStrings.ModuleNotFound_Exception
