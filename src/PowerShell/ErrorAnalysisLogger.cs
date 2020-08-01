@@ -13,13 +13,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     {
         public static void Log(ILogger logger, ErrorRecord errorRecord, bool isException)
         {
-            if (string.CompareOrdinal(errorRecord.FullyQualifiedErrorId, KnownErrorId.CommandNotFound) == 0)
+            switch (errorRecord.FullyQualifiedErrorId)
             {
-                LogCommandNotFoundWarning(logger, errorRecord, isException);
-            }
-            else if (string.CompareOrdinal(errorRecord.FullyQualifiedErrorId, KnownErrorId.ModuleNotFound) == 0)
-            {
-                LogModuleNotFoundWarning(logger, errorRecord, isException);
+                case KnownErrorId.CommandNotFound:
+                    LogCommandNotFoundWarning(logger, errorRecord, isException);
+                    break;
+
+                case KnownErrorId.ModuleNotFound:
+                    LogModuleNotFoundWarning(logger, errorRecord, isException);
+                    break;
             }
         }
 
