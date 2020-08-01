@@ -13,7 +13,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     {
         public static void Log(ILogger logger, ErrorRecord errorRecord, bool isException)
         {
-            if (errorRecord.FullyQualifiedErrorId == "CommandNotFoundException")
+            if (errorRecord.FullyQualifiedErrorId == KnownErrorId.CommandNotFound)
             {
                 var publicMessage = isException
                                         ? PowerShellWorkerStrings.CommandNotFoundException_Exception
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 logger.Log(isUserOnlyLog: true, LogLevel.Warning, userMessage);
             }
-            else if (errorRecord.FullyQualifiedErrorId == "Modules_ModuleNotFound,Microsoft.PowerShell.Commands.ImportModuleCommand")
+            else if (errorRecord.FullyQualifiedErrorId == KnownErrorId.ModuleNotFound)
             {
                 var publicMessage = isException
                                         ? PowerShellWorkerStrings.ModuleNotFound_Exception
@@ -41,6 +41,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 logger.Log(isUserOnlyLog: true, LogLevel.Warning, userMessage);
             }
+        }
+
+        private static class KnownErrorId
+        {
+            public const string CommandNotFound = "CommandNotFoundException";
+            public const string ModuleNotFound = "Modules_ModuleNotFound,Microsoft.PowerShell.Commands.ImportModuleCommand";
         }
     }
 }
