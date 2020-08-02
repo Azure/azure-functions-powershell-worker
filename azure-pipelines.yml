@@ -59,10 +59,11 @@ steps:
   displayName: 'Copy package to ArtifactStagingDirectory'
 
 - task: NuGetCommand@2
-  condition: and(ne(variables['Build.Reason'], 'PullRequest'), in(variables['Build.SourceBranchName'], 'v3.x/ps7', 'v3.x/ps6', 'v2.x'))
+  condition: and(ne(variables['Build.Reason'], 'PullRequest'), in(variables['Build.SourceBranch'], 'refs/heads/v3.x/ps7', 'refs/heads/v3.x/ps6', 'refs/heads/v2.x'))
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
     nuGetFeedType: 'internal'
     publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/c0493cce-bc63-4e11-9fc9-e7c45291f151'
     allowPackageConflicts: true
+  displayName: 'Push NuGet package'
