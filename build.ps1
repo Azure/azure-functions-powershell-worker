@@ -19,7 +19,10 @@ param(
     $NoBuild,
 
     [string]
-    $Configuration = "Debug"
+    $Configuration = "Debug",
+
+    [string]
+    $BuildNumber = '0'
 )
 
 #Requires -Version 6.0
@@ -83,8 +86,8 @@ if(!$NoBuild.IsPresent) {
     Get-WebFile -Url 'https://raw.githubusercontent.com/PowerShell/PowerShell/master/src/Modules/Windows/Microsoft.PowerShell.Management/Microsoft.PowerShell.Management.psd1' `
         -OutFile "$PSScriptRoot/src/Modules/Microsoft.PowerShell.Management/Microsoft.PowerShell.Management.psd1" 
 
-    dotnet publish -c $Configuration $PSScriptRoot
-    dotnet pack -c $Configuration "$PSScriptRoot/package"
+    dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot
+    dotnet pack -c $Configuration "/p:BuildNumber=$BuildNumber" "$PSScriptRoot/package"
 }
 
 # Test step
