@@ -1,7 +1,6 @@
 <Project>
   <PropertyGroup>
-    <BuildNumber Condition="$(APPVEYOR) != ''">$(APPVEYOR_BUILD_NUMBER)</BuildNumber>
-    <BuildNumber Condition="$(APPVEYOR) == ''">$([System.DateTime]::Now.ToString(`MMdd`))</BuildNumber>
+    <BuildNumber Condition=" '$(BuildNumber)' == '' ">1</BuildNumber>
     <Version>2.0.$(BuildNumber)</Version>
     <PackageTags>PowerShell;AzureFunctions;language;Azure;</PackageTags>
     <PackageLicenseUrl>https://github.com/Azure/azure-functions-powershell-worker/blob/master/LICENSE</PackageLicenseUrl>
