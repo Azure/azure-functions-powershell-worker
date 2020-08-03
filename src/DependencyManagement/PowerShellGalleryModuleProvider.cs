@@ -92,7 +92,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 .AddParameter("Force", Utils.BoxedTrue)
                 .AddParameter("ErrorAction", "Stop");
 
-            pwsh.InvokeAndClearCommands();
+            try
+            {
+                pwsh.Invoke();
+            }
+            finally
+            {
+                pwsh.Streams.ClearStreams();
+                pwsh.Commands.Clear();
+            }
         }
 
         /// <summary>
