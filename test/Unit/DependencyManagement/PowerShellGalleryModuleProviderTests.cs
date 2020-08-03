@@ -7,9 +7,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
     using Xunit;
 
     using PowerShellWorker.DependencyManagement;
+    using PowerShellWorker.Utility;
 
     public class PowerShellGalleryModuleProviderTests
     {
+        private readonly Mock<ILogger> _mockLogger = new Mock<ILogger>();
+
         private readonly Mock<IPowerShellGallerySearchInvoker> _mockSearchInvoker =
             new Mock<IPowerShellGallerySearchInvoker>(MockBehavior.Strict);
 
@@ -17,7 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
         public PowerShellGalleryModuleProviderTests()
         {
-            _moduleProvider = new PowerShellGalleryModuleProvider(_mockSearchInvoker.Object);
+            _moduleProvider = new PowerShellGalleryModuleProvider(_mockLogger.Object, _mockSearchInvoker.Object);
         }
 
         [Fact]

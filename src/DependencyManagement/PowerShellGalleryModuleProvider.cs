@@ -14,10 +14,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
     internal class PowerShellGalleryModuleProvider : IModuleProvider
     {
+        private readonly ILogger _logger;
+
         private readonly IPowerShellGallerySearchInvoker _searchInvoker;
 
-        public PowerShellGalleryModuleProvider(IPowerShellGallerySearchInvoker searchInvoker = null)
+        public PowerShellGalleryModuleProvider(ILogger logger, IPowerShellGallerySearchInvoker searchInvoker = null)
         {
+            _logger =  logger ?? throw new ArgumentNullException(nameof(logger));
             _searchInvoker = searchInvoker ?? new PowerShellGallerySearchInvoker();
         }
 
