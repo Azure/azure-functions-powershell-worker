@@ -13,12 +13,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         private readonly Mock<IPowerShellGallerySearchInvoker> _mockSearchInvoker =
             new Mock<IPowerShellGallerySearchInvoker>(MockBehavior.Strict);
 
+        private PowerShellGalleryModuleProvider _moduleProvider;
+
+        public PowerShellGalleryModuleProviderTests()
+        {
+            _moduleProvider = new PowerShellGalleryModuleProvider(_mockSearchInvoker.Object);
+        }
+
         [Fact]
         public void ReturnsNullIfSearchInvokerReturnsNull()
         {
             _mockSearchInvoker.Setup(_ => _.Invoke(It.IsAny<Uri>())).Returns(default(Stream));
-            var moduleProvider = new PowerShellGalleryModuleProvider(_mockSearchInvoker.Object);
-            var actualVersion = moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
+            var actualVersion = _moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
             Assert.Null(actualVersion);
         }
 
@@ -43,8 +49,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             using (var responseStream = new MemoryStream(Encoding.UTF8.GetBytes(ResponseText)))
             {
                 _mockSearchInvoker.Setup(_ => _.Invoke(It.IsAny<Uri>())).Returns(responseStream);
-                var moduleProvider = new PowerShellGalleryModuleProvider(_mockSearchInvoker.Object);
-                var actualVersion = moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
+                var actualVersion = _moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
                 Assert.Equal("1.2.3.4", actualVersion);
             }
         }
@@ -82,8 +87,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             using (var responseStream = new MemoryStream(Encoding.UTF8.GetBytes(ResponseText)))
             {
                 _mockSearchInvoker.Setup(_ => _.Invoke(It.IsAny<Uri>())).Returns(responseStream);
-                var moduleProvider = new PowerShellGalleryModuleProvider(_mockSearchInvoker.Object);
-                var actualVersion = moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
+                var actualVersion = _moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
                 Assert.Equal("1.2.3.6", actualVersion);
             }
         }
@@ -121,8 +125,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             using (var responseStream = new MemoryStream(Encoding.UTF8.GetBytes(ResponseText)))
             {
                 _mockSearchInvoker.Setup(_ => _.Invoke(It.IsAny<Uri>())).Returns(responseStream);
-                var moduleProvider = new PowerShellGalleryModuleProvider(_mockSearchInvoker.Object);
-                var actualVersion = moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
+                var actualVersion = _moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
                 Assert.Equal("1.2.3.5", actualVersion);
             }
         }
@@ -166,8 +169,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             using (var responseStream = new MemoryStream(Encoding.UTF8.GetBytes(ResponseText)))
             {
                 _mockSearchInvoker.Setup(_ => _.Invoke(It.IsAny<Uri>())).Returns(responseStream);
-                var moduleProvider = new PowerShellGalleryModuleProvider(_mockSearchInvoker.Object);
-                var actualVersion = moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
+                var actualVersion = _moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
                 Assert.Equal("1.2.3.6", actualVersion);
             }
         }
@@ -207,8 +209,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             using (var responseStream = new MemoryStream(Encoding.UTF8.GetBytes(responseText)))
             {
                 _mockSearchInvoker.Setup(_ => _.Invoke(It.IsAny<Uri>())).Returns(responseStream);
-                var moduleProvider = new PowerShellGalleryModuleProvider(_mockSearchInvoker.Object);
-                var actualVersion = moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "0");
+                var actualVersion = _moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "0");
                 Assert.Equal(higherVersion, actualVersion);
             }
         }
@@ -228,8 +229,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             using (var responseStream = new MemoryStream(Encoding.UTF8.GetBytes(ResponseText)))
             {
                 _mockSearchInvoker.Setup(_ => _.Invoke(It.IsAny<Uri>())).Returns(responseStream);
-                var moduleProvider = new PowerShellGalleryModuleProvider(_mockSearchInvoker.Object);
-                var actualVersion = moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
+                var actualVersion = _moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
                 Assert.Null(actualVersion);
             }
         }
@@ -315,8 +315,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 _mockSearchInvoker.Setup(_ => _.Invoke(new Uri("https://NextLink2")))
                     .Returns(responseStream3);
 
-                var moduleProvider = new PowerShellGalleryModuleProvider(_mockSearchInvoker.Object);
-                var actualVersion = moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
+                var actualVersion = _moduleProvider.GetLatestPublishedModuleVersion("ModuleName", "1");
                 Assert.Equal("1.2.3.6", actualVersion);
             }
         }
