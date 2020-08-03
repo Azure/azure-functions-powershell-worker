@@ -87,8 +87,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 .AddParameter("AllowPrerelease", Utils.BoxedTrue)
                 .AddParameter("Path", path)
                 .AddParameter("Force", Utils.BoxedTrue)
-                .AddParameter("ErrorAction", "Stop")
-                .InvokeAndClearCommands();
+                .AddParameter("ErrorAction", "Stop");
+
+            pwsh.InvokeAndClearCommands();
         }
 
         /// <summary>
