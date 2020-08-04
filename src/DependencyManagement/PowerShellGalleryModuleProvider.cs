@@ -99,7 +99,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
             finally
             {
-                LogSaveModuleErrorsAndWarnings(pwsh);
+Lo                LogSaveModuleErrorsAndWarnings(pwsh, moduleName, version);
                 pwsh.Streams.ClearStreams();
                 pwsh.Commands.Clear();
             }
@@ -118,16 +118,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 .InvokeAndClearCommands();
         }
 
-        private void LogSaveModuleErrorsAndWarnings(PowerShell pwsh)
+        private void LogSaveModuleErrorsAndWarnings(PowerShell pwsh, string moduleName, string version)
         {
+            var prefix = $"Save-Module('{moduleName}', '{version}'): ";
+
             foreach (var item in pwsh.Streams.Error)
             {
-                _logger.Log(isUserOnlyLog: false, LogLevel.Error, $"Save-Module: {item.Exception.Message}");
+                _logger.Log(isUserOnlyLog: false, LogLevel.Error, $"{prefix}{item.Exception.Message}");
             }
 
             foreach (var item in pwsh.Streams.Warning)
             {
-                _logger.Log(isUserOnlyLog: false, LogLevel.Warning, $"Save-Module: {item.Message}");
+                _logger.Log(isUserOnlyLog: false, LogLevel.Warning, $"{prefix}{item.Message}");
             }
         }
 
