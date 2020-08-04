@@ -99,7 +99,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
             finally
             {
-Lo                LogSaveModuleErrorsAndWarnings(pwsh, moduleName, version);
+                LogSaveModuleErrorsAndWarnings(pwsh, moduleName, version);
                 pwsh.Streams.ClearStreams();
                 pwsh.Commands.Clear();
             }
