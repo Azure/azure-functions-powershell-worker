@@ -99,16 +99,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
             finally
             {
-                foreach (var item in pwsh.Streams.Error)
-                {
-                    _logger.Log(isUserOnlyLog: false, LogLevel.Error, $"Save-Module: {item.Exception.Message}");
-                }
-
-                foreach (var item in pwsh.Streams.Warning)
-                {
-                    _logger.Log(isUserOnlyLog: false, LogLevel.Warning, $"Save-Module: {item.Message}");
-                }
-
+                LogSaveModuleErrorsAndWarnings(pwsh);
                 pwsh.Streams.ClearStreams();
                 pwsh.Commands.Clear();
             }
@@ -125,6 +116,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 .AddParameter("Force", Utils.BoxedTrue)
                 .AddParameter("ErrorAction", "SilentlyContinue")
                 .InvokeAndClearCommands();
+        }
+
+        private void LogSaveModuleErrorsAndWarnings(PowerShell pwsh)
+        {
+            foreach (var item in pwsh.Streams.Error)
+            {
+                _logger.Log(isUserOnlyLog: false, LogLevel.Error, $"Save-Module: {item.Exception.Message}");
+            }
+
+            foreach (var item in pwsh.Streams.Warning)
+            {
+                _logger.Log(isUserOnlyLog: false, LogLevel.Warning, $"Save-Module: {item.Message}");
+            }
         }
 
         private static Version GetLatestVersion(
