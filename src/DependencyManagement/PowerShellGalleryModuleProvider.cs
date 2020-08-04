@@ -11,6 +11,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
     using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
     using Microsoft.Azure.Functions.PowerShellWorker.Utility;
+    using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
     internal class PowerShellGalleryModuleProvider : IModuleProvider
     {
@@ -98,6 +99,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             }
             finally
             {
+                foreach (var item in pwsh.Streams.Error)
+                {
+                    _logger.Log(isUserOnlyLog: false, LogLevel.Error, $"Save-Module: {item.Exception.Message}");
+                }
+
+                foreach (var item in pwsh.Streams.Warning)
+                {
+                    _logger.Log(isUserOnlyLog: false, LogLevel.Warning, $"Save-Module: {item.Message}");
+                }
+
                 pwsh.Streams.ClearStreams();
                 pwsh.Commands.Clear();
             }
