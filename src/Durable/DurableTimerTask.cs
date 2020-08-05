@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         private bool IsCompleted { get; }
         private bool IsCanceled { get; set; }
-        private DateTime FireAt { get; set; }
+        public DateTime FireAt { get; set; }
 
         // Only incomplete, uncanceled DurableTimerTasks should be created
         public DurableTimerTask(
