@@ -102,7 +102,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, logger: _testLogger))
                 {
                     var currentDependenciesPath = dependencyManager.Initialize(_testLogger);
 
@@ -132,7 +132,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, logger: _testLogger))
                 {
                     var currentDependenciesPath = dependencyManager.Initialize(_testLogger);
 
@@ -153,7 +153,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
             var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
-            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, logger: _testLogger))
             {
                 // Trying to set the functionApp dependencies should throw since requirements.psd1 is not a hash table.
                 var exception = Assert.Throws<DependencyInstallationException>(
@@ -172,7 +172,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
             var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
-            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, logger: _testLogger))
             {
                 // Trying to set the functionApp dependencies should throw since the module version
                 // in requirements.psd1 is not in a valid format.
@@ -193,7 +193,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
             var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
-            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, logger: _testLogger))
             {
                 // Trying to set the functionApp dependencies should throw since no
                 // requirements.psd1 is found at the function app root.

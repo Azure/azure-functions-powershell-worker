@@ -11,13 +11,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
     using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
     using Microsoft.Azure.Functions.PowerShellWorker.Utility;
+    using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
     internal class PowerShellGalleryModuleProvider : IModuleProvider
     {
+        private readonly ILogger _logger;
+
         private readonly IPowerShellGallerySearchInvoker _searchInvoker;
 
-        public PowerShellGalleryModuleProvider(IPowerShellGallerySearchInvoker searchInvoker = null)
+        public PowerShellGalleryModuleProvider(ILogger logger, IPowerShellGallerySearchInvoker searchInvoker = null)
         {
+            _logger =  logger ?? throw new ArgumentNullException(nameof(logger));
             _searchInvoker = searchInvoker ?? new PowerShellGallerySearchInvoker();
         }
 
@@ -87,8 +91,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 .AddParameter("AllowPrerelease", Utils.BoxedTrue)
                 .AddParameter("Path", path)
                 .AddParameter("Force", Utils.BoxedTrue)
-                .AddParameter("ErrorAction", "Stop")
-                .InvokeAndClearCommands();
+                .AddParameter("ErrorAction", "Stop");
+
+            try
+            {
+                pwsh.Invoke();
+            }
+            finally
+            {
+                LogSaveModuleErrorsAndWarnings(pwsh, moduleName, version);
+                pwsh.Streams.ClearStreams();
+                pwsh.Commands.Clear();
+            }
         }
 
         /// <summary>
@@ -102,6 +116,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 .AddParameter("Force", Utils.BoxedTrue)
                 .AddParameter("ErrorAction", "SilentlyContinue")
                 .InvokeAndClearCommands();
+        }
+
+        private void LogSaveModuleErrorsAndWarnings(PowerShell pwsh, string moduleName, string version)
+        {
+            var prefix = $"Save-Module('{moduleName}', '{version}'): ";
+
+            foreach (var item in pwsh.Streams.Error)
+            {
+                _logger.Log(isUserOnlyLog: false, LogLevel.Error, $"{prefix}{item.Exception.Message}");
+            }
+
+            foreach (var item in pwsh.Streams.Warning)
+            {
+                _logger.Log(isUserOnlyLog: false, LogLevel.Warning, $"{prefix}{item.Message}");
+            }
         }
 
         private static Version GetLatestVersion(
