@@ -229,11 +229,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
                 catch (RuntimeException e)
                 {
-                    if (e.ErrorRecord.FullyQualifiedErrorId == "CommandNotFoundException")
-                    {
-                        Logger.Log(isUserOnlyLog: false, LogLevel.Warning, PowerShellWorkerStrings.CommandNotFoundException_Exception);
-                    }
-
+                    ErrorAnalysisLogger.Log(Logger, e.ErrorRecord, isException: true);
                     Logger.Log(isUserOnlyLog: true, LogLevel.Error, GetFunctionExceptionMessage(e));
                     throw;
                 }
