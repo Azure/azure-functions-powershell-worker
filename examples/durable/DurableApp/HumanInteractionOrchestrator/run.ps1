@@ -11,12 +11,12 @@ $duration = $Context.Input.Duration
 Invoke-ActivityFunction -FunctionName "RequestApproval"
 
 $durableTimeoutEvent = Start-DurableTimer -Duration $duration -NoWait
-$approvalEvent = Start-EventListener -EventName "ApprovalEvent" -NoWait
+$approvalEvent = Start-DurableExternalEventListener -EventName "ApprovalEvent" -NoWait
 
-$firstEvent = Wait-AnyTask -Task @($approvalEvent, $durableTimeoutEvent)
+$firstEvent = Wait-DurableTask -Task @($approvalEvent, $durableTimeoutEvent) -Any
 
 if ($approvalEvent -eq $firstEvent) {
-    $durableTimeout.Cancel()
+    Stop-DurableTimerTask -TimerTask $durableTimeout
     $output += Invoke-ActivityFunction -FunctionName "ProcessApproval" -Input $approvalEvent
 }
 else {
