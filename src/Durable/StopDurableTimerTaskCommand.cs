@@ -7,8 +7,6 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
-    using System;
-    using System.Collections;
     using System.Management.Automation;
 
     /// <summary>
