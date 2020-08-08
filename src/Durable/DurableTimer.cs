@@ -55,14 +55,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         private static HistoryEvent GetTimerFired(OrchestrationContext context, HistoryEvent timerCreated)
         {
-            if (timerCreated != null)
-            {
-                return context.History.FirstOrDefault(
+            return timerCreated == null
+                ? null
+                : context.History.FirstOrDefault(
                     e => e.EventType == HistoryEventType.TimerFired &&
-                         e.TimerId == timerCreated.EventId
-                    );
-            }
-            return null;
+                         e.TimerId == timerCreated.EventId);
         }
 
         private void CreateTimerAndWaitUntilFired(OrchestrationContext context)

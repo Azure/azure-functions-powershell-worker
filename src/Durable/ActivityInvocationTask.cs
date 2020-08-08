@@ -7,11 +7,30 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
-    public class ActivityInvocationTask
+    using System.Linq;
+
+    public class ActivityInvocationTask : DurableTask
     {
         public string Name { get; }
 
-        internal ActivityInvocationTask(string name)
+        internal override HistoryEvent GetTaskScheduledHistoryEvent(OrchestrationContext context)
+        {
+            return context.History.FirstOrDefault(
+                e => e.EventType == HistoryEventType.TaskScheduled &&
+                     e.Name == Name &&
+                     !e.IsProcessed);
+        }
+
+        internal override HistoryEvent GetTaskCompletedHistoryEvent(OrchestrationContext context, HistoryEvent taskScheduled)
+        {
+            return taskScheduled == null
+                ? null
+                : context.History.FirstOrDefault(
+                    e => e.EventType == HistoryEventType.TaskCompleted &&
+                         e.TaskScheduledId == taskScheduled.EventId);
+        }
+
+        public ActivityInvocationTask(string name)
         {
             Name = name;
         }
