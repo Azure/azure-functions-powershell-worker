@@ -57,21 +57,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         
         internal abstract HistoryEvent GetTaskCompletedHistoryEvent(OrchestrationContext context, HistoryEvent taskScheduled);
 
-        private static object GetEventResult(HistoryEvent historyEvent)
+        internal static object GetEventResult(HistoryEvent historyEvent)
         {
             // output the result if and only if the history event is a completed activity function
-            return historyEvent.EventType == HistoryEventType.TaskCompleted
+            return historyEvent.EventType != HistoryEventType.TaskCompleted
                 ? null
                 : TypeExtensions.ConvertFromJson(historyEvent.Result);
         }   
 
-        private static void InitiateAndWaitForStop(OrchestrationContext context)
+        internal static void InitiateAndWaitForStop(OrchestrationContext context)
         {
             context.OrchestrationActionCollector.Stop();
             _waitForStop.WaitOne();
         }
 
-        private static void Stop()
+        internal static void Stop()
         {
             _waitForStop.Set();
         }
