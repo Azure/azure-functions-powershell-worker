@@ -44,5 +44,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             return new CreateDurableTimerAction(FireAt);
         }
+
+        internal override OrchestrationAction CreateOrchestrationAction()
+        {
+            return new CreateDurableTimerAction(FireAt);
+        }
     }
 }
