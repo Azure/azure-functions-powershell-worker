@@ -8,32 +8,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
-    using System.Linq;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Xunit;
 
     public class DurableTaskHandlerTests
     {
-        private const string FunctionName = "function name";
         private const string FunctionInput = "function input";
-        private const string InvocationResult = "Invocation result";
-        private const string InvocationResultJson = "\"Invocation result\"";
-
-        private const string ActivityTriggerBindingType = "activityTrigger";
-
-        private static TimeSpan _duration = new TimeSpan(0, 0, 1);
-        
-        private static TimeSpan _longInterval = new TimeSpan(0, 0, 5);
-        private static TimeSpan _shortInterval = new TimeSpan(0, 0, 3);
+        private static TimeSpan _delayBeforeStopping = new TimeSpan(0, 0, 2);
+        private static TimeSpan _timeInterval = new TimeSpan(0, 0, 1);
         private static readonly DateTime _startTime = DateTime.UtcNow;
-        private static readonly DateTime _restartTime = _startTime.Add(_longInterval);
-        private static readonly DateTime _shouldNotHitTime = _restartTime.Add(_longInterval);
-        private readonly DateTime _fireAt = _startTime.Add(_shortInterval);
+        private static readonly DateTime _fireAt = _startTime.Add(_timeInterval);
+        private static readonly DateTime _restartTime = _fireAt.Add(_timeInterval);
         private int _nextEventId = 1;
 
         [Theory]
         [InlineData(true, true)]
-        public void WaitAll_OutputsActivityResults_WhenAllActivityTasksCompleted(
+        public void WaitAll_OutputsActivityResults_WhenAllTasksCompleted(
             bool scheduled, bool completed)
         {
             var history = DurableTestUtilities.MergeHistories(
@@ -45,15 +35,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 CreateOrchestratorStartedHistory(date: _startTime, isProcessed: true),
                 CreateActivityHistory("FunctionA", scheduled: scheduled, completed: completed, output: "\"Result1\""),
                 CreateActivityHistory("FunctionA", scheduled: scheduled, completed: completed, output: "\"Result2\""),
+                CreateDurableTimerHistory(timerCreated: scheduled, timerFired: completed, fireAt: _fireAt, _restartTime, orchestratorStartedIsProcessed: false),
                 CreateActivityHistory("FunctionB", scheduled: scheduled, completed: completed, output: "\"Result3\"")
             );
 
             var orchestrationContext = new OrchestrationContext { History = history };
             var tasksToWaitFor =
-                new ReadOnlyCollection<ActivityInvocationTask>(
-                    new[] { "FunctionA", "FunctionA", "FunctionB" }
-                        .Select(name => new ActivityInvocationTask(name, FunctionInput))
-                        .ToArray());
+                new ReadOnlyCollection<DurableTask>(
+                    new DurableTask[] { 
+                        new ActivityInvocationTask("FunctionA", FunctionInput),
+                        new ActivityInvocationTask("FunctionA", FunctionInput),
+                        new DurableTimerTask(_fireAt),
+                        new ActivityInvocationTask("FunctionB", FunctionInput) });
 
             var allOutput = new List<object>();
 
@@ -73,16 +66,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         {
             var history = DurableTestUtilities.MergeHistories(
                 CreateActivityHistory("FunctionA", scheduled: true, completed: true, output: "\"Result1\""), // completed
-                CreateActivityHistory("FunctionA", scheduled: scheduled, completed: completed, output: "\"Result2\""),
+                CreateActivityHistory("FunctionA", scheduled: true, completed: true, output: "\"Result2\""),
+                CreateDurableTimerHistory(timerCreated: scheduled, timerFired: completed, fireAt: _fireAt, _restartTime, orchestratorStartedIsProcessed: false),
                 CreateActivityHistory("FunctionB", scheduled: true, completed: true, output: "\"Result3\"") // completed
             );
 
             var orchestrationContext = new OrchestrationContext { History = history };
             var tasksToWaitFor =
-                new ReadOnlyCollection<ActivityInvocationTask>(
-                    new[] { "FunctionA", "FunctionA", "FunctionB" }
-                        .Select(name => new ActivityInvocationTask(name, FunctionInput))
-                        .ToArray());
+                new ReadOnlyCollection<DurableTask>(
+                    new DurableTask[] { 
+                        new ActivityInvocationTask("FunctionA", FunctionInput),
+                        new ActivityInvocationTask("FunctionA", FunctionInput),
+                        new DurableTimerTask(_fireAt),
+                        new ActivityInvocationTask("FunctionB", FunctionInput) });
 
             var durableTaskHandler = new DurableTaskHandler();
             DurableTestUtilities.EmulateStop(durableTaskHandler);
@@ -101,6 +97,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var history = DurableTestUtilities.MergeHistories(
                 CreateActivityHistory("FunctionA", scheduled: true, completed: true, output: "\"Result1\""),
                 CreateActivityHistory("FunctionA", scheduled: scheduledAndCompleted, completed: scheduledAndCompleted, output: "\"Result2\""),
+                CreateDurableTimerHistory(timerCreated: scheduledAndCompleted, timerFired: scheduledAndCompleted, fireAt: _fireAt, _restartTime, orchestratorStartedIsProcessed: false),
                 CreateActivityHistory("FunctionB", scheduled: true, completed: true, output: "\"Result3\"")
             );
 
@@ -108,14 +105,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             var orchestrationContext = new OrchestrationContext { History = history };
             var tasksToWaitFor =
-                new ReadOnlyCollection<ActivityInvocationTask>(
-                    new[] { "FunctionA", "FunctionA", "FunctionB" }
-                        .Select(name => new ActivityInvocationTask(name, FunctionInput))
-                        .ToArray());
+                new ReadOnlyCollection<DurableTask>(
+                    new DurableTask[] { 
+                        new ActivityInvocationTask("FunctionA", FunctionInput),
+                        new ActivityInvocationTask("FunctionA", FunctionInput),
+                        new DurableTimerTask(_fireAt),
+                        new ActivityInvocationTask("FunctionB", FunctionInput) });
 
             DurableTestUtilities.VerifyWaitForDurableTasks(
                 durableTaskHandler,
-                _duration,
+                _delayBeforeStopping,
                 expectedWaitForStop,
                 () =>
                 {

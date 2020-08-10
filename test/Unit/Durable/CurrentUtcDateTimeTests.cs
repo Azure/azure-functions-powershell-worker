@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             }
             _orchestrationBindingInfo = new OrchestrationBindingInfo("ContextParameterName", context);
 
-            DurableTestUtilities.InvokeOrchestration(_orchestrationInvoker, _orchestrationBindingInfo, _mockPowerShellServices, completed: completed);
+            InvokeOrchestration(completed: completed);
 
             Assert.Equal(_orchestrationBindingInfo.Context.History.FirstOrDefault(
                 (e) => e.EventType == HistoryEventType.OrchestratorStarted).Timestamp,
