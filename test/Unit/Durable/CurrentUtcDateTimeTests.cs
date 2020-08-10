@@ -9,33 +9,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     using System.Collections;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
-    using System.Management.Automation;
-    using System.Threading;
     using System.Linq;
+    using System.Management.Automation;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Moq;
-    using WebJobs.Script.Grpc.Messages;
     using Xunit;
 
     public class CurrentUtcDateTimeTests
     {
         private const string FunctionName = "function name";
         private const string FunctionInput = "function input";
-        private const string ActivityTriggerBindingType = "activityTrigger";
         private const string InvocationResultJson = "\"Invocation result\"";
-        private const DateTimeKind utc = DateTimeKind.Utc;
-        private DateTime time = new DateTime(2020, 1, 1, 0, 0, 0, 0, utc);
-        private int intervalMilliseconds = 5;
-        private int _nextEventId = 1;
-        private readonly IEnumerable<AzFunctionInfo> _loadedFunctions =
-            new[] { CreateFakeActivityTriggerAzFunctionInfo(FunctionName) };
-
-        readonly OrchestrationInvoker _orchestrationInvoker = new OrchestrationInvoker();
-
-        private OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo("ContextParametername",
+        private static int intervalMilliseconds = 5;
+        private static DateTime _startTime = DateTime.UtcNow;
+        private static DateTime _restartTime = _startTime.AddMilliseconds(intervalMilliseconds);
+        private static DateTime _shouldNotHitTime = _restartTime.AddMilliseconds(intervalMilliseconds);
+        private static readonly OrchestrationInvoker _orchestrationInvoker = new OrchestrationInvoker();
+        private static OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo("ContextParametername",
                                                                                                    new OrchestrationContext());
-
-        private readonly Mock<IPowerShellServices> _mockPowerShellServices = new Mock<IPowerShellServices>();
+        private static readonly Mock<IPowerShellServices> _mockPowerShellServices = new Mock<IPowerShellServices>();
+        private int _nextEventId = 1;
 
         // Checks that CurrentUtcDateTime is set/reset to the Timestamp of the first OrchestratorStarted event
         // This test assumes that when OrchestrationInvoker.Invoke() is called, the history contains at least one OrchestratorStarted event
@@ -45,32 +38,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [InlineData(false, false)]
         public void CurrentUtcDateTime_InitializesToFirstOrchestratorStartedTimestamp_IfOrchestratorInvoked(bool firstExecution, bool completed)
         {
-            if (firstExecution)
+            var history = CreateOrchestratorStartedHistory(startTime: _startTime, isProcessed: false);
+            var context = new OrchestrationContext { History = history };
+            if (!firstExecution)
             {
-                _orchestrationBindingInfo = new OrchestrationBindingInfo(
-                    "ContextParameterName",
-                    new OrchestrationContext { History = CreateOrchestratorStartedHistory(date: time, isProcessed: false) }
-                    );
-            }
-            else
-            {
-                DateTime startTime = time;
-                DateTime restartTime = startTime.AddMilliseconds(intervalMilliseconds);
                 // Assumes that a context, when passed to OrchestrationInvoker, has all HistoryEvents' IsProcessed reset to false
-                var history = MergeHistories(
-                    CreateOrchestratorStartedHistory(date: time, isProcessed: false),
+                history = DurableTestUtilities.MergeHistories(
+                    history,
                     CreateActivityHistory(name: FunctionName,
                                           scheduled: true,
                                           completed: true,
                                           output: InvocationResultJson,
-                                          date: restartTime,
+                                          date: _restartTime,
                                           orchestratorStartedIsProcessed: false)
                 );
-                var context = new OrchestrationContext { History = history, CurrentUtcDateTime = restartTime };
-                _orchestrationBindingInfo = new OrchestrationBindingInfo("ContextParameterName", context);
+                context.CurrentUtcDateTime =_restartTime;
             }
+            _orchestrationBindingInfo = new OrchestrationBindingInfo("ContextParameterName", context);
 
-            InvokeOrchestration(completed: completed);
+            DurableTestUtilities.InvokeOrchestration(_orchestrationInvoker, _orchestrationBindingInfo, _mockPowerShellServices, completed: completed);
 
             Assert.Equal(_orchestrationBindingInfo.Context.History.FirstOrDefault(
                 (e) => e.EventType == HistoryEventType.OrchestratorStarted).Timestamp,
@@ -86,47 +72,43 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [InlineData(false)]
         public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfActivityFunctionCompleted(bool completed)
         {
-            DateTime startTime = time;
-            DateTime restartTime = startTime.AddMilliseconds(intervalMilliseconds);
-            DateTime shouldNotHitTime = restartTime.AddMilliseconds(intervalMilliseconds);
-            var history = MergeHistories(
-                CreateOrchestratorStartedHistory(date: startTime, isProcessed: true),
+            var history = DurableTestUtilities.MergeHistories(
+                CreateOrchestratorStartedHistory(startTime: _startTime, isProcessed: true),
                 CreateActivityHistory(
                     name: FunctionName,
                     scheduled: true,
                     completed: completed,
                     output: InvocationResultJson,
-                    date: restartTime,
+                    date: _restartTime,
                     orchestratorStartedIsProcessed: false)
             );
 
-            var _activityInvocationTracker = new ActivityInvocationTracker();
+            OrchestrationContext context = new OrchestrationContext { History = history, CurrentUtcDateTime = _startTime };
+            var durableTaskHandler = new DurableTaskHandler();
+            var allOutput = new List<object>();
             if (completed)
             {
-                history = MergeHistories(history, CreateActivityHistory(
+                history = DurableTestUtilities.MergeHistories(history, CreateActivityHistory(
                     name: FunctionName,
                     scheduled: true,
                     completed: true,
                     output: InvocationResultJson,
-                    date: shouldNotHitTime,
+                    date: _shouldNotHitTime,
                     orchestratorStartedIsProcessed: false));
             }
             else
             {
-                EmulateStop(_activityInvocationTracker);
+                DurableTestUtilities.EmulateStop(durableTaskHandler);
             }
 
-            OrchestrationContext context = new OrchestrationContext { History = history, CurrentUtcDateTime = startTime };
-            var allOutput = new List<object>();
-
-            _activityInvocationTracker.ReplayActivityOrStop(FunctionName, FunctionInput, context, _loadedFunctions, noWait: false, output => allOutput.Add(output));
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(new ActivityInvocationTask(FunctionName, FunctionInput), context, noWait: false, output => allOutput.Add(output));
             if (completed)
             {
-                Assert.Equal(restartTime, context.CurrentUtcDateTime);
+                Assert.Equal(_restartTime, context.CurrentUtcDateTime);
             }
             else
             {
-                Assert.Equal(startTime, context.CurrentUtcDateTime);
+                Assert.Equal(_startTime, context.CurrentUtcDateTime);
             }
         }
 
@@ -134,43 +116,41 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [Fact]
         public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfTimestampsAreIdentical()
         {
-            DateTime startTime = time;
-            DateTime shouldNotHitTime = startTime.AddMilliseconds(intervalMilliseconds);
-            var history = MergeHistories(
+            var history = DurableTestUtilities.MergeHistories(
                 CreateActivityHistory(
                     name: FunctionName,
                     scheduled: true,
                     completed: true,
-                    date: startTime,
+                    date: _startTime,
                     output: InvocationResultJson,
                     orchestratorStartedIsProcessed: true),
                 CreateActivityHistory(
                     name: FunctionName,
                     scheduled: true,
                     completed: true,
-                    date: startTime,
+                    date: _startTime,
                     output: InvocationResultJson,
                     orchestratorStartedIsProcessed: false),
                 CreateActivityHistory(
                     name: FunctionName,
                     scheduled: true,
                     completed: true,
-                    date: shouldNotHitTime,
+                    date: _shouldNotHitTime,
                     output: InvocationResultJson,
                     orchestratorStartedIsProcessed: false)
                     );
-            var context = new OrchestrationContext { History = history, CurrentUtcDateTime = startTime };
+            var context = new OrchestrationContext { History = history, CurrentUtcDateTime = _startTime };
             var willHitEvent = context.History.First(
                 e => e.EventType == HistoryEventType.OrchestratorStarted &&
                      e.IsProcessed);
             var allOutput = new List<object>();
-            var _activityInvocationTracker = new ActivityInvocationTracker();
+            var durableTaskHandler = new DurableTaskHandler();
 
-            _activityInvocationTracker.ReplayActivityOrStop(FunctionName, FunctionInput, context, _loadedFunctions, noWait: false, output => allOutput.Add(output));
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(new ActivityInvocationTask(FunctionName, FunctionInput), context, noWait: false, output => allOutput.Add(output));
 
-            Assert.Equal(startTime, context.CurrentUtcDateTime);
+            Assert.Equal(_startTime, context.CurrentUtcDateTime);
             var shouldNotHitEvent = context.History.First(
-                e => e.Timestamp.Equals(shouldNotHitTime));
+                e => e.Timestamp.Equals(_shouldNotHitTime));
             Assert.True(willHitEvent.IsProcessed);
             Assert.False(shouldNotHitEvent.IsProcessed);
         }
@@ -184,43 +164,40 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         // Otherwise, only TaskScheduled events are added to the history 
         public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfAllActivitiesCompleted(bool allCompleted)
         {
-            DateTime startTime = time;
-            DateTime restartTime = startTime.AddMilliseconds(intervalMilliseconds);
-            DateTime shouldNotHitTime = restartTime.AddMilliseconds(intervalMilliseconds);
             var activityFunctions = new Dictionary<string, bool>();
             activityFunctions.Add("FunctionA", true);
             activityFunctions.Add("FunctionB", allCompleted);
             activityFunctions.Add("FunctionC", true);
-            var history = MergeHistories(
-                CreateOrchestratorStartedHistory(date: startTime, isProcessed: true),
-                CreateNoWaitActivityHistory(scheduled: activityFunctions, restartTime: restartTime, orchestratorStartedIsProcessed: false),
-                CreateOrchestratorStartedHistory(date: shouldNotHitTime, isProcessed: false)
+            var history = DurableTestUtilities.MergeHistories(
+                CreateOrchestratorStartedHistory(startTime: _startTime, isProcessed: true),
+                CreateNoWaitActivityHistory(scheduled: activityFunctions, restartTime: _restartTime, orchestratorStartedIsProcessed: false),
+                CreateOrchestratorStartedHistory(startTime: _shouldNotHitTime, isProcessed: false)
             );
-            OrchestrationContext context = new OrchestrationContext { History = history, CurrentUtcDateTime = startTime };
+            OrchestrationContext context = new OrchestrationContext { History = history, CurrentUtcDateTime = _startTime };
             var tasksToWaitFor = new ReadOnlyCollection<ActivityInvocationTask>(
-                new[] { "FunctionA", "FunctionB", "FunctionC" }.Select(name => new ActivityInvocationTask(name: name)).ToArray());
-            var _activityInvocationTracker = new ActivityInvocationTracker();
+                new[] { "FunctionA", "FunctionB", "FunctionC" }.Select(name => new ActivityInvocationTask(name, FunctionInput)).ToArray());
+            var durableTaskHandler = new DurableTaskHandler();
             var allOutput = new List<object>();
 
             if (!allCompleted)
             {
-                EmulateStop(_activityInvocationTracker);
+                DurableTestUtilities.EmulateStop(durableTaskHandler);
             }
 
-            _activityInvocationTracker.WaitForActivityTasks(tasksToWaitFor, context, output => allOutput.Add(output));
+            durableTaskHandler.WaitAll(tasksToWaitFor, context, output => allOutput.Add(output));
             
             if (allCompleted)
             {
-                Assert.Equal(restartTime, context.CurrentUtcDateTime);
+                Assert.Equal(_restartTime, context.CurrentUtcDateTime);
             }
             else
             {
-                Assert.Equal(startTime, context.CurrentUtcDateTime);
+                Assert.Equal(_startTime, context.CurrentUtcDateTime);
             }
         }
 
         // Creates a history containing an OrchestratorStarted event
-        private HistoryEvent[] CreateOrchestratorStartedHistory(DateTime date, bool isProcessed)
+        private HistoryEvent[] CreateOrchestratorStartedHistory(DateTime startTime, bool isProcessed)
         {
             var history = new List<HistoryEvent>();
             // Add an OrchestratorStarted event
@@ -231,7 +208,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     EventType = HistoryEventType.OrchestratorStarted,
                     EventId = orchestrationStartedEventId,
-                    Timestamp = date,
+                    Timestamp = startTime,
                     IsProcessed = isProcessed
                 });
 
@@ -343,34 +320,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             return history.ToArray();
         }
 
-        private static HistoryEvent[] MergeHistories(params HistoryEvent[][] histories)
-        {
-            return histories.Aggregate((a, b) => a.Concat(b).ToArray());
-        }
-
-        private static AzFunctionInfo CreateFakeActivityTriggerAzFunctionInfo(string functionName)
-        {
-            return CreateFakeAzFunctionInfo(functionName, "fakeTriggerBindingName", ActivityTriggerBindingType, BindingInfo.Types.Direction.In);
-        }
-
-        private static AzFunctionInfo CreateFakeAzFunctionInfo(
-            string functionName,
-            string bindingName,
-            string bindingType,
-            BindingInfo.Types.Direction bindingDirection)
-        {
-            return new AzFunctionInfo(
-                functionName,
-                new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(
-                    new Dictionary<string, ReadOnlyBindingInfo>
-                    {
-                        {
-                            bindingName,
-                            new ReadOnlyBindingInfo(bindingType, bindingDirection)
-                        }
-                    }));
-        }
-
         private int GetUniqueEventId()
         {
             return _nextEventId++;
@@ -378,52 +327,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         private Hashtable InvokeOrchestration(bool completed, PSDataCollection<object> output = null)
         {
-            var invocationAsyncResult = CreateInvocationResult(completed);
-            ExpectBeginInvoke(invocationAsyncResult, output);
-            if (!completed)
-            {
-                SignalToStopInvocation();
-            }
-
-            var result = _orchestrationInvoker.Invoke(_orchestrationBindingInfo, _mockPowerShellServices.Object);
-            return result;
-        }
-
-        private static IAsyncResult CreateInvocationResult(bool completed)
-        {
-            var completionEvent = new AutoResetEvent(initialState: completed);
-            var result = new Mock<IAsyncResult>();
-            result.Setup(_ => _.AsyncWaitHandle).Returns(completionEvent);
-            return result.Object;
-        }
-
-        private void EmulateStop(ActivityInvocationTracker activityInvocationTracker)
-        {
-            activityInvocationTracker.Stop();
-        }
-
-        private void ExpectBeginInvoke(IAsyncResult invocationAsyncResult, PSDataCollection<object> output = null)
-        {
-            _mockPowerShellServices
-                .Setup(_ => _.BeginInvoke(It.IsAny<PSDataCollection<object>>()))
-                .Returns(
-                    (PSDataCollection<object> outputBuffer) =>
-                    {
-                        if (output != null)
-                        {
-                            foreach (var item in output)
-                            {
-                                outputBuffer.Add(item);
-                            }
-                        }
-
-                        return invocationAsyncResult;
-                    });
-        }
-
-        private void SignalToStopInvocation()
-        {
-            _orchestrationBindingInfo.Context.OrchestrationActionCollector.Stop();
+            return DurableTestUtilities.InvokeOrchestration(_orchestrationInvoker, _orchestrationBindingInfo, _mockPowerShellServices, completed, output);
         }
     }
 }

@@ -17,18 +17,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         [ValidateNotNull]
         public ActivityInvocationTask[] Task { get; set; }
 
-        private readonly ActivityInvocationTracker _activityInvocationTracker = new ActivityInvocationTracker();
+        private readonly DurableTaskHandler _durableTaskHandler = new DurableTaskHandler();
 
         protected override void EndProcessing()
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
-            _activityInvocationTracker.WaitForActivityTasks(Task, context, WriteObject);
+            _durableTaskHandler.WaitAll(Task, context, WriteObject);
         }
 
         protected override void StopProcessing()
         {
-            _activityInvocationTracker.Stop();
+            _durableTaskHandler.Stop();
         }
     }
 }

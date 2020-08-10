@@ -32,20 +32,24 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         [Parameter]
         public SwitchParameter NoWait { get; set; }
 
-        private readonly ActivityInvocationTracker _activityInvocationTracker = new ActivityInvocationTracker();
+        private readonly DurableTaskHandler _durableTaskHandler = new DurableTaskHandler();
 
         protected override void EndProcessing()
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
             var loadedFunctions = FunctionLoader.GetLoadedFunctions();
-            _activityInvocationTracker.ReplayActivityOrStop(
-                FunctionName, Input, context, loadedFunctions, NoWait.IsPresent, WriteObject);
+
+            var task = new ActivityInvocationTask(FunctionName, Input);
+            ActivityInvocationTask.ValidateTask(task, loadedFunctions);
+            
+            _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                task, context, NoWait.IsPresent, WriteObject);
         }
 
         protected override void StopProcessing()
         {
-            _activityInvocationTracker.Stop();
+            _durableTaskHandler.Stop();
         }
     }
 }

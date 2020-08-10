@@ -7,17 +7,29 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
+    using System;
     using System.Linq;
+    using System.Collections.Generic;
+
+    using WebJobs.Script.Grpc.Messages;
 
     public class ActivityInvocationTask : DurableTask
     {
-        public string Name { get; }
+        internal string FunctionName { get; }
+
+        private object FunctionInput { get; }
+
+        public ActivityInvocationTask(string functionName, object functionInput)
+        {
+            FunctionName = functionName;
+            FunctionInput = functionInput;
+        }
 
         internal override HistoryEvent GetTaskScheduledHistoryEvent(OrchestrationContext context)
         {
             return context.History.FirstOrDefault(
                 e => e.EventType == HistoryEventType.TaskScheduled &&
-                     e.Name == Name &&
+                     e.Name == FunctionName &&
                      !e.IsProcessed);
         }
 
@@ -30,9 +42,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                          e.TaskScheduledId == taskScheduled.EventId);
         }
 
-        public ActivityInvocationTask(string name)
+        internal override OrchestrationAction CreateOrchestrationAction()
         {
-            Name = name;
+            return new CallActivityAction(FunctionName, FunctionInput);
+        }
+
+        internal static void ValidateTask(ActivityInvocationTask task, IEnumerable<AzFunctionInfo> loadedFunctions)
+        {
+            var functionInfo = loadedFunctions.FirstOrDefault(fi => fi.FuncName == task.FunctionName);
+            if (functionInfo == null)
+            {
+                var message = string.Format(PowerShellWorkerStrings.FunctionNotFound, task.FunctionName);
+                throw new InvalidOperationException(message);
+            }
+
+            var activityTriggerBinding = functionInfo.InputBindings.FirstOrDefault(
+                                            entry => DurableBindings.IsActivityTrigger(entry.Value.Type)
+                                                     && entry.Value.Direction == BindingInfo.Types.Direction.In);
+            if (activityTriggerBinding.Key == null)
+            {
+                var message = string.Format(PowerShellWorkerStrings.FunctionDoesNotHaveProperActivityFunctionBinding, task.FunctionName);
+                throw new InvalidOperationException(message);
+            }
         }
     }
 }

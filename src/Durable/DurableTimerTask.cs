@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         internal override HistoryEvent GetTaskScheduledHistoryEvent(OrchestrationContext context)
         {
             return context.History.FirstOrDefault(
-                e => e.EventType == HistoryEventType.TaskScheduled &&
+                e => e.EventType == HistoryEventType.TimerCreated &&
                      e.FireAt.Equals(FireAt) &&
                      !e.IsProcessed);
         }
@@ -38,6 +38,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 : context.History.FirstOrDefault(
                     e => e.EventType == HistoryEventType.TimerFired &&
                          e.TimerId == taskScheduled.EventId);
+        }
+
+        internal override OrchestrationAction CreateOrchestrationAction()
+        {
+            return new CreateDurableTimerAction(FireAt);
         }
     }
 }
