@@ -11,7 +11,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         public string Name { get; }
 
-        public ActivityInvocationTask(string name)
+        internal ActivityInvocationTask(string name)
         {
             Name = name;
         }

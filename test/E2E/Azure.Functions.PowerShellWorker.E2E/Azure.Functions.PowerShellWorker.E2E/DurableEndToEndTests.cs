@@ -5,6 +5,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Net;
     using System.Threading.Tasks;
     using Xunit;
