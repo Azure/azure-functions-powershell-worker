@@ -147,6 +147,13 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                             var statusResponseBody = await GetResponseBodyAsync(statusResponse);
                             Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
                             string path = statusResponseBody.output.ToString();
+                            string lastFolderName = Path.GetDirectoryName(path);
+
+                            if (!Directory.Exists(lastFolderName))
+                            {
+                                Assert.True(false, $"The directory {lastFolderName} does not exist!");
+                            }
+
                             string[] lines = System.IO.File.ReadAllLines(path);
 
                             // Expect the format to be as in Case 1
@@ -228,6 +235,13 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                             var statusResponseBody = await GetResponseBodyAsync(statusResponse);
                             Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
                             string path = statusResponseBody.output.ToString();
+                            string lastFolderName = Path.GetDirectoryName(path);
+
+                            if (!Directory.Exists(lastFolderName))
+                            {
+                                Assert.True(false, $"The directory {lastFolderName} does not exist!");
+                            }
+                            
                             string[] lines = System.IO.File.ReadAllLines(path);
 
                             // Expect the format to be as in Case 1
