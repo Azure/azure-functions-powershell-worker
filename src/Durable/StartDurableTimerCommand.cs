@@ -24,6 +24,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         [ValidateNotNullOrEmpty]
         public TimeSpan Duration { get; set; }
 
+        [Parameter]
+        public SwitchParameter NoWait { get; set; }
+
         private readonly DurableTimer _durableTimer = new DurableTimer();
 
         protected override void EndProcessing()
@@ -31,7 +34,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
             DateTime fireAt = context.CurrentUtcDateTime.Add(Duration);
-            _durableTimer.StopAndCreateTimerOrContinue(context, fireAt);
+            _durableTimer.StopAndCreateTimerOrContinue(context, fireAt, NoWait.IsPresent, WriteObject);
         }
 
         protected override void StopProcessing()

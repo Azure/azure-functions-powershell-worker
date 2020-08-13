@@ -54,12 +54,13 @@ FunctionsToExport = @(
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @(
-    'Push-OutputBinding',
+    
     'Get-OutputBinding',
-    'Trace-PipelineObject',
+    'Invoke-ActivityFunction',
+    'Push-OutputBinding',
     'Set-FunctionInvocationContext',
     'Start-DurableTimer',
-    'Invoke-ActivityFunction',
+    'Trace-PipelineObject',
     'Wait-ActivityFunction')
 
 # Variables to export from this module
