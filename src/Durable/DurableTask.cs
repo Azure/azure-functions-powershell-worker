@@ -7,8 +7,6 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
-    using System.Collections.Generic;
-    
     public abstract class DurableTask
     {
         internal abstract HistoryEvent GetTaskScheduledHistoryEvent(OrchestrationContext context);

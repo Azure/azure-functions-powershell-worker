@@ -31,6 +31,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 var taskScheduled = task.GetTaskScheduledHistoryEvent(context);
                 var taskCompleted = task.GetTaskCompletedHistoryEvent(context, taskScheduled);
 
+                // Assume that the task scheduled must have completed if NoWait is not present and the orchestrator restarted
+                if (taskScheduled == null)
+                {
+                    InitiateAndWaitForStop(context);
+                }
+
                 if (taskCompleted != null)
                 {                         
                     CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
@@ -43,14 +49,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                         output(GetEventResult(taskCompleted));
                     }
                 }
-                else
-                {
-                    InitiateAndWaitForStop(context);
-                }
             }
         }
 
-        // Waits for all of tasks to complete
+        // Waits for all of the given DurableTasks to complete
         public void WaitAll(
             IReadOnlyCollection<DurableTask> tasksToWaitFor,
             OrchestrationContext context,
@@ -84,6 +86,50 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                         output(GetEventResult(completedEvent));
                     }
                 }
+            }
+            else
+            {
+                InitiateAndWaitForStop(context);
+            }
+        }
+
+        // Waits for any one of the given DurableTasks to complete and outputs the first DurableTask that does so
+        public void WaitAny(
+            IReadOnlyCollection<DurableTask> tasksToWaitFor,
+            OrchestrationContext context,
+            Action<object> output)
+        {
+            var completedTasks = new List<DurableTask>();
+            int earliestCompletedHistoryEventIndex = context.History.Length;
+            int earliestCompletedTaskIndex = -1;
+
+            foreach (var task in tasksToWaitFor)
+            {
+                var taskScheduled = task.GetTaskScheduledHistoryEvent(context);
+                var taskCompleted = task.GetTaskCompletedHistoryEvent(context, taskScheduled);
+
+                taskScheduled.IsProcessed = true;
+
+                if (taskCompleted != null)
+                {
+                    completedTasks.Add(task);
+                    int completedHistoryEventIndex = Array.IndexOf(context.History, taskCompleted);
+
+                    if (completedHistoryEventIndex < earliestCompletedHistoryEventIndex)
+                    {
+                        earliestCompletedHistoryEventIndex = completedHistoryEventIndex;
+                        earliestCompletedTaskIndex = completedTasks.LastIndexOf(task);
+                    }
+
+                    taskCompleted.IsProcessed = true;
+                }
+            }
+
+            var anyTaskCompleted = completedTasks.Count > 0;
+            if (anyTaskCompleted)
+            {
+                CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
+                output(completedTasks[earliestCompletedTaskIndex]);
             }
             else
             {
