@@ -28,7 +28,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [Theory]
         [InlineData(true, true, false)]
         [InlineData(false, false, true)]
-        public void StopAndCreateTimerOrContinue_WaitsUntilTimerFires(bool timerCreated, bool timerFired, bool expectedWaitForStop)
+        public void StopAndCreateTimerOrContinue_WaitsUntilTimerFires_IfNoWaitNotRequested(bool timerCreated, bool timerFired, bool expectedWaitForStop)
         {
             var history = DurableTestUtilities.MergeHistories(
                 CreateOrchestratorStartedHistory(date: _startTime, isProcessed: true),
@@ -42,7 +42,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 expectedWaitForStop: expectedWaitForStop,
                 () =>
                 {
-                    _durableTimer.StopAndCreateTimerOrContinue(context: context, fireAt: _fireAt, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
+                    _durableTimer.StopAndCreateTimerOrContinue(context: context, fireAt: _fireAt, noWait: false, _ => { });
                 });
         }
 
@@ -65,12 +65,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             if (!timerCreated || !timerFired)
             {
                 EmulateStop(_durableTimer);
-                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: _fireAt, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
+                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: _fireAt, noWait: false, _ => { });
                 Assert.Equal(_startTime, context.CurrentUtcDateTime);
             }
             else
             {
-                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: _fireAt, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
+                _durableTimer.StopAndCreateTimerOrContinue(context:context, fireAt: _fireAt, noWait: false, _ => { });
                 Assert.Equal(_restartTime, context.CurrentUtcDateTime);
             }
             VerifyCreateDurableTimerActionAdded(context, _fireAt);
@@ -89,11 +89,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var context = new OrchestrationContext { History = history };
 
             for (int i = 0; i < 2; i++) {
-                _durableTimer.StopAndCreateTimerOrContinue(context: context, fireAt: _fireAt, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
+                _durableTimer.StopAndCreateTimerOrContinue(context: context, fireAt: _fireAt, noWait: false, _ => { });
                 Assert.Equal(_restartTime, context.CurrentUtcDateTime);
             }
 
-            _durableTimer.StopAndCreateTimerOrContinue(context: context, fireAt: _fireAt, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
+            _durableTimer.StopAndCreateTimerOrContinue(context: context, fireAt: _fireAt, noWait: false, _ => { });
             Assert.Equal(_shouldNotHitTime, context.CurrentUtcDateTime);
         }
 
@@ -121,7 +121,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         [Fact]
-        public void StopAndCreateTimerOrContinue_OutputsDurableTimerTask_WhenNoWaitRequested()
+        public void StopAndCreateTimerOrContinue_OutputsDurableTimerTask_IfNoWaitRequested()
         {
             var history = CreateOrchestratorStartedHistory(date: _startTime, isProcessed: true);
             var context = new OrchestrationContext { History = history };
@@ -147,19 +147,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                     }
                 );
 
-                int orchestratorStartEventId = GetUniqueEventId();
-                history.Add(
-                    new HistoryEvent
-                    {
-                        EventType = HistoryEventType.OrchestratorStarted,
-                        EventId = orchestratorStartEventId,
-                        Timestamp = restartTime,
-                        IsProcessed = orchestratorStartedIsProcessed
-                    }
-                );
-
                 if (timerFired)
                 {
+                    int orchestratorStartEventId = GetUniqueEventId();
+                    history.Add(
+                        new HistoryEvent
+                        {
+                            EventType = HistoryEventType.OrchestratorStarted,
+                            EventId = orchestratorStartEventId,
+                            Timestamp = restartTime,
+                            IsProcessed = orchestratorStartedIsProcessed
+                        }
+                    );
+
                     history.Add(
                         new HistoryEvent
                         {
@@ -207,7 +207,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private void VerifyCreateDurableTimerActionAdded(OrchestrationContext context, DateTime fireAt)
         {
             var actions = DurableTestUtilities.GetCollectedActions(context);
-            var action = (CreateDurableTimerAction)actions[actions.Count - 1];
+            var action = (CreateDurableTimerAction)actions.Last();
             Assert.Equal(action.FireAt, fireAt);
         }
 
