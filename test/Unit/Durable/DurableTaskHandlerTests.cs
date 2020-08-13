@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         [Theory]
         [InlineData(true, true)]
-        public void WaitAll_OutputsActivityResults_WhenAllTasksCompleted(
+        public void WaitAll_OutputsTaskResults_WhenAllTasksCompleted(
             bool scheduled, bool completed)
         {
             var history = DurableTestUtilities.MergeHistories(
@@ -54,7 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             durableTaskHandler.WaitAll(tasksToWaitFor, orchestrationContext, output => { allOutput.Add(output); });
 
             Assert.Equal(new[] { "Result1", "Result2", "Result3" }, allOutput);
-            VerifyNoCallActivityActionAdded(orchestrationContext);
+            VerifyNoOrchestrationActionAdded(orchestrationContext);
         }
 
         [Theory]
@@ -86,7 +86,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             durableTaskHandler.WaitAll(tasksToWaitFor, orchestrationContext,
                                                            _ => { Assert.True(false, "Unexpected output"); });
 
-            VerifyNoCallActivityActionAdded(orchestrationContext);
+            VerifyNoOrchestrationActionAdded(orchestrationContext);
         }
 
         [Theory]
@@ -119,6 +119,74 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 () =>
                 {
                     durableTaskHandler.WaitAll(tasksToWaitFor, orchestrationContext, _ => { });
+                });
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void WaitAny_OutputsEarliestCompletedTask_WhenAnyTaskCompleted(bool completed)
+        {
+            var history = DurableTestUtilities.MergeHistories(
+                CreateOrchestratorStartedHistory(date: _startTime, isProcessed: true),
+                CreateActivityHistory("FunctionA", scheduled: true, restartTime:_restartTime, completed: completed, output: "\"Result1\"", orchestratorStartedIsProcessed: false),
+                CreateActivityHistory("FunctionA", scheduled: false, completed: false, output: "\"Result2\""),
+                CreateDurableTimerHistory(timerCreated: true, timerFired: true, fireAt: _fireAt, restartTime: _restartTime, orchestratorStartedIsProcessed: false)
+            );
+
+            var orchestrationContext = new OrchestrationContext { History = history };
+            var firedTimer = new DurableTimerTask(_fireAt);
+            var completedActivity = new ActivityInvocationTask("FunctionA", FunctionInput);
+            var tasksToWaitFor =
+                new ReadOnlyCollection<DurableTask>(
+                    new DurableTask[] { 
+                        completedActivity,
+                        new ActivityInvocationTask("FunctionA", FunctionInput),
+                        firedTimer });
+
+            var allOutput = new List<object>();
+
+            var durableTaskHandler = new DurableTaskHandler();
+            durableTaskHandler.WaitAny(tasksToWaitFor, orchestrationContext, output => { allOutput.Add(output); });
+
+            if (completed)
+            {
+                Assert.Equal(new[] { completedActivity }, allOutput);
+            }
+            else
+            {
+                Assert.Equal(new[] { firedTimer }, allOutput);
+            }
+            VerifyNoOrchestrationActionAdded(orchestrationContext);
+        }
+
+        [Theory]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        public void WaitAny_WaitsForStop_WhenAllTasksAreNotCompleted(bool completed, bool expectedWaitForStop)
+        {
+            var history = DurableTestUtilities.MergeHistories(
+                CreateOrchestratorStartedHistory(date: _startTime, isProcessed: true),
+                CreateActivityHistory("FunctionA", scheduled: true, completed: false, output: "\"Result1\""),
+                CreateActivityHistory("FunctionA", scheduled: true, completed: completed, output: "\"Result2\"")
+            );
+
+            var durableTaskHandler = new DurableTaskHandler();
+
+            var orchestrationContext = new OrchestrationContext { History = history };
+            var tasksToWaitFor =
+                new ReadOnlyCollection<DurableTask>(
+                    new DurableTask[] { 
+                        new ActivityInvocationTask("FunctionA", FunctionInput),
+                        new ActivityInvocationTask("FunctionA", FunctionInput) });
+
+            DurableTestUtilities.VerifyWaitForDurableTasks(
+                durableTaskHandler,
+                _delayBeforeStopping,
+                expectedWaitForStop,
+                () =>
+                {
+                    durableTaskHandler.WaitAny(tasksToWaitFor, orchestrationContext, _ => { });
                 });
         }
 
@@ -234,7 +302,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             return _nextEventId++;
         }
 
-        private static void VerifyNoCallActivityActionAdded(OrchestrationContext orchestrationContext)
+        private static void VerifyNoOrchestrationActionAdded(OrchestrationContext orchestrationContext)
         {
             var actions = DurableTestUtilities.GetCollectedActions(orchestrationContext);
             Assert.Empty(actions);

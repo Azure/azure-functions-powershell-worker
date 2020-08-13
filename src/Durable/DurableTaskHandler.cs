@@ -108,8 +108,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 var taskScheduled = task.GetTaskScheduledHistoryEvent(context);
                 var taskCompleted = task.GetTaskCompletedHistoryEvent(context, taskScheduled);
 
-                taskScheduled.IsProcessed = true;
-
+                if (taskScheduled != null)
+                {
+                    taskScheduled.IsProcessed = true;
+                }
+                
                 if (taskCompleted != null)
                 {
                     completedTasks.Add(task);
@@ -129,6 +132,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             if (anyTaskCompleted)
             {
                 CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
+                // Return a reference to the first completed task
                 output(completedTasks[earliestCompletedTaskIndex]);
             }
             else
