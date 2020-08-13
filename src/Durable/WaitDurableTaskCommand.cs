@@ -10,7 +10,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Collections;
     using System.Management.Automation;
 
-    [Cmdlet("Wait", "ActivityFunction")]
+    [Cmdlet("Wait", "DurableTask")]
     public class WaitActivityFunctionCommand : PSCmdlet
     {
         [Parameter(Mandatory = true)]

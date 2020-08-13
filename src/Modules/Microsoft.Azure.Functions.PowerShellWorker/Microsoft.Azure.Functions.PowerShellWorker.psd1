@@ -61,7 +61,7 @@ CmdletsToExport = @(
     'Set-FunctionInvocationContext',
     'Start-DurableTimer',
     'Trace-PipelineObject',
-    'Wait-ActivityFunction')
+    'Wait-DurableTask')
 
 # Variables to export from this module
 VariablesToExport = @()
