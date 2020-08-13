@@ -152,7 +152,11 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
                             if (!Directory.Exists(lastFolderName))
                             {
-                                Assert.True(false, $"The directory {lastFolderName} does not exist!");
+                                Assert.True(false, $@"The directory {lastFolderName} does not exist!
+                                    The system's value for TMP is {System.Environment.GetEnvironmentVariable("TMP", EnvironmentVariableTarget.Machine)}.
+                                    The user's value for TMP is {System.Environment.GetEnvironmentVariable("TMP")}.
+                                    The system's value for TEMP is {System.Environment.GetEnvironmentVariable("TEMP", EnvironmentVariableTarget.Machine)}.
+                                    The user's value for TEMP is {System.Environment.GetEnvironmentVariable("TEMP")}");
                             }
 
                             string[] lines = System.IO.File.ReadAllLines(path);
@@ -240,7 +244,11 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
                             if (!Directory.Exists(lastFolderName))
                             {
-                                Assert.True(false, $"The directory {lastFolderName} does not exist!");
+                                Assert.True(false, $@"The directory {lastFolderName} does not exist!
+                                    The system's value for TMP is {System.Environment.GetEnvironmentVariable("TMP", EnvironmentVariableTarget.Machine)}.
+                                    The user's value for TMP is {System.Environment.GetEnvironmentVariable("TMP")}.
+                                    The system's value for TEMP is {System.Environment.GetEnvironmentVariable("TEMP", EnvironmentVariableTarget.Machine)}.
+                                    The user's value for TEMP is {System.Environment.GetEnvironmentVariable("TEMP")}");
                             }
                             
                             string[] lines = System.IO.File.ReadAllLines(path);
