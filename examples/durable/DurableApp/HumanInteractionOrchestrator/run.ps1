@@ -11,15 +11,7 @@ $duration = $Context.Input.Duration
 Invoke-ActivityFunction -FunctionName "RequestApproval"
 
 $durableTimeoutEvent = Start-DurableTimer -Duration $duration -NoWait
-<<<<<<< HEAD
-<<<<<<< HEAD
 $approvalEvent = Start-DurableExternalEventListener -EventName "ApprovalEvent" -NoWait
-=======
-$approvalEvent = Start-EventListener -EventName "ApprovalEvent" -NoWait
->>>>>>> 3deb55c... Modified name of external event cmdlet and added NoWait flag
-=======
-$approvalEvent = Start-DurableExternalEventListener -EventName "ApprovalEvent" -NoWait
->>>>>>> 9bbe9b4... Modified new cmdlet names
 
 $firstEvent = Wait-DurableTask -Task @($approvalEvent, $durableTimeoutEvent) -Any
 
