@@ -59,6 +59,7 @@ CmdletsToExport = @(
     'Invoke-ActivityFunction',
     'Push-OutputBinding',
     'Set-FunctionInvocationContext',
+    "Start-DurableExternalEventListener",
     'Start-DurableTimer',
     'Trace-PipelineObject',
     'Wait-DurableTask')
