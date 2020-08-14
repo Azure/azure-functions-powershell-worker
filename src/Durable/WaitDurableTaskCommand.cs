@@ -11,11 +11,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Management.Automation;
 
     [Cmdlet("Wait", "DurableTask")]
-    public class WaitActivityFunctionCommand : PSCmdlet
+    public class WaitDurableTaskCommand : PSCmdlet
     {
         [Parameter(Mandatory = true)]
         [ValidateNotNull]
-        public ActivityInvocationTask[] Task { get; set; }
+        public DurableTask[] Task { get; set; }
+
+        [Parameter]
+        public SwitchParameter Any { get; set; }
 
         private readonly DurableTaskHandler _durableTaskHandler = new DurableTaskHandler();
 
@@ -23,7 +26,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
-            _durableTaskHandler.WaitAll(Task, context, WriteObject);
+            
+            if (Any.IsPresent)
+            {
+                _durableTaskHandler.WaitAny(Task, context, WriteObject);
+            }
+            else
+            {
+                _durableTaskHandler.WaitAll(Task, context, WriteObject);
+            }
         }
 
         protected override void StopProcessing()
