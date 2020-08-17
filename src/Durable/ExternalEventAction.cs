@@ -16,7 +16,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         public readonly string EventName;
 
         public ExternalEventAction(string eventName)
-            : base(ActionType.CallActivity)
+            : base(ActionType.WaitForExternalEvent)
         {
             EventName = eventName; 
         }

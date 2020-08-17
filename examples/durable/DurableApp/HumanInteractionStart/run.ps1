@@ -4,7 +4,7 @@ param($Request, $TriggerMetadata)
 
 Write-Host 'HumanInteractionStart started'
 
-$OrchestratorInputs = @{ Duration = 10 }
+$OrchestratorInputs = @{ ManagerId = 1; Duration = 120 }
 
 $InstanceId = Start-NewOrchestration -FunctionName 'HumanInteractionOrchestrator' -InputObject $OrchestratorInputs
 Write-Host "Started orchestration with ID = '$InstanceId'"

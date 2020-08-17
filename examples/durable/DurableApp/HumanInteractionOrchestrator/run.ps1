@@ -6,9 +6,10 @@ Write-Host 'HumanInteractionOrchestrator: started.'
 
 $output = @()
 
-$duration = $Context.Input.Duration
+$duration = New-TimeSpan -Seconds $Context.Input.Duration
+$managerId = $Context.Input.ManagerId
 
-Invoke-ActivityFunction -FunctionName "RequestApproval"
+Invoke-ActivityFunction -FunctionName "RequestApproval" -Input $managerId
 
 $durableTimeoutEvent = Start-DurableTimer -Duration $duration -NoWait
 $approvalEvent = Start-DurableExternalEventListener -EventName "ApprovalEvent" -NoWait

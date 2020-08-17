@@ -18,10 +18,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             EventName = eventName;
         }
 
-        // There is no corresponding history event for an expected external event; we instead return a dummy HistoryEvent
+        // There is no corresponding history event for an expected external event
         internal override HistoryEvent GetTaskScheduledHistoryEvent(OrchestrationContext context)
         {
-            return new HistoryEvent();
+            return null;
         }
 
         internal override HistoryEvent GetTaskCompletedHistoryEvent(OrchestrationContext context, HistoryEvent taskScheduled)
