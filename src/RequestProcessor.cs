@@ -357,9 +357,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             var rpcLogger = new RpcLogger(_msgStream);
             rpcLogger.SetContext(request.RequestId, null);
 
-            var setCurrentDirMessage = string.Format(PowerShellWorkerStrings.SettingCurrentDirectory, environmentReloadRequest.FunctionAppDirectory);
-            rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, setCurrentDirMessage);
-            Directory.SetCurrentDirectory(environmentReloadRequest.FunctionAppDirectory);
+            if (environmentReloadRequest.FunctionAppDirectory != null)
+            {
+                var setCurrentDirMessage = string.Format(PowerShellWorkerStrings.SettingCurrentDirectory, environmentReloadRequest.FunctionAppDirectory);
+                rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, setCurrentDirMessage);
+                Directory.SetCurrentDirectory(environmentReloadRequest.FunctionAppDirectory);
+            }
 
             rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.EnvironmentReloadCompleted, stopwatch.ElapsedMilliseconds));
 
