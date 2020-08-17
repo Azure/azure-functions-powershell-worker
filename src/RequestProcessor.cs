@@ -349,20 +349,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             stopwatch.Start();
 
             var environmentReloadRequest = request.FunctionEnvironmentReloadRequest;
-            foreach (var (name, value) in environmentReloadRequest.EnvironmentVariables)
-            {
-                Environment.SetEnvironmentVariable(name, value);
-            }
 
             var rpcLogger = new RpcLogger(_msgStream);
             rpcLogger.SetContext(request.RequestId, null);
 
-            if (environmentReloadRequest.FunctionAppDirectory != null)
-            {
-                var setCurrentDirMessage = string.Format(PowerShellWorkerStrings.SettingCurrentDirectory, environmentReloadRequest.FunctionAppDirectory);
-                rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, setCurrentDirMessage);
-                Directory.SetCurrentDirectory(environmentReloadRequest.FunctionAppDirectory);
-            }
+            var functionsEnvironmentReloader = new FunctionsEnvironmentReloader(rpcLogger);
+            functionsEnvironmentReloader.ReloadEnvironment(
+                environmentReloadRequest.EnvironmentVariables,
+                environmentReloadRequest.FunctionAppDirectory);
 
             rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.EnvironmentReloadCompleted, stopwatch.ElapsedMilliseconds));
 
