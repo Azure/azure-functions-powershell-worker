@@ -17,12 +17,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         internal string FunctionName { get; }
 
-        private object FunctionInput { get; }
+        private object Input { get; }
 
         internal ActivityInvocationTask(string functionName, object functionInput)
         {
             FunctionName = functionName;
-            FunctionInput = functionInput;
+            Input = functionInput;
         }
 
         internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context)
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         internal override OrchestrationAction CreateOrchestrationAction()
         {
-            return new CallActivityAction(FunctionName, FunctionInput);
+            return new CallActivityAction(FunctionName, Input);
         }
 
         internal static void ValidateTask(ActivityInvocationTask task, IEnumerable<AzFunctionInfo> loadedFunctions)

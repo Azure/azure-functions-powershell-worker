@@ -78,6 +78,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         OrchestratorCompleted,
 
         /// <summary>
+        /// External Event sent by orchestration event
+        /// </summary>
+        EventSent,
+
+        /// <summary>
         /// External Event raised to orchestration event
         /// </summary>
         EventRaised,
