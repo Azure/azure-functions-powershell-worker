@@ -1,3 +1,3 @@
 param($name)
 
-Write-Host "Approval requested."
+"Approval requested."
