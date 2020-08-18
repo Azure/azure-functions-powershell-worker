@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             FireAt = fireAt;
         }
 
-        internal override HistoryEvent GetTaskScheduledHistoryEvent(OrchestrationContext context)
+        internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context)
         {
             return context.History.FirstOrDefault(
                 e => e.EventType == HistoryEventType.TimerCreated &&
@@ -31,13 +31,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                      !e.IsProcessed);
         }
 
-        internal override HistoryEvent GetTaskCompletedHistoryEvent(OrchestrationContext context, HistoryEvent taskScheduled)
+        internal override HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent scheduledHistoryEvent)
         {
-            return taskScheduled == null
+            return scheduledHistoryEvent == null
                 ? null
                 : context.History.FirstOrDefault(
                     e => e.EventType == HistoryEventType.TimerFired &&
-                         e.TimerId == taskScheduled.EventId);
+                         e.TimerId == scheduledHistoryEvent.EventId);
         }
 
         internal override OrchestrationAction CreateOrchestrationAction()

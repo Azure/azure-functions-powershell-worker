@@ -118,9 +118,9 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                                         21    <Timestamp3>
         */
         [Fact]
-        public async Task DurableExecutionReplaysCurrentUtcDateTime()
+        public async Task CurrentUtcDateTimeClientReplaysCurrentUtcDateTime()
         {
-            var initialResponse = await Utilities.GetHttpTriggerResponse("CurrentUtcDateTimeStart", queryString: string.Empty);
+            var initialResponse = await Utilities.GetHttpTriggerResponse("CurrentUtcDateTimeClient", queryString: string.Empty);
 
             var location = initialResponse.Headers.Location;
 

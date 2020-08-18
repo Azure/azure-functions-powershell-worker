@@ -28,25 +28,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             else
             {
-                var taskScheduled = task.GetTaskScheduledHistoryEvent(context);
-                var taskCompleted = task.GetTaskCompletedHistoryEvent(context, taskScheduled);
+                var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context);
+                var completedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent);
 
                 // Assume that the task scheduled must have completed if NoWait is not present and the orchestrator restarted
-                if (taskScheduled == null)
+                if (scheduledHistoryEvent == null)
                 {
                     InitiateAndWaitForStop(context);
                 }
 
-                if (taskCompleted != null)
+                if (completedHistoryEvent != null)
                 {                         
                     CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
 
-                    taskScheduled.IsProcessed = true;
-                    taskCompleted.IsProcessed = true;
+                    scheduledHistoryEvent.IsProcessed = true;
+                    completedHistoryEvent.IsProcessed = true;
                     
-                    if (GetEventResult(taskCompleted) != null)
+                    if (GetEventResult(completedHistoryEvent) != null)
                     {
-                        output(GetEventResult(taskCompleted));
+                        output(GetEventResult(completedHistoryEvent));
                     }
                 }
             }
@@ -61,17 +61,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var completedEvents = new List<HistoryEvent>();
             foreach (var task in tasksToWaitFor)
             {
-                var taskScheduled = task.GetTaskScheduledHistoryEvent(context);
-                var taskCompleted = task.GetTaskCompletedHistoryEvent(context, taskScheduled);
+                var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context);
+                var completedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent);
 
-                if (taskCompleted == null)
+                if (completedHistoryEvent == null)
                 {
                     break;
                 }
 
-                taskScheduled.IsProcessed = true;
-                taskCompleted.IsProcessed = true;
-                completedEvents.Add(taskCompleted);
+                scheduledHistoryEvent.IsProcessed = true;
+                completedHistoryEvent.IsProcessed = true;
+                completedEvents.Add(completedHistoryEvent);
             }
 
             var allTasksCompleted = completedEvents.Count == tasksToWaitFor.Count;
@@ -79,11 +79,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
 
-                foreach (var completedEvent in completedEvents)
+                foreach (var completedHistoryEvent in completedEvents)
                 {
-                    if (GetEventResult(completedEvent) != null)
+                    if (GetEventResult(completedHistoryEvent) != null)
                     {
-                        output(GetEventResult(completedEvent));
+                        output(GetEventResult(completedHistoryEvent));
                     }
                 }
             }
@@ -100,31 +100,32 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             Action<object> output)
         {
             var completedTasks = new List<DurableTask>();
-            int earliestCompletedHistoryEventIndex = context.History.Length;
-            int earliestCompletedTaskIndex = -1;
+            DurableTask firstCompletedTask = null;
+            int firstCompletedHistoryEventIndex = -1;
 
             foreach (var task in tasksToWaitFor)
             {
-                var taskScheduled = task.GetTaskScheduledHistoryEvent(context);
-                var taskCompleted = task.GetTaskCompletedHistoryEvent(context, taskScheduled);
+                var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context);
+                var completedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent);
 
-                if (taskScheduled != null)
+                if (scheduledHistoryEvent != null)
                 {
-                    taskScheduled.IsProcessed = true;
+                    scheduledHistoryEvent.IsProcessed = true;
                 }
                 
-                if (taskCompleted != null)
+                if (completedHistoryEvent != null)
                 {
                     completedTasks.Add(task);
-                    int completedHistoryEventIndex = Array.IndexOf(context.History, taskCompleted);
+                    int completedHistoryEventIndex = Array.IndexOf(context.History, completedHistoryEvent);
 
-                    if (completedHistoryEventIndex < earliestCompletedHistoryEventIndex)
+                    if (firstCompletedHistoryEventIndex < 0 ||
+                        completedHistoryEventIndex < firstCompletedHistoryEventIndex)
                     {
-                        earliestCompletedHistoryEventIndex = completedHistoryEventIndex;
-                        earliestCompletedTaskIndex = completedTasks.LastIndexOf(task);
+                        firstCompletedHistoryEventIndex = completedHistoryEventIndex;
+                        firstCompletedTask = task;
                     }
 
-                    taskCompleted.IsProcessed = true;
+                    completedHistoryEvent.IsProcessed = true;
                 }
             }
 
@@ -133,7 +134,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
                 // Return a reference to the first completed task
-                output(completedTasks[earliestCompletedTaskIndex]);
+                output(firstCompletedTask);
             }
             else
             {
