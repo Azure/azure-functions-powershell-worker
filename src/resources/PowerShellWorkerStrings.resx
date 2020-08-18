@@ -316,4 +316,7 @@
   <data name="EnvironmentReloadCompleted" xml:space="preserve">
     <value>Environment reload completed in {0} ms.</value>
   </data>
+  <data name="SettingCurrentDirectory" xml:space="preserve">
+    <value>Setting current directory to '{0}'.</value>
+  </data>
 </root>
