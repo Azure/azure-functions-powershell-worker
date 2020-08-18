@@ -20,6 +20,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     using System.Diagnostics;
+    using System.IO;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
     internal class RequestProcessor
@@ -338,13 +339,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             stopwatch.Start();
 
             var environmentReloadRequest = request.FunctionEnvironmentReloadRequest;
-            foreach (var (name, value) in environmentReloadRequest.EnvironmentVariables)
-            {
-                Environment.SetEnvironmentVariable(name, value);
-            }
 
             var rpcLogger = new RpcLogger(_msgStream);
             rpcLogger.SetContext(request.RequestId, null);
+
+            var functionsEnvironmentReloader = new FunctionsEnvironmentReloader(rpcLogger);
+            functionsEnvironmentReloader.ReloadEnvironment(
+                environmentReloadRequest.EnvironmentVariables,
+                environmentReloadRequest.FunctionAppDirectory);
+
             rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.EnvironmentReloadCompleted, stopwatch.ElapsedMilliseconds));
 
             StreamingMessage response = NewStreamingMessageTemplate(
