@@ -19,7 +19,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         private object FunctionInput { get; }
 
-        public ActivityInvocationTask(string functionName, object functionInput)
+        internal ActivityInvocationTask(string functionName, object functionInput)
         {
             FunctionName = functionName;
             FunctionInput = functionInput;
