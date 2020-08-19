@@ -31,23 +31,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context);
                 var completedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent);
 
-                // Assume that the task scheduled must have completed if NoWait is not present and the orchestrator restarted
-                if (scheduledHistoryEvent == null)
-                {
-                    InitiateAndWaitForStop(context);
-                }
-
+                // We must check if the task has been completed first, otherwise external events will always wait upon replays
                 if (completedHistoryEvent != null)
                 {                         
                     CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
-
-                    scheduledHistoryEvent.IsProcessed = true;
-                    completedHistoryEvent.IsProcessed = true;
                     
                     if (GetEventResult(completedHistoryEvent) != null)
                     {
                         output(GetEventResult(completedHistoryEvent));
                     }
+
+                    if (scheduledHistoryEvent != null)
+                    {
+                        scheduledHistoryEvent.IsProcessed = true;
+                    }
+
+                    completedHistoryEvent.IsProcessed = true;
+                }
+                else if (scheduledHistoryEvent == null)
+                {
+                    InitiateAndWaitForStop(context);
                 }
             }
         }
@@ -69,7 +72,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     break;
                 }
 
-                scheduledHistoryEvent.IsProcessed = true;
+                if (scheduledHistoryEvent != null)
+                {
+                    scheduledHistoryEvent.IsProcessed = true;
+                }
+
                 completedHistoryEvent.IsProcessed = true;
                 completedEvents.Add(completedHistoryEvent);
             }
@@ -108,7 +115,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context);
                 var completedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent);
 
-                
+                // We must mark this event as processed even if it has not completed; subsequent completed history events
+                // corresponding to an awaited task will not have their IsProcessed value ever set to true.
+                if (scheduledHistoryEvent != null)
+                {
+                    scheduledHistoryEvent.IsProcessed = true;
+                }
+
                 if (completedHistoryEvent != null)
                 {
                     completedTasks.Add(task);
@@ -121,7 +134,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                         firstCompletedTask = task;
                     }
 
-                    scheduledHistoryEvent.IsProcessed = true;
                     completedHistoryEvent.IsProcessed = true;
                 }
             }

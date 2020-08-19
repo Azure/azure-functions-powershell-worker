@@ -18,11 +18,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             EventName = eventName;
         }
 
-        // There is no corresponding history event for an expected external event; we return a new HistoryEvent so this does not
-        // cause DurableTaskHandler to call InitiateAndWaitForStop()
+        // There is no corresponding history event for an expected external event
         internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context)
         {
-            return new HistoryEvent();
+            return null;
         }
 
         internal override HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent taskScheduled)

@@ -122,7 +122,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [InlineData(false, true)]
         [InlineData(true, false)]
         [InlineData(true, true)]
-        public void StopAndInitiateDurableTaskOrReplay_OutputsActivityTask_WhenNoWaitRequested(
+        public void StopAndInitiateDurableTaskOrReplay_OutputsActivityInvocationTask_WhenNoWaitRequested(
             bool scheduled, bool completed)
         {
             var history = CreateHistory(scheduled: scheduled, completed: completed, output: InvocationResultJson);
