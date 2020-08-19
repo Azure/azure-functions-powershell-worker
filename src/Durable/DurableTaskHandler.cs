@@ -108,10 +108,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context);
                 var completedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent);
 
-                if (scheduledHistoryEvent != null)
-                {
-                    scheduledHistoryEvent.IsProcessed = true;
-                }
                 
                 if (completedHistoryEvent != null)
                 {
@@ -125,6 +121,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                         firstCompletedTask = task;
                     }
 
+                    scheduledHistoryEvent.IsProcessed = true;
                     completedHistoryEvent.IsProcessed = true;
                 }
             }
@@ -149,10 +146,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         private static object GetEventResult(HistoryEvent historyEvent)
         {
-            // Output the result if and only if the history event is a completed activity function
-            return historyEvent.EventType != HistoryEventType.TaskCompleted
-                ? null
-                : TypeExtensions.ConvertFromJson(historyEvent.Result);
+            // Output the result if and only if the history event is a completed activity function or a raised external event
+            
+            if (historyEvent.EventType == HistoryEventType.TaskCompleted)
+            {
+                return TypeExtensions.ConvertFromJson(historyEvent.Result);
+            }
+            else if (historyEvent.EventType == HistoryEventType.EventRaised)
+            {
+                return TypeExtensions.ConvertFromJson(historyEvent.Input);
+            }
+            return null;
         }
 
         private void InitiateAndWaitForStop(OrchestrationContext context)
