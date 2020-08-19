@@ -3,6 +3,9 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
+# Set aliases for cmdlets to export
+Set-Alias -Name Wait-ActivityFunction -Value Wait-DurableTask
+
 function CheckIfDurableFunctionsEnabled {
     if (($null -ne $env:PSWorkerEnableExperimentalDurableFunctions) -and
             (-not [bool]::Parse($env:PSWorkerEnableExperimentalDurableFunctions))) {
