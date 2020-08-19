@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     public abstract class DurableTask
     {
+        // GetScheduledHistoryEvent should never return null unless the task has not been initiated
         internal abstract HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context);
         
         internal abstract HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent scheduledHistoryEvent);

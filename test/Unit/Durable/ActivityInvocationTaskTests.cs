@@ -95,7 +95,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                     DurableTestUtilities.CreateFakeActivityTriggerAzFunctionInfo("FunctionB")
                 };
 
-            var history = MergeHistories(
+            var history = DurableTestUtilities.MergeHistories(
                 CreateHistory("FunctionA", scheduled: true, completed: true, output: "\"Result1\""),
                 CreateHistory("FunctionB", scheduled: true, completed: true, output: "\"Result2\""),
                 CreateHistory("FunctionA", scheduled: true, completed: true, output: "\"Result3\"")
@@ -161,7 +161,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Contains(wrongFunctionName, exception.Message);
             Assert.DoesNotContain(ActivityTriggerBindingType, exception.Message);
 
-            VerifyNoCallActivityActionAdded(orchestrationContext);
+            DurableTestUtilities.VerifyNoActionAdded(orchestrationContext);
         }
 
         [Theory]
@@ -188,7 +188,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Contains(FunctionName, exception.Message);
             Assert.Contains(ActivityTriggerBindingType, exception.Message);
 
-            VerifyNoCallActivityActionAdded(orchestrationContext);
+            DurableTestUtilities.VerifyNoActionAdded(orchestrationContext);
         }
 
         private HistoryEvent[] CreateHistory(bool scheduled, bool completed, string output)
@@ -228,11 +228,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             return history.ToArray();
         }
 
-        private static HistoryEvent[] MergeHistories(params HistoryEvent[][] histories)
-        {
-            return histories.Aggregate((a, b) => a.Concat(b).ToArray());
-        }
-
         private int GetUniqueEventId()
         {
             return _nextEventId++;
@@ -244,12 +239,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var action = (CallActivityAction) actions.Single();
             Assert.Equal(FunctionName, action.FunctionName);
             Assert.Equal(FunctionInput, action.Input);
-        }
-
-        private static void VerifyNoCallActivityActionAdded(OrchestrationContext orchestrationContext)
-        {
-            var actions = DurableTestUtilities.GetCollectedActions(orchestrationContext);
-            Assert.Empty(actions);
         }
     }
 }
