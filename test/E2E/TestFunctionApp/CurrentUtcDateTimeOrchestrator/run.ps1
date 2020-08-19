@@ -44,7 +44,7 @@ Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 Write-Host "Finished the asynchronous calls."
 
 # Checks that CurrentUtcDateTime updates only after all awaited activity functions completed
-$activityResults += Wait-ActivityFunction -Task $tasks
+$activityResults += Wait-DurableTask -Task $tasks
 # <Timestamp3>
 Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 

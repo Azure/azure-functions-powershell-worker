@@ -9,7 +9,7 @@ $parallelTasks =
         Invoke-ActivityFunction -FunctionName 'SayHello' -Input $Name -NoWait
     }
 
-$output = Wait-ActivityFunction -Task $parallelTasks
+$output = Wait-DurableTask -Task $parallelTasks
 
 Write-Host 'FanOutFanInOrchestrator: finished.'
 

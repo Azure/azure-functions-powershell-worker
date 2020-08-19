@@ -27,19 +27,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         [Parameter]
         public SwitchParameter NoWait { get; set; }
 
-        private readonly DurableTimer _durableTimer = new DurableTimer();
+        private readonly DurableTaskHandler _durableTaskHandler = new DurableTaskHandler();
 
         protected override void EndProcessing()
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
+            
             DateTime fireAt = context.CurrentUtcDateTime.Add(Duration);
-            _durableTimer.StopAndCreateTimerOrContinue(context, fireAt, NoWait.IsPresent, WriteObject);
+            var task = new DurableTimerTask(fireAt);
+            
+            _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(task, context, NoWait.IsPresent, WriteObject);
         }
 
         protected override void StopProcessing()
         {
-            _durableTimer.Stop();
+            _durableTaskHandler.Stop();
         }
     }
 }

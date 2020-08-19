@@ -7,10 +7,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 {
     using System;
     using System.Collections;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Management.Automation;
-    using System.Threading;
 
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
 
@@ -33,8 +31,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [Fact]
         public void InvocationRunsToCompletionIfNotStopped()
         {
-            var invocationAsyncResult = CreateInvocationResult(completed: true);
-            ExpectBeginInvoke(invocationAsyncResult);
+            var invocationAsyncResult = DurableTestUtilities.CreateInvocationResult(completed: true);
+            DurableTestUtilities.ExpectBeginInvoke(_mockPowerShellServices, invocationAsyncResult);
 
             _orchestrationInvoker.Invoke(_orchestrationBindingInfo, _mockPowerShellServices.Object);
 
@@ -126,47 +124,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         private Hashtable InvokeOrchestration(bool completed, PSDataCollection<object> output = null)
         {
-            var invocationAsyncResult = CreateInvocationResult(completed);
-            ExpectBeginInvoke(invocationAsyncResult, output);
-            if (!completed)
-            {
-                SignalToStopInvocation();
-            }
-
-            var result = _orchestrationInvoker.Invoke(_orchestrationBindingInfo, _mockPowerShellServices.Object);
-            return result;
-        }
-
-        private static IAsyncResult CreateInvocationResult(bool completed)
-        {
-            var completionEvent = new AutoResetEvent(initialState: completed);
-            var result = new Mock<IAsyncResult>();
-            result.Setup(_ => _.AsyncWaitHandle).Returns(completionEvent);
-            return result.Object;
-        }
-
-        private void ExpectBeginInvoke(IAsyncResult invocationAsyncResult, PSDataCollection<object> output = null)
-        {
-            _mockPowerShellServices
-                .Setup(_ => _.BeginInvoke(It.IsAny<PSDataCollection<object>>()))
-                .Returns(
-                    (PSDataCollection<object> outputBuffer) =>
-                    {
-                        if (output != null)
-                        {
-                            foreach (var item in output)
-                            {
-                                outputBuffer.Add(item);
-                            }
-                        }
-
-                        return invocationAsyncResult;
-                    });
-        }
-
-        private void SignalToStopInvocation()
-        {
-            _orchestrationBindingInfo.Context.OrchestrationActionCollector.Stop();
+            return DurableTestUtilities.InvokeOrchestration(_orchestrationInvoker, _orchestrationBindingInfo, _mockPowerShellServices, completed, output);
         }
     }
 }
