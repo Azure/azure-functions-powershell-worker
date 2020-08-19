@@ -14,7 +14,7 @@ $output += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "Tokyo
 $tasks = @()
 $tasks += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "Seattle" -NoWait
 $tasks += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "London" -NoWait
-$output += Wait-ActivityFunction -Task $tasks
+$output += Wait-DurableTask -Task $tasks
 
 Write-Host "DurableOrchestrator: finished."
 
