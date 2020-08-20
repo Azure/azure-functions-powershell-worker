@@ -162,7 +162,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         // If any activity is not complete, CurrentUtcDateTime does not update
         // This test assumes that when all activities are completed, TaskScheduled events -> OrchestratorStarted event -> TaskCompleted events are added to history in that order
         // Otherwise, only TaskScheduled events are added to the history 
-        public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfAllActivitiesCompleted(bool allCompleted)
+        public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfAllActivitiesCompleted_WhenWaitAllIsCalled(bool allCompleted)
         {
             var activityFunctions = new Dictionary<string, bool>();
             activityFunctions.Add("FunctionA", true);
@@ -187,6 +187,43 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             durableTaskHandler.WaitAll(tasksToWaitFor, context, output => allOutput.Add(output));
             
             if (allCompleted)
+            {
+                Assert.Equal(_restartTime, context.CurrentUtcDateTime);
+            }
+            else
+            {
+                Assert.Equal(_startTime, context.CurrentUtcDateTime);
+            }
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void CurrentUtcDateTime_UpdatesToNextOrchestratorStartedTimestamp_IfAnyActivitiesCompleted_WhenWaitAnyIsCalled(bool anyCompleted)
+        {
+            var activityFunctions = new Dictionary<string, bool>();
+            activityFunctions.Add("FunctionA", false);
+            activityFunctions.Add("FunctionB", anyCompleted);
+            activityFunctions.Add("FunctionC", false);
+            var history = DurableTestUtilities.MergeHistories(
+                CreateOrchestratorStartedHistory(startTime: _startTime, isProcessed: true),
+                CreateNoWaitActivityHistory(scheduled: activityFunctions, restartTime: _restartTime, orchestratorStartedIsProcessed: false),
+                CreateOrchestratorStartedHistory(startTime: _shouldNotHitTime, isProcessed: false)
+            );
+            OrchestrationContext context = new OrchestrationContext { History = history, CurrentUtcDateTime = _startTime };
+            var tasksToWaitFor = new ReadOnlyCollection<ActivityInvocationTask>(
+                new[] { "FunctionA", "FunctionB", "FunctionC" }.Select(name => new ActivityInvocationTask(name, FunctionInput)).ToArray());
+            var durableTaskHandler = new DurableTaskHandler();
+            var allOutput = new List<object>();
+
+            if (!anyCompleted)
+            {
+                DurableTestUtilities.EmulateStop(durableTaskHandler);
+            }
+
+            durableTaskHandler.WaitAny(tasksToWaitFor, context, output => allOutput.Add(output));
+            
+            if (anyCompleted)
             {
                 Assert.Equal(_restartTime, context.CurrentUtcDateTime);
             }
@@ -301,20 +338,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                     IsProcessed = orchestratorStartedIsProcessed
                 });
 
-            // Add completed tasks to the history if all completed
-            if (completedEvents.Keys.Count == scheduled.Keys.Count)
+            // Add completed tasks to the history
+            foreach (string name in completedEvents.Keys)
             {
-                foreach (string name in completedEvents.Keys)
-                {
-                    history.Add(
-                        new HistoryEvent
-                        {
-                            EventType = HistoryEventType.TaskCompleted,
-                            EventId = GetUniqueEventId(),
-                            TaskScheduledId = completedEvents[name],
-                            Result = InvocationResultJson                        
-                        });
-                }
+                history.Add(
+                    new HistoryEvent
+                    {
+                        EventType = HistoryEventType.TaskCompleted,
+                        EventId = GetUniqueEventId(),
+                        TaskScheduledId = completedEvents[name],
+                        Result = InvocationResultJson                        
+                    });
             }
 
             return history.ToArray();

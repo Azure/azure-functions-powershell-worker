@@ -28,29 +28,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             else
             {
-                var taskScheduled = task.GetTaskScheduledHistoryEvent(context);
-                var taskCompleted = task.GetTaskCompletedHistoryEvent(context, taskScheduled);
+                var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context);
+                var completedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent);
 
-                if (taskCompleted != null)
+                // Assume that the task scheduled must have completed if NoWait is not present and the orchestrator restarted
+                if (scheduledHistoryEvent == null)
+                {
+                    InitiateAndWaitForStop(context);
+                }
+
+                if (completedHistoryEvent != null)
                 {                         
                     CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
 
-                    taskScheduled.IsProcessed = true;
-                    taskCompleted.IsProcessed = true;
+                    scheduledHistoryEvent.IsProcessed = true;
+                    completedHistoryEvent.IsProcessed = true;
                     
-                    if (GetEventResult(taskCompleted) != null)
+                    if (GetEventResult(completedHistoryEvent) != null)
                     {
-                        output(GetEventResult(taskCompleted));
+                        output(GetEventResult(completedHistoryEvent));
                     }
-                }
-                else
-                {
-                    InitiateAndWaitForStop(context);
                 }
             }
         }
 
-        // Waits for all of tasks to complete
+        // Waits for all of the given DurableTasks to complete
         public void WaitAll(
             IReadOnlyCollection<DurableTask> tasksToWaitFor,
             OrchestrationContext context,
@@ -59,17 +61,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var completedEvents = new List<HistoryEvent>();
             foreach (var task in tasksToWaitFor)
             {
-                var taskScheduled = task.GetTaskScheduledHistoryEvent(context);
-                var taskCompleted = task.GetTaskCompletedHistoryEvent(context, taskScheduled);
+                var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context);
+                var completedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent);
 
-                if (taskCompleted == null)
+                if (completedHistoryEvent == null)
                 {
                     break;
                 }
 
-                taskScheduled.IsProcessed = true;
-                taskCompleted.IsProcessed = true;
-                completedEvents.Add(taskCompleted);
+                scheduledHistoryEvent.IsProcessed = true;
+                completedHistoryEvent.IsProcessed = true;
+                completedEvents.Add(completedHistoryEvent);
             }
 
             var allTasksCompleted = completedEvents.Count == tasksToWaitFor.Count;
@@ -77,13 +79,62 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
 
-                foreach (var completedEvent in completedEvents)
+                foreach (var completedHistoryEvent in completedEvents)
                 {
-                    if (GetEventResult(completedEvent) != null)
+                    if (GetEventResult(completedHistoryEvent) != null)
                     {
-                        output(GetEventResult(completedEvent));
+                        output(GetEventResult(completedHistoryEvent));
                     }
                 }
+            }
+            else
+            {
+                InitiateAndWaitForStop(context);
+            }
+        }
+
+        // Waits for any one of the given DurableTasks to complete and outputs the first DurableTask that does so
+        public void WaitAny(
+            IReadOnlyCollection<DurableTask> tasksToWaitFor,
+            OrchestrationContext context,
+            Action<object> output)
+        {
+            var completedTasks = new List<DurableTask>();
+            DurableTask firstCompletedTask = null;
+            int firstCompletedHistoryEventIndex = -1;
+
+            foreach (var task in tasksToWaitFor)
+            {
+                var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context);
+                var completedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent);
+
+                if (scheduledHistoryEvent != null)
+                {
+                    scheduledHistoryEvent.IsProcessed = true;
+                }
+                
+                if (completedHistoryEvent != null)
+                {
+                    completedTasks.Add(task);
+                    int completedHistoryEventIndex = Array.IndexOf(context.History, completedHistoryEvent);
+
+                    if (firstCompletedHistoryEventIndex < 0 ||
+                        completedHistoryEventIndex < firstCompletedHistoryEventIndex)
+                    {
+                        firstCompletedHistoryEventIndex = completedHistoryEventIndex;
+                        firstCompletedTask = task;
+                    }
+
+                    completedHistoryEvent.IsProcessed = true;
+                }
+            }
+
+            var anyTaskCompleted = completedTasks.Count > 0;
+            if (anyTaskCompleted)
+            {
+                CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
+                // Return a reference to the first completed task
+                output(firstCompletedTask);
             }
             else
             {
