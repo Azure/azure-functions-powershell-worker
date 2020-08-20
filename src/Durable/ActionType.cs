@@ -44,5 +44,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         /// Wait for an external event.
         /// </summary>
         WaitForExternalEvent = 6,
+
+        /// <summary>
+        /// Call an entity function.
+        /// </summary>
+        CallEntity = 7,
+
+        /// <summary>
+        /// Make an Http call.
+        /// </summary>
+        CallHttp = 8,
     }
 }

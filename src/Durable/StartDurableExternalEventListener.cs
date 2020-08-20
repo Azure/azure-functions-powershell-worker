@@ -11,13 +11,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Management.Automation;
 
     /// <summary>
-    /// Start the Durable Functions timer
+    /// Start the Durable External Event Listener
     /// </summary>
     [Cmdlet("Start", "DurableExternalEventListener")]
     public class StartDurableExternalEventListenerCommand : PSCmdlet
     {
         /// <summary>
-        /// Gets and sets the duration of the Durable Timer.
+        /// Gets and sets the EventName of the external event to listen for
         /// </summary>
         [Parameter(Mandatory = true)]
         [ValidateNotNullOrEmpty]

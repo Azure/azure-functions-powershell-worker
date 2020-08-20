@@ -6,7 +6,7 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     /// <summary>
-    /// An orchestration action that represents calling an activity function.
+    /// An orchestration action that represents listening for an external event
     /// </summary>
     internal class ExternalEventAction : OrchestrationAction
     {
