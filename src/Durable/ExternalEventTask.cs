@@ -11,11 +11,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     public class ExternalEventTask : DurableTask
     {
-        internal string EventName { get; }
+        internal string ExternalEventName { get; }
 
-        public ExternalEventTask(string eventName)
+        public ExternalEventTask(string externalEventName)
         {
-            EventName = eventName;
+            ExternalEventName = externalEventName;
         }
 
         // There is no corresponding history event for an expected external event
@@ -28,13 +28,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             return context.History.FirstOrDefault(
                     e => e.EventType == HistoryEventType.EventRaised &&
-                         e.Name == EventName &&
+                         e.Name == ExternalEventName &&
                          !e.IsProcessed);
         }
 
         internal override OrchestrationAction CreateOrchestrationAction()
         {
-            return new ExternalEventAction(EventName);
+            return new ExternalEventAction(ExternalEventName);
         }
     }
 }

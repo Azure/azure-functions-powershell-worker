@@ -18,6 +18,7 @@ $approvalEvent = Start-DurableExternalEventListener -EventName "ApprovalEvent" -
 $firstEvent = Wait-DurableTask -Task @($approvalEvent, $durableTimeoutEvent) -Any
 
 if ($approvalEvent -eq $firstEvent) {
+    Stop-DurableTimerTask -Task $durableTimeoutEvent
     $output += Invoke-ActivityFunction -FunctionName "ProcessApproval" -Input $approvalEvent
 }
 else {

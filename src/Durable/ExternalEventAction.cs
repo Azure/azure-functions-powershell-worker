@@ -13,17 +13,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         /// <summary>
         /// The external event name.
         /// </summary>
-        public readonly string EventName;
+        public readonly string ExternalEventName;
 
         /// <summary>
         /// Reason for the action. This field is necessary for the Durable extension to recognize the ExternalEventAction.
         /// </summary>
         public readonly string Reason = "ExternalEvent";
 
-        public ExternalEventAction(string eventName)
+        public ExternalEventAction(string externalEventName)
             : base(ActionType.WaitForExternalEvent)
         {
-            EventName = eventName; 
+            ExternalEventName = externalEventName; 
         }
     }
 }
