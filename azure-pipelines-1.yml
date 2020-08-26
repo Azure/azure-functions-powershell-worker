@@ -12,7 +12,7 @@ pool:
 
 variables:
   Configuration: Release
-  NightlyBuild: ${nightlyBuild}
+  NightlyBuild: $(nightlyBuild)
 
 steps:
 - pwsh: ./build.ps1 -NoBuild -Bootstrap
