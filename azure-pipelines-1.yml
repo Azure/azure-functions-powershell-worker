@@ -12,6 +12,7 @@ pool:
 
 variables:
   Configuration: Release
+  NightlyBuild: ${nightlyBuild}
 
 steps:
 - pwsh: ./build.ps1 -NoBuild -Bootstrap
@@ -38,8 +39,9 @@ steps:
         throw 'Unable to find Microsoft.Azure.Functions.PowerShellWorker*.nupkg at ./package'
       }
       Copy-Item -Path $sourcePath -Destination $(Build.ArtifactStagingDirectory) -ErrorAction Stop -Verbose -Force
-  displayName: 'Copy package to ArtifactStagingDirectory' 
+  displayName: 'Copy package to ArtifactStagingDirectory'
 - task: NuGetCommand@2
+  condition: and(variables.NightlyBuild, true)
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
