@@ -69,7 +69,7 @@ steps:
   displayName: 'Set UploadPackage variable'
 
 - task: NuGetCommand@2
-  condition: and(ne(variables['Build.Reason'], 'PullRequest'), in(variables['Build.SourceBranch'], 'refs/heads/v3.x/ps7', 'refs/heads/v3.x/ps6', 'refs/heads/v2.x'))
+  condition: and(ne(variables['Build.Reason'], 'PullRequest'), in(variables['Build.SourceBranch'], 'refs/heads/v3.x/ps7', 'refs/heads/v3.x/ps6', 'refs/heads/v2.x'), eq(variables.UploadPackage, false))
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
@@ -77,3 +77,12 @@ steps:
     publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/c0493cce-bc63-4e11-9fc9-e7c45291f151'
     allowPackageConflicts: true
   displayName: 'Push NuGet package'
+
+- task: NuGetCommand@2
+  condition: eq(variables.UploadPackage, true)
+  inputs:
+    command: 'push'
+    packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
+    nuGetFeedType: 'internal'
+    publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df'
+    allowPackageConflicts: true
