@@ -147,19 +147,8 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                         {
                             var statusResponseBody = await GetResponseBodyAsync(statusResponse);
                             Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
-                            string path = statusResponseBody.output.ToString();
-                            string lastFolderName = Path.GetDirectoryName(path);
-
-                            if (!Directory.Exists(lastFolderName))
-                            {
-                                Assert.True(false, $@"The directory {lastFolderName} does not exist!
-                                    The system's value for TMP is {System.Environment.GetEnvironmentVariable("TMP", EnvironmentVariableTarget.Machine)}.
-                                    The user's value for TMP is {System.Environment.GetEnvironmentVariable("TMP")}.
-                                    The system's value for TEMP is {System.Environment.GetEnvironmentVariable("TEMP", EnvironmentVariableTarget.Machine)}.
-                                    The user's value for TEMP is {System.Environment.GetEnvironmentVariable("TEMP")}");
-                            }
-
-                            string[] lines = System.IO.File.ReadAllLines(path);
+                            string log = statusResponseBody.output.ToString();
+                            string[] lines = log.Split('\n');
 
                             // Expect the format to be as in Case 1
                             var delineatorLines = new int[] { 0, 3, 9 };
