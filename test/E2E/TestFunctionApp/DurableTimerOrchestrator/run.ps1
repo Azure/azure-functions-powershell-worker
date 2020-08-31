@@ -24,7 +24,7 @@ Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 
 Write-Host "DurableTimerOrchestrator: finished."
 
-return $path
+return (Get-Content $path) -join "`n"
 
 <#
 Contents of the file should resemble the following:
