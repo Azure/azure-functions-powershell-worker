@@ -6,13 +6,6 @@
 # Set aliases for cmdlets to export
 Set-Alias -Name Wait-ActivityFunction -Value Wait-DurableTask
 
-function CheckIfDurableFunctionsEnabled {
-    if (($null -ne $env:PSWorkerEnableExperimentalDurableFunctions) -and
-            (-not [bool]::Parse($env:PSWorkerEnableExperimentalDurableFunctions))) {
-		throw 'PowerShell Durable Functions are disabled (check the PSWorkerEnableExperimentalDurableFunctions environment variable).'
-	}
-}
-
 function GetDurableClientFromModulePrivateData {
     $PrivateData = $PSCmdlet.MyInvocation.MyCommand.Module.PrivateData
     if ($PrivateData) {
@@ -55,8 +48,6 @@ function Start-NewOrchestration {
         [object] $DurableClient
     )
 
-    CheckIfDurableFunctionsEnabled
-    
     if ($null -eq $DurableClient) {
         $DurableClient = GetDurableClientFromModulePrivateData
         if ($null -eq $DurableClient) {
@@ -105,8 +96,6 @@ function New-OrchestrationCheckStatusResponse {
         [object] $DurableClient
     )
     
-	CheckIfDurableFunctionsEnabled
-
     if ($null -eq $DurableClient) {
         $DurableClient = GetDurableClientFromModulePrivateData
         if ($null -eq $DurableClient) {

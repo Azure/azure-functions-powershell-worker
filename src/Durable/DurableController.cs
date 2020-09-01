@@ -22,7 +22,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     /// </summary>
     internal class DurableController
     {
-        private readonly bool _durableEnabled;
         private readonly DurableFunctionInfo _durableFunctionInfo;
         private readonly IPowerShellServices _powerShellServices;
         private readonly IOrchestrationInvoker _orchestrationInvoker;
@@ -32,7 +31,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             DurableFunctionInfo durableDurableFunctionInfo,
             PowerShell pwsh)
             : this(
-                Utils.AreDurableFunctionsEnabled(),
                 durableDurableFunctionInfo,
                 new PowerShellServices(pwsh),
                 new OrchestrationInvoker())
@@ -40,12 +38,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         }
 
         internal DurableController(
-            bool durableEnabled,
             DurableFunctionInfo durableDurableFunctionInfo,
             IPowerShellServices powerShellServices,
             IOrchestrationInvoker orchestrationInvoker)
         {
-            _durableEnabled = durableEnabled;
             _durableFunctionInfo = durableDurableFunctionInfo;
             _powerShellServices = powerShellServices;
             _orchestrationInvoker = orchestrationInvoker;
@@ -57,8 +53,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             // in the module context for the 'Start-NewOrchestration' function to use.
             if (_durableFunctionInfo.IsDurableClient)
             {
-                ThrowIfDurableNotEnabled();
-
                 var durableClient =
                     inputData.First(item => item.Name == _durableFunctionInfo.DurableClientBindingName)
                         .Data.ToObject();
@@ -67,8 +61,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             else if (_durableFunctionInfo.IsOrchestrationFunction)
             {
-                ThrowIfDurableNotEnabled();
-
                 _orchestrationBindingInfo = CreateOrchestrationBindingInfo(inputData);
                 _powerShellServices.SetOrchestrationContext(_orchestrationBindingInfo.Context);
             }
@@ -96,7 +88,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         public void AddPipelineOutputIfNecessary(Collection<object> pipelineItems, Hashtable result)
         {
             var shouldAddPipelineOutput =
-                _durableEnabled && _durableFunctionInfo.Type == DurableFunctionType.ActivityFunction;
+                _durableFunctionInfo.Type == DurableFunctionType.ActivityFunction;
 
             if (shouldAddPipelineOutput)
             {
@@ -130,14 +122,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             return new OrchestrationBindingInfo(
                 context.Name,
                 JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String));
-        }
-
-        private void ThrowIfDurableNotEnabled()
-        {
-            if (!_durableEnabled)
-            {
-                throw new NotImplementedException(PowerShellWorkerStrings.DurableFunctionsDisabled);
-            }
         }
     }
 }
