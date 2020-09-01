@@ -6,6 +6,8 @@
 using System;
 using System.Threading.Tasks;
 
+using System.Management.Automation.Runspaces;
+
 using CommandLine;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
@@ -36,6 +38,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .WithNotParsed(err => Environment.Exit(1));
 
             InitialSessionStateProvider.Initialize();
+
+            // Create and discard a PowerShell object, just to warm up PowerShell for the first function invocation
+            using (var powerShell = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault()))
+            {
+            }
 
             var msgStream = new MessagingStream(arguments.Host, arguments.Port);
             var requestProcessor = new RequestProcessor(msgStream);
