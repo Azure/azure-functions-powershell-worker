@@ -37,15 +37,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .WithParsed(ops => arguments = ops)
                 .WithNotParsed(err => Environment.Exit(1));
 
-            InitialSessionStateProvider.Initialize();
-
             // Create and discard a PowerShell object, just to warm up PowerShell for the first function invocation
-            using (var powerShell = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault()))
-            {
-            }
+            using (var powerShell = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault())) { }
+
+            var initialSessionStateProvider = new InitialSessionStateProvider();
 
             var msgStream = new MessagingStream(arguments.Host, arguments.Port);
-            var requestProcessor = new RequestProcessor(msgStream);
+            var requestProcessor = new RequestProcessor(msgStream, () => Utils.NewPwshInstance(initialSessionStateProvider.GetInstance));
 
             // Send StartStream message
             var startedMessage = new StreamingMessage() {

@@ -11,45 +11,40 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
     internal class InitialSessionStateProvider
     {
-        private static InitialSessionState s_iss;
+        private readonly InitialSessionState _initialSessionState = InitialSessionState.CreateDefault();
 
-        private static bool s_isPsModulePathAdded = false;
+        private bool _isPsModulePathAdded = false;
 
-        /// <summary>
-        /// Must be invoked exactly once before any GetInstance invocation
-        /// </summary>
-        public static void Initialize()
+        public InitialSessionStateProvider()
         {
-            s_iss = InitialSessionState.CreateDefault();
-
             // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
             if (Platform.IsWindows)
             {
                 // This sets the execution policy on Windows to Unrestricted which is required to run the user's function scripts on
                 // Windows client versions. This is needed if a user is testing their function locally with the func CLI.
-                s_iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
+                _initialSessionState.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
             }
         }
 
-        public static InitialSessionState GetInstance()
+        public InitialSessionState GetInstance()
         {
-            if (!s_isPsModulePathAdded)
+            if (!_isPsModulePathAdded)
             {
                 if (FunctionLoader.FunctionAppRootPath == null)
                 {
                     throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
                 }
 
-                s_iss.EnvironmentVariables.Add(
+                _initialSessionState.EnvironmentVariables.Add(
                     new SessionStateVariableEntry(
                         "PSModulePath",
                         FunctionLoader.FunctionModulePath,
                         description: null));
 
-                s_isPsModulePathAdded = true;
+                _isPsModulePathAdded = true;
             }
 
-            return s_iss;
+            return _initialSessionState;
         }
     }
 }

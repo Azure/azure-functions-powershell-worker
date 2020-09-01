@@ -13,7 +13,7 @@ using Microsoft.PowerShell.Commands;
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     using System.Management.Automation;
-    using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
+    using System.Management.Automation.Runspaces;
 
     internal class Utils
     {
@@ -32,9 +32,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         /// <summary>
         /// Create a new PowerShell instance using our singleton InitialSessionState instance.
         /// </summary>
-        internal static PowerShell NewPwshInstance()
+        internal static PowerShell NewPwshInstance(Func<InitialSessionState> getInitialSessionState)
         {
-            var pwsh = PowerShell.Create(InitialSessionStateProvider.GetInstance());
+            var pwsh = PowerShell.Create(getInitialSessionState());
+            
             if (s_globalVariables == null)
             {
                 // Get the names of the built-in global variables

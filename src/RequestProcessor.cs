@@ -19,12 +19,12 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     using System.Diagnostics;
-    using System.IO;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
     internal class RequestProcessor
     {
         private readonly MessagingStream _msgStream;
+        private readonly Func<System.Management.Automation.PowerShell> _newPwshInstance;
         private readonly PowerShellManagerPool _powershellPool;
         private DependencyManager _dependencyManager;
 
@@ -37,10 +37,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
             new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
 
-        internal RequestProcessor(MessagingStream msgStream)
+        internal RequestProcessor(MessagingStream msgStream, Func<System.Management.Automation.PowerShell> newPwshInstance)
         {
             _msgStream = msgStream;
-            _powershellPool = new PowerShellManagerPool(() => new RpcLogger(msgStream));
+            _newPwshInstance = newPwshInstance;
+
+            _powershellPool = new PowerShellManagerPool(() => new RpcLogger(msgStream), newPwshInstance);
 
             // Host sends capabilities/init data to worker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.WorkerInitRequest, ProcessWorkerInitRequest);
@@ -200,12 +202,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     // Create the very first Runspace so the debugger has the target to attach to.
                     // This PowerShell instance is shared by the first PowerShellManager instance created in the pool,
                     // and the dependency manager (used to download dependent modules if needed).
-                    var pwsh = Utils.NewPwshInstance();
+                    var pwsh = _newPwshInstance();
                     LogPowerShellVersion(rpcLogger, pwsh);
                     _powershellPool.Initialize(pwsh);
 
                     // Start the download asynchronously if needed.
-                    _dependencyManager.StartDependencyInstallationIfNeeded(request, pwsh, rpcLogger);
+                    _dependencyManager.StartDependencyInstallationIfNeeded(request, pwsh, _newPwshInstance, rpcLogger);
 
                     rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.FirstFunctionLoadCompleted, stopwatch.ElapsedMilliseconds));
                 }

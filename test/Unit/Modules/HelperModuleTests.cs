@@ -30,8 +30,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         static HelperModuleTests()
         {
-            InitialSessionStateProvider.Initialize();
-
             var funcDirectory = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "TestScripts", "PowerShell");
             var rpcFuncMetadata = new RpcFunctionMetadata()
             {
@@ -52,7 +50,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             var funcLoadReq = new FunctionLoadRequest { FunctionId = "FunctionId", Metadata = rpcFuncMetadata };
             FunctionLoader.SetupWellKnownPaths(funcLoadReq, managedDependenciesPath: null);
-            s_pwsh = Utils.NewPwshInstance();
+            var initialSessionStateProvider = new InitialSessionStateProvider();
+            s_pwsh = Utils.NewPwshInstance(initialSessionStateProvider.GetInstance);
             s_funcInfo = new AzFunctionInfo(rpcFuncMetadata);
         }
 

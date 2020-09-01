@@ -84,8 +84,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Create a PowerShellManager instance and initialize it.
         /// </summary>
-        internal PowerShellManager(ILogger logger, int id)
-            : this(logger, Utils.NewPwshInstance(), id)
+        internal PowerShellManager(ILogger logger, Func<PowerShell> newPwshInstance, int id)
+            : this(logger, newPwshInstance(), id)
         {
             // Initialize the Runspace
             Initialize();

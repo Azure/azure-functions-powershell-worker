@@ -20,6 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     internal class PowerShellManagerPool
     {
         private readonly Func<ILogger> _createLogger;
+        private readonly Func<PowerShell> _newPwshInstance;
         private readonly BlockingCollection<PowerShellManager> _pool;
         private int _poolSize;
 
@@ -31,9 +32,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Constructor of the pool.
         /// </summary>
-        internal PowerShellManagerPool(Func<ILogger> createLogger)
+        internal PowerShellManagerPool(Func<ILogger> createLogger, Func<PowerShell> newPwshInstance)
         {
             _createLogger = createLogger;
+            _newPwshInstance = newPwshInstance;
             _pool = new BlockingCollection<PowerShellManager>(UpperBound);
             RpcLogger.WriteSystemLog(LogLevel.Information, string.Format(PowerShellWorkerStrings.LogConcurrencyUpperBound, UpperBound.ToString()));
         }
@@ -73,7 +75,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                         // If the pool hasn't reached its bounded capacity yet, then
                         // we create a new item and return it.
                         var logger = CreateLoggerWithContext(requestId, invocationId);
-                        psManager = new PowerShellManager(logger, id);
+                        psManager = new PowerShellManager(logger, _newPwshInstance, id);
 
                         RpcLogger.WriteSystemLog(LogLevel.Trace, string.Format(PowerShellWorkerStrings.LogNewPowerShellManagerCreated, id.ToString()));
                     }

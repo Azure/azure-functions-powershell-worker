@@ -45,8 +45,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         static PowerShellManagerTests()
         {
-            InitialSessionStateProvider.Initialize();
-
             s_funcDirectory = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "TestScripts", "PowerShell");
             s_testLogger = new ConsoleLogger();
             s_testInputData = new List<ParameterBinding>
@@ -75,9 +73,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         // Have a single place to get a PowerShellManager for testing.
         // This is to guarantee that the well known paths are setup before calling the constructor of PowerShellManager.
-        internal static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger, PowerShell pwsh = null)
+        private static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger, PowerShell pwsh)
         {
-            return pwsh != null ? new PowerShellManager(logger, pwsh) : new PowerShellManager(logger, id: 2);
+            return new PowerShellManager(logger, pwsh);
+        }
+
+        private static PowerShellManager NewTestPowerShellManager(ConsoleLogger logger)
+        {
+            var initialSessionStateProvider = new InitialSessionStateProvider();
+            return new PowerShellManager(logger, () => Utils.NewPwshInstance(initialSessionStateProvider.GetInstance), id: 2);
         }
 
         private static (AzFunctionInfo, PowerShellManager) PrepareFunction(string scriptFile, string entryPoint)
@@ -368,7 +372,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             // Clear log stream
             s_testLogger.FullLog.Clear();
-            NewTestPowerShellManager(s_testLogger, Utils.NewPwshInstance());
+            NewTestPowerShellManager(s_testLogger, PowerShell.Create());
 
             Assert.Empty(s_testLogger.FullLog);
         }
@@ -379,8 +383,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var dummyBindingInfo = new Dictionary<string, ReadOnlyBindingInfo>();
             var outputBindings = new ReadOnlyDictionary<string, ReadOnlyBindingInfo>(dummyBindingInfo);
 
-            var powerShellManagerPool = new PowerShellManagerPool(() => new ContextValidatingLogger());
-            var pwsh = Utils.NewPwshInstance();
+            var powerShellManagerPool = new PowerShellManagerPool(() => new ContextValidatingLogger(), PowerShell.Create);
+            var pwsh = PowerShell.Create();
             powerShellManagerPool.Initialize(pwsh);
 
             var worker = powerShellManagerPool.CheckoutIdleWorker("requestId", "invocationId", "FuncName", outputBindings);
