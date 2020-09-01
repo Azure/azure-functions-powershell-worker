@@ -50,7 +50,7 @@ Add-Content -Value $Context.CurrentUtcDateTime -Path $path
 
 Write-Host "CurrentUtcDateTimeOrchestrator: finished."
 
-return $path
+return (Get-Content $path) -join "`n"
 
 <#
 Contents of the file should resemble one of the following two cases:
