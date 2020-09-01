@@ -30,6 +30,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         static HelperModuleTests()
         {
+            InitialSessionStateProvider.Initialize();
+
             var funcDirectory = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "TestScripts", "PowerShell");
             var rpcFuncMetadata = new RpcFunctionMetadata()
             {

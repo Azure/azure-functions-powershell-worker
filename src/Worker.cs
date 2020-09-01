@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using CommandLine;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
+using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
@@ -33,6 +34,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             Parser.Default.ParseArguments<WorkerArguments>(args)
                 .WithParsed(ops => arguments = ops)
                 .WithNotParsed(err => Environment.Exit(1));
+
+            InitialSessionStateProvider.Initialize();
 
             var msgStream = new MessagingStream(arguments.Host, arguments.Port);
             var requestProcessor = new RequestProcessor(msgStream);

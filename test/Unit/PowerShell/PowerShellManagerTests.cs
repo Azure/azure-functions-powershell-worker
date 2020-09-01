@@ -45,6 +45,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         static PowerShellManagerTests()
         {
+            InitialSessionStateProvider.Initialize();
+
             s_funcDirectory = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "TestScripts", "PowerShell");
             s_testLogger = new ConsoleLogger();
             s_testInputData = new List<ParameterBinding>
@@ -254,10 +256,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void ModulePathShouldBeSetCorrectly()
         {
-            string workerModulePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
-            string funcAppModulePath = Path.Join(FunctionLoader.FunctionAppRootPath, "Modules");
-            string expectedPath = $"{funcAppModulePath}{Path.PathSeparator}{workerModulePath}";
-            Assert.Equal(expectedPath, Environment.GetEnvironmentVariable("PSModulePath"));
+            string path = Path.Join(s_funcDirectory, "testBasicFunction.ps1");
+            var (functionInfo, testManager) = PrepareFunction(path, string.Empty);
+
+            try
+            {
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
+                InvokeFunction(testManager, functionInfo);
+
+                string workerModulePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
+                string funcAppModulePath = Path.Join(FunctionLoader.FunctionAppRootPath, "Modules");
+                string expectedPath = $"{funcAppModulePath}{Path.PathSeparator}{workerModulePath}";
+                Assert.Equal(expectedPath, Environment.GetEnvironmentVariable("PSModulePath"));
+            }
+            finally
+            {
+                FunctionMetadata.UnregisterFunctionMetadata(testManager.InstanceId);
+            }
         }
 
         [Fact]
