@@ -13,7 +13,7 @@ using Microsoft.PowerShell.Commands;
 namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     using System.Management.Automation;
-    using System.Management.Automation.Runspaces;
+    using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 
     internal class Utils
     {
@@ -27,7 +27,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         internal readonly static object BoxedFalse = (object)false;
 
         private const string VariableDriveRoot = @"Variable:\";
-        private static InitialSessionState s_iss;
         private static HashSet<string> s_globalVariables;
 
         /// <summary>
@@ -35,31 +34,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         /// </summary>
         internal static PowerShell NewPwshInstance()
         {
-            if (s_iss == null)
-            {
-                if (FunctionLoader.FunctionAppRootPath == null)
-                {
-                    throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
-                }
-
-                s_iss = InitialSessionState.CreateDefault();
-
-                s_iss.EnvironmentVariables.Add(
-                    new SessionStateVariableEntry(
-                        "PSModulePath",
-                        FunctionLoader.FunctionModulePath,
-                        description: null));
-
-                // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
-                if(Platform.IsWindows)
-                {
-                    // This sets the execution policy on Windows to Unrestricted which is required to run the user's function scripts on
-                    // Windows client versions. This is needed if a user is testing their function locally with the func CLI.
-                    s_iss.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Unrestricted;
-                }
-            }
-
-            var pwsh = PowerShell.Create(s_iss);
+            var pwsh = PowerShell.Create(InitialSessionStateProvider.GetInstance());
             if (s_globalVariables == null)
             {
                 // Get the names of the built-in global variables
