@@ -37,18 +37,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         {
             if (s_iss == null)
             {
-                if (FunctionLoader.FunctionAppRootPath == null)
-                {
-                    throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
-                }
-
                 s_iss = InitialSessionState.CreateDefault();
 
-                s_iss.EnvironmentVariables.Add(
-                    new SessionStateVariableEntry(
-                        "PSModulePath",
-                        FunctionLoader.FunctionModulePath,
-                        description: null));
+                if (FunctionLoader.FunctionAppRootPath != null)
+                {
+                    s_iss.EnvironmentVariables.Add(
+                        new SessionStateVariableEntry(
+                            "PSModulePath",
+                            FunctionLoader.FunctionModulePath,
+                            description: null));
+                }
 
                 // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
                 if(Platform.IsWindows)
