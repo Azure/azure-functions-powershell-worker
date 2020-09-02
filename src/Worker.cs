@@ -6,6 +6,7 @@
 using System;
 using System.Threading.Tasks;
 
+using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 
 using CommandLine;
@@ -37,8 +38,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .WithParsed(ops => arguments = ops)
                 .WithNotParsed(err => Environment.Exit(1));
 
-            // Create and discard a PowerShell object, just to warm up PowerShell for the first function invocation
-            using (var powerShell = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault())) { }
+            WarmupPowerShell();
 
             var initialSessionStateProvider = new InitialSessionStateProvider();
 
@@ -53,6 +53,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             msgStream.Write(startedMessage);
             await requestProcessor.ProcessRequestLoop();
+        }
+
+        private static void WarmupPowerShell()
+        {
+            // Create and discard a PowerShell object, just to warm up PowerShell for the first function invocation
+            using var powerShell = System.Management.Automation.PowerShell.Create(InitialSessionState.CreateDefault());
+
+            powerShell.AddCommand("New-Item")
+                    .AddParameter("Path", @"Function:\")
+                    .AddParameter("Name", "FakeFunction")
+                    .AddParameter("Value", ScriptBlock.Create(string.Empty))
+                    .AddParameter("Options", "Constant")
+                    .InvokeAndClearCommands();
         }
     }
 
