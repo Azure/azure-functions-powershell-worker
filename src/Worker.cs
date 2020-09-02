@@ -34,8 +34,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .WithParsed(ops => arguments = ops)
                 .WithNotParsed(err => Environment.Exit(1));
 
+            // Create the very first Runspace so the debugger has the target to attach to.
+            // This PowerShell instance is shared by the first PowerShellManager instance created in the pool,
+            // and the dependency manager (used to download dependent modules if needed).
+            var pwsh = Utils.NewPwshInstance();
+
             var msgStream = new MessagingStream(arguments.Host, arguments.Port);
-            var requestProcessor = new RequestProcessor(msgStream);
+            var requestProcessor = new RequestProcessor(msgStream, pwsh);
 
             // Send StartStream message
             var startedMessage = new StreamingMessage() {
