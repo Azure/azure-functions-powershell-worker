@@ -199,6 +199,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     // Setup the FunctionApp root path and module path.
                     FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath);
 
+
+                    if (FunctionLoader.FunctionAppRootPath == null)
+                    {
+                        throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
+                    }
+
                     _firstPwshInstance.AddCommand("Set-Content")
                         .AddParameter("Path", "env:PSModulePath")
                         .AddParameter("Value", FunctionLoader.FunctionModulePath)
