@@ -37,10 +37,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // Create the very first Runspace so the debugger has the target to attach to.
             // This PowerShell instance is shared by the first PowerShellManager instance created in the pool,
             // and the dependency manager (used to download dependent modules if needed).
-            var pwsh = Utils.NewPwshInstance();
+            var firstPowerShellInstance = Utils.NewPwshInstance();
+            LogPowerShellVersion(firstPowerShellInstance);
 
             var msgStream = new MessagingStream(arguments.Host, arguments.Port);
-            var requestProcessor = new RequestProcessor(msgStream, pwsh);
+            var requestProcessor = new RequestProcessor(msgStream, firstPowerShellInstance);
 
             // Send StartStream message
             var startedMessage = new StreamingMessage() {
@@ -50,6 +51,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             msgStream.Write(startedMessage);
             await requestProcessor.ProcessRequestLoop();
+        }
+
+        private static void LogPowerShellVersion(System.Management.Automation.PowerShell pwsh)
+        {
+            var message = string.Format(PowerShellWorkerStrings.PowerShellVersion, Utils.GetPowerShellVersion(pwsh));
+            RpcLogger.WriteSystemLog(LogLevel.Information, message);
         }
     }
 

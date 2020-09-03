@@ -199,8 +199,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     // Setup the FunctionApp root path and module path.
                     FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath);
 
-                    LogPowerShellVersion(rpcLogger, _firstPwshInstance);
-
                     _firstPwshInstance.AddCommand("Set-Content")
                         .AddParameter("Path", "env:PSModulePath")
                         .AddParameter("Value", FunctionLoader.FunctionModulePath)
@@ -495,12 +493,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             {
                 response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData();
             }
-        }
-
-        private static void LogPowerShellVersion(RpcLogger rpcLogger, System.Management.Automation.PowerShell pwsh)
-        {
-            var message = string.Format(PowerShellWorkerStrings.PowerShellVersion, Utils.GetPowerShellVersion(pwsh));
-            rpcLogger.Log(isUserOnlyLog: false, LogLevel.Information, message);
         }
 
         #endregion
