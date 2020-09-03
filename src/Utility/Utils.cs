@@ -39,13 +39,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             {
                 s_iss = InitialSessionState.CreateDefault();
 
-                if (!AreDurableFunctionsEnabled())
-                {
-                    // TODO: This is probably not necessary, but this is how it was
-                    // before introducing durable functions, so leaving it here until we test thoroughly.
-                    s_iss.ThreadOptions = PSThreadOptions.UseCurrentThread;
-                }
-
                 if (FunctionLoader.FunctionAppRootPath != null)
                 {
                     s_iss.EnvironmentVariables.Add(

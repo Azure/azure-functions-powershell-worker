@@ -238,7 +238,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var durableFunctionInfo = new DurableFunctionInfo(durableFunctionType, durableClientBindingName);
 
             return new DurableController(
-                            durableEnabled: true,
                             durableFunctionInfo,
                             _mockPowerShellServices.Object,
                             _mockOrchestrationInvoker.Object);
