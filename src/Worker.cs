@@ -60,7 +60,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         // Warm up the PowerShell instance so that the subsequent function load and invocation requests are faster
         private static void WarmUpPowerShell(System.Management.Automation.PowerShell firstPowerShellInstance)
         {
-            // We just need this name to be unique, so that it does not coincide with an actual function
+            // It turns out that creating/removing a function warms up the session enough.
+            // We just need this name to be unique, so that it does not coincide with an actual function.
             const string DummyFunctionName = "DummyFunction-71b09c92-6bce-42d0-aba1-7b985b8c3563";
 
             firstPowerShellInstance.AddCommand("New-Item")
