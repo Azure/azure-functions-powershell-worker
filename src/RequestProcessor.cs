@@ -196,19 +196,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     _dependencyManager = new DependencyManager(request.FunctionLoadRequest.Metadata.Directory, logger: rpcLogger);
                     var managedDependenciesPath = _dependencyManager.Initialize(request, rpcLogger);
 
-                    // Setup the FunctionApp root path and module path.
-                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath);
-
-
-                    if (FunctionLoader.FunctionAppRootPath == null)
-                    {
-                        throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
-                    }
-
-                    _firstPwshInstance.AddCommand("Set-Content")
-                        .AddParameter("Path", "env:PSModulePath")
-                        .AddParameter("Value", FunctionLoader.FunctionModulePath)
-                        .InvokeAndClearCommands();
+                    SetupAppRootPathAndModulePath(functionLoadRequest, managedDependenciesPath);
 
                     _powershellPool.Initialize(_firstPwshInstance);
 
@@ -499,6 +487,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             {
                 response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData();
             }
+        }
+
+        private void SetupAppRootPathAndModulePath(FunctionLoadRequest functionLoadRequest, string managedDependenciesPath)
+        {
+            FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath);
+
+            if (FunctionLoader.FunctionAppRootPath == null)
+            {
+                throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
+            }
+
+            _firstPwshInstance.AddCommand("Set-Content")
+                .AddParameter("Path", "env:PSModulePath")
+                .AddParameter("Value", FunctionLoader.FunctionModulePath)
+                .InvokeAndClearCommands();
         }
 
         #endregion
