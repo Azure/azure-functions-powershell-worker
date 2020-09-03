@@ -64,13 +64,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // We just need this name to be unique, so that it does not coincide with an actual function.
             const string DummyFunctionName = "DummyFunction-71b09c92-6bce-42d0-aba1-7b985b8c3563";
 
-            firstPowerShellInstance.AddCommand("New-Item")
+            firstPowerShellInstance.AddCommand("Microsoft.PowerShell.Management\\New-Item")
                 .AddParameter("Path", "Function:")
                 .AddParameter("Name", DummyFunctionName)
                 .AddParameter("Value", ScriptBlock.Create(string.Empty))
                 .InvokeAndClearCommands();
 
-            firstPowerShellInstance.AddCommand("Remove-Item")
+            firstPowerShellInstance.AddCommand("Microsoft.PowerShell.Management\\Remove-Item")
                 .AddParameter("Path", $"Function:{DummyFunctionName}")
                 .InvokeAndClearCommands();
         }

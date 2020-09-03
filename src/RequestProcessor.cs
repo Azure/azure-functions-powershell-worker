@@ -497,7 +497,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
             }
 
-            _firstPwshInstance.AddCommand("Set-Content")
+            _firstPwshInstance.AddCommand("Microsoft.PowerShell.Management\\Set-Content")
                 .AddParameter("Path", "env:PSModulePath")
                 .AddParameter("Value", FunctionLoader.FunctionModulePath)
                 .InvokeAndClearCommands();
