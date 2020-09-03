@@ -4,10 +4,12 @@
 //
 
 using System;
+using System.Management.Automation;
 using System.Threading.Tasks;
 
 using CommandLine;
 using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
+using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
@@ -34,17 +36,49 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .WithParsed(ops => arguments = ops)
                 .WithNotParsed(err => Environment.Exit(1));
 
+            // Create the very first Runspace so the debugger has the target to attach to.
+            // This PowerShell instance is shared by the first PowerShellManager instance created in the pool,
+            // and the dependency manager (used to download dependent modules if needed).
+            var firstPowerShellInstance = Utils.NewPwshInstance();
+            LogPowerShellVersion(firstPowerShellInstance);
+            WarmUpPowerShell(firstPowerShellInstance);
+
             var msgStream = new MessagingStream(arguments.Host, arguments.Port);
-            var requestProcessor = new RequestProcessor(msgStream);
+            var requestProcessor = new RequestProcessor(msgStream, firstPowerShellInstance);
 
             // Send StartStream message
-            var startedMessage = new StreamingMessage() {
+            var startedMessage = new StreamingMessage()
+            {
                 RequestId = arguments.RequestId,
                 StartStream = new StartStream() { WorkerId = arguments.WorkerId }
             };
 
             msgStream.Write(startedMessage);
             await requestProcessor.ProcessRequestLoop();
+        }
+
+        // Warm up the PowerShell instance so that the subsequent function load and invocation requests are faster
+        private static void WarmUpPowerShell(System.Management.Automation.PowerShell firstPowerShellInstance)
+        {
+            // It turns out that creating/removing a function warms up the runspace enough.
+            // We just need this name to be unique, so that it does not coincide with an actual function.
+            const string DummyFunctionName = "DummyFunction-71b09c92-6bce-42d0-aba1-7b985b8c3563";
+
+            firstPowerShellInstance.AddCommand("Microsoft.PowerShell.Management\\New-Item")
+                .AddParameter("Path", "Function:")
+                .AddParameter("Name", DummyFunctionName)
+                .AddParameter("Value", ScriptBlock.Create(string.Empty))
+                .InvokeAndClearCommands();
+
+            firstPowerShellInstance.AddCommand("Microsoft.PowerShell.Management\\Remove-Item")
+                .AddParameter("Path", $"Function:{DummyFunctionName}")
+                .InvokeAndClearCommands();
+        }
+
+        private static void LogPowerShellVersion(System.Management.Automation.PowerShell pwsh)
+        {
+            var message = string.Format(PowerShellWorkerStrings.PowerShellVersion, Utils.GetPowerShellVersion(pwsh));
+            RpcLogger.WriteSystemLog(LogLevel.Information, message);
         }
     }
 

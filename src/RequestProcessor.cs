@@ -19,12 +19,12 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     using System.Diagnostics;
-    using System.IO;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
     internal class RequestProcessor
     {
         private readonly MessagingStream _msgStream;
+        private readonly System.Management.Automation.PowerShell _firstPwshInstance;
         private readonly PowerShellManagerPool _powershellPool;
         private DependencyManager _dependencyManager;
 
@@ -37,9 +37,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
             new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
 
-        internal RequestProcessor(MessagingStream msgStream)
+        internal RequestProcessor(MessagingStream msgStream, System.Management.Automation.PowerShell firstPwshInstance)
         {
             _msgStream = msgStream;
+            _firstPwshInstance = firstPwshInstance;
             _powershellPool = new PowerShellManagerPool(() => new RpcLogger(msgStream));
 
             // Host sends capabilities/init data to worker
@@ -194,18 +195,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     _dependencyManager = new DependencyManager(request.FunctionLoadRequest.Metadata.Directory, logger: rpcLogger);
                     var managedDependenciesPath = _dependencyManager.Initialize(request, rpcLogger);
 
-                    // Setup the FunctionApp root path and module path.
-                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath);
+                    SetupAppRootPathAndModulePath(functionLoadRequest, managedDependenciesPath);
 
-                    // Create the very first Runspace so the debugger has the target to attach to.
-                    // This PowerShell instance is shared by the first PowerShellManager instance created in the pool,
-                    // and the dependency manager (used to download dependent modules if needed).
-                    var pwsh = Utils.NewPwshInstance();
-                    LogPowerShellVersion(rpcLogger, pwsh);
-                    _powershellPool.Initialize(pwsh);
+                    _powershellPool.Initialize(_firstPwshInstance);
 
                     // Start the download asynchronously if needed.
-                    _dependencyManager.StartDependencyInstallationIfNeeded(request, pwsh, rpcLogger);
+                    _dependencyManager.StartDependencyInstallationIfNeeded(request, _firstPwshInstance, rpcLogger);
 
                     rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.FirstFunctionLoadCompleted, stopwatch.ElapsedMilliseconds));
                 }
@@ -493,10 +488,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
         }
 
-        private static void LogPowerShellVersion(RpcLogger rpcLogger, System.Management.Automation.PowerShell pwsh)
+        private void SetupAppRootPathAndModulePath(FunctionLoadRequest functionLoadRequest, string managedDependenciesPath)
         {
-            var message = string.Format(PowerShellWorkerStrings.PowerShellVersion, Utils.GetPowerShellVersion(pwsh));
-            rpcLogger.Log(isUserOnlyLog: false, LogLevel.Information, message);
+            FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath);
+
+            if (FunctionLoader.FunctionAppRootPath == null)
+            {
+                throw new InvalidOperationException(PowerShellWorkerStrings.FunctionAppRootNotResolved);
+            }
+
+            _firstPwshInstance.AddCommand("Microsoft.PowerShell.Management\\Set-Content")
+                .AddParameter("Path", "env:PSModulePath")
+                .AddParameter("Value", FunctionLoader.FunctionModulePath)
+                .InvokeAndClearCommands();
         }
 
         #endregion
