@@ -200,6 +200,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath);
 
                     LogPowerShellVersion(rpcLogger, _firstPwshInstance);
+
+                    _firstPwshInstance.AddCommand("Set-Content")
+                        .AddParameter("Path", "env:PSModulePath")
+                        .AddParameter("Value", FunctionLoader.FunctionModulePath)
+                        .InvokeAndClearCommands();
+
                     _powershellPool.Initialize(_firstPwshInstance);
 
                     // Start the download asynchronously if needed.
