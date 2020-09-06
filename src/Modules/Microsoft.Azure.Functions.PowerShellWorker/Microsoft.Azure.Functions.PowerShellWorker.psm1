@@ -8,7 +8,10 @@ Set-Alias -Name Wait-ActivityFunction -Value Wait-DurableTask
 
 function GetDurableClientFromModulePrivateData {
     $PrivateData = $PSCmdlet.MyInvocation.MyCommand.Module.PrivateData
-    if ($PrivateData) {
+    if ($PrivateData -eq $null -or $PrivateData['DurableClient'] -eq $null) {
+        throw "No binding of the type 'durableClient' was defined."
+    }
+    else {
         $PrivateData['DurableClient']
     }
 }
@@ -50,9 +53,6 @@ function Start-NewOrchestration {
 
     if ($null -eq $DurableClient) {
         $DurableClient = GetDurableClientFromModulePrivateData
-        if ($null -eq $DurableClient) {
-            throw "Cannot start an orchestration function. No binding of the type 'durableClient' was defined."
-        }
     }
 
     $InstanceId = (New-Guid).Guid
@@ -98,9 +98,6 @@ function New-OrchestrationCheckStatusResponse {
     
     if ($null -eq $DurableClient) {
         $DurableClient = GetDurableClientFromModulePrivateData
-        if ($null -eq $DurableClient) {
-            throw "Cannot create orchestration check status response. No binding of the type 'durableClient' was defined."
-        }
     }
 
     [uri]$requestUrl = $Request.Url
@@ -172,22 +169,15 @@ function Send-DurableExternalEvent {
         [object] $EventData,
 
 		[Parameter(
-            Position=3,
             ValueFromPipelineByPropertyName=$true)]
         [string] $TaskHubName,
 
         [Parameter(
-            Position=4,
             ValueFromPipelineByPropertyName=$true)]
         [string] $ConnectionName
     )
-
-    CheckIfDurableFunctionsEnabled
     
     $DurableClient = GetDurableClientFromModulePrivateData
-    if ($null -eq $DurableClient) {
-        throw "Cannot send an external event to an orchestration function. No binding of the type 'durableClient' was defined."
-    }
 
     $RequestUrl = GetRaiseEventUrl -DurableClient $DurableClient -InstanceId $InstanceId -EventName $EventName -TaskHubName $TaskHubName -ConnectionName $ConnectionName
 

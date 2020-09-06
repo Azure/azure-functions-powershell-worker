@@ -161,7 +161,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         [Theory]
-        // [InlineData(false, true)]
+        [InlineData(false, true)]
         [InlineData(true, false)]
         public void WaitAny_WaitsForStop_WhenAllTasksAreNotCompleted(bool completed, bool expectedWaitForStop)
         {
