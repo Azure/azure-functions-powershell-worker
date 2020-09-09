@@ -16,11 +16,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         /// The DateTime at which the timer will fire.
         /// </summary>
         public readonly DateTime FireAt;
-        
-        public CreateDurableTimerAction (DateTime fireAt)
+
+        /// <summary>
+        /// Indicates whether the timer has been canceled.
+        /// </summary>
+        public bool IsCanceled;
+
+        public CreateDurableTimerAction (DateTime fireAt, bool isCanceled = false)
             : base(ActionType.CreateTimer)
         {
             FireAt = fireAt;
+            IsCanceled = isCanceled;
         }
     }
 }

@@ -130,6 +130,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             orchestrationBindingInfo.Context.OrchestrationActionCollector.Stop();
         }
 
+        public static void VerifyNoActionAdded(OrchestrationContext orchestrationContext)
+        {
+            var actions = DurableTestUtilities.GetCollectedActions(orchestrationContext);
+            Assert.Empty(actions);
+        }
+
         public static void VerifyWaitForDurableTasks(
             DurableTaskHandler durableTaskHandler,
             TimeSpan delayBeforeStopping,

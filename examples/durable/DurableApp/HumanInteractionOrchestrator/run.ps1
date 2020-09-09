@@ -6,9 +6,11 @@ Write-Host 'HumanInteractionOrchestrator: started.'
 
 $output = @()
 
-$duration = $Context.Input.Duration
+$duration = New-TimeSpan -Seconds $Context.Input.Duration
+$managerId = $Context.Input.ManagerId
+$skipManagerId = $Context.Input.SkipManagerId
 
-Invoke-ActivityFunction -FunctionName "RequestApproval"
+$output += Invoke-ActivityFunction -FunctionName "RequestApproval" -Input $managerId
 
 $durableTimeoutEvent = Start-DurableTimer -Duration $duration -NoWait
 $approvalEvent = Start-DurableExternalEventListener -EventName "ApprovalEvent" -NoWait
@@ -16,11 +18,11 @@ $approvalEvent = Start-DurableExternalEventListener -EventName "ApprovalEvent" -
 $firstEvent = Wait-DurableTask -Task @($approvalEvent, $durableTimeoutEvent) -Any
 
 if ($approvalEvent -eq $firstEvent) {
-    Stop-DurableTimerTask -TimerTask $durableTimeout
+    Stop-DurableTimerTask -Task $durableTimeoutEvent
     $output += Invoke-ActivityFunction -FunctionName "ProcessApproval" -Input $approvalEvent
 }
 else {
-    $output += Invoke-ActivityFunction -FunctionName "EscalateApproval"
+    $output += Invoke-ActivityFunction -FunctionName "EscalateApproval" -Input $skipManagerId
 }
 
 Write-Host 'HumanInteractionOrchestrator: finished.'

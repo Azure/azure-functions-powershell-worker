@@ -14,13 +14,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     // All DurableTimerTasks must be complete or canceled for the orchestration to complete
     public class DurableTimerTask : DurableTask
     {
-        public DateTime FireAt { get; set; }
+        internal DateTime FireAt { get; }
+
+        private CreateDurableTimerAction Action { get; }
 
         // Only incomplete, uncanceled DurableTimerTasks should be created
         internal DurableTimerTask(
             DateTime fireAt)
         {
             FireAt = fireAt;
+            Action = new CreateDurableTimerAction(FireAt);
         }
 
         internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context)
@@ -42,7 +45,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         internal override OrchestrationAction CreateOrchestrationAction()
         {
-            return new CreateDurableTimerAction(FireAt);
+            return Action;
+        }
+
+        // Indicates that the task has been canceled; without this, the orchestration will not terminate until the timer has expired
+        internal void Cancel()
+        {
+            Action.IsCanceled = true;
         }
     }
 }

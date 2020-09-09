@@ -49,8 +49,10 @@ NestedModules = @('Microsoft.Azure.Functions.PowerShellWorker.psm1', 'Microsoft.
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = @(
-    'Start-NewOrchestration',
-    'New-OrchestrationCheckStatusResponse')
+
+    'New-OrchestrationCheckStatusResponse',
+    'Send-DurableExternalEvent',
+    'Start-NewOrchestration')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @(
@@ -59,7 +61,9 @@ CmdletsToExport = @(
     'Invoke-ActivityFunction',
     'Push-OutputBinding',
     'Set-FunctionInvocationContext',
+    'Start-DurableExternalEventListener',
     'Start-DurableTimer',
+    'Stop-DurableTimerTask',
     'Trace-PipelineObject',
     'Wait-DurableTask')
 

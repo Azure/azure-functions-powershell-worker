@@ -2,7 +2,7 @@ using namespace System.Net
 
 param($Request, $TriggerMetadata)
 
-Write-Host "CurrentUtcDateTimeStart started"
+Write-Host "CurrentUtcDateTimeClient started"
 
 $ErrorActionPreference = 'Stop'
 
@@ -12,4 +12,4 @@ Write-Host "Started orchestration with ID = '$InstanceId'"
 $Response = New-OrchestrationCheckStatusResponse -Request $Request -InstanceId $InstanceId
 Push-OutputBinding -Name Response -Value $Response
 
-Write-Host "CurrentUtcDateTimeStart completed"
+Write-Host "CurrentUtcDateTimeClient completed"

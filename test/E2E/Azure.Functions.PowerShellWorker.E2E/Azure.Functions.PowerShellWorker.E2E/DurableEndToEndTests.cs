@@ -140,6 +140,11 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     {
                         case HttpStatusCode.Accepted:
                         {
+                            if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                            {
+                                Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                            }
+
                             await Task.Delay(TimeSpan.FromSeconds(2));
                             break;
                         }
@@ -221,6 +226,11 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     {
                         case HttpStatusCode.Accepted:
                         {
+                            if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                            {
+                                Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                            }
+                            
                             await Task.Delay(TimeSpan.FromSeconds(2));
                             break;
                         }
@@ -253,6 +263,53 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                 }
             }
         }
+
+        [Fact]
+        private async Task ExternalEventClientSendsExternalEvents() {
+            var initialResponse = await Utilities.GetHttpTriggerResponse("ExternalEventClient", queryString: string.Empty);
+
+            var initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+            dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
+            var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
+
+            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(60);
+            var startTime = DateTime.UtcNow;
+
+            using(var httpClient = new HttpClient())
+            {
+                while (true)
+                {
+                    var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
+                    switch (statusResponse.StatusCode)
+                    {
+                        case HttpStatusCode.Accepted:
+                        {
+                            if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                            {
+                                Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                            }
+                            
+                            await Task.Delay(TimeSpan.FromSeconds(2));
+                            break;
+                        }
+                        case HttpStatusCode.OK:
+                        {
+                            var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                            Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
+                            Assert.Equal("FirstTimeout", statusResponseBody.output[0].ToString());
+                            Assert.Equal("SecondExternalEvent", statusResponseBody.output[1].ToString());
+                            return;
+                        }
+                        default:
+                        {
+                            Assert.True(false, $"Unexpected orchestration status code: {statusResponse.StatusCode}");
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
         
         private void VerifyArrayItemsAreEqual(string[] array, int[] indices)
         {
