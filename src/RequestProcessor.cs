@@ -522,6 +522,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             var message = string.Format(PowerShellWorkerStrings.PowerShellVersion, Utils.GetPowerShellVersion(pwsh));
             rpcLogger.Log(isUserOnlyLog: false, LogLevel.Information, message);
+
+            rpcLogger.Log(isUserOnlyLog: true, LogLevel.Warning, PowerShellWorkerStrings.PowerShell6EndOfLifeWarning);
         }
 
         #endregion
