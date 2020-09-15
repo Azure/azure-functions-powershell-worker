@@ -344,8 +344,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             s_testLogger.FullLog.Clear();
             NewTestPowerShellManager(s_testLogger);
 
-            Assert.Single(s_testLogger.FullLog);
-            Assert.Equal($"Trace: No 'profile.ps1' is found at the function app root folder: {FunctionLoader.FunctionAppRootPath}.", s_testLogger.FullLog[0]);
+            Assert.Contains($"Trace: No 'profile.ps1' is found at the function app root folder: {FunctionLoader.FunctionAppRootPath}.", s_testLogger.FullLog);
         }
 
         [Fact]

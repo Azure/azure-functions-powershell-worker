@@ -103,6 +103,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             if (!_runspaceInited)
             {
+                Logger.Log(isUserOnlyLog: true, LogLevel.Warning, PowerShellWorkerStrings.PowerShell6EndOfLifeWarning);
+
                 // Register stream events
                 RegisterStreamEvents();
                 // Deploy functions from the function App
