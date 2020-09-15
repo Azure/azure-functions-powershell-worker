@@ -320,6 +320,6 @@
     <value>Setting current directory to '{0}'.</value>
   </data>
   <data name="PowerShell6EndOfLifeWarning" xml:space="preserve">
-    <value>The Function app uses PowerShell Core 6. This version of PowerShell reached end of life, and it is strongly recommended that you migrate the Function app to PowerShell 7. For more details, see https://aka.ms/functions-powershell-6-to-7.</value>
+    <value>The Function app uses PowerShell Core 6. Your Function app is still supported, but this version of PowerShell reached end of life, so it is strongly recommended that you migrate the Function app to PowerShell 7. For more details, see https://aka.ms/functions-powershell-6-to-7.</value>
   </data>
 </root>
