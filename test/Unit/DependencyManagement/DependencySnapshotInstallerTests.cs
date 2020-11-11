@@ -260,6 +260,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _mockStorage.Verify(_ => _.PromoteInstallingSnapshotToInstalledAtomically(It.IsAny<string>()), Times.Never);
             _mockStorage.Verify(_ => _.RemoveSnapshot(_targetPathInstalling), Times.Once);
             _mockStorage.Verify(_ => _.SetSnapshotCreationTimeToUtcNow("snapshot"), Times.Once);
+            _mockSnapshotContentLogger.Verify(_ => _.LogDependencySnapshotContent(_targetPathInstalling, _mockLogger.Object), Times.Once);
         }
 
         private DependencySnapshotInstaller CreateDependenciesSnapshotInstallerWithMocks()

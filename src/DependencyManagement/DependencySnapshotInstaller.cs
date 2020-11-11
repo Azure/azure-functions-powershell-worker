@@ -167,6 +167,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     LogLevel.Trace,
                     string.Format(PowerShellWorkerStrings.RemovingEquivalentDependencySnapshot, installingPath, latestSnapshot));
 
+                _snapshotContentLogger.LogDependencySnapshotContent(installingPath, logger);
+
                 // The new snapshot is not better than the latest installed snapshot,
                 // so remove the new snapshot and update the timestamp of the latest snapshot
                 // in order to avoid unnecessary worker restarts.
