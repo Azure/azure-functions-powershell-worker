@@ -53,17 +53,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             _storage = storage ?? new DependencyManagerStorage(GetFunctionAppRootPath(requestMetadataDirectory));
             _installedDependenciesLocator = installedDependenciesLocator ?? new InstalledDependenciesLocator(_storage);
+            var snapshotContentLogger = new PowerShellModuleSnapshotLogger();
             _installer = installer ?? new DependencySnapshotInstaller(
                                             moduleProvider ?? new PowerShellGalleryModuleProvider(logger),
                                             _storage,
                                             new PowerShellModuleSnapshotComparer(),
-                                            new PowerShellModuleSnapshotLogger());
+                                            snapshotContentLogger);
             _newerSnapshotDetector = newerSnapshotDetector ?? new NewerDependencySnapshotDetector(_storage, new WorkerRestarter());
             _backgroundSnapshotMaintainer =
                 maintainer ?? new BackgroundDependencySnapshotMaintainer(
                                     _storage,
                                     _installer,
-                                    new DependencySnapshotPurger(_storage));
+                                    new DependencySnapshotPurger(_storage),
+                                    snapshotContentLogger);
         }
 
         /// <summary>

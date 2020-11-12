@@ -23,21 +23,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private readonly IDependencyManagerStorage _storage;
         private readonly IDependencySnapshotInstaller _installer;
         private readonly IDependencySnapshotPurger _purger;
+        private readonly IDependencySnapshotContentLogger _contentLogger;
+        private string _currentSnapshotPath;
         private DependencyManifestEntry[] _dependencyManifest;
         private Timer _installAndPurgeTimer;
 
         public BackgroundDependencySnapshotMaintainer(
             IDependencyManagerStorage storage,
             IDependencySnapshotInstaller installer,
-            IDependencySnapshotPurger purger)
+            IDependencySnapshotPurger purger,
+            IDependencySnapshotContentLogger contentLogger)
         {
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _installer = installer ?? throw new ArgumentNullException(nameof(installer));
             _purger = purger ?? throw new ArgumentNullException(nameof(purger));
+            _contentLogger = contentLogger ?? throw new ArgumentNullException(nameof(contentLogger));
         }
 
         public void Start(string currentSnapshotPath, DependencyManifestEntry[] dependencyManifest, ILogger logger)
         {
+            _currentSnapshotPath = currentSnapshotPath;
             _dependencyManifest = dependencyManifest ?? throw new ArgumentNullException(nameof(dependencyManifest));
 
             _purger.SetCurrentlyUsedSnapshot(currentSnapshotPath, logger);
@@ -58,6 +63,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             {
                 // Purge before installing a new snapshot, as we may be able to free some space.
                 _purger.Purge(logger);
+
+                _contentLogger.LogDependencySnapshotContent(_currentSnapshotPath, logger);
 
                 if (IsAnyInstallationStartedRecently())
                 {
