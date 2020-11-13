@@ -67,8 +67,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 maintainer ?? new BackgroundDependencySnapshotMaintainer(
                                     _storage,
                                     _installer,
-                                    new DependencySnapshotPurger(_storage),
-                                    snapshotContentLogger);
+                                    new DependencySnapshotPurger(_storage));
             _currentSnapshotContentLogger =
                 currentSnapshotContentLogger ?? new BackgroundDependencySnapshotContentLogger(snapshotContentLogger);
         }
