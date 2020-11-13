@@ -29,6 +29,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private readonly IBackgroundDependencySnapshotMaintainer _backgroundSnapshotMaintainer;
 
+        private readonly IBackgroundDependencySnapshotContentLogger _currentSnapshotContentLogger;
+
         private DependencyManifestEntry[] _dependenciesFromManifest;
 
         private string _currentSnapshotPath;
@@ -49,6 +51,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             IDependencySnapshotInstaller installer = null,
             INewerDependencySnapshotDetector newerSnapshotDetector = null,
             IBackgroundDependencySnapshotMaintainer maintainer = null,
+            IBackgroundDependencySnapshotContentLogger currentSnapshotContentLogger = null,
             ILogger logger = null)
         {
             _storage = storage ?? new DependencyManagerStorage(GetFunctionAppRootPath(requestMetadataDirectory));
@@ -66,6 +69,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                                     _installer,
                                     new DependencySnapshotPurger(_storage),
                                     snapshotContentLogger);
+            _currentSnapshotContentLogger =
+                currentSnapshotContentLogger ?? new BackgroundDependencySnapshotContentLogger(snapshotContentLogger);
         }
 
         /// <summary>
@@ -106,6 +111,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 _backgroundSnapshotMaintainer.Start(_currentSnapshotPath, _dependenciesFromManifest, logger);
                 _newerSnapshotDetector.Start(_currentSnapshotPath, logger);
+                _currentSnapshotContentLogger.Start(_currentSnapshotPath, logger);
 
                 return _currentSnapshotPath;
             }
@@ -178,6 +184,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             (_backgroundSnapshotMaintainer as IDisposable)?.Dispose();
             (_newerSnapshotDetector as IDisposable)?.Dispose();
+            (_currentSnapshotContentLogger as IDisposable)?.Dispose();
             _dependencyInstallationTask?.Dispose();
         }
 
