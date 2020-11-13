@@ -60,6 +60,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     InstallModule(module, installingPath, pwsh, logger);
                 }
 
+                _snapshotContentLogger.LogDependencySnapshotContent(installingPath, logger);
+
                 switch (installationMode)
                 {
                     case DependencySnapshotInstallationMode.Optional:
@@ -166,8 +168,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     isUserOnlyLog: false,
                     LogLevel.Trace,
                     string.Format(PowerShellWorkerStrings.RemovingEquivalentDependencySnapshot, installingPath, latestSnapshot));
-
-                _snapshotContentLogger.LogDependencySnapshotContent(installingPath, logger);
 
                 // The new snapshot is not better than the latest installed snapshot,
                 // so remove the new snapshot and update the timestamp of the latest snapshot
