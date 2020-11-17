@@ -60,6 +60,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     InstallModule(module, installingPath, pwsh, logger);
                 }
 
+                _snapshotContentLogger.LogDependencySnapshotContent(installingPath, logger);
+
                 switch (installationMode)
                 {
                     case DependencySnapshotInstallationMode.Optional:
