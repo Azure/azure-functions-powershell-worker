@@ -29,6 +29,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private readonly IBackgroundDependencySnapshotMaintainer _backgroundSnapshotMaintainer;
 
+        private readonly IBackgroundDependencySnapshotContentLogger _currentSnapshotContentLogger;
+
         private DependencyManifestEntry[] _dependenciesFromManifest;
 
         private string _currentSnapshotPath;
@@ -48,21 +50,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             IInstalledDependenciesLocator installedDependenciesLocator = null,
             IDependencySnapshotInstaller installer = null,
             INewerDependencySnapshotDetector newerSnapshotDetector = null,
-            IBackgroundDependencySnapshotMaintainer maintainer = null)
+            IBackgroundDependencySnapshotMaintainer maintainer = null,
+            IBackgroundDependencySnapshotContentLogger currentSnapshotContentLogger = null)
         {
             _storage = storage ?? new DependencyManagerStorage(GetFunctionAppRootPath(requestMetadataDirectory));
             _installedDependenciesLocator = installedDependenciesLocator ?? new InstalledDependenciesLocator(_storage);
+            var snapshotContentLogger = new PowerShellModuleSnapshotLogger();
             _installer = installer ?? new DependencySnapshotInstaller(
                                             moduleProvider ?? new PowerShellGalleryModuleProvider(),
                                             _storage,
                                             new PowerShellModuleSnapshotComparer(),
-                                            new PowerShellModuleSnapshotLogger());
+                                            snapshotContentLogger);
             _newerSnapshotDetector = newerSnapshotDetector ?? new NewerDependencySnapshotDetector(_storage, new WorkerRestarter());
             _backgroundSnapshotMaintainer =
                 maintainer ?? new BackgroundDependencySnapshotMaintainer(
                                     _storage,
                                     _installer,
                                     new DependencySnapshotPurger(_storage));
+            _currentSnapshotContentLogger =
+                currentSnapshotContentLogger ?? new BackgroundDependencySnapshotContentLogger(snapshotContentLogger);
         }
 
         /// <summary>
@@ -103,6 +109,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
                 _backgroundSnapshotMaintainer.Start(_currentSnapshotPath, _dependenciesFromManifest, logger);
                 _newerSnapshotDetector.Start(_currentSnapshotPath, logger);
+                _currentSnapshotContentLogger.Start(_currentSnapshotPath, logger);
 
                 return _currentSnapshotPath;
             }
@@ -175,6 +182,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             (_backgroundSnapshotMaintainer as IDisposable)?.Dispose();
             (_newerSnapshotDetector as IDisposable)?.Dispose();
+            (_currentSnapshotContentLogger as IDisposable)?.Dispose();
             _dependencyInstallationTask?.Dispose();
         }
 
