@@ -24,6 +24,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         private readonly Mock<IDependencySnapshotInstaller> _mockInstaller = new Mock<IDependencySnapshotInstaller>(MockBehavior.Strict);
         private readonly Mock<INewerDependencySnapshotDetector> _mockNewerDependencySnapshotDetector = new Mock<INewerDependencySnapshotDetector>();
         private readonly Mock<IBackgroundDependencySnapshotMaintainer> _mockBackgroundDependencySnapshotMaintainer = new Mock<IBackgroundDependencySnapshotMaintainer>();
+        private readonly Mock<IBackgroundDependencySnapshotContentLogger> _mockBackgroundDependencySnapshotContentLogger = new Mock<IBackgroundDependencySnapshotContentLogger>();
         private readonly Mock<ILogger> _mockLogger = new Mock<ILogger>();
 
         [Fact]
@@ -82,7 +83,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
-        public void Initialize_StartsBackgroundSnapshotMaintainerAndNewerSnapshotDetector()
+        public void Initialize_StartsBackgroundActivities()
         {
             var dependencyManifest = GetAnyNonEmptyDependencyManifestEntries();
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(dependencyManifest);
@@ -98,6 +99,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                     Times.Once);
 
                 _mockNewerDependencySnapshotDetector.Verify(
+                    _ => _.Start("InstalledSnapshot", _mockLogger.Object),
+                    Times.Once);
+
+                _mockBackgroundDependencySnapshotContentLogger.Verify(
                     _ => _.Start("InstalledSnapshot", _mockLogger.Object),
                     Times.Once);
             }
@@ -307,7 +312,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 installedDependenciesLocator: _mockInstalledDependenciesLocator.Object,
                 installer: _mockInstaller.Object,
                 newerSnapshotDetector: _mockNewerDependencySnapshotDetector.Object,
-                maintainer: _mockBackgroundDependencySnapshotMaintainer.Object);
+                maintainer: _mockBackgroundDependencySnapshotMaintainer.Object,
+                currentSnapshotContentLogger: _mockBackgroundDependencySnapshotContentLogger.Object);
         }
     }
 }
