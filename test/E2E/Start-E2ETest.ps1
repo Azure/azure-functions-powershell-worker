@@ -4,7 +4,7 @@
 #
 
 $FUNC_RUNTIME_VERSION = '3'
-$NETCOREAPP_VERSION = '3.1'
+$TARGET_FRAMEWORK = 'net5.0'
 $POWERSHELL_VERSION = '7'
 
 $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
@@ -45,8 +45,8 @@ Write-Host "Copying azure-functions-powershell-worker to Functions Host workers 
 
 $configuration = if ($env:CONFIGURATION) { $env:CONFIGURATION } else { 'Debug' }
 Remove-Item -Recurse -Force -Path "$FUNC_CLI_DIRECTORY/workers/powershell"
-Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/netcoreapp$NETCOREAPP_VERSION/publish/" "$FUNC_CLI_DIRECTORY/workers/powershell/$POWERSHELL_VERSION"
-Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/netcoreapp$NETCOREAPP_VERSION/publish/worker.config.json" "$FUNC_CLI_DIRECTORY/workers/powershell"
+Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/$TARGET_FRAMEWORK/publish/" "$FUNC_CLI_DIRECTORY/workers/powershell/$POWERSHELL_VERSION"
+Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/$TARGET_FRAMEWORK/publish/worker.config.json" "$FUNC_CLI_DIRECTORY/workers/powershell"
 
 Write-Host "Staring Functions Host..."
 
