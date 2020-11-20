@@ -7,8 +7,8 @@ using namespace System.Runtime.InteropServices
 
 $IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
 $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
-$MinimalSDKVersion = '3.1.201'
-$DefaultSDKVersion = '3.1.201'
+$MinimalSDKVersion = '5.0.100'
+$DefaultSDKVersion = '5.0.100'
 $LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
 $GrpcToolsVersion = '2.27.0' # grpc.tools
 $GoogleProtobufToolsVersion = '3.11.4' # google.protobuf.tools
@@ -32,7 +32,7 @@ function Find-Dotnet
             $env:PATH = $LocalDotnetDirPath + [IO.Path]::PathSeparator + $env:PATH
         }
         else {
-            throw "Cannot find the dotnet SDK for .NET Core 3.1. Please specify '-Bootstrap' to install build dependencies."
+            throw "Cannot find the dotnet SDK for .NET Core 5.0. Please specify '-Bootstrap' to install build dependencies."
         }
     }
 }
