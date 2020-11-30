@@ -31,32 +31,24 @@ steps:
     AzureWebJobsStorage: $(AzureWebJobsStorage)
     AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
     AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
-    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)    
+    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
     FUNCTIONS_WORKER_RUNTIME : "powershell"
   displayName: 'Running E2ETest'
 
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/*.trx'
+    failTaskOnFailedTests: true
+  condition: succeededOrFailed()
+  displayName: 'Publish tests results'
+
 - task: CopyFiles@2
   inputs:
-    SourceFolder: '$(System.DefaultWorkingDirectory)/testResults'
-    Contents: '*.trx'
+    SourceFolder: '$(System.DefaultWorkingDirectory)/package'
+    Contents: '**/*.nupkg'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
-  displayName: 'Copying test result file for artifacts'
-  
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
-  displayName: 'Publishing build and test result artifacts'
-
-- pwsh: |
-      $sourcePath  = (ls package/**/*/Microsoft.Azure.Functions.PowerShellWorker*.nupkg).FullName
-      if (-not (test-path $sourcePath))
-      {
-        throw 'Unable to find Microsoft.Azure.Functions.PowerShellWorker*.nupkg at ./package'
-      }
-      Copy-Item -Path $sourcePath -Destination $(Build.ArtifactStagingDirectory) -ErrorAction Stop -Verbose -Force
-  displayName: 'Copy package to ArtifactStagingDirectory'
+  displayName: 'Copy package to artifacts directory'
 
 - pwsh: |
     $uploadPackage = $null
@@ -86,3 +78,11 @@ steps:
     nuGetFeedType: 'internal'
     publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df'
     allowPackageConflicts: true
+  displayName: 'Push NuGet package to the AzureFunctionsPreRelease feed'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'
+  displayName: 'Publish build artifacts'
