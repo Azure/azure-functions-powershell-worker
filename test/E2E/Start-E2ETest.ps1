@@ -2,6 +2,11 @@
 # Copyright (c) Microsoft. All rights reserved.	
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.	
 #
+param
+(
+    [Switch]
+    $UseCoreToolsBuildFromIntegrationTests
+)
 
 $FUNC_RUNTIME_VERSION = '3'
 $NETCOREAPP_VERSION = '3.1'
@@ -20,33 +25,46 @@ if ($IsWindows) {
     }
 }
 
-$FUNC_CLI_DOWNLOAD_URL = "https://functionsclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/Azure.Functions.Cli.$os-$arch.zip"
+$coreToolsDownloadURL = $null
+if ($UseCoreToolsBuildFromIntegrationTests.IsPresent)
+{
+    $coreToolsDownloadURL = "https://funcintegrationtests.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/Azure.Functions.Cli.$os-$arch.zip"
+    $env:CORE_TOOLS_URL = "https://funcintegrationtests.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest"
+}
+else
+{
+    $coreToolsDownloadURL = "https://functionsclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/Azure.Functions.Cli.$os-$arch.zip"
+    if (-not $env:CORE_TOOLS_URL)
+    {
+        $env:CORE_TOOLS_URL = "https://functionsclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest"
+    }
+}
+
 $FUNC_CLI_DIRECTORY = Join-Path $PSScriptRoot 'Azure.Functions.Cli'
 
 Write-Host 'Deleting Functions Core Tools if exists...'
 Remove-Item -Force "$FUNC_CLI_DIRECTORY.zip" -ErrorAction Ignore
 Remove-Item -Recurse -Force $FUNC_CLI_DIRECTORY -ErrorAction Ignore
 
-if (-not $env:CORE_TOOLS_URL)
-{
-    $env:CORE_TOOLS_URL = "https://functionsclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest"
-}
-
 $version = Invoke-RestMethod -Uri "$env:CORE_TOOLS_URL/version.txt"
 Write-Host "Downloading Functions Core Tools (Version: $version)..."
 
 $output = "$FUNC_CLI_DIRECTORY.zip"
-Invoke-RestMethod -Uri $FUNC_CLI_DOWNLOAD_URL -OutFile $output
+Invoke-RestMethod -Uri $coreToolsDownloadURL -OutFile $output
 
 Write-Host 'Extracting Functions Core Tools...'
 Expand-Archive $output -DestinationPath $FUNC_CLI_DIRECTORY
 
-Write-Host "Copying azure-functions-powershell-worker to Functions Host workers directory..."
+if (-not $UseCoreToolsBuildFromIntegrationTests.IsPresent)
+{
+    # For a regular test run, the binaries for the PowerShell worker get replaced after downloading and installing the Core Tools.
+    Write-Host "Copying azure-functions-powershell-worker to Functions Host workers directory..."
 
-$configuration = if ($env:CONFIGURATION) { $env:CONFIGURATION } else { 'Debug' }
-Remove-Item -Recurse -Force -Path "$FUNC_CLI_DIRECTORY/workers/powershell"
-Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/netcoreapp$NETCOREAPP_VERSION/publish/" "$FUNC_CLI_DIRECTORY/workers/powershell/$POWERSHELL_VERSION"
-Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/netcoreapp$NETCOREAPP_VERSION/publish/worker.config.json" "$FUNC_CLI_DIRECTORY/workers/powershell"
+    $configuration = if ($env:CONFIGURATION) { $env:CONFIGURATION } else { 'Debug' }
+    Remove-Item -Recurse -Force -Path "$FUNC_CLI_DIRECTORY/workers/powershell"
+    Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/netcoreapp$NETCOREAPP_VERSION/publish/" "$FUNC_CLI_DIRECTORY/workers/powershell/$POWERSHELL_VERSION"
+    Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/netcoreapp$NETCOREAPP_VERSION/publish/worker.config.json" "$FUNC_CLI_DIRECTORY/workers/powershell"
+}
 
 Write-Host "Staring Functions Host..."
 
