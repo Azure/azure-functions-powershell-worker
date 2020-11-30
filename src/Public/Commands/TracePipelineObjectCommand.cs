@@ -28,7 +28,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Commands
         /// <summary>
         /// The object from pipeline.
         /// </summary>
-        [Parameter(Mandatory = true, Position = 0, ValueFromPipeline = true)]
+        [Parameter(Position = 0, ValueFromPipeline = true)]
         public object InputObject { get; set; }
 
         private static PowerShell s_pwsh;
