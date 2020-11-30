@@ -308,7 +308,7 @@
     <value>CommandNotFoundException detected (exception).</value>
   </data>
   <data name="CommandNotFoundUserWarning" xml:space="preserve">
-    <value>The Function app may be missing a module containing the '{0}' command definition. If this command belongs to a module available on the PowerShell Gallery, add a reference to this module to requirements.psd1. Make sure this module is compatible with PowerShell 7. For more details, see https://aka.ms/functions-powershell-managed-dependency.</value>
+    <value>The Function app may be missing a module containing the '{0}' command definition. If this command belongs to a module available on the PowerShell Gallery, add a reference to this module to requirements.psd1. Make sure this module is compatible with PowerShell 7. For more details, see https://aka.ms/functions-powershell-managed-dependency. If the module is installed but you are still getting this error, try to import the module explicitly by invoking Import-Module just before the command that produces the error: this will not fix the issue but will expose the root cause.</value>
   </data>
   <data name="ModuleNotFound_Error" xml:space="preserve">
     <value>ModuleNotFound detected (error).</value>
