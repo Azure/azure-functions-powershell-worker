@@ -122,6 +122,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Null(returnOrchestrationMessage.Output);
         }
 
+        [Fact]
+        public void WrapsExceptionIntoOrchestrationFailureException()
+        {
+            Exception originalException = new Exception("Original exception");
+            _mockPowerShellServices.Setup(_ => _.EndInvoke(It.IsAny<IAsyncResult>())).Throws(originalException);
+
+            var output = new[] { "item1", "item2" };
+
+            var thrownException = Assert.Throws<OrchestrationFailureException>(() => InvokeOrchestration(completed: true, output));
+            Assert.Same(originalException, thrownException.InnerException);
+        }
+
         private Hashtable InvokeOrchestration(bool completed, PSDataCollection<object> output = null)
         {
             return DurableTestUtilities.InvokeOrchestration(_orchestrationInvoker, _orchestrationBindingInfo, _mockPowerShellServices, completed, output);

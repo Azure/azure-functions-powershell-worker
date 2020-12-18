@@ -30,17 +30,36 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void StopAndInitiateDurableTaskOrReplay_ReplaysActivity_IfActivityCompleted(
             bool scheduled, bool completed)
         {
-            var history = CreateHistory(scheduled: scheduled, completed: completed, output: InvocationResultJson);
+            var history = CreateHistory(scheduled: scheduled, completed: completed, failed: false, output: InvocationResultJson);
             var orchestrationContext = new OrchestrationContext { History = history };
             var allOutput = new List<object>();
 
             var durableTaskHandler = new DurableTaskHandler();
             durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
                 task: new ActivityInvocationTask(FunctionName, FunctionInput), orchestrationContext, noWait: false,
-                output => { allOutput.Add(output); });
+                output: output => { allOutput.Add(output); },
+                onFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
 
             VerifyCallActivityActionAdded(orchestrationContext);
             Assert.Equal(InvocationResult, allOutput.Single());
+        }
+
+        [Fact]
+        public void StopAndInitiateDurableTaskOrReplay_OutputsError_IfActivityFailed()
+        {
+            const string FailureReason = "Failure reason";
+            var history = CreateHistory(scheduled: true, completed: false, failed: true, output: InvocationResultJson, failureReason: FailureReason);
+            var orchestrationContext = new OrchestrationContext { History = history };
+            var allErrors = new List<object>();
+
+            var durableTaskHandler = new DurableTaskHandler();
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                task: new ActivityInvocationTask(FunctionName, FunctionInput), orchestrationContext, noWait: false,
+                output: _ => { Assert.True(false, "Unexpected output"); },
+                onFailure: reason => { allErrors.Add(reason); });
+
+            VerifyCallActivityActionAdded(orchestrationContext);
+            Assert.Equal(FailureReason, allErrors.Single());
         }
 
         [Theory]
@@ -50,7 +69,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void StopAndInitiateDurableTaskOrReplay_OutputsNothing_IfActivityNotCompleted(
             bool scheduled, bool completed)
         {
-            var history = CreateHistory(scheduled: scheduled, completed: completed, output: InvocationResultJson);
+            var history = CreateHistory(scheduled: scheduled, completed: completed, failed: false, output: InvocationResultJson);
             var orchestrationContext = new OrchestrationContext { History = history };
 
             var durableTaskHandler = new DurableTaskHandler();
@@ -58,7 +77,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
                 new ActivityInvocationTask(FunctionName, FunctionInput), orchestrationContext, noWait: false,
-                _ => { Assert.True(false, "Unexpected output"); });
+                output: _ => { Assert.True(false, "Unexpected output"); },
+                onFailure: reason => { Assert.True(false, $"Unexpected failure: {reason}"); });
 
             VerifyCallActivityActionAdded(orchestrationContext);
         }
@@ -71,7 +91,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var durableTaskHandler = new DurableTaskHandler();
 
             var history = CreateHistory(
-                scheduled: scheduledAndCompleted, completed: scheduledAndCompleted, output: InvocationResultJson);
+                scheduled: scheduledAndCompleted, completed: scheduledAndCompleted, failed: false, output: InvocationResultJson);
 
             var orchestrationContext = new OrchestrationContext { History = history };
 
@@ -82,7 +102,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 () =>
                 {
                     durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
-                        new ActivityInvocationTask(FunctionName, FunctionInput), orchestrationContext, noWait: false, _ => { });
+                        new ActivityInvocationTask(FunctionName, FunctionInput), orchestrationContext, noWait: false,
+                        output: _ => { }, onFailure: _ => { });
                 });
         }
 
@@ -96,9 +117,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 };
 
             var history = DurableTestUtilities.MergeHistories(
-                CreateHistory("FunctionA", scheduled: true, completed: true, output: "\"Result1\""),
-                CreateHistory("FunctionB", scheduled: true, completed: true, output: "\"Result2\""),
-                CreateHistory("FunctionA", scheduled: true, completed: true, output: "\"Result3\"")
+                CreateHistory("FunctionA", scheduled: true, completed: true, failed: false, output: "\"Result1\""),
+                CreateHistory("FunctionB", scheduled: true, completed: true, failed: false, output: "\"Result2\""),
+                CreateHistory("FunctionA", scheduled: true, completed: true, failed: false, output: "\"Result3\"")
             );
             var orchestrationContext = new OrchestrationContext { History = history };
             var allOutput = new List<object>();
@@ -110,7 +131,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             {
                 durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
                     new ActivityInvocationTask("FunctionA", FunctionInput), orchestrationContext, noWait: false,
-                    output => { allOutput.Add(output); });
+                    output: output => { allOutput.Add(output); },
+                    onFailure: _ => { });
             }
 
             // Expect FunctionA results only
@@ -125,14 +147,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void StopAndInitiateDurableTaskOrReplay_OutputsActivityInvocationTask_WhenNoWaitRequested(
             bool scheduled, bool completed)
         {
-            var history = CreateHistory(scheduled: scheduled, completed: completed, output: InvocationResultJson);
+            var history = CreateHistory(scheduled: scheduled, completed: completed, failed: false, output: InvocationResultJson);
             var orchestrationContext = new OrchestrationContext { History = history };
             var allOutput = new List<ActivityInvocationTask>();
 
             var durableTaskHandler = new DurableTaskHandler();
             durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
                 new ActivityInvocationTask(FunctionName, FunctionInput), orchestrationContext, noWait: true,
-                output => { allOutput.Add((ActivityInvocationTask)output); });
+                output: output => { allOutput.Add((ActivityInvocationTask)output); },
+                onFailure: _ => { });
 
             VerifyCallActivityActionAdded(orchestrationContext);
             Assert.Equal(FunctionName, allOutput.Single().FunctionName);
@@ -141,7 +164,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [Fact]
         public void ValidateTask_Throws_WhenActivityFunctionDoesNotExist()
         {
-            var history = CreateHistory(scheduled: false, completed: false, output: InvocationResultJson);
+            var history = CreateHistory(scheduled: false, completed: false, failed: false, output: InvocationResultJson);
             var orchestrationContext = new OrchestrationContext { History = history };
 
             var loadedFunctions = new[]
@@ -170,7 +193,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void ValidateTask_Throws_WhenActivityFunctionHasNoProperBinding(
             string bindingType, BindingInfo.Types.Direction bindingDirection)
         {
-            var history = CreateHistory(scheduled: false, completed: false, output: InvocationResultJson);
+            var history = CreateHistory(scheduled: false, completed: false, failed: false, output: InvocationResultJson);
             var orchestrationContext = new OrchestrationContext { History = history };
 
             var loadedFunctions = new[]
@@ -191,12 +214,27 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             DurableTestUtilities.VerifyNoActionAdded(orchestrationContext);
         }
 
-        private HistoryEvent[] CreateHistory(bool scheduled, bool completed, string output)
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void GetCompletedHistoryEvent_ReturnsTaskCompletedOrTaskFailed(bool succeeded)
         {
-            return CreateHistory(FunctionName, scheduled, completed, output);
+            var history = CreateHistory(scheduled: true, completed: succeeded, failed: !succeeded, output: InvocationResultJson);
+            var orchestrationContext = new OrchestrationContext { History = history };
+
+            var task = new ActivityInvocationTask(FunctionName, FunctionInput);
+            var scheduledEvent = task.GetScheduledHistoryEvent(orchestrationContext);
+            var completedEvent = task.GetCompletedHistoryEvent(orchestrationContext, scheduledEvent);
+
+            Assert.Equal(scheduledEvent.EventId, completedEvent.TaskScheduledId);
         }
 
-        private HistoryEvent[] CreateHistory(string name, bool scheduled, bool completed, string output)
+        private HistoryEvent[] CreateHistory(bool scheduled, bool completed, bool failed, string output, string failureReason = null)
+        {
+            return CreateHistory(FunctionName, scheduled, completed, failed, output, failureReason);
+        }
+
+        private HistoryEvent[] CreateHistory(string name, bool scheduled, bool completed, bool failed, string output, string failureReason = null)
         {
             var history = new List<HistoryEvent>();
 
@@ -222,6 +260,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                         EventId = GetUniqueEventId(),
                         TaskScheduledId = taskScheduledEventId,
                         Result = output
+                    });
+            }
+
+            if (failed)
+            {
+                history.Add(
+                    new HistoryEvent
+                    {
+                        EventType = HistoryEventType.TaskFailed,
+                        EventId = GetUniqueEventId(),
+                        TaskScheduledId = taskScheduledEventId,
+                        Result = output,
+                        Reason = failureReason
                     });
             }
 

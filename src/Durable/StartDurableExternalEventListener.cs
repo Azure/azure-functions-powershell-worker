@@ -35,7 +35,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             
             var task = new ExternalEventTask(EventName);
             
-            _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(task, context, NoWait.IsPresent, WriteObject);
+            _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                task, context, NoWait.IsPresent, WriteObject, failureReason => DurableActivityErrorHandler.Handle(this, failureReason));
         }
 
         protected override void StopProcessing()

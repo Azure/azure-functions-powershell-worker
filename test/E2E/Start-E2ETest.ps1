@@ -66,7 +66,7 @@ if (-not $UseCoreToolsBuildFromIntegrationTests.IsPresent)
     Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/netcoreapp$NETCOREAPP_VERSION/publish/worker.config.json" "$FUNC_CLI_DIRECTORY/workers/powershell"
 }
 
-Write-Host "Staring Functions Host..."
+Write-Host "Starting Functions Host..."
 
 $Env:FUNCTIONS_WORKER_RUNTIME = "powershell"
 $Env:FUNCTIONS_WORKER_RUNTIME_VERSION = $POWERSHELL_VERSION

@@ -43,10 +43,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 }
                 else
                 {
-                    // The orchestration function completed
-                    pwsh.EndInvoke(asyncResult);
-                    var result = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(outputBuffer);
-                    return CreateOrchestrationResult(isDone: true, actions, output: result);
+                    try
+                    {
+                        // The orchestration function completed
+                        pwsh.EndInvoke(asyncResult);
+                        var result = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(outputBuffer);
+                        return CreateOrchestrationResult(isDone: true, actions, output: result);
+                    }
+                    catch (Exception e)
+                    {
+                        // The orchestrator code has thrown an unhandled exception:
+                        // this should be treated as an entire orchestration failure
+                        throw new OrchestrationFailureException(actions, e);
+                    }
                 }
             }
             finally

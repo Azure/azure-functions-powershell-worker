@@ -233,6 +233,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     Logger.Log(isUserOnlyLog: true, LogLevel.Error, GetFunctionExceptionMessage(e));
                     throw;
                 }
+                catch (OrchestrationFailureException e)
+                {
+                    if (e.InnerException is IContainsErrorRecord inner)
+                    {
+                        Logger.Log(isUserOnlyLog: true, LogLevel.Error, GetFunctionExceptionMessage(inner));
+                    }
+                    throw;
+                }
             }
             finally
             {

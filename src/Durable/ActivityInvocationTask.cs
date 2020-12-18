@@ -38,8 +38,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             return scheduledHistoryEvent == null
                 ? null
                 : context.History.FirstOrDefault(
-                    e => e.EventType == HistoryEventType.TaskCompleted &&
-                         e.TaskScheduledId == scheduledHistoryEvent.EventId);
+                    e => e.TaskScheduledId == scheduledHistoryEvent.EventId
+                         && (e.EventType == HistoryEventType.TaskCompleted
+                             || e.EventType == HistoryEventType.TaskFailed));
         }
 
         internal override OrchestrationAction CreateOrchestrationAction()

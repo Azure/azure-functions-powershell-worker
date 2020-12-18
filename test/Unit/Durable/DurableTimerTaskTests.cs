@@ -41,7 +41,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 expectedWaitForStop: expectedWaitForStop,
                 () =>
                 {
-                    durableTaskHandler.StopAndInitiateDurableTaskOrReplay(task: new DurableTimerTask(_fireAt), context: context, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
+                    durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                        task: new DurableTimerTask(_fireAt), context: context, noWait: false,
+                        output: _ => { Assert.True(false, "Unexpected output"); },
+                        onFailure: _ => { });
                 });
         }
 
@@ -67,12 +70,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             if (!timerCreated || !timerFired)
             {
                 DurableTestUtilities.EmulateStop(durableTaskHandler);
-                durableTaskHandler.StopAndInitiateDurableTaskOrReplay(task: task, context: context, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
+                durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                    task: task, context: context, noWait: false,
+                    output: _ => { Assert.True(false, "Unexpected output"); },
+                    onFailure: _ => { });
                 Assert.Equal(_startTime, context.CurrentUtcDateTime);
             }
             else
             {
-                durableTaskHandler.StopAndInitiateDurableTaskOrReplay(task: task, context: context, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
+                durableTaskHandler.StopAndInitiateDurableTaskOrReplay(task: task, context: context, noWait: false, _ => { Assert.True(false, "Unexpected output"); }, errorMessage => { });
                 Assert.Equal(_restartTime, context.CurrentUtcDateTime);
             }
             VerifyCreateDurableTimerActionAdded(context, _fireAt);
@@ -92,11 +98,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var durableTaskHandler = new DurableTaskHandler();
 
             for (int i = 0; i < 2; i++) {
-                durableTaskHandler.StopAndInitiateDurableTaskOrReplay(task: new DurableTimerTask(_fireAt), context: context, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
+                durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                    task: new DurableTimerTask(_fireAt), context: context, noWait: false,
+                    output: _ => { Assert.True(false, "Unexpected output"); },
+                    onFailure: _ => { });
                 Assert.Equal(_restartTime, context.CurrentUtcDateTime);
             }
 
-            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(task: new DurableTimerTask(_fireAt), context: context, noWait: false, _ => { Assert.True(false, "Unexpected output"); });
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                task: new DurableTimerTask(_fireAt), context: context, noWait: false,
+                output: _ => { Assert.True(false, "Unexpected output"); },
+                onFailure: _ => { });
             Assert.Equal(_shouldNotHitTime, context.CurrentUtcDateTime);
         }
 
@@ -120,7 +132,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 DurableTestUtilities.EmulateStop(durableTaskHandler);
             }
             
-            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(task: new DurableTimerTask(_fireAt), context: context, noWait: false, _ => { Assert.True(false, "Unexpected output"); } );
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                task: new DurableTimerTask(_fireAt), context: context, noWait: false,
+                output: _ => { Assert.True(false, "Unexpected output"); }, onFailure: _ => { });
             VerifyCreateDurableTimerActionAdded(context, _fireAt);
         }
 
@@ -133,7 +147,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             var durableTaskHandler = new DurableTaskHandler();
 
-            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(task: new DurableTimerTask(_fireAt), context: context, noWait: true, output => { allOutput.Add((DurableTimerTask)output); });
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                task: new DurableTimerTask(_fireAt), context: context, noWait: true,
+                output: output => { allOutput.Add((DurableTimerTask)output); },
+                onFailure: _ => { });
             Assert.Equal(_fireAt, allOutput.Single().FireAt);
             VerifyCreateDurableTimerActionAdded(context, _fireAt);
         }

@@ -6,7 +6,9 @@ Write-Host "DurableClient started"
 
 $ErrorActionPreference = 'Stop'
 
-$InstanceId = Start-NewOrchestration -FunctionName 'DurableOrchestrator' -InputObject 'Hello'
+$FunctionName = $Request.Query.FunctionName ?? 'DurableOrchestrator'
+
+$InstanceId = Start-NewOrchestration -FunctionName $FunctionName -InputObject 'Hello'
 Write-Host "Started orchestration with ID = '$InstanceId'"
 
 $Response = New-OrchestrationCheckStatusResponse -Request $Request -InstanceId $InstanceId
