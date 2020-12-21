@@ -109,7 +109,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                 {
                     case HttpStatusCode.Accepted:
                     {
-                            if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                        if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
                         {
                             Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
                         }
