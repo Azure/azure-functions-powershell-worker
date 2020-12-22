@@ -25,6 +25,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         [DataMember]
         public HistoryEventType EventType { get; set; }
 
+        [DataMember]
+        public string Reason { get; set; }
+
         #endregion
 
         #region Timer_Event_Fields

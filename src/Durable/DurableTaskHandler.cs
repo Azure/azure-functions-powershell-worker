@@ -18,7 +18,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             DurableTask task,
             OrchestrationContext context,
             bool noWait,
-            Action<object> output)
+            Action<object> output,
+            Action<string> onFailure)
         {
             context.OrchestrationActionCollector.Add(task.CreateOrchestrationAction());
 
@@ -35,11 +36,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 if (completedHistoryEvent != null)
                 {                         
                     CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
-                    
-                    if (GetEventResult(completedHistoryEvent) != null)
-                    {
-                        output(GetEventResult(completedHistoryEvent));
-                    }
 
                     if (scheduledHistoryEvent != null)
                     {
@@ -47,6 +43,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     }
 
                     completedHistoryEvent.IsProcessed = true;
+
+                    switch (completedHistoryEvent.EventType)
+                    {
+                        case HistoryEventType.TaskCompleted:
+                            var eventResult = GetEventResult(completedHistoryEvent);
+                            if (eventResult != null)
+                            {
+                                output(eventResult);
+                            }
+                            break;
+
+                        case HistoryEventType.TaskFailed:
+                            onFailure(completedHistoryEvent.Reason);
+                            break;
+                    }
                 }
                 else if (scheduledHistoryEvent == null)
                 {

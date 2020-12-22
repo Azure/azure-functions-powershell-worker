@@ -101,7 +101,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 DurableTestUtilities.EmulateStop(durableTaskHandler);
             }
 
-            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(new ActivityInvocationTask(FunctionName, FunctionInput), context, noWait: false, output => allOutput.Add(output));
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                new ActivityInvocationTask(FunctionName, FunctionInput), context, noWait: false,
+                output: output => allOutput.Add(output), onFailure: _ => { });
             if (completed)
             {
                 Assert.Equal(_restartTime, context.CurrentUtcDateTime);
@@ -146,7 +148,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var allOutput = new List<object>();
             var durableTaskHandler = new DurableTaskHandler();
 
-            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(new ActivityInvocationTask(FunctionName, FunctionInput), context, noWait: false, output => allOutput.Add(output));
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                new ActivityInvocationTask(FunctionName, FunctionInput), context, noWait: false,
+                output: output => allOutput.Add(output), onFailure: _ => { });
 
             Assert.Equal(_startTime, context.CurrentUtcDateTime);
             var shouldNotHitEvent = context.History.First(

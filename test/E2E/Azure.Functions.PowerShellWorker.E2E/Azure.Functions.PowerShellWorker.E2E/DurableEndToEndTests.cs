@@ -87,6 +87,55 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             }
         }
 
+        [Fact]
+        public async Task ActivityExceptionIsPropagatedThroughOrchestrator()
+        {
+            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClient", queryString: "?FunctionName=DurableOrchestratorWithException");
+            Assert.Equal(HttpStatusCode.Accepted, initialResponse.StatusCode);
+
+            var initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+            dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
+            var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
+
+            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(60);
+            var startTime = DateTime.UtcNow;
+
+            using var httpClient = new HttpClient();
+
+            while (true)
+            {
+                var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
+                switch (statusResponse.StatusCode)
+                {
+                    case HttpStatusCode.Accepted:
+                    {
+                        if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                        {
+                            Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                        }
+
+                        await Task.Delay(TimeSpan.FromSeconds(2));
+                        break;
+                    }
+
+                    case HttpStatusCode.OK:
+                    {
+                        var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                        Assert.Equal("Failed", (string)statusResponseBody.runtimeStatus);
+                        var output = statusResponseBody.output.ToString();
+                        Assert.Contains("Orchestrator function 'DurableOrchestratorWithException' failed", output);
+                        Assert.Contains("Activity function 'DurableActivityWithException' failed", output);
+                        Assert.Contains("Intentional exception (Name)", output);
+                        return;
+                    }
+
+                    default:
+                        Assert.True(false, $"Unexpected orchestration status code: {statusResponse.StatusCode}");
+                        break;
+                }
+            }
+        }
+
         /*
             Verifies that the Durable execution model correctly replays the same collection of CurrentUtcDateTimes.
             The orchestrator writes CurrentUtcDateTime values to a temporary file. File contents are expected to

@@ -12,11 +12,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     /// </summary>
     internal class OrchestrationMessage
     {
-        public OrchestrationMessage(bool isDone, List<List<OrchestrationAction>> actions, object output)
+        public OrchestrationMessage(bool isDone, List<List<OrchestrationAction>> actions, object output, string error = null)
         {
             IsDone = isDone;
             Actions = actions;
             Output = output;
+            Error = error;
         }
 
         /// <summary>
@@ -33,5 +34,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         /// The output result of the orchestration function run.
         /// </summary>
         public readonly object Output;
+
+        /// <summary>
+        /// The orchestration error message.
+        /// </summary>
+        public readonly string Error;
     }
 }

@@ -42,9 +42,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
             var task = new ActivityInvocationTask(FunctionName, Input);
             ActivityInvocationTask.ValidateTask(task, loadedFunctions);
-            
+
             _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
-                task, context, NoWait.IsPresent, WriteObject);
+                task, context, NoWait.IsPresent, WriteObject, failureReason => DurableActivityErrorHandler.Handle(this, failureReason));
         }
 
         protected override void StopProcessing()

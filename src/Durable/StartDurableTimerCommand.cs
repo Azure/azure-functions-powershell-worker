@@ -37,7 +37,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             DateTime fireAt = context.CurrentUtcDateTime.Add(Duration);
             var task = new DurableTimerTask(fireAt);
             
-            _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(task, context, NoWait.IsPresent, WriteObject);
+            _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                task, context, NoWait.IsPresent, WriteObject, failureReason => DurableActivityErrorHandler.Handle(this, failureReason));
         }
 
         protected override void StopProcessing()
