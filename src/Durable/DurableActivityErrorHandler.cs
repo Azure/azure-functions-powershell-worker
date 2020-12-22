@@ -25,7 +25,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             //   - Exception message
             //   - Error category
             // If you make changes in any of these, make sure they are backward-compatible,
-            // so the existing Functions are not.
+            // so the existing Functions are not broken.
 
             const string ErrorId = "Functions.Durable.ActivityFailure";
             var exception = new ActivityFailureException(errorMessage);
