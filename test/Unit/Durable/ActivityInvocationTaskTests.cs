@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -64,7 +64,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         [Theory]
         [InlineData(false, false)]
-        [InlineData(false, true)]
         [InlineData(true, false)]
         public void StopAndInitiateDurableTaskOrReplay_OutputsNothing_IfActivityNotCompleted(
             bool scheduled, bool completed)
