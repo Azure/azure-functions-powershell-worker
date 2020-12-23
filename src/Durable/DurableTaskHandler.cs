@@ -59,7 +59,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                             break;
                     }
                 }
-                else if (scheduledHistoryEvent == null)
+                else
                 {
                     InitiateAndWaitForStop(context);
                 }

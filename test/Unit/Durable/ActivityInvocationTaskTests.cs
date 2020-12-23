@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
@@ -84,14 +84,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         [Theory]
-        [InlineData(false, true)]
-        [InlineData(true, false)]
-        public void StopAndInitiateDurableTaskOrReplay_WaitsForStop_IfActivityNotCompleted(bool scheduledAndCompleted, bool expectedWaitForStop)
+        [InlineData(false, false, true)]
+        [InlineData(true, false, true)]
+        [InlineData(true, true, false)]
+        public void StopAndInitiateDurableTaskOrReplay_WaitsForStop_IfActivityNotCompleted(bool scheduled, bool completed, bool expectedWaitForStop)
         {
             var durableTaskHandler = new DurableTaskHandler();
 
             var history = CreateHistory(
-                scheduled: scheduledAndCompleted, completed: scheduledAndCompleted, failed: false, output: InvocationResultJson);
+                scheduled: scheduled, completed: completed, failed: false, output: InvocationResultJson);
 
             var orchestrationContext = new OrchestrationContext { History = history };
 
