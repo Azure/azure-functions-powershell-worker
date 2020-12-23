@@ -64,7 +64,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         [Theory]
         [InlineData(false, false)]
-        [InlineData(false, true)]
         [InlineData(true, false)]
         public void StopAndInitiateDurableTaskOrReplay_OutputsNothing_IfActivityNotCompleted(
             bool scheduled, bool completed)
@@ -84,14 +83,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         [Theory]
-        [InlineData(false, true)]
-        [InlineData(true, false)]
-        public void StopAndInitiateDurableTaskOrReplay_WaitsForStop_IfActivityNotCompleted(bool scheduledAndCompleted, bool expectedWaitForStop)
+        [InlineData(false, false, true)]
+        [InlineData(true, false, true)]
+        [InlineData(true, true, false)]
+        public void StopAndInitiateDurableTaskOrReplay_WaitsForStop_IfActivityNotCompleted(bool scheduled, bool completed, bool expectedWaitForStop)
         {
             var durableTaskHandler = new DurableTaskHandler();
 
             var history = CreateHistory(
-                scheduled: scheduledAndCompleted, completed: scheduledAndCompleted, failed: false, output: InvocationResultJson);
+                scheduled: scheduled, completed: completed, failed: false, output: InvocationResultJson);
 
             var orchestrationContext = new OrchestrationContext { History = history };
 
