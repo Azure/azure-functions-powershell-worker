@@ -1,24 +1,31 @@
-﻿//
+//
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
 #pragma warning disable 1591 // Missing XML comment for publicly visible type or member 'member'
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
 {
+    using System;
     using System.Collections;
     using System.Management.Automation;
 
-    [Cmdlet("Wait", "DurableTask")]
-    public class WaitDurableTaskCommand : PSCmdlet
+    /// <summary>
+    /// Start the Durable Functions timer
+    /// </summary>
+    [Cmdlet("Start", "DurableTimer")]
+    public class StartDurableTimerCommand : PSCmdlet
     {
+        /// <summary>
+        /// Gets and sets the duration of the Durable Timer.
+        /// </summary>
         [Parameter(Mandatory = true)]
-        [ValidateNotNull]
-        public DurableTask[] Task { get; set; }
+        [ValidateNotNullOrEmpty]
+        public TimeSpan Duration { get; set; }
 
         [Parameter]
-        public SwitchParameter Any { get; set; }
+        public SwitchParameter NoWait { get; set; }
 
         private readonly DurableTaskHandler _durableTaskHandler = new DurableTaskHandler();
 
@@ -26,15 +33,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
-            
-            if (Any.IsPresent)
-            {
-                _durableTaskHandler.WaitAny(Task, context, WriteObject);
-            }
-            else
-            {
-                _durableTaskHandler.WaitAll(Task, context, WriteObject);
-            }
+
+            DateTime fireAt = context.CurrentUtcDateTime.Add(Duration);
+            var task = new DurableTimerTask(fireAt);
+
+            _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                task, context, NoWait.IsPresent, WriteObject, failureReason => DurableActivityErrorHandler.Handle(this, failureReason));
         }
 
         protected override void StopProcessing()
