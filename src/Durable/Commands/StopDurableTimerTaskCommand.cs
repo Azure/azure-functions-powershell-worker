@@ -8,6 +8,7 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
 {
     using System.Management.Automation;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
 
     /// <summary>
     /// Stop the Durable timeout task

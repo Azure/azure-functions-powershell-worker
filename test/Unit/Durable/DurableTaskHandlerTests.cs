@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
     using Xunit;
 
     public class DurableTaskHandlerTests

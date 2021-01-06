@@ -8,8 +8,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System;
     using System.Collections.Generic;
     using System.Threading;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
     using Utility;
-    
+
     internal class DurableTaskHandler
     {
         private readonly ManualResetEvent _waitForStop = new ManualResetEvent(initialState: false);

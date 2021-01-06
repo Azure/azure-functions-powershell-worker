@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     using System.Linq;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
     using Xunit;
 
     public class DurableTimerTaskTests

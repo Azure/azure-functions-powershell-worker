@@ -5,11 +5,11 @@
 
 #pragma warning disable 1591 // "Missing XML comments for publicly visible type"
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
 {
     using System;
     using System.Linq;
-    
+
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
 
     // Returned by the Start-DurableTimer cmdlet if the NoWait flag is present, representing a timeout task

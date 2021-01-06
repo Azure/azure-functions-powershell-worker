@@ -5,14 +5,14 @@
 
 #pragma warning disable 1591 // "Missing XML comments for publicly visible type"
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
 {
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
 
     public abstract class DurableTask
     {
         internal abstract HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context);
-        
+
         internal abstract HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent scheduledHistoryEvent);
 
         internal abstract OrchestrationAction CreateOrchestrationAction();

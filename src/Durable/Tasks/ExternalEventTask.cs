@@ -5,7 +5,7 @@
 
 #pragma warning disable 1591 // "Missing XML comments for publicly visible type"
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
 {
     using System.Linq;
 

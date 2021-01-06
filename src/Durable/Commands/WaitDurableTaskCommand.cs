@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
 {
     using System.Collections;
     using System.Management.Automation;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
 
     [Cmdlet("Wait", "DurableTask")]
     public class WaitDurableTaskCommand : PSCmdlet
