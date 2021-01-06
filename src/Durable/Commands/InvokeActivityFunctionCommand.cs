@@ -5,24 +5,30 @@
 
 #pragma warning disable 1591 // Missing XML comment for publicly visible type or member 'member'
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
 {
-    using System;
     using System.Collections;
     using System.Management.Automation;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
 
     /// <summary>
-    /// Start the Durable Functions timer
+    /// Invoke an activity function.
     /// </summary>
-    [Cmdlet("Start", "DurableTimer")]
-    public class StartDurableTimerCommand : PSCmdlet
+    [Cmdlet("Invoke", "ActivityFunction")]
+    public class InvokeActivityFunctionCommand : PSCmdlet
     {
         /// <summary>
-        /// Gets and sets the duration of the Durable Timer.
+        /// Gets and sets the activity function name.
         /// </summary>
         [Parameter(Mandatory = true)]
-        [ValidateNotNullOrEmpty]
-        public TimeSpan Duration { get; set; }
+        public string FunctionName { get; set; }
+
+        /// <summary>
+        /// Gets and sets the input for an activity function.
+        /// </summary>
+        [Parameter]
+        [ValidateNotNull]
+        public object Input { get; set; }
 
         [Parameter]
         public SwitchParameter NoWait { get; set; }
@@ -33,10 +39,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
-            
-            DateTime fireAt = context.CurrentUtcDateTime.Add(Duration);
-            var task = new DurableTimerTask(fireAt);
-            
+            var loadedFunctions = FunctionLoader.GetLoadedFunctions();
+
+            var task = new ActivityInvocationTask(FunctionName, Input);
+            ActivityInvocationTask.ValidateTask(task, loadedFunctions);
+
             _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
                 task, context, NoWait.IsPresent, WriteObject, failureReason => DurableActivityErrorHandler.Handle(this, failureReason));
         }

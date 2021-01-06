@@ -7,6 +7,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     using System.Collections.Generic;
 
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
+
     /// <summary>
     /// Represent an orchestration message to be sent to the host.
     /// </summary>

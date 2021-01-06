@@ -5,10 +5,11 @@
 
 #pragma warning disable 1591 // Missing XML comment for publicly visible type or member 'member'
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
 {
     using System.Collections;
     using System.Management.Automation;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
 
     /// <summary>
     /// Start the Durable External Event Listener
@@ -32,9 +33,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
-            
+
             var task = new ExternalEventTask(EventName);
-            
+
             _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
                 task, context, NoWait.IsPresent, WriteObject, failureReason => DurableActivityErrorHandler.Handle(this, failureReason));
         }

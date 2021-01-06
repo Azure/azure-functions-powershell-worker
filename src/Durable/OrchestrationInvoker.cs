@@ -12,6 +12,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Management.Automation;
 
     using PowerShellWorker.Utility;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
 
     internal class OrchestrationInvoker : IOrchestrationInvoker
     {

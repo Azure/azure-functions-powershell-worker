@@ -5,10 +5,11 @@
 
 #pragma warning disable 1591 // Missing XML comment for publicly visible type or member 'member'
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
 {
     using System.Collections;
     using System.Management.Automation;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
 
     [Cmdlet("Wait", "DurableTask")]
     public class WaitDurableTaskCommand : PSCmdlet
@@ -26,7 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
-            
+
             if (Any.IsPresent)
             {
                 _durableTaskHandler.WaitAny(Task, context, WriteObject);

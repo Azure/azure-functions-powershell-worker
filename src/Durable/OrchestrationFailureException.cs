@@ -9,6 +9,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Collections.Generic;
     using Newtonsoft.Json;
 
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
+
     /// <summary>
     /// OrchestrationFailureException should be propagated back to the Host when an orchestrator function
     /// throws and does not handle an exception. The Durable Functions extension implementation requires

@@ -5,13 +5,17 @@
 
 #pragma warning disable 1591 // "Missing XML comments for publicly visible type"
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
 {
     using System;
     using System.Linq;
     using System.Collections.Generic;
 
     using WebJobs.Script.Grpc.Messages;
+
+    using Microsoft.Azure.Functions.PowerShellWorker;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
 
     public class ActivityInvocationTask : DurableTask
     {

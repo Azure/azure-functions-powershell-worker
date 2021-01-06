@@ -12,6 +12,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     using System.Linq;
     using System.Management.Automation;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
     using Moq;
     using Xunit;
 

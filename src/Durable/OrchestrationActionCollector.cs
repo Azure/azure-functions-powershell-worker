@@ -9,6 +9,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Collections.Generic;
     using System.Threading;
 
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
+
     internal class OrchestrationActionCollector
     {
         private readonly List<OrchestrationAction> _actions = new List<OrchestrationAction>();
