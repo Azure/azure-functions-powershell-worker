@@ -13,6 +13,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     using WebJobs.Script.Grpc.Messages;
 
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
+
     public class ActivityInvocationTask : DurableTask
     {
         internal string FunctionName { get; }

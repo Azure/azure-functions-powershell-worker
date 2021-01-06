@@ -15,6 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     using System.Threading;
     using Moq;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
     using WebJobs.Script.Grpc.Messages;
     using Xunit;
 

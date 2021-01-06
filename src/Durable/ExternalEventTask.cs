@@ -9,6 +9,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     using System.Linq;
 
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
+
     public class ExternalEventTask : DurableTask
     {
         internal string ExternalEventName { get; }

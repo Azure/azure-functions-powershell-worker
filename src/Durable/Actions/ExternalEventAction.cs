@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions
 {
     /// <summary>
     /// An orchestration action that represents listening for an external event
@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         public ExternalEventAction(string externalEventName)
             : base(ActionType.WaitForExternalEvent)
         {
-            ExternalEventName = externalEventName; 
+            ExternalEventName = externalEventName;
         }
     }
 }
