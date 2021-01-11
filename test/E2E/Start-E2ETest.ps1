@@ -28,8 +28,8 @@ if ($IsWindows) {
 $coreToolsDownloadURL = $null
 if ($UseCoreToolsBuildFromIntegrationTests.IsPresent)
 {
-    $coreToolsDownloadURL = "https://funcintegrationtests.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/Azure.Functions.Cli.$os-$arch.zip"
-    $env:CORE_TOOLS_URL = "https://funcintegrationtests.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest"
+    $coreToolsDownloadURL = "https://functionsintegclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/Azure.Functions.Cli.$os-$arch.zip"
+    $env:CORE_TOOLS_URL = "https://functionsintegclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest"
 }
 else
 {
