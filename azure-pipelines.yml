@@ -7,8 +7,15 @@
 #- master
 #- dev
 
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-latest'
+    windows:
+      imageName: 'vs2017-win2016'
+
 pool:
-    vmImage: 'vs2017-win2016'
+    vmImage: $(imageName)
 
 variables:
   Configuration: Release
