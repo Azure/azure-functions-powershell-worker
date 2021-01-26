@@ -20,7 +20,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             OrchestrationContext context,
             bool noWait,
             Action<object> output,
-            Action<string> onFailure)
+            Action<string> onFailure,
+            RetryOptions retryOptions = null)
         {
             context.OrchestrationActionCollector.Add(task.CreateOrchestrationAction());
 
@@ -30,6 +31,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             else
             {
+                context.OrchestrationActionCollector.NextBatch();
+
                 var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context);
                 var completedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent);
 
@@ -56,7 +59,32 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                             break;
 
                         case HistoryEventType.TaskFailed:
-                            onFailure(completedHistoryEvent.Reason);
+                            if (retryOptions == null)
+                            {
+                                onFailure(completedHistoryEvent.Reason);
+                            }
+                            else
+                            {
+                                // Reset IsProcessed, let RetryProcessor handle these events instead.
+                                scheduledHistoryEvent.IsProcessed = false;
+                                completedHistoryEvent.IsProcessed = false;
+
+                                var shouldContinueProcessing =
+                                    RetryProcessor.Process(
+                                        context.History,
+                                        scheduledHistoryEvent,
+                                        retryOptions.MaxNumberOfAttempts,
+                                        onSuccess:
+                                            result => {
+                                                output(TypeExtensions.ConvertFromJson(result));
+                                            },
+                                        onFailure);
+                                        
+                                if (shouldContinueProcessing)
+                                {
+                                    InitiateAndWaitForStop(context);
+                                }
+                            }
                             break;
                     }
                 }
@@ -73,6 +101,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             OrchestrationContext context,
             Action<object> output)
         {
+            context.OrchestrationActionCollector.NextBatch();
+                
             var completedEvents = new List<HistoryEvent>();
             foreach (var task in tasksToWaitFor)
             {
@@ -118,6 +148,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             OrchestrationContext context,
             Action<object> output)
         {
+            context.OrchestrationActionCollector.NextBatch();
+                
             var completedTasks = new List<DurableTask>();
             DurableTask firstCompletedTask = null;
             int firstCompletedHistoryEventIndex = -1;

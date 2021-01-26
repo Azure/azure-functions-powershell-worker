@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [Fact]
         public void MessageContainsInnerExceptionMessage()
         {
-            var e = new OrchestrationFailureException(new List<OrchestrationAction>(), _innerException);
+            var e = new OrchestrationFailureException(new List<List<OrchestrationAction>>(), _innerException);
 
             var labelPos = e.Message.IndexOf(OrchestrationFailureException.OutOfProcDataLabel);
             Assert.Equal(_innerException.Message, e.Message.Substring(0, labelPos));
@@ -29,11 +29,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [Fact]
         public void MessageContainsSerializedOrchestrationMessage()
         {
-            var actions = new List<OrchestrationAction> {
-                    new CallActivityAction("activity1", "input1"),
-                    new CallActivityAction("activity2", "input2")
-                };
-
+            var actions = new List<List<OrchestrationAction>> {
+                                new List<OrchestrationAction> {
+                                        new CallActivityAction("activity1", "input1"),
+                                        new CallActivityAction("activity2", "input2")
+                                    }
+                            };
+                
             var e = new OrchestrationFailureException(actions, _innerException);
 
             var labelPos = e.Message.IndexOf(OrchestrationFailureException.OutOfProcDataLabel);
@@ -44,10 +46,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Null(orchestrationMessage.Output.Value);
             Assert.Equal(_innerException.Message, (string)orchestrationMessage.Error);
             var deserializedActions = (IEnumerable<dynamic>)((IEnumerable<dynamic>)orchestrationMessage.Actions).Single();
-            Assert.Equal(actions.Count(), deserializedActions.Count());
-            for (var i = 0; i < actions.Count(); i++)
+            for (var i = 0; i < actions.Single().Count(); i++)
             {
-                AssertEqualAction((OrchestrationAction)actions[i], deserializedActions.ElementAt(i));
+                AssertEqualAction((OrchestrationAction)actions.Single()[i], deserializedActions.ElementAt(i));
             }
         }
 

@@ -63,8 +63,10 @@ PowerShell.sln.DotSettings.user
 StyleCop.Cache
 
 examples/PSCoreApp/Modules
-src/Modules
-!src/Modules/Microsoft.Azure.Functions.PowerShellWorker
+src/Modules/Microsoft.PowerShell.*
+src/Modules/PackageManagement
+src/Modules/PowerShellGet
+src/Modules/ThreadJob
 
 # protobuf
 protobuf/*

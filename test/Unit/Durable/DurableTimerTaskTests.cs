@@ -227,7 +227,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private void VerifyCreateDurableTimerActionAdded(OrchestrationContext context, DateTime fireAt)
         {
             var actions = DurableTestUtilities.GetCollectedActions(context);
-            var action = (CreateDurableTimerAction)actions.Last();
+            var action = (CreateDurableTimerAction)actions.Last().Last();
             Assert.Equal(action.FireAt, fireAt);
         }
     }

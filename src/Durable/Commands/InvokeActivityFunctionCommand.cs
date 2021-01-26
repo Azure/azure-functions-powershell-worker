@@ -33,6 +33,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
         [Parameter]
         public SwitchParameter NoWait { get; set; }
 
+        [Parameter]
+        [ValidateNotNull]
+        public RetryOptions RetryOptions { get; set; }
+
         private readonly DurableTaskHandler _durableTaskHandler = new DurableTaskHandler();
 
         protected override void EndProcessing()
@@ -41,11 +45,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
             var loadedFunctions = FunctionLoader.GetLoadedFunctions();
 
-            var task = new ActivityInvocationTask(FunctionName, Input);
+            var task = new ActivityInvocationTask(FunctionName, Input, RetryOptions);
             ActivityInvocationTask.ValidateTask(task, loadedFunctions);
 
             _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
-                task, context, NoWait.IsPresent, WriteObject, failureReason => DurableActivityErrorHandler.Handle(this, failureReason));
+                task, context, NoWait.IsPresent,
+                output: WriteObject,
+                onFailure: failureReason => DurableActivityErrorHandler.Handle(this, failureReason),
+                retryOptions: RetryOptions);
         }
 
         protected override void StopProcessing()

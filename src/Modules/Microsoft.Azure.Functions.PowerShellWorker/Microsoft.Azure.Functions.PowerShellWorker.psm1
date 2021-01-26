@@ -208,3 +208,29 @@ function GetRaiseEventUrl(
 
     return $RequestUrl
 }
+
+function New-DurableRetryOptions(
+    [Parameter(Mandatory = $true)]
+    [timespan]
+    $FirstRetryInterval,
+
+    [Parameter(Mandatory = $true)]
+    [int]
+    $MaxNumberOfAttempts,
+    
+    [double]
+    $BackoffCoefficient,
+    
+    [timespan]
+    $MaxRetryInterval,
+    
+    [timespan]
+    $RetryTimeout) {
+
+    [Microsoft.Azure.Functions.PowerShellWorker.Durable.RetryOptions]::new(
+        $FirstRetryInterval,
+        $MaxNumberOfAttempts,
+        $PSBoundParameters.ContainsKey('BackoffCoefficient') ? $BackoffCoefficient : $null,
+        $MaxRetryInterval,
+        $RetryTimeout)
+}

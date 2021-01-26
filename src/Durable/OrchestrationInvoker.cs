@@ -67,10 +67,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         private static Hashtable CreateOrchestrationResult(
             bool isDone,
-            List<OrchestrationAction> actions,
+            List<List<OrchestrationAction>> actions,
             object output)
         {
-            var orchestrationMessage = new OrchestrationMessage(isDone, new List<List<OrchestrationAction>> { actions }, output);
+            var orchestrationMessage = new OrchestrationMessage(isDone, actions, output);
             return new Hashtable { { AzFunctionInfo.DollarReturn, orchestrationMessage } };
         }
     }
