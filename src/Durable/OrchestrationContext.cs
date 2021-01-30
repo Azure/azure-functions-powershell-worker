@@ -31,8 +31,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         [DataMember]
         internal HistoryEvent[] History { get; set; }
 
-        public DateTime CurrentUtcDateTime {get; internal set; }
+        public DateTime CurrentUtcDateTime { get; internal set; }
 
         internal OrchestrationActionCollector OrchestrationActionCollector { get; } = new OrchestrationActionCollector();
+
+        internal object CustomStatus { get; set; }
     }
 }
