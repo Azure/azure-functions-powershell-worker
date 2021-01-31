@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [Fact]
         public void MessageContainsInnerExceptionMessage()
         {
-            var e = new OrchestrationFailureException(new List<List<OrchestrationAction>>(), _innerException);
+            var e = new OrchestrationFailureException(new List<List<OrchestrationAction>>(), customStatus: null, _innerException);
 
             var labelPos = e.Message.IndexOf(OrchestrationFailureException.OutOfProcDataLabel);
             Assert.Equal(_innerException.Message, e.Message.Substring(0, labelPos));
@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                                     }
                             };
                 
-            var e = new OrchestrationFailureException(actions, _innerException);
+            var e = new OrchestrationFailureException(actions,  customStatus: null, _innerException);
 
             var labelPos = e.Message.IndexOf(OrchestrationFailureException.OutOfProcDataLabel);
             var startPos = labelPos + OrchestrationFailureException.OutOfProcDataLabel.Length;
