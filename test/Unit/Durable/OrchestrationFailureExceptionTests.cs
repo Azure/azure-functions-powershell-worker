@@ -35,8 +35,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                                         new CallActivityAction("activity2", "input2")
                                     }
                             };
-                
-            var e = new OrchestrationFailureException(actions,  customStatus: null, _innerException);
+
+            const string CustomStatus = "my custom status";
+            
+            var e = new OrchestrationFailureException(actions,  customStatus: CustomStatus, _innerException);
 
             var labelPos = e.Message.IndexOf(OrchestrationFailureException.OutOfProcDataLabel);
             var startPos = labelPos + OrchestrationFailureException.OutOfProcDataLabel.Length;
@@ -45,6 +47,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.False((bool)orchestrationMessage.IsDone);
             Assert.Null(orchestrationMessage.Output.Value);
             Assert.Equal(_innerException.Message, (string)orchestrationMessage.Error);
+            Assert.Equal(CustomStatus, (string)orchestrationMessage.CustomStatus);
             var deserializedActions = (IEnumerable<dynamic>)((IEnumerable<dynamic>)orchestrationMessage.Actions).Single();
             for (var i = 0; i < actions.Single().Count(); i++)
             {
