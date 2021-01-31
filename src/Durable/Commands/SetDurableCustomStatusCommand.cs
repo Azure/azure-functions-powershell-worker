@@ -13,7 +13,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
     [Cmdlet("Set", "DurableCustomStatus")]
     public class SetDurableCustomStatusCommand : PSCmdlet
     {
-        [Parameter]
+        [Parameter(
+            Mandatory = true,
+            Position = 0,
+            ValueFromPipeline = true)]
         public object CustomStatus { get; set; }
 
         protected override void EndProcessing()
