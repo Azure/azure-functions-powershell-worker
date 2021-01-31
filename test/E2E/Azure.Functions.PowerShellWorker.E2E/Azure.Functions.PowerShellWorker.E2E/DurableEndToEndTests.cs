@@ -65,6 +65,8 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                                 Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
                             }
 
+                            Assert.Equal("Custom status: started", (string)statusResponseBody.customStatus);
+
                             await Task.Delay(TimeSpan.FromSeconds(2));
                             break;
                         }
@@ -77,6 +79,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                             Assert.Equal("Hello Seattle", statusResponseBody.output[1].ToString());
                             Assert.Equal("Hello London", statusResponseBody.output[2].ToString());
                             Assert.Equal("Hello Toronto", statusResponseBody.output[3].ToString());
+                            Assert.Equal("Custom status: finished", (string)statusResponseBody.customStatus);
                             return;
                         }
 

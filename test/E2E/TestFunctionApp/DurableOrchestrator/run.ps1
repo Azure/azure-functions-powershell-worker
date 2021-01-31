@@ -6,6 +6,8 @@ $ErrorActionPreference = 'Stop'
 
 Write-Host "DurableOrchestrator: started. Input: $($Context.Input)"
 
+Set-DurableCustomStatus -CustomStatus 'Custom status: started'
+
 # Function chaining
 $output = @()
 $output += Invoke-ActivityFunction -FunctionName "DurableActivity" -Input "Tokyo"
@@ -20,6 +22,8 @@ $output += Wait-DurableTask -Task $tasks
 $retryOptions = New-DurableRetryOptions -FirstRetryInterval (New-Timespan -Seconds 2) -MaxNumberOfAttempts 5
 $inputData = @{ Name = 'Toronto'; StartTime = $Context.CurrentUtcDateTime }
 $output += Invoke-ActivityFunction -FunctionName "DurableActivityFlaky" -Input $inputData -RetryOptions $retryOptions
+
+Set-DurableCustomStatus -CustomStatus 'Custom status: finished'
 
 Write-Host "DurableOrchestrator: finished."
 
