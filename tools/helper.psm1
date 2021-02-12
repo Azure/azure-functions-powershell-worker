@@ -7,8 +7,8 @@ using namespace System.Runtime.InteropServices
 
 $IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
 $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
-$MinimalSDKVersion = '3.1.405'
-$DefaultSDKVersion = '3.1.405'
+$MinimalSDKVersion = '3.1.406'
+$DefaultSDKVersion = '3.1.406'
 $LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
 $GrpcToolsVersion = '2.27.0' # grpc.tools
 $GoogleProtobufToolsVersion = '3.11.4' # google.protobuf.tools
