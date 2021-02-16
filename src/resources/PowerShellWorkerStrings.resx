@@ -290,7 +290,7 @@
     <value>First function load request completed in {0} ms.</value>
   </data>
   <data name="ProfileInvocationCompleted" xml:space="preserve">
-    <value>Profile invocation completed in {0} ms.</value>
+    <value>Profile invocation completed in '{0}' ms.</value>
   </data>
   <data name="FunctionInvocationStarting" xml:space="preserve">
     <value>Invoking function '{0}' code {1} ms after receiving request. Invocation performance details: {2}</value>
