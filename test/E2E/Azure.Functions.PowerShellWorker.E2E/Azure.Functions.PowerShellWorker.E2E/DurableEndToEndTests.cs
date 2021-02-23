@@ -42,7 +42,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             Assert.NotNull(initialResponseBodyObject.terminatePostUri);
             Assert.NotNull(initialResponseBodyObject.rewindPostUri);
 
-            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(60);
+            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(90);
             var startTime = DateTime.UtcNow;
 
             using (var httpClient = new HttpClient())
@@ -76,6 +76,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                             Assert.Equal("Hello Tokyo", statusResponseBody.output[0].ToString());
                             Assert.Equal("Hello Seattle", statusResponseBody.output[1].ToString());
                             Assert.Equal("Hello London", statusResponseBody.output[2].ToString());
+                            Assert.Equal("Hello Toronto", statusResponseBody.output[3].ToString());
                             return;
                         }
 

@@ -289,7 +289,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private static void VerifyCallActivityActionAdded(OrchestrationContext orchestrationContext)
         {
             var actions = DurableTestUtilities.GetCollectedActions(orchestrationContext);
-            var action = (CallActivityAction) actions.Single();
+            var action = (CallActivityAction)actions.Single().Single();
             Assert.Equal(FunctionName, action.FunctionName);
             Assert.Equal(FunctionInput, action.Input);
         }

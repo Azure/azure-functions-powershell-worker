@@ -86,7 +86,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                     });
         }
 
-        public static List<OrchestrationAction> GetCollectedActions(OrchestrationContext orchestrationContext)
+        public static List<List<OrchestrationAction>> GetCollectedActions(OrchestrationContext orchestrationContext)
         {
             var (_, actions) = orchestrationContext.OrchestrationActionCollector.WaitForActions(new ManualResetEvent(true));
             return actions;

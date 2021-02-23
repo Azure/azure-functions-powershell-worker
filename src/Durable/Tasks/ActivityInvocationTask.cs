@@ -23,10 +23,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
 
         private object Input { get; }
 
-        internal ActivityInvocationTask(string functionName, object functionInput)
+        private RetryOptions RetryOptions { get; }
+
+        internal ActivityInvocationTask(string functionName, object functionInput, RetryOptions retryOptions)
         {
             FunctionName = functionName;
             Input = functionInput;
+            RetryOptions = retryOptions;
+        }
+
+        internal ActivityInvocationTask(string functionName, object functionInput)
+            : this(functionName, functionInput, retryOptions: null)
+        {
         }
 
         internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context)
@@ -49,7 +57,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
 
         internal override OrchestrationAction CreateOrchestrationAction()
         {
-            return new CallActivityAction(FunctionName, Input);
+            return RetryOptions == null
+                ? new CallActivityAction(FunctionName, Input)
+                : new CallActivityWithRetryAction(FunctionName, Input, RetryOptions);
         }
 
         internal static void ValidateTask(ActivityInvocationTask task, IEnumerable<AzFunctionInfo> loadedFunctions)

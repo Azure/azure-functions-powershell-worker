@@ -24,17 +24,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
         }
 
-        public OrchestrationFailureException(List<OrchestrationAction> actions, Exception innerException)
+        public OrchestrationFailureException(List<List<OrchestrationAction>> actions, Exception innerException)
             : base(FormatOrchestrationFailureMessage(actions, innerException), innerException)
         {
         }
 
-        private static string FormatOrchestrationFailureMessage(List<OrchestrationAction> actions, Exception exception)
+        private static string FormatOrchestrationFailureMessage(List<List<OrchestrationAction>> actions, Exception exception)
         {
             // For more details on why this message looks like this, see:
             // - https://github.com/Azure/azure-functions-durable-js/pull/145
             // - https://github.com/Azure/azure-functions-durable-extension/pull/1171
-            var orchestrationMessage = new OrchestrationMessage(isDone: false, new List<List<OrchestrationAction>> { actions }, output: null, exception.Message);
+            var orchestrationMessage = new OrchestrationMessage(isDone: false, actions, output: null, exception.Message);
             var message = $"{exception.Message}{OutOfProcDataLabel}{JsonConvert.SerializeObject(orchestrationMessage)}";
             return message;
         }

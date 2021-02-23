@@ -8,7 +8,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     using System;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
+    using System.Linq;
+    using System.Threading;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
     using Xunit;
 
@@ -189,6 +192,116 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 {
                     durableTaskHandler.WaitAny(tasksToWaitFor, orchestrationContext, _ => { });
                 });
+        }
+
+        [Theory]
+        [InlineData(false, 1, 1)]
+        [InlineData(false, 5, 5)]
+        [InlineData(true, 1, 1)]
+        [InlineData(true, 5, 1)]
+        public void StopAndInitiateDurableTaskOrReplay_AddsActivityBatch_UnlessNoWait(bool noWait, int numberOfActions, int expectedNumberOfBatches)
+        {
+            var orchestrationContext = new OrchestrationContext { History = new HistoryEvent[0] };
+            var durableTaskHandler = new DurableTaskHandler();
+
+            for (var i = 0; i < numberOfActions; ++i)
+            {
+                durableTaskHandler.Stop(); // just to avoid the next call getting stuck waiting for a stop event
+
+                durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                    new ActivityInvocationTask("Function", "Input"),
+                    orchestrationContext,
+                    noWait: noWait,
+                    output: _ => {},
+                    onFailure: _ => {}
+                );
+            }
+
+            var (_, actions) = orchestrationContext.OrchestrationActionCollector.WaitForActions(new AutoResetEvent(initialState: true));
+            Assert.Equal(expectedNumberOfBatches, actions.Count);
+        }
+
+        [Theory]
+        [InlineData(false, false, 1)]
+        [InlineData(true, false, 2)]
+        [InlineData(false, true, 2)]
+        [InlineData(true, true, 2)]
+        public void WaitAll_And_WaitAny_StartNewActivityBatch(bool invokeWaitAll, bool invokeWaitAny, int expectedNumberOfBatches)
+        {
+            var orchestrationContext = new OrchestrationContext { History = new HistoryEvent[0] };
+            var durableTaskHandler = new DurableTaskHandler();
+
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                new ActivityInvocationTask("Function", "Input"),
+                orchestrationContext,
+                noWait: true,
+                output: _ => {},
+                onFailure: _ => {}
+            );
+
+            if (invokeWaitAll)
+            {
+                durableTaskHandler.Stop(); // just to avoid the next call getting stuck waiting for a stop event
+                durableTaskHandler.WaitAll(new DurableTask[0], orchestrationContext, output: _ => {});
+            }
+
+            if (invokeWaitAny)
+            {
+                durableTaskHandler.Stop(); // just to avoid the next call getting stuck waiting for a stop event
+                durableTaskHandler.WaitAny(new DurableTask[0], orchestrationContext, output: _ => {});
+            }
+
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                new ActivityInvocationTask("Function", "Input"),
+                orchestrationContext,
+                noWait: true,
+                output: _ => {},
+                onFailure: _ => {}
+            );
+
+            var (_, actions) = orchestrationContext.OrchestrationActionCollector.WaitForActions(new AutoResetEvent(initialState: true));
+            Assert.Equal(expectedNumberOfBatches, actions.Count);
+        }
+
+        [Fact]
+        public void StopAndInitiateDurableTaskOrReplay_RetriesOnFailure()
+        {
+            const string FunctionName = "Function";
+            const string FunctionInput = "Input";
+
+            var history = new[]
+            {
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, Name = FunctionName, EventId = 1 },
+                new HistoryEvent { EventType = HistoryEventType.TaskFailed, TaskScheduledId = 1 },
+                new HistoryEvent { EventType = HistoryEventType.TimerCreated, EventId = 2 },
+                new HistoryEvent { EventType = HistoryEventType.TimerFired, TimerId = 2 },
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, Name = FunctionName, EventId = 3 },
+                new HistoryEvent { EventType = HistoryEventType.TaskCompleted, Result = "\"OK\"", TaskScheduledId = 3 },
+            };
+
+            var orchestrationContext = new OrchestrationContext { History = history };
+            var durableTaskHandler = new DurableTaskHandler();
+
+            var retryOptions = new RetryOptions(TimeSpan.FromSeconds(1), 2, null, null, null);
+
+            object result = null;
+
+            durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
+                new ActivityInvocationTask(FunctionName, FunctionInput, retryOptions),
+                orchestrationContext,
+                noWait: false,
+                output: output => { result = output; },
+                onFailure: _ => { Assert.True(false, "Unexpected failure"); },
+                retryOptions: retryOptions
+            );
+
+            Assert.Equal("OK", result);
+
+            var (_, actions) = orchestrationContext.OrchestrationActionCollector.WaitForActions(new AutoResetEvent(initialState: true));
+            var action = (CallActivityWithRetryAction)actions.Single().Single();
+            Assert.Equal(FunctionName, action.FunctionName);
+            Assert.Equal(FunctionInput, action.Input);
+            Assert.NotEmpty(action.RetryOptions);
         }
 
         private HistoryEvent[] CreateActivityHistory(string name, bool scheduled, bool completed, string output) {

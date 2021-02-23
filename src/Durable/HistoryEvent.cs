@@ -58,5 +58,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         // Internal used only
         public bool IsProcessed { get; set; }
+
+        public override string ToString()
+        {
+            var relatedEventId = EventType == HistoryEventType.TimerFired ? TimerId : TaskScheduledId;
+            var processedMarker = IsProcessed ? "X" : " ";
+            return $"[{EventId}] {EventType} '{Name}' ({relatedEventId}) [{processedMarker}]";
+        }
     }
 }
