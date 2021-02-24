@@ -14,12 +14,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     /// </summary>
     internal class OrchestrationMessage
     {
-        public OrchestrationMessage(bool isDone, List<List<OrchestrationAction>> actions, object output, string error = null)
+        public OrchestrationMessage(
+            bool isDone,
+            List<List<OrchestrationAction>> actions,
+            object output,
+            object customStatus,
+            string error = null)
         {
             IsDone = isDone;
             Actions = actions;
             Output = output;
             Error = error;
+            CustomStatus = customStatus;
         }
 
         /// <summary>
@@ -41,5 +47,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         /// The orchestration error message.
         /// </summary>
         public readonly string Error;
+
+        /// <summary>
+        /// Custom orchestration status.
+        /// </summary>
+        public readonly object CustomStatus;
     }
 }

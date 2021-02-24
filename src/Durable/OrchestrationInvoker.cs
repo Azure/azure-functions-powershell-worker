@@ -40,7 +40,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 {
                     // The orchestration function should be stopped and restarted
                     pwsh.StopInvoke();
-                    return CreateOrchestrationResult(isDone: false, actions, output: null);
+                    return CreateOrchestrationResult(isDone: false, actions, output: null, context.CustomStatus);
                 }
                 else
                 {
@@ -49,13 +49,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                         // The orchestration function completed
                         pwsh.EndInvoke(asyncResult);
                         var result = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(outputBuffer);
-                        return CreateOrchestrationResult(isDone: true, actions, output: result);
+                        return CreateOrchestrationResult(isDone: true, actions, output: result, context.CustomStatus);
                     }
                     catch (Exception e)
                     {
                         // The orchestrator code has thrown an unhandled exception:
                         // this should be treated as an entire orchestration failure
-                        throw new OrchestrationFailureException(actions, e);
+                        throw new OrchestrationFailureException(actions, context.CustomStatus, e);
                     }
                 }
             }
@@ -68,9 +68,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private static Hashtable CreateOrchestrationResult(
             bool isDone,
             List<List<OrchestrationAction>> actions,
-            object output)
+            object output,
+            object customStatus)
         {
-            var orchestrationMessage = new OrchestrationMessage(isDone, actions, output);
+            var orchestrationMessage = new OrchestrationMessage(isDone, actions, output, customStatus);
             return new Hashtable { { AzFunctionInfo.DollarReturn, orchestrationMessage } };
         }
     }
