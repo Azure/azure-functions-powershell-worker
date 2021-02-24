@@ -46,7 +46,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             var startTime = DateTime.UtcNow;
 
             // Allow the orchestration to proceed until the first custom status is set
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(10));
 
             using (var httpClient = new HttpClient())
             {
