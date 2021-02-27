@@ -38,7 +38,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             {
                 case VersionSpecificationType.ExactVersion:
                     return _storage.IsModuleVersionInstalled(
-                        snapshotPath, dependency.Name, dependency.VersionSpecification);
+                                snapshotPath, dependency.Name, dependency.VersionSpecification)
+                        || _storage.IsModuleVersionInstalled(
+                                snapshotPath, dependency.Name, StripVersionPostfix(dependency.VersionSpecification));
 
                 case VersionSpecificationType.MajorVersion:
                     return IsMajorVersionInstalled(
@@ -47,6 +49,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 default:
                     throw new ArgumentException($"Unknown version specification type: {dependency.VersionSpecificationType}");
             }
+        }
+
+        private string StripVersionPostfix(string versionSpecification)
+        {
+            const char PostfixSeparator = '-';
+            var separatorPos = versionSpecification.IndexOf(PostfixSeparator);
+            return separatorPos == -1 ? versionSpecification : versionSpecification.Substring(0, separatorPos);
         }
 
         private bool IsMajorVersionInstalled(string snapshotPath, string name, string majorVersion)

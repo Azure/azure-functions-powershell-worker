@@ -86,5 +86,39 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             Assert.Null(result);
         }
+
+        // Any version with a postfix starting with '-' will be considered a preview version.
+        // Preview versions may be installed into a folder with the base version name, without the postfix
+        // (for example '4.0.2-preview' may be installed into a folder with the name '4.0.2'),
+        // so we need to take this into account and look for both.
+        [Theory]
+        [InlineData("-preview")]
+        [InlineData("-alfa")]
+        [InlineData("-prerelease")]
+        [InlineData("-anything")]
+        public void ReturnsLatestSnapshotPath_WhenPreviewVersionInstalled(string postfix)
+        {
+            var baseVersion = "4.0.2";
+            var fullVersion = baseVersion + postfix;
+            
+            DependencyManifestEntry[] dependencyManifestEntries =
+            {
+                new DependencyManifestEntry("A", VersionSpecificationType.ExactVersion, fullVersion)
+            };
+
+            _mockStorage.Setup(_ => _.GetDependencies()).Returns(dependencyManifestEntries);
+
+            _mockStorage.Setup(_ => _.GetLatestInstalledSnapshot()).Returns("snapshot");
+
+            // No exact match...
+            _mockStorage.Setup(_ => _.IsModuleVersionInstalled("snapshot", "A", fullVersion)).Returns(false);
+            // ...but the base version is here
+            _mockStorage.Setup(_ => _.IsModuleVersionInstalled("snapshot", "A", baseVersion)).Returns(true);
+
+            var installedDependenciesLocator = new InstalledDependenciesLocator(_mockStorage.Object);
+            var result = installedDependenciesLocator.GetPathWithAcceptableDependencyVersionsInstalled();
+
+            Assert.Equal("snapshot", result);
+        }
     }
 }
