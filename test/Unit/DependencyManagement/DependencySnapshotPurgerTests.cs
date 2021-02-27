@@ -319,5 +319,36 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
             _mockStorage.Verify(_ => _.SetSnapshotAccessTimeToUtcNow(It.IsAny<string>()), Times.Once);
         }
+
+        [Fact]
+        public void LogDependencySnapshotsInstalledAndSnapshotsToKeep()
+        {
+            var mockLogger = new Mock<ILogger>(MockBehavior.Loose);
+            var mockStorage = new Mock<IDependencyManagerStorage>();
+
+            mockStorage.Setup(_ => _.GetInstalledAndInstallingSnapshots()).Returns(new[] { "1", "2", "3" });
+
+            mockStorage.Setup(_ => _.GetSnapshotAccessTimeUtc("1")).Returns(DateTime.UtcNow - TimeSpan.FromMinutes(11));
+            mockStorage.Setup(_ => _.GetSnapshotAccessTimeUtc("2")).Returns(DateTime.UtcNow);
+            mockStorage.Setup(_ => _.GetSnapshotAccessTimeUtc("3")).Returns(DateTime.UtcNow - TimeSpan.FromMinutes(6));
+
+            using (var purger = new DependencySnapshotPurger(
+                                        mockStorage.Object,
+                                        heartbeatPeriod: TimeSpan.FromMinutes(10),
+                                        oldHeartbeatAgeMargin: TimeSpan.FromMinutes(0),
+                                        minNumberOfSnapshotsToKeep: 1))
+            {
+                purger.Purge(mockLogger.Object);
+            }
+
+            mockLogger.Verify(
+                _ => _.Log(
+                    false,
+                    LogLevel.Trace,
+                    It.Is<string>(
+                        message => message.Contains("Number of dependency snapshots installed: '3'. Dependency snapshots to keep: '1'.")),
+                    null),
+                Times.Once);
+        }
     }
 }
