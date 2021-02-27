@@ -334,4 +334,7 @@
   <data name="SettingCurrentDirectory" xml:space="preserve">
     <value>Setting current directory to '{0}'.</value>
   </data>
+  <data name="LogDependencySnapshotsInstalledAndSnapshotsToKeep" xml:space="preserve">
+    <value>Number of dependency snapshots installed: '{0}'. Dependency snapshots to keep: '{1}'.</value>
+  </data>
 </root>
