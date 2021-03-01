@@ -73,6 +73,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                                             .OrderBy(entry => entry.Item2)
                                             .ToArray();
 
+            var snapshotsLogmessage = string.Format(
+                                        PowerShellWorkerStrings.LogDependencySnapshotsInstalledAndSnapshotsToKeep,
+                                        pathSortedByAccessTime.Length,
+                                        _minNumberOfSnapshotsToKeep);
+            logger.Log(isUserOnlyLog: false, LogLevel.Trace, snapshotsLogmessage);
+
             for (var i = 0; i < pathSortedByAccessTime.Length - _minNumberOfSnapshotsToKeep; ++i)
             {
                 var creationTime = pathSortedByAccessTime[i].Item2;
