@@ -131,7 +131,9 @@ function Resolve-ProtoBufToolPath
 {
     if (-not $Script:protoc_Path) {
         Write-Log "Resolve the protobuf tools for auto-generating code"
-        $nugetPath = "~/.nuget/packages"
+
+        $nugetPath = Get-NugetPackagesPath
+
         $toolsPath = "$RepoRoot/tools"
 
         if (-not (Test-Path "$toolsPath/obj/project.assets.json")) {
@@ -203,6 +205,23 @@ function Write-Log
     $foregroundColor = if ($Warning) { "Yellow" } else { "Green" }
     $indentPrefix = if ($Indent) { "    " } else { "" }
     Write-Host -ForegroundColor $foregroundColor "${indentPrefix}${Message}"
+}
+
+function Get-NugetPackagesPath
+{
+    if ($env:NUGET_PACKAGES)
+    {
+        return $env:NUGET_PACKAGES
+    }
+
+    if ($IsWindowsEnv)
+    {
+        return "${env:USERPROFILE}\.nuget\packages"
+    }
+    else
+    {
+        return "${env:HOME}/.nuget/packages"
+    }
 }
 
 #region Start-ResGen
