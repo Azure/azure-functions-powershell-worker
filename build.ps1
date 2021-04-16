@@ -18,6 +18,12 @@ param(
     [switch]
     $NoBuild,
 
+    [switch]
+    $Deploy,
+
+    [string]
+    $CoreToolsDir,
+
     [string]
     $Configuration = "Debug",
 
@@ -26,6 +32,52 @@ param(
 )
 
 #Requires -Version 6.0
+
+$PowerShellVersion = '7'
+$TargetFramework = 'netcoreapp3.1'
+
+function Get-FunctionsCoreToolsDir {
+    if ($CoreToolsDir) {
+        $CoreToolsDir
+    } else {
+        $funcPath = (Get-Command func).Source
+        if (-not $funcPath) {
+            throw 'Cannot find "func" command. Please install Azure Functions Core Tools.'
+        }
+
+        # func may be just a symbolic link, so we need to follow it until we find the true location
+        while ((((Get-Item $funcPath).Attributes) -band 'ReparsePoint') -ne 0) {
+            $funcPath = (Get-Item $funcPath).Target
+        }
+
+        $funcParentDir = Split-Path -Path $funcPath -Parent
+
+        if (-not (Test-Path -Path $funcParentDir/workers/powershell -PathType Container)) {
+            throw 'Cannot find Azure Function Core Tools installation directory. ' +
+                  'Please provide the path in the CoreToolsDir parameter.'
+        }
+
+        $funcParentDir
+    }
+}
+
+function Deploy-PowerShellWorker {
+    $ErrorActionPreference = 'Stop'
+
+    $powerShellWorkerDir = "$(Get-FunctionsCoreToolsDir)/workers/powershell/$PowerShellVersion"
+
+    Write-Log "Deploying worker to $powerShellWorkerDir..."
+
+    if (-not $IsWindows) {
+        sudo chmod -R a+w $powerShellWorkerDir
+    }
+
+    Remove-Item -Path $powerShellWorkerDir/* -Recurse -Force
+    Copy-Item -Path "./src/bin/$Configuration/$TargetFramework/publish/*" `
+        -Destination $powerShellWorkerDir -Recurse -Force
+
+    Write-Log "Deployed worker to $powerShellWorkerDir"
+}
 
 Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
 
@@ -45,7 +97,7 @@ if ($Bootstrap.IsPresent) {
 }
 
 # Clean step
-if($Clean.IsPresent) {
+if ($Clean.IsPresent) {
     Push-Location $PSScriptRoot
     git clean -fdX
     Pop-Location
@@ -55,7 +107,7 @@ if($Clean.IsPresent) {
 Find-Dotnet
 
 # Build step
-if(!$NoBuild.IsPresent) {
+if (!$NoBuild.IsPresent) {
     if (-not (Get-Module -Name PSDepend -ListAvailable)) {
         throw "Cannot find the 'PSDepend' module. Please specify '-Bootstrap' to install build dependencies."
     }
@@ -91,7 +143,11 @@ if(!$NoBuild.IsPresent) {
 }
 
 # Test step
-if($Test.IsPresent) {
+if ($Test.IsPresent) {
     dotnet test "$PSScriptRoot/test/Unit"
     if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
+}
+
+if ($Deploy.IsPresent) {
+    Deploy-PowerShellWorker
 }
