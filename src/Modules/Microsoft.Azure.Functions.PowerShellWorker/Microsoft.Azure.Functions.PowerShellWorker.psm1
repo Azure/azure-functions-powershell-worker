@@ -51,6 +51,8 @@ function Start-NewOrchestration {
         [object] $DurableClient
     )
 
+    $ErrorActionPreference = 'Stop'
+
     if ($null -eq $DurableClient) {
         $DurableClient = GetDurableClientFromModulePrivateData
     }
