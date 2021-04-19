@@ -57,8 +57,16 @@ function Start-NewOrchestration {
 
     $InstanceId = (New-Guid).Guid
 
+    $Uri =
+        if ($DurableClient.rpcBaseUrl) {
+            # Fast local RPC path
+            "$($DurableClient.rpcBaseUrl)orchestrators/$FunctionName$($InstanceId ? "/$InstanceId" : '')"
+        } else {
+            # Legacy app frontend path
     $UriTemplate = $DurableClient.creationUrls.createNewInstancePostUri
-    $Uri = $UriTemplate.Replace('{functionName}', $FunctionName).Replace('[/{instanceId}]', "/$InstanceId")
+            $UriTemplate.Replace('{functionName}', $FunctionName).Replace('[/{instanceId}]', "/$InstanceId")
+        }
+
     $Body = $InputObject | ConvertTo-Json -Compress
               
     $null = Invoke-RestMethod -Uri $Uri -Method 'POST' -ContentType 'application/json' -Body $Body
