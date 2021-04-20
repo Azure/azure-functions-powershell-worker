@@ -216,7 +216,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 SetInputBindingParameterValues(functionInfo, inputData, durableController, triggerMetadata, traceContext);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InputBindingValuesReady);
 
-                _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
+                if (!durableController.ShouldSuppressPipelineTraces())
+                {
+                    _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
+                }
 
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InvokingFunctionCode);
                 Logger.Log(isUserOnlyLog: false, LogLevel.Trace, CreateInvocationPerformanceReportMessage(functionInfo.FuncName, stopwatch));

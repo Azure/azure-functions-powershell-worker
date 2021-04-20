@@ -109,6 +109,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             return true;
         }
 
+        public bool ShouldSuppressPipelineTraces()
+        {
+            return _durableFunctionInfo.Type == DurableFunctionType.ActivityFunction;
+        }
+
         private static OrchestrationBindingInfo CreateOrchestrationBindingInfo(IList<ParameterBinding> inputData)
         {
             // Quote from https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings:

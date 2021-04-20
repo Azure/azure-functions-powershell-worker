@@ -19,7 +19,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public string DurableClientBindingName { get; }
 
-        public DurableFunctionType Type { get; }
+        public DurableFunctionType Type
+        {
+            get;
+            internal set; // for testing purposes only
+        }
 
         public bool ProvidesForcedDollarReturnValue => Type != DurableFunctionType.None;
     }

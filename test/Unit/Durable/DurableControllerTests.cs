@@ -231,6 +231,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.False(result.ContainsKey(AzFunctionInfo.DollarReturn));
         }
 
+        [Theory]
+        [InlineData(DurableFunctionType.None, false)]
+        [InlineData(DurableFunctionType.OrchestrationFunction, false)]
+        [InlineData(DurableFunctionType.ActivityFunction, true)]
+        internal void SuppressPipelineTracesForActivityFunctionOnly(DurableFunctionType durableFunctionType, bool shouldSuppressPipelineTraces)
+        {
+            var durableController = CreateDurableController(durableFunctionType);
+            Assert.Equal(shouldSuppressPipelineTraces, durableController.ShouldSuppressPipelineTraces());
+        }
+
         private DurableController CreateDurableController(
             DurableFunctionType durableFunctionType,
             string durableClientBindingName = null)
