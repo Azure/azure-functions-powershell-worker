@@ -5,6 +5,7 @@
 
 # Set aliases for cmdlets to export
 Set-Alias -Name Wait-ActivityFunction -Value Wait-DurableTask
+New-Alias -Name Invoke-ActivityFunction -Value Invoke-DurableActivity
 
 function GetDurableClientFromModulePrivateData {
     $PrivateData = $PSCmdlet.MyInvocation.MyCommand.Module.PrivateData
