@@ -4,6 +4,7 @@
       "authLevel": "function",
       "type": "httpTrigger",
       "direction": "in",
+      "route": "orchestrators/{functionName}",
       "name": "Request",
       "methods": [
         "get",
