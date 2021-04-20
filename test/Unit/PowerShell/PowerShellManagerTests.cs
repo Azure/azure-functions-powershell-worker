@@ -17,6 +17,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
     using System.Collections.ObjectModel;
     using System.Management.Automation;
+    using Microsoft.Azure.Functions.PowerShellWorker.Durable;
+    using Newtonsoft.Json;
 
     internal class TestUtils
     {
@@ -371,6 +373,52 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var worker = powerShellManagerPool.CheckoutIdleWorker("requestId", "invocationId", "FuncName", outputBindings);
 
             powerShellManagerPool.ReclaimUsedWorker(worker);
+        }
+
+        [Theory]
+        [InlineData(DurableFunctionType.None, false)]
+        [InlineData(DurableFunctionType.OrchestrationFunction, false)]
+        [InlineData(DurableFunctionType.ActivityFunction, true)]
+        internal void SuppressPipelineTracesForDurableActivityFunctionOnly(DurableFunctionType durableFunctionType, bool shouldSuppressPipelineTraces)
+        {
+            s_testLogger.FullLog.Clear();
+
+            var path = Path.Join(s_funcDirectory, "testFunctionWithOutput.ps1");
+            var (functionInfo, testManager) = PrepareFunction(path, string.Empty);
+            functionInfo.DurableFunctionInfo.Type = durableFunctionType;
+
+            try
+            {
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
+
+                var result = testManager.InvokeFunction(functionInfo, null, null, CreateOrchestratorInputData(), new FunctionInvocationPerformanceStopwatch());
+
+                var relevantLogs = s_testLogger.FullLog.Where(message => message.StartsWith("Information: OUTPUT:")).ToList();
+                var expected = shouldSuppressPipelineTraces ? new string[0] : new[] { "Information: OUTPUT: Hello" };
+                Assert.Equal(expected, relevantLogs);
+            }
+            finally
+            {
+                FunctionMetadata.UnregisterFunctionMetadata(testManager.InstanceId);
+            }
+        }
+
+        private static List<ParameterBinding> CreateOrchestratorInputData()
+        {
+            var orchestrationContext = new OrchestrationContext
+            {
+                History = new[] { new HistoryEvent { EventType = HistoryEventType.OrchestratorStarted } }
+            };
+
+            var testInputData = new List<ParameterBinding>
+                {
+                    new ParameterBinding
+                    {
+                        Name = TestInputBindingName,
+                        Data = new TypedData { String = JsonConvert.SerializeObject(orchestrationContext) }
+                    }
+                };
+            return testInputData;
         }
 
         private static Hashtable InvokeFunction(PowerShellManager powerShellManager, AzFunctionInfo functionInfo, Hashtable triggerMetadata = null)
