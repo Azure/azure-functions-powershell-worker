@@ -18,6 +18,8 @@ namespace Azure.Functions.PowerShell.Tests.E2E
     {
         private readonly FunctionAppFixture _fixture;
 
+        private TimeSpan _orchestrationCompletionTimeout = TimeSpan.FromSeconds(120);
+
         public DurableEndToEndTests(FunctionAppFixture fixture)
         {
             this._fixture = fixture;
@@ -42,11 +44,10 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             Assert.NotNull(initialResponseBodyObject.terminatePostUri);
             Assert.NotNull(initialResponseBodyObject.rewindPostUri);
 
-            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(90);
             var startTime = DateTime.UtcNow;
 
             // Allow the orchestration to proceed until the first custom status is set
-            await Task.Delay(TimeSpan.FromSeconds(10));
+            await Task.Delay(TimeSpan.FromSeconds(20));
 
             using (var httpClient = new HttpClient())
             {
@@ -63,9 +64,9 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                                 runtimeStatus == "Running" || runtimeStatus == "Pending",
                                 $"Unexpected runtime status: {runtimeStatus}");
 
-                            if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                            if (DateTime.UtcNow > startTime + _orchestrationCompletionTimeout)
                             {
-                                Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                                Assert.True(false, $"The orchestration has not completed after {_orchestrationCompletionTimeout}");
                             }
 
                             Assert.Equal("Custom status: started", (string)statusResponseBody.customStatus);
@@ -104,7 +105,6 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
             var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
 
-            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(60);
             var startTime = DateTime.UtcNow;
 
             using var httpClient = new HttpClient();
@@ -116,9 +116,9 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                 {
                     case HttpStatusCode.Accepted:
                     {
-                        if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                        if (DateTime.UtcNow > startTime + _orchestrationCompletionTimeout)
                         {
-                            Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                            Assert.True(false, $"The orchestration has not completed after {_orchestrationCompletionTimeout}");
                         }
 
                         await Task.Delay(TimeSpan.FromSeconds(2));
@@ -184,7 +184,6 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
             var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
 
-            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(60);
             var startTime = DateTime.UtcNow;
 
             using(var httpClient = new HttpClient())
@@ -196,9 +195,9 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     {
                         case HttpStatusCode.Accepted:
                         {
-                            if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                            if (DateTime.UtcNow > startTime + _orchestrationCompletionTimeout)
                             {
-                                Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                                Assert.True(false, $"The orchestration has not completed after {_orchestrationCompletionTimeout}");
                             }
 
                             await Task.Delay(TimeSpan.FromSeconds(2));
@@ -270,7 +269,6 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
             var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
 
-            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(60);
             var startTime = DateTime.UtcNow;
 
             using(var httpClient = new HttpClient())
@@ -282,9 +280,9 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     {
                         case HttpStatusCode.Accepted:
                         {
-                            if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                            if (DateTime.UtcNow > startTime + _orchestrationCompletionTimeout)
                             {
-                                Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                                Assert.True(false, $"The orchestration has not completed after {_orchestrationCompletionTimeout}");
                             }
                             
                             await Task.Delay(TimeSpan.FromSeconds(2));
@@ -328,7 +326,6 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
             var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
 
-            var orchestrationCompletionTimeout = TimeSpan.FromSeconds(60);
             var startTime = DateTime.UtcNow;
 
             using(var httpClient = new HttpClient())
@@ -340,9 +337,9 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     {
                         case HttpStatusCode.Accepted:
                         {
-                            if (DateTime.UtcNow > startTime + orchestrationCompletionTimeout)
+                            if (DateTime.UtcNow > startTime + _orchestrationCompletionTimeout)
                             {
-                                Assert.True(false, $"The orchestration has not completed after {orchestrationCompletionTimeout}");
+                                Assert.True(false, $"The orchestration has not completed after {_orchestrationCompletionTimeout}");
                             }
                             
                             await Task.Delay(TimeSpan.FromSeconds(2));
