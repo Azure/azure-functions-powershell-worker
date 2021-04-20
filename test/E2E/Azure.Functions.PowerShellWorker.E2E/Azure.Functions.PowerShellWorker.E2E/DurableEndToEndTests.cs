@@ -1,4 +1,4 @@
-// Copyright (c) .NET Foundation. All rights reserved.
+﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
 namespace Azure.Functions.PowerShell.Tests.E2E
@@ -47,7 +47,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             var startTime = DateTime.UtcNow;
 
             // Allow the orchestration to proceed until the first custom status is set
-            await Task.Delay(TimeSpan.FromSeconds(10));
+            await Task.Delay(TimeSpan.FromSeconds(20));
 
             using (var httpClient = new HttpClient())
             {
