@@ -6,7 +6,7 @@ Write-Host 'FanOutFanInOrchestrator: started.'
 
 $parallelTasks =
     foreach ($Name in 'Tokyo', 'Seattle', 'London') {
-        Invoke-ActivityFunction -FunctionName 'SayHello' -Input $Name -NoWait
+        Invoke-DurableActivity -FunctionName 'SayHello' -Input $Name -NoWait
     }
 
 $output = Wait-DurableTask -Task $parallelTasks

@@ -6,9 +6,9 @@ Write-Host 'FunctionChainingOrchestrator: started.'
 
 $output = @()
 
-$output += Invoke-ActivityFunction -FunctionName 'SayHello' -Input 'Tokyo'
-$output += Invoke-ActivityFunction -FunctionName 'SayHello' -Input 'Seattle'
-$output += Invoke-ActivityFunction -FunctionName 'SayHello' -Input 'London'
+$output += Invoke-DurableActivity -FunctionName 'SayHello' -Input 'Tokyo'
+$output += Invoke-DurableActivity -FunctionName 'SayHello' -Input 'Seattle'
+$output += Invoke-DurableActivity -FunctionName 'SayHello' -Input 'London'
 
 Write-Host 'FunctionChainingOrchestrator: finished.'
 
