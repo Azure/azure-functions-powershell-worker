@@ -42,7 +42,8 @@ function Get-FunctionsCoreToolsDir {
     } else {
         $funcPath = (Get-Command func).Source
         if (-not $funcPath) {
-            throw 'Cannot find "func" command. Please install Azure Functions Core Tools.'
+            throw 'Cannot find "func" command. Please install Azure Functions Core Tools: ' +
+                  'see https://github.com/Azure/azure-functions-core-tools#installing for instructions'
         }
 
         # func may be just a symbolic link, so we need to follow it until we find the true location
