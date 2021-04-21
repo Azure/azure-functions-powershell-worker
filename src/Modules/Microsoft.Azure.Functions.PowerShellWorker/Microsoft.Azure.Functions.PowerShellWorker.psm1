@@ -79,7 +79,7 @@ function GetUrlOrigin([uri]$Url) {
     $fixedOriginUrl.ToString()
 }
 
-function New-OrchestrationCheckStatusResponse {
+function New-DurableOrchestrationCheckStatusResponse {
     [CmdletBinding()]
     param(
         [Parameter(
