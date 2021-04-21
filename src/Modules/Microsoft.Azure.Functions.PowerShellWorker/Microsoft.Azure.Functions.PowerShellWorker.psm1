@@ -24,7 +24,7 @@ function GetDurableClientFromModulePrivateData {
 .DESCRIPTION
     Start an orchestration Azure Function with the given function name and input value.
 .EXAMPLE
-    PS > Start-NewOrchestration -DurableClient Starter -FunctionName OrchestratorFunction -InputObject "input value for the orchestration function"
+    PS > Start-DurableOrchestration -DurableClient Starter -FunctionName OrchestratorFunction -InputObject "input value for the orchestration function"
     Return the instance id of the new orchestration.
 .PARAMETER FunctionName
     The name of the orchestration Azure Function you want to start.
@@ -33,7 +33,7 @@ function GetDurableClientFromModulePrivateData {
 .PARAMETER DurableClient
     The orchestration client object.
 #>
-function Start-NewOrchestration {
+function Start-DurableOrchestration {
     [CmdletBinding()]
     param(
         [Parameter(
