@@ -7,6 +7,7 @@
 Set-Alias -Name Wait-ActivityFunction -Value Wait-DurableTask
 Set-Alias -Name Invoke-ActivityFunction -Value Invoke-DurableActivity
 Set-Alias -Name New-OrchestrationCheckStatusResponse -Value New-DurableOrchestrationCheckStatusResponse
+Set-Alias -Name Start-NewOrchestration -Value Start-DurableOrchestration
 
 function GetDurableClientFromModulePrivateData {
     $PrivateData = $PSCmdlet.MyInvocation.MyCommand.Module.PrivateData
