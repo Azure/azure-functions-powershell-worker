@@ -8,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 
 $OrchestratorInputs = @{ FirstDuration = 5; SecondDuration = 60 }
 
-$InstanceId = Start-NewOrchestration -FunctionName 'ExternalEventOrchestrator' -InputObject $OrchestratorInputs
+$InstanceId = Start-DurableOrchestration -FunctionName 'ExternalEventOrchestrator' -InputObject $OrchestratorInputs
 Write-Host "Started orchestration with ID = '$InstanceId'"
 
 $Response = New-DurableOrchestrationCheckStatusResponse -Request $Request -InstanceId $InstanceId

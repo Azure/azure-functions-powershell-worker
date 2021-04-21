@@ -6,7 +6,7 @@ Write-Host 'HumanInteractionStart started'
 
 $OrchestratorInputs = @{ Duration = 45; ManagerId = 1; SkipManagerId = 2 }
 
-$InstanceId = Start-NewOrchestration -FunctionName 'HumanInteractionOrchestrator' -InputObject $OrchestratorInputs
+$InstanceId = Start-DurableOrchestration -FunctionName 'HumanInteractionOrchestrator' -InputObject $OrchestratorInputs
 Write-Host "Started orchestration with ID = '$InstanceId'"
 
 $Response = New-DurableOrchestrationCheckStatusResponse -Request $Request -InstanceId $InstanceId

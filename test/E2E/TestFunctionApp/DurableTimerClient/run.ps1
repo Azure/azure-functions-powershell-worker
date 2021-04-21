@@ -6,7 +6,7 @@ Write-Host "DurableTimerClient started"
 
 $ErrorActionPreference = 'Stop'
 
-$InstanceId = Start-NewOrchestration -FunctionName 'DurableTimerOrchestrator'
+$InstanceId = Start-DurableOrchestration -FunctionName 'DurableTimerOrchestrator'
 Write-Host "Started orchestration with ID = '$InstanceId'"
 
 $Response = New-DurableOrchestrationCheckStatusResponse -Request $Request -InstanceId $InstanceId

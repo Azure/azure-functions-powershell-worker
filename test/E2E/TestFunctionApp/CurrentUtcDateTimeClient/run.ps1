@@ -6,7 +6,7 @@ Write-Host "CurrentUtcDateTimeClient started"
 
 $ErrorActionPreference = 'Stop'
 
-$InstanceId = Start-NewOrchestration -FunctionName 'CurrentUtcDateTimeOrchestrator' -InputObject 'Hello'
+$InstanceId = Start-DurableOrchestration -FunctionName 'CurrentUtcDateTimeOrchestrator' -InputObject 'Hello'
 Write-Host "Started orchestration with ID = '$InstanceId'"
 
 $Response = New-DurableOrchestrationCheckStatusResponse -Request $Request -InstanceId $InstanceId

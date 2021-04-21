@@ -4,7 +4,7 @@ param($Request, $TriggerMetadata)
 
 Write-Host 'HttpStart started'
 
-$InstanceId = Start-NewOrchestration -FunctionName $Request.Params.FunctionName -InputObject $Request.Query.Input
+$InstanceId = Start-DurableOrchestration -FunctionName $Request.Params.FunctionName -InputObject $Request.Query.Input
 Write-Host "Started orchestration $($Request.Params.FunctionName) with ID = '$InstanceId'"
 
 $Response = New-DurableOrchestrationCheckStatusResponse -Request $Request -InstanceId $InstanceId
