@@ -65,7 +65,7 @@ function Start-NewOrchestration {
             "$($DurableClient.rpcBaseUrl)orchestrators/$FunctionName$($InstanceId ? "/$InstanceId" : '')"
         } else {
             # Legacy app frontend path
-    $UriTemplate = $DurableClient.creationUrls.createNewInstancePostUri
+            $UriTemplate = $DurableClient.creationUrls.createNewInstancePostUri
             $UriTemplate.Replace('{functionName}', $FunctionName).Replace('[/{instanceId}]', "/$InstanceId")
         }
 
