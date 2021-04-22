@@ -5,6 +5,9 @@
 
 # Set aliases for cmdlets to export
 Set-Alias -Name Wait-ActivityFunction -Value Wait-DurableTask
+Set-Alias -Name Invoke-ActivityFunction -Value Invoke-DurableActivity
+Set-Alias -Name New-OrchestrationCheckStatusResponse -Value New-DurableOrchestrationCheckStatusResponse
+Set-Alias -Name Start-NewOrchestration -Value Start-DurableOrchestration
 
 function GetDurableClientFromModulePrivateData {
     $PrivateData = $PSCmdlet.MyInvocation.MyCommand.Module.PrivateData
@@ -22,7 +25,7 @@ function GetDurableClientFromModulePrivateData {
 .DESCRIPTION
     Start an orchestration Azure Function with the given function name and input value.
 .EXAMPLE
-    PS > Start-NewOrchestration -DurableClient Starter -FunctionName OrchestratorFunction -InputObject "input value for the orchestration function"
+    PS > Start-DurableOrchestration -DurableClient Starter -FunctionName OrchestratorFunction -InputObject "input value for the orchestration function"
     Return the instance id of the new orchestration.
 .PARAMETER FunctionName
     The name of the orchestration Azure Function you want to start.
@@ -31,7 +34,7 @@ function GetDurableClientFromModulePrivateData {
 .PARAMETER DurableClient
     The orchestration client object.
 #>
-function Start-NewOrchestration {
+function Start-DurableOrchestration {
     [CmdletBinding()]
     param(
         [Parameter(
@@ -78,7 +81,7 @@ function GetUrlOrigin([uri]$Url) {
     $fixedOriginUrl.ToString()
 }
 
-function New-OrchestrationCheckStatusResponse {
+function New-DurableOrchestrationCheckStatusResponse {
     [CmdletBinding()]
     param(
         [Parameter(

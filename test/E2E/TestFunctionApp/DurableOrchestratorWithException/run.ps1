@@ -4,6 +4,6 @@ param($Context)
 
 $ErrorActionPreference = 'Stop'
 
-Invoke-ActivityFunction -FunctionName 'DurableActivityWithException' -Input 'Name' -ErrorAction Stop
+Invoke-DurableActivity -FunctionName 'DurableActivityWithException' -Input 'Name' -ErrorAction Stop
 
 'This should not be returned'

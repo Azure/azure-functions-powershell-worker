@@ -12,10 +12,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
 
     /// <summary>
-    /// Invoke an activity function.
+    /// Invoke a durable activity.
     /// </summary>
-    [Cmdlet("Invoke", "ActivityFunction")]
-    public class InvokeActivityFunctionCommand : PSCmdlet
+    [Cmdlet("Invoke", "DurableActivity")]
+    public class InvokeDurableActivityCommand : PSCmdlet
     {
         /// <summary>
         /// Gets and sets the activity function name.
