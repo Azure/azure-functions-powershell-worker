@@ -54,14 +54,24 @@ function Start-DurableOrchestration {
         [object] $DurableClient
     )
 
+    $ErrorActionPreference = 'Stop'
+
     if ($null -eq $DurableClient) {
         $DurableClient = GetDurableClientFromModulePrivateData
     }
 
     $InstanceId = (New-Guid).Guid
 
-    $UriTemplate = $DurableClient.creationUrls.createNewInstancePostUri
-    $Uri = $UriTemplate.Replace('{functionName}', $FunctionName).Replace('[/{instanceId}]', "/$InstanceId")
+    $Uri =
+        if ($DurableClient.rpcBaseUrl) {
+            # Fast local RPC path
+            "$($DurableClient.rpcBaseUrl)orchestrators/$FunctionName$($InstanceId ? "/$InstanceId" : '')"
+        } else {
+            # Legacy app frontend path
+            $UriTemplate = $DurableClient.creationUrls.createNewInstancePostUri
+            $UriTemplate.Replace('{functionName}', $FunctionName).Replace('[/{instanceId}]', "/$InstanceId")
+        }
+
     $Body = $InputObject | ConvertTo-Json -Compress
               
     $null = Invoke-RestMethod -Uri $Uri -Method 'POST' -ContentType 'application/json' -Body $Body
