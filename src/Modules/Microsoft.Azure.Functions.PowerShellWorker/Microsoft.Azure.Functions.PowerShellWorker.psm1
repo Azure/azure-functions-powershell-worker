@@ -19,6 +19,53 @@ function GetDurableClientFromModulePrivateData {
     }
 }
 
+function Get-DurableStatus {
+    [CmdletBinding()]
+    param(
+        [Parameter(
+            Mandatory = $true,
+            Position = 0,
+            ValueFromPipelineByPropertyName = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $InstanceId,
+
+        [Parameter(
+            ValueFromPipelineByPropertyName = $true)]
+        [object] $DurableClient,
+
+        [switch] $ShowHistory,
+
+        [switch] $ShowHistoryOutput,
+
+        [switch] $ShowInput
+    )
+
+    $ErrorActionPreference = 'Stop'
+
+    if ($null -eq $DurableClient) {
+        $DurableClient = GetDurableClientFromModulePrivateData
+    }
+
+    $requestUrl = "$($DurableClient.BaseUrl)/instances/$InstanceId"
+
+    $query = @()
+    if ($ShowHistory.IsPresent) {
+        $query += "showHistory=true"
+    }
+    if ($ShowHistoryOutput.IsPresent) {
+        $query += "showHistoryOutput=true"
+    }
+    if ($ShowInput.IsPresent) {
+        $query += "showInput=true"
+    }
+
+    if ($query.Count -gt 0) {
+        $requestUrl += "?" + [string]::Join("&", $query)
+    }
+
+    Invoke-RestMethod -Uri $requestUrl
+}
+
 <#
 .SYNOPSIS
     Start an orchestration Azure Function.
@@ -77,6 +124,35 @@ function Start-DurableOrchestration {
     $null = Invoke-RestMethod -Uri $Uri -Method 'POST' -ContentType 'application/json' -Body $Body
     
     return $instanceId
+}
+
+function Stop-DurableOrchestration {
+    [CmdletBinding()]
+    param(
+        [Parameter(
+            Mandatory = $true,
+            Position = 0,
+            ValueFromPipelineByPropertyName = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $InstanceId,
+
+        [Parameter(
+            Mandatory = $true,
+            Position = 1,
+            ValueFromPipelineByPropertyName = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Reason
+    )
+
+    $ErrorActionPreference = 'Stop'
+
+    if ($null -eq $DurableClient) {
+        $DurableClient = GetDurableClientFromModulePrivateData
+    }
+
+    $requestUrl = "$($DurableClient.BaseUrl)/instances/$InstanceId/terminate?reason=$([System.Web.HttpUtility]::UrlEncode($Reason))"
+
+    Invoke-RestMethod -Uri $requestUrl
 }
 
 function IsValidUrl([uri]$Url) {
