@@ -19,6 +19,53 @@ function GetDurableClientFromModulePrivateData {
     }
 }
 
+function Get-DurableStatus {
+    [CmdletBinding()]
+    param(
+        [Parameter(
+            Mandatory = $true,
+            Position = 0,
+            ValueFromPipelineByPropertyName = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $InstanceId,
+
+        [Parameter(
+            ValueFromPipelineByPropertyName = $true)]
+        [object] $DurableClient,
+
+        [switch] $ShowHistory,
+
+        [switch] $ShowHistoryOutput,
+
+        [switch] $ShowInput
+    )
+
+    $ErrorActionPreference = 'Stop'
+
+    if ($null -eq $DurableClient) {
+        $DurableClient = GetDurableClientFromModulePrivateData
+    }
+
+    $requestUrl = "$($DurableClient.BaseUrl)/instances/$InstanceId"
+
+    $query = @()
+    if ($ShowHistory.IsPresent) {
+        $query += "showHistory=true"
+    }
+    if ($ShowHistoryOutput.IsPresent) {
+        $query += "showHistoryOutput=true"
+    }
+    if ($ShowInput.IsPresent) {
+        $query += "showInput=true"
+    }
+
+    if ($query.Count -gt 0) {
+        $requestUrl += "?" + [string]::Join("&", $query)
+    }
+
+    Invoke-RestMethod -Uri $requestUrl
+}
+
 <#
 .SYNOPSIS
     Start an orchestration Azure Function.
