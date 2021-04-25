@@ -418,7 +418,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         [Fact]
         public async Task DurableClientTerminatesOrchestration()
         {
-            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClient", queryString: string.Empty);
+            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClientTerminating", queryString: string.Empty);
             Assert.Equal(HttpStatusCode.Accepted, initialResponse.StatusCode);
 
             var location = initialResponse.Headers.Location;
