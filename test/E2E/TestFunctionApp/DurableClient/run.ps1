@@ -16,8 +16,8 @@ Push-OutputBinding -Name Response -Value $Response
 
 $Status = Get-DurableStatus -InstanceId $InstanceId
 Write-Host "Orchestration $InstanceId status: $($Status | ConvertTo-Json)"
-if ($Status.runtime -ne 'Running') {
-    throw "Unexpected orchestration $InstanceId runtime status: $($Status.runtime)"
+if ($Status.runtimeStatus -notin 'Pending', 'Running') {
+    throw "Unexpected orchestration $InstanceId runtime status: $($Status.runtimeStatus)"
 }
 
 Write-Host "DurableClient completed"
