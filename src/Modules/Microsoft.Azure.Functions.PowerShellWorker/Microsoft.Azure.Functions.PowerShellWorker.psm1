@@ -126,6 +126,35 @@ function Start-DurableOrchestration {
     return $instanceId
 }
 
+function Stop-DurableOrchestration {
+    [CmdletBinding()]
+    param(
+        [Parameter(
+            Mandatory = $true,
+            Position = 0,
+            ValueFromPipelineByPropertyName = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $InstanceId,
+
+        [Parameter(
+            Mandatory = $true,
+            Position = 1,
+            ValueFromPipelineByPropertyName = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Reason
+    )
+
+    $ErrorActionPreference = 'Stop'
+
+    if ($null -eq $DurableClient) {
+        $DurableClient = GetDurableClientFromModulePrivateData
+    }
+
+    $requestUrl = "$($DurableClient.BaseUrl)/instances/$InstanceId/terminate?reason=$([System.Web.HttpUtility]::UrlEncode($Reason))"
+
+    Invoke-RestMethod -Uri $requestUrl
+}
+
 function IsValidUrl([uri]$Url) {
     $Url.IsAbsoluteUri -and ($Url.Scheme -in 'http', 'https')
 }
