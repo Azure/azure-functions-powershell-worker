@@ -449,6 +449,62 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 TestCaseCleanup();
             }
         }
+
+        [Theory]
+        [InlineData("CONTAINER_NAME", "MyContainerName", true)]
+        [InlineData("WEBSITE_INSTANCE_ID", "MyInstanceId", true)]
+        [InlineData(null, null, false)]
+        public void ValidateManagedDependenciesPath(string name, string value, bool setEnvironmentVariable)
+        {
+            const string HomeDriveName = "HOME";
+
+            bool deleteVariable = false;
+            string expectedPath = null;
+
+            if (setEnvironmentVariable)
+            {
+                Environment.SetEnvironmentVariable(name, value);
+                Environment.SetEnvironmentVariable(HomeDriveName, "home");
+
+                deleteVariable = true;
+
+                const string DataFolderName = "data";
+                const string ManagedDependenciesFolderName = "ManagedDependencies";
+                expectedPath = Path.Combine(HomeDriveName, DataFolderName, ManagedDependenciesFolderName);
+            }
+            else
+            {
+                string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify);
+                expectedPath =  Path.Combine(appDataFolder, AzureFunctionsFolderName, "MyFunction", ManagedDependenciesFolderName);
+            }
+
+            var functionAppRoot = Path.Join(Path.GetTempPath(), "MyFunction");
+
+            try
+            {
+                if (!Directory.Exists(functionAppRoot))
+                {
+                    Directory.CreateDirectory(functionAppRoot);
+                }
+
+                var managedDependenciesPath = ManagedDependenciesPathDetector.GetManagedDependenciesPath(functionAppRoot);
+                var dependenciesPathIsValid = managedDependenciesPath.StartsWith(expectedPath, StringComparison.CurrentCultureIgnoreCase);
+                Assert.True(dependenciesPathIsValid);
+            }
+            finally
+            {
+                if (deleteVariable)
+                {
+                    Environment.SetEnvironmentVariable(name, null);
+                    Environment.SetEnvironmentVariable(HomeDriveName, null);
+                }
+
+                if (Directory.Exists(functionAppRoot))
+                {
+                    Directory.Delete(functionAppRoot);
+                }
+            }
+        }
     }
 
     class MockModuleProvider : IModuleProvider
