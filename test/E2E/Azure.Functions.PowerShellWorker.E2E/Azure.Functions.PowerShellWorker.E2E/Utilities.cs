@@ -64,8 +64,14 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             string uri = $"api/{functionName}{queryString}";
             HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/plain"));
-
-            using (var httpClient = new HttpClient())
+            var handler = new HttpClientHandler();
+            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+            handler.ServerCertificateCustomValidationCallback = 
+                (httpRequestMessage, cert, cetChain, policyErrors) =>
+            {
+                return true;
+            };
+            using (var httpClient = new HttpClient(handler))
             {
                 httpClient.BaseAddress = new Uri(Constants.FunctionsHostUrl);
                 return await httpClient.SendAsync(request);
