@@ -415,7 +415,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             }
         }
 
-        [Fact]
+        [Fact(Skip = "https://github.com/Azure/azure-functions-powershell-worker/issues/640")]
         public async Task DurableClientTerminatesOrchestration()
         {
             var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClientTerminating", queryString: string.Empty);
