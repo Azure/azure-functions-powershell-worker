@@ -10,14 +10,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
     using Xunit;
 
     using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
+    using System;
 
     public class DependencySnapshotFolderNameToolsTests
     {
         [Fact]
         public void CreatesUniqueEnoughNames()
         {
+            // ticks = microseconds * (TimeSpan.TicksPerMillisecond / 1000)
+            // A snapshot name created 1 microsecond (10 ticks) later must be different
+            var waitTime = new TimeSpan(10);
+
             var name1 = DependencySnapshotFolderNameTools.CreateUniqueName();
-            Thread.Sleep(2); // A snapshot name created 2 milliseconds later must be different
+            Thread.Sleep(waitTime);
             var name2 = DependencySnapshotFolderNameTools.CreateUniqueName();
             Assert.NotEqual(name1, name2);
         }
@@ -40,8 +45,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void UniqueNamesConvertedFromInstalledToInstallingAreStillUnique()
         {
+            // A snapshot name created 1 microsecond (10 ticks) later must be different
+            var waitTime = new TimeSpan(10);
+
             var name1 = DependencySnapshotFolderNameTools.CreateUniqueName();
-            Thread.Sleep(2); // A snapshot name created 2 milliseconds later must be different
+            Thread.Sleep(waitTime);
             var name2 = DependencySnapshotFolderNameTools.CreateUniqueName();
 
             var convertedToInstalling1 = DependencySnapshotFolderNameTools.ConvertInstalledToInstalling(name1);
