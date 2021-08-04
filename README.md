@@ -49,7 +49,7 @@ with any additional questions or comments.
 
 ### Prereqs
 
-* [.NET 3.1 SDK](https://www.microsoft.com/net/download/visual-studio-sdks)
+* [.NET 5.0 SDK](https://www.microsoft.com/net/download/visual-studio-sdks)
 
 ### Build
 

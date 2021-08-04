@@ -16,8 +16,8 @@ $DotnetSDKVersionRequirements = @{
     }
     # We need .NET SDK 5.0 for the updated C# compiler
     '5.0' = @{
-        MinimalPatch = '202'
-        DefaultPatch = '202'
+        MinimalPatch = '302'
+        DefaultPatch = '302'
     }
 }
 
