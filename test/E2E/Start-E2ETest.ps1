@@ -59,7 +59,7 @@ $taskHubName = NewTaskHubName -Length 45
 
 $FUNC_RUNTIME_VERSION = '3'
 $TARGET_FRAMEWORK = 'net5.0'
-$POWERSHELL_VERSION = '7'
+$POWERSHELL_VERSION = '7.2'
 
 $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 if ($IsWindows) {
