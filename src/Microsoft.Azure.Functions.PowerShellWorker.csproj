@@ -6,7 +6,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
   <Import Project="..\PowerShellWorker.Common.props" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <TieredCompilation>true</TieredCompilation>
     <Product>Azure Function PowerShell Language Worker</Product>
     <AssemblyName>Microsoft.Azure.Functions.PowerShellWorker</AssemblyName>
