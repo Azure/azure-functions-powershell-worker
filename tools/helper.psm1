@@ -9,15 +9,9 @@ $IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
 $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 
 $DotnetSDKVersionRequirements = @{
-    # We need .NET SDK 3.1 for running the tests, as we still build against the 3.1 framework
-    '3.1' = @{
-        MinimalPatch = '407'
-        DefaultPatch = '407'
-    }
-    # We need .NET SDK 5.0 for the updated C# compiler
-    '5.0' = @{
-        MinimalPatch = '302'
-        DefaultPatch = '302'
+    '6.0' = @{
+        MinimalPatch = '100-preview.6.21355.2'
+        DefaultPatch = '100-preview.6.21355.2'
     }
 }
 
@@ -36,7 +30,7 @@ function Find-Dotnet
     AddLocalDotnetDirPath
 
     $listSdksOutput = dotnet --list-sdks
-    $installedDotnetSdks = $listSdksOutput -replace '(\d+\.\d+\.\d+)(.*)', '$1'
+    $installedDotnetSdks = $listSdksOutput | ForEach-Object { $_.Split(" ")[0] }
     Write-Log "Detected dotnet SDKs: $($installedDotnetSdks -join ', ')"
 
     foreach ($majorMinorVersion in $DotnetSDKVersionRequirements.Keys) {
@@ -44,7 +38,7 @@ function Find-Dotnet
 
         $firstAcceptable = $installedDotnetSdks |
                                 Where-Object { $_.StartsWith("$majorMinorVersion.") } |
-                                Where-Object { [version]$_ -ge [version]$minimalVersion } |
+                                Where-Object { [System.Management.Automation.SemanticVersion]::new($_) -ge [System.Management.Automation.SemanticVersion]::new($minimalVersion) } |
                                 Select-Object -First 1
 
         if (-not $firstAcceptable) {
