@@ -9,6 +9,11 @@ $IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
 $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 
 $DotnetSDKVersionRequirements = @{
+    # We need .NET SDK 5.0 for running the tests, as we still build against the 5.0 framework
+    '5.0' = @{
+        MinimalPatch = '202'
+        DefaultPatch = '202'
+    }
     '6.0' = @{
         MinimalPatch = '100-preview.6.21355.2'
         DefaultPatch = '100-preview.6.21355.2'
