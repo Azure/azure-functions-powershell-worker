@@ -3,6 +3,8 @@
 |Branch|Status|
 |---|---|
 |dev|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=dev)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=dev)|
+|v4.x/ps7.2|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v3.x%2Fps7)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v4.x%2Fps7.2)|
+|v4.x/ps7.0|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v3.x%2Fps7)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v4.x%2Fps7.0)|
 |v3.x/ps7|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v3.x%2Fps7)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v3.x%2Fps7)|
 |v3.x/ps6|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v3.x%2Fps6)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v3.x%2Fps6)|
 |v2.x|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v2.x)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v2.x)|
