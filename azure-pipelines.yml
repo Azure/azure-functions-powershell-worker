@@ -68,7 +68,7 @@ steps:
   displayName: 'Set UploadPackage variable'
 
 - task: NuGetCommand@2
-  condition: and(ne(variables['Build.Reason'], 'PullRequest'), in(variables['Build.SourceBranch'], 'refs/heads/v3.x/ps7', 'refs/heads/v3.x/ps6', 'refs/heads/v2.x'), eq(variables.UploadPackage, false))
+  condition: and(ne(variables['Build.Reason'], 'PullRequest'), in(variables['Build.SourceBranch'], 'refs/heads/v4.x/ps7.2', 'refs/heads/v4.x/ps7.0' , 'refs/heads/v3.x/ps7', 'refs/heads/v3.x/ps6', 'refs/heads/v2.x'), eq(variables.UploadPackage, false))
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
