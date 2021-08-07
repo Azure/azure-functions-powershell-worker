@@ -5,10 +5,10 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
 -->
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
-    <id>Microsoft.Azure.Functions.PowerShellWorker.PS7</id>
+    <id>Microsoft.Azure.Functions.PowerShellWorker.PS7.0</id>
     <!-- Needed to specify the version here for the nuspec to be valid -->
     <version>$version$</version>
-    <title>Azure Function PowerShell Language Worker (PowerShell 7)</title>
+    <title>Azure Function PowerShell Language Worker (PowerShell 7.0)</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -27,7 +27,6 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
   </metadata>
   <files>
     <file src="..\src\bin\$configuration$\$targetFramework$\publish\**\*" target="contentFiles\any\any\workers\powershell\7" />
-    <file src="..\src\bin\$configuration$\$targetFramework$\publish\worker.config.json" target="contentFiles\any\any\workers\powershell" />
     <file src="..\images\Powershell_black_64.png" target="images\" />
   </files>
 </package>
