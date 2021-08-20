@@ -1,9 +1,9 @@
 <Project>
   <PropertyGroup>
     <BuildNumber Condition=" '$(BuildNumber)' == '' ">1</BuildNumber>
-    <Version>3.0.$(BuildNumber)</Version>
+    <Version>4.0.$(BuildNumber)</Version>
     <PackageTags>PowerShell;AzureFunctions;language;Azure;</PackageTags>
-    <PackageLicenseUrl>https://github.com/Azure/azure-functions-powershell-worker/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl>https://github.com/Azure/azure-functions-powershell-worker/blob/dev/LICENSE</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Azure/azure-functions-powershell-worker</RepositoryUrl>
   </PropertyGroup>
