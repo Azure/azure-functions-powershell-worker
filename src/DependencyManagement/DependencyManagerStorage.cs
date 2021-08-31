@@ -24,8 +24,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         public IEnumerable<DependencyManifestEntry> GetDependencies()
         {
-            var dependencyManifest = new DependencyManifest(_functionAppRootPath);
-            return dependencyManifest.GetEntries();
+            return GetAppDependencyManifest().GetEntries();
         }
 
         public bool SnapshotExists(string path)
@@ -127,6 +126,30 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             return heartbeatLastWrite >= snapshotCreation ? heartbeatLastWrite : snapshotCreation;
         }
 
+        public void PreserveDependencyManifest(string path)
+        {
+            var source = GetAppDependencyManifest().GetPath();
+            var destination = Path.Join(path, Path.GetFileName(source));
+            File.Copy(source, destination, overwrite: true);
+        }
+
+        public bool IsEquivalentDependencyManifest(string path)
+        {
+            var source = GetAppDependencyManifest().GetPath();
+            if (!File.Exists(source))
+            {
+                return false;
+            }
+
+            var destination = Path.Join(path, Path.GetFileName(source));
+            if (!File.Exists(destination))
+            {
+                return false;
+            }
+            
+            return File.ReadAllText(source) == File.ReadAllText(destination);
+        }
+
         private IEnumerable<string> GetInstalledSnapshots()
         {
             if (!Directory.Exists(_managedDependenciesRootPath))
@@ -137,6 +160,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             return Directory.EnumerateDirectories(
                 _managedDependenciesRootPath,
                 DependencySnapshotFolderNameTools.InstalledPattern);
+        }
+
+        private DependencyManifest GetAppDependencyManifest()
+        {
+            return new DependencyManifest(_functionAppRootPath);
         }
     }
 }

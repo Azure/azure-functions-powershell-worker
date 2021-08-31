@@ -108,7 +108,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             try
             {
-                return _storage.CreateInstallingSnapshot(path);
+                var installingPath = _storage.CreateInstallingSnapshot(path);
+                _storage.PreserveDependencyManifest(installingPath);
+                return installingPath;
             }
             catch (Exception e)
             {
