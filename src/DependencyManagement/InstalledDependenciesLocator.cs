@@ -7,28 +7,46 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 {
     using System;
     using System.Linq;
+    using Microsoft.Azure.Functions.PowerShellWorker.Utility;
+    using static Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types;
 
     internal class InstalledDependenciesLocator : IInstalledDependenciesLocator
     {
         private readonly IDependencyManagerStorage _storage;
 
-        public InstalledDependenciesLocator(IDependencyManagerStorage storage)
+        private readonly ILogger _logger;
+
+        public InstalledDependenciesLocator(IDependencyManagerStorage storage, ILogger logger)
         {
-            _storage = storage;
+            _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public string GetPathWithAcceptableDependencyVersionsInstalled()
         {
             var lastSnapshotPath = _storage.GetLatestInstalledSnapshot();
-            if (lastSnapshotPath != null)
+            if (lastSnapshotPath == null)
             {
-                var dependencies = _storage.GetDependencies();
-                if (dependencies.All(entry => IsAcceptableVersionInstalled(lastSnapshotPath, entry)))
-                {
-                    return lastSnapshotPath;
-                }
+                _logger.Log(isUserOnlyLog: false, Level.Information, string.Format(PowerShellWorkerStrings.NoInstalledDependencySnapshot, lastSnapshotPath));
+                return null;
             }
 
+            _logger.Log(isUserOnlyLog: false, Level.Information, string.Format(PowerShellWorkerStrings.LastInstalledDependencySnapshotFound, lastSnapshotPath));
+
+            if (_storage.IsEquivalentDependencyManifest(lastSnapshotPath))
+            {
+                _logger.Log(isUserOnlyLog: false, Level.Information, string.Format(PowerShellWorkerStrings.EquivalentDependencySnapshotManifest, lastSnapshotPath));
+                return lastSnapshotPath;
+            }
+
+            var dependencies = _storage.GetDependencies();
+            if (dependencies.All(entry => IsAcceptableVersionInstalled(lastSnapshotPath, entry)))
+            {
+                _logger.Log(isUserOnlyLog: false, Level.Information, string.Format(PowerShellWorkerStrings.DependencySnapshotContainsAcceptableModuleVersions, lastSnapshotPath));
+                return lastSnapshotPath;
+            }
+
+            _logger.Log(isUserOnlyLog: false, Level.Information, string.Format(PowerShellWorkerStrings.DependencySnapshotDoesNotContainAcceptableModuleVersions, lastSnapshotPath));
             return null;
         }
 

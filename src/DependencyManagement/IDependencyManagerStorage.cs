@@ -37,5 +37,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         void SetSnapshotAccessTimeToUtcNow(string path);
 
         DateTime GetSnapshotAccessTimeUtc(string path);
+
+        void PreserveDependencyManifest(string path);
+
+        bool IsEquivalentDependencyManifest(string path);
     }
 }
