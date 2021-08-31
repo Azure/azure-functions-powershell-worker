@@ -313,7 +313,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 installer: _mockInstaller.Object,
                 newerSnapshotDetector: _mockNewerDependencySnapshotDetector.Object,
                 maintainer: _mockBackgroundDependencySnapshotMaintainer.Object,
-                currentSnapshotContentLogger: _mockBackgroundDependencySnapshotContentLogger.Object);
+                currentSnapshotContentLogger: _mockBackgroundDependencySnapshotContentLogger.Object,
+                logger: _mockLogger.Object);
         }
     }
 }

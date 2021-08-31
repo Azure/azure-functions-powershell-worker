@@ -34,6 +34,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
             _targetPathInstalled = DependencySnapshotFolderNameTools.CreateUniqueName();
             _targetPathInstalling = DependencySnapshotFolderNameTools.ConvertInstalledToInstalling(_targetPathInstalled);
             _mockStorage.Setup(_ => _.CreateInstallingSnapshot(_targetPathInstalled)).Returns(_targetPathInstalling);
+            _mockStorage.Setup(_ => _.PreserveDependencyManifest(_targetPathInstalling));
             _mockStorage.Setup(_ => _.PromoteInstallingSnapshotToInstalledAtomically(_targetPathInstalled));
             _mockStorage.Setup(_ => _.GetLatestInstalledSnapshot()).Returns(default(string));
         }
