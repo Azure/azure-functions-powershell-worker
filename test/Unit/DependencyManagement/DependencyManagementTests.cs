@@ -221,7 +221,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var mockModuleProvider = new MockModuleProvider { SuccessfulDownload = true };
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, mockModuleProvider))
+                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, mockModuleProvider, logger: _testLogger))
                 {
                     dependencyManager.Initialize(_testLogger);
 
@@ -268,7 +268,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var mockModuleProvider = new MockModuleProvider { ShouldNotThrowAfterCount = 2 };
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, mockModuleProvider))
+                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, mockModuleProvider, logger: _testLogger))
                 {
                     dependencyManager.Initialize(_testLogger);
 
@@ -325,7 +325,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, new MockModuleProvider()))
+                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, new MockModuleProvider(), logger: _testLogger))
                 {
                     dependencyManager.Initialize(_testLogger);
 
@@ -382,7 +382,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 // the PSGallery to retrieve the latest module version
                 using (var dependencyManager = new DependencyManager(
                     functionLoadRequest.Metadata.Directory,
-                    new MockModuleProvider { GetLatestModuleVersionThrows = true }))
+                    new MockModuleProvider { GetLatestModuleVersionThrows = true },
+                    logger: _testLogger))
                 {
                     dependencyManager.Initialize(_testLogger);
                     dependencyManager.StartDependencyInstallationIfNeeded(PowerShell.Create(), PowerShell.Create, _testLogger);
@@ -417,7 +418,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 // the PSGallery to retrive the latest module version
                 using (var dependencyManager = new DependencyManager(
                     functionLoadRequest.Metadata.Directory,
-                    new MockModuleProvider { GetLatestModuleVersionThrows = true }))
+                    new MockModuleProvider { GetLatestModuleVersionThrows = true },
+                    logger: _testLogger))
                 {
                     // Create a path to mimic an existing installation of the Az module
                     AzModulePath = Path.Join(managedDependenciesFolderPath, "FakeDependenciesSnapshot", "Az");

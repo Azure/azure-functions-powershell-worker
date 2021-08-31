@@ -32,6 +32,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             _maxDependencyEntries = maxDependencyEntries;
         }
 
+        public string GetPath()
+        {
+            return Path.Combine(_functionAppRootPath, RequirementsPsd1FileName);
+        }
+
         public IEnumerable<DependencyManifestEntry> GetEntries()
         {
             var hashtable = ParsePowerShellDataFile();
@@ -93,7 +98,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private Hashtable ParsePowerShellDataFile()
         {
             // Path to requirements.psd1 file.
-            var requirementsFilePath = Path.Join(_functionAppRootPath, RequirementsPsd1FileName);
+            var requirementsFilePath = GetPath();
 
             if (!File.Exists(requirementsFilePath))
             {
