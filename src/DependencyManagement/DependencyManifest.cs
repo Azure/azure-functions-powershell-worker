@@ -21,7 +21,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private readonly int _maxDependencyEntries;
 
-        public DependencyManifest(string functionAppRootPath, int maxDependencyEntries = 10)
+        public DependencyManifest(string functionAppRootPath, int maxDependencyEntries = 50)
         {
             if (string.IsNullOrWhiteSpace(functionAppRootPath))
             {
