@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             ILogger logger = null)
         {
             _storage = storage ?? new DependencyManagerStorage(GetFunctionAppRootPath(requestMetadataDirectory));
-            _installedDependenciesLocator = installedDependenciesLocator ?? new InstalledDependenciesLocator(_storage);
+            _installedDependenciesLocator = installedDependenciesLocator ?? new InstalledDependenciesLocator(_storage, logger);
             var snapshotContentLogger = new PowerShellModuleSnapshotLogger();
             _installer = installer ?? new DependencySnapshotInstaller(
                                             moduleProvider ?? new PowerShellGalleryModuleProvider(logger),
