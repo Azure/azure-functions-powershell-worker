@@ -122,26 +122,6 @@ $Env:FUNCTIONS_WORKER_RUNTIME = "powershell"
 $Env:FUNCTIONS_WORKER_RUNTIME_VERSION = $POWERSHELL_VERSION
 $Env:AZURE_FUNCTIONS_ENVIRONMENT = "development"
 $Env:Path = "$Env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
-$funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
-
-Write-Host "Installing extensions..."
-Push-Location "$PSScriptRoot\TestFunctionApp"
-
-if ($IsMacOS -or $IsLinux) {
-    chmod +x $funcExePath
-}
-
-& $funcExePath extensions install | ForEach-Object {    
-  if ($_ -match 'OK')    
-  { Write-Host $_ -f Green }    
-  elseif ($_ -match 'FAIL|ERROR')   
-  { Write-Host $_ -f Red }   
-  else    
-  { Write-Host $_ }    
-}
-
-if ($LASTEXITCODE -ne 0) { throw "Installing extensions failed." }
-Pop-Location
 
 Write-Host "Running E2E integration tests..." -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
