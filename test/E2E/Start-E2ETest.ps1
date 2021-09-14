@@ -57,7 +57,7 @@ function NewTaskHubName
 
 $taskHubName = NewTaskHubName -Length 45
 
-$FUNC_RUNTIME_VERSION = '3'
+$FUNC_RUNTIME_VERSION = '4'
 $TARGET_FRAMEWORK = 'net6.0'
 $POWERSHELL_VERSION = '7.2'
 
