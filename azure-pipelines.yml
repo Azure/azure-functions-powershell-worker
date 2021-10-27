@@ -35,12 +35,12 @@ steps:
 
 - pwsh: |
     Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.ps1' -OutFile 'dotnet-install.ps1'
-    ./dotnet-install.ps1 -InstallDir "$env:ProgramFiles/dotnet" -Version "6.0.100-preview.7.21379.14" -Channel 'release'
+    ./dotnet-install.ps1 -InstallDir "$env:ProgramFiles/dotnet" -Version "6.0.100-rc.2.21505.57" -Channel 'release'
   displayName: 'Install the .Net version used by the Core Tools for Windows'
   condition: eq( variables['Agent.OS'], 'Windows_NT' )
 
 - bash: |
-    curl -sSL https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.sh | bash /dev/stdin -v '6.0.100-preview.7.21379.14' -c 'release' --install-dir /usr/share/dotnet
+    curl -sSL https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.sh | bash /dev/stdin -v '6.0.100-rc.2.21505.57' -c 'release' --install-dir /usr/share/dotnet
   displayName: 'Install the .Net version used by the Core Tools for Linux'
   condition: eq( variables['Agent.OS'], 'Linux' )
 
