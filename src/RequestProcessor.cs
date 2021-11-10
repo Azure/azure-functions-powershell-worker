@@ -456,7 +456,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         private static void BindOutputFromResult(InvocationResponse response, AzFunctionInfo functionInfo, IDictionary results)
         {
-            if (functionInfo.DurableFunctionInfo.Type == DurableFunctionType.None) // TODO: but let activity functions have output bindings, too
+            if (functionInfo.DurableFunctionInfo.Type != DurableFunctionType.OrchestrationFunction)
             {
                 // Set out binding data and return response to be sent back to host
                 foreach (var (bindingName, bindingInfo) in functionInfo.OutputBindings)
