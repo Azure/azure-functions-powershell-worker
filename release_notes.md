@@ -1,0 +1,1 @@
+* Bug fix: Activity Functions can now use output bindings (https://github.com/Azure/azure-functions-powershell-worker/issues/646)
