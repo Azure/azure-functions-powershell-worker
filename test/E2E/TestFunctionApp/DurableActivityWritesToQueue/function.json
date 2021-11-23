@@ -1,0 +1,16 @@
+{
+  "bindings": [
+    {
+      "name": "name",
+      "type": "activityTrigger",
+      "direction": "in"
+    },
+    {
+        "type": "queue",
+        "direction": "out",
+        "name": "outputQueueItem",
+        "queueName": "outqueue",
+        "connection": "AzureWebJobsStorage"
+    }
+  ]
+}
