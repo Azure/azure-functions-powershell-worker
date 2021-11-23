@@ -33,7 +33,7 @@ param(
 
 #Requires -Version 6.0
 
-$PowerShellVersion = '7'
+$PowerShellVersion = '7.2'
 $TargetFramework = 'net6.0'
 
 function Get-FunctionsCoreToolsDir {
