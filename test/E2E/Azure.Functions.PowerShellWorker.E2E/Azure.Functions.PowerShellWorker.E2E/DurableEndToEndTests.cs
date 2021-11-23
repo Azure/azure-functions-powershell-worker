@@ -148,6 +148,56 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         }
 
         [Fact]
+        public async Task ActivityCanHaveQueueBinding()
+        {
+            const string queueName = "outqueue";
+            await StorageHelpers.ClearQueue(queueName);
+            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClient", queryString: "?FunctionName=DurableOrchestratorWriteToQueue");
+            Assert.Equal(HttpStatusCode.Accepted, initialResponse.StatusCode);
+
+            var initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+            dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
+            var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
+
+            var startTime = DateTime.UtcNow;
+
+            using var httpClient = new HttpClient();
+
+            while (true)
+            {
+                var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
+                switch (statusResponse.StatusCode)
+                {
+                    case HttpStatusCode.Accepted:
+                        {
+                            if (DateTime.UtcNow > startTime + _orchestrationCompletionTimeout)
+                            {
+                                Assert.True(false, $"The orchestration has not completed after {_orchestrationCompletionTimeout}");
+                            }
+
+                            await Task.Delay(TimeSpan.FromSeconds(2));
+                            break;
+                        }
+
+                    case HttpStatusCode.OK:
+                        {
+                            var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                            Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
+
+                            var queueMessage = await StorageHelpers.ReadFromQueue(queueName);
+                            Assert.Equal("QueueData", queueMessage);
+                            return;
+                        }
+
+                    default:
+                        Assert.True(false, $"Unexpected orchestration status code: {statusResponse.StatusCode}");
+                        break;
+                }
+            }
+        }
+
+
+        [Fact]
         public async Task ActivityExceptionIsPropagatedThroughOrchestrator()
         {
             var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClient", queryString: "?FunctionName=DurableOrchestratorWithException");
