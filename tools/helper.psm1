@@ -10,8 +10,8 @@ $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 
 $DotnetSDKVersionRequirements = @{
     '6.0' = @{
-        MinimalPatch = '100-preview.7.21379.14'
-        DefaultPatch = '100-preview.7.21379.14'
+        MinimalPatch = '100'
+        DefaultPatch = '100'
     }
 }
 
