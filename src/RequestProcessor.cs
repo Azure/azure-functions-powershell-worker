@@ -97,6 +97,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             var workerInitRequest = request.WorkerInitRequest;
             Environment.SetEnvironmentVariable("AZUREPS_HOST_ENVIRONMENT", $"AzureFunctions/{workerInitRequest.HostVersion}");
+            Environment.SetEnvironmentVariable("POWERSHELL_DISTRIBUTION_CHANNEL", $"Azure-Functions-{workerInitRequest.HostVersion}");
 
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
