@@ -391,7 +391,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
 
-                var result = testManager.InvokeFunction(functionInfo, null, null, CreateOrchestratorInputData(), new FunctionInvocationPerformanceStopwatch());
+                var result = testManager.InvokeFunction(functionInfo, null, null, null, CreateOrchestratorInputData(), new FunctionInvocationPerformanceStopwatch());
 
                 var relevantLogs = s_testLogger.FullLog.Where(message => message.StartsWith("Information: OUTPUT:")).ToList();
                 var expected = shouldSuppressPipelineTraces ? new string[0] : new[] { "Information: OUTPUT: Hello" };
@@ -423,7 +423,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
         private static Hashtable InvokeFunction(PowerShellManager powerShellManager, AzFunctionInfo functionInfo, Hashtable triggerMetadata = null)
         {
-            return powerShellManager.InvokeFunction(functionInfo, triggerMetadata, null, s_testInputData, new FunctionInvocationPerformanceStopwatch());
+            return powerShellManager.InvokeFunction(functionInfo, triggerMetadata, null, null, s_testInputData, new FunctionInvocationPerformanceStopwatch());
         }
 
         private class ContextValidatingLogger : ILogger
