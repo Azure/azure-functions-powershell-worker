@@ -9,7 +9,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     /// <summary>
-    /// Custom RetryContext constructed from the RpcTraceContext member received from the host.
+    /// Custom RetryContext constructed from the RpcRetryContext member received from the host.
     /// </summary>
     internal class RetryContext
     {
