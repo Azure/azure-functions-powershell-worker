@@ -1,1 +1,2 @@
 * Bug fix: Activity Functions can now use output bindings (https://github.com/Azure/azure-functions-powershell-worker/issues/646)
+* New feature: Added support for access to RetryContext within execution context (https://github.com/Azure/azure-functions-powershell-worker/issues/594)
