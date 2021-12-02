@@ -5,7 +5,6 @@
 
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
-
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     /// <summary>
