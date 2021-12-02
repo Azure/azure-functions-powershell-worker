@@ -38,6 +38,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         private const string TestInputBindingName = "req";
         private const string TestOutputBindingName = "res";
         private const string TestStringData = "Foo";
+        private const int TestRetryCount = 0;
+        private const int TestMaxRetryCount = 1;
+        private readonly static RpcException TestException = new RpcException
+        {
+            Source = "",
+            StackTrace = "",
+            Message = "TestMessage"
+        };
 
         private readonly static string s_funcDirectory;
         private readonly static FunctionLoadRequest s_functionLoadRequest;
@@ -176,9 +184,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
-        public void InvokeBasicFunctionWithTriggerMetadataAndTraceContextWorks()
+        public void InvokeBasicFunctionWithTriggerMetadataAndTraceContextAndRetryContextWorks()
         {
-            string path = Path.Join(s_funcDirectory, "testBasicFunctionWithTriggerMetadata.ps1");
+            string path = Path.Join(s_funcDirectory, "testBasicFunctionWithTriggerMetadataAndRetryContext.ps1");
             var (functionInfo, testManager) = PrepareFunction(path, string.Empty);
 
             Hashtable triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase)
@@ -186,11 +194,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 { TestInputBindingName, TestStringData }
             };
 
+            RetryContext retryContext = new RetryContext(TestRetryCount, TestMaxRetryCount, TestException);
+
             try
             {
                 FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
 
-                Hashtable result = InvokeFunction(testManager, functionInfo, triggerMetadata);
+                Hashtable result = InvokeFunction(testManager, functionInfo, triggerMetadata, retryContext);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
                 Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(testManager.InstanceId);
@@ -421,9 +431,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             return testInputData;
         }
 
-        private static Hashtable InvokeFunction(PowerShellManager powerShellManager, AzFunctionInfo functionInfo, Hashtable triggerMetadata = null)
+        private static Hashtable InvokeFunction(
+            PowerShellManager powerShellManager,
+            AzFunctionInfo functionInfo,
+            Hashtable triggerMetadata = null,
+            RetryContext retryContext = null)
         {
-            return powerShellManager.InvokeFunction(functionInfo, triggerMetadata, null, null, s_testInputData, new FunctionInvocationPerformanceStopwatch());
+            return powerShellManager.InvokeFunction(functionInfo, triggerMetadata, null, retryContext, s_testInputData, new FunctionInvocationPerformanceStopwatch());
         }
 
         private class ContextValidatingLogger : ILogger

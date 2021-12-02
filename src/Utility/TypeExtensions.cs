@@ -153,9 +153,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         {
             return new RpcException
             {
-                Message = exception.Message,
                 Source = exception.Source ?? "",
-                StackTrace = exception.StackTrace ?? ""
+                StackTrace = exception.StackTrace ?? "",
+                Message = exception.Message
             };
         }
 
