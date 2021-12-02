@@ -9,7 +9,7 @@ param ($Req, $TriggerMetadata, $RetryContext)
 Write-Verbose "a log"
 $cmdName = $MyInvocation.MyCommand.Name
 
-$result = "{0},{1}:{2},{3}" -f `
+$result = "{0},{1}:{2},{3},{4}" -f `
     $TriggerMetadata.Req,`
     $cmdName,`
     $RetryContext.RetryCount,`

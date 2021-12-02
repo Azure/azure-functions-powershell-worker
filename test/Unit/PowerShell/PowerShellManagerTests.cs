@@ -40,11 +40,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         private const string TestStringData = "Foo";
         private const int TestRetryCount = 0;
         private const int TestMaxRetryCount = 1;
+        private const string TestMessage = "TestMessage";
         private readonly static RpcException TestException = new RpcException
         {
             Source = "",
             StackTrace = "",
-            Message = "TestMessage"
+            Message = TestMessage
         };
 
         private readonly static string s_funcDirectory;
@@ -207,7 +208,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 Assert.Empty(outputBindings);
 
                 // A PowerShell function should be created fro the Az function.
-                string expectedResult = $"{TestStringData},{functionInfo.DeployedPSFuncName}";
+                string expectedResult = $"{TestStringData},{functionInfo.DeployedPSFuncName}:{TestRetryCount},{TestMaxRetryCount},{TestMessage}";
                 Assert.Equal(expectedResult, result[TestOutputBindingName]);
             }
             finally
