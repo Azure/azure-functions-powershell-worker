@@ -3,9 +3,6 @@
 # Licensed under the MIT license. See LICENSE file in the project root for full license information.
 #
 
-function Run
-{
-    param($req, $inputBlob, $TriggerMetadata)
+param($req, $inputBlob, $RetryContext)
 
-    "Run"
-}
+"DoNothing"

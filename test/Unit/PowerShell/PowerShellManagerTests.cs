@@ -38,6 +38,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         private const string TestInputBindingName = "req";
         private const string TestOutputBindingName = "res";
         private const string TestStringData = "Foo";
+        private const int TestRetryCount = 0;
+        private const int TestMaxRetryCount = 1;
+        private const string TestMessage = "TestMessage";
+        private readonly static RpcException TestException = new RpcException
+        {
+            Source = "",
+            StackTrace = "",
+            Message = TestMessage
+        };
 
         private readonly static string s_funcDirectory;
         private readonly static FunctionLoadRequest s_functionLoadRequest;
@@ -176,9 +185,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
-        public void InvokeBasicFunctionWithTriggerMetadataAndTraceContextWorks()
+        public void InvokeBasicFunctionWithTriggerMetadataAndTraceContextAndRetryContextWorks()
         {
-            string path = Path.Join(s_funcDirectory, "testBasicFunctionWithTriggerMetadata.ps1");
+            string path = Path.Join(s_funcDirectory, "testBasicFunctionWithTriggerMetadataAndRetryContext.ps1");
             var (functionInfo, testManager) = PrepareFunction(path, string.Empty);
 
             Hashtable triggerMetadata = new Hashtable(StringComparer.OrdinalIgnoreCase)
@@ -186,18 +195,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                 { TestInputBindingName, TestStringData }
             };
 
+            RetryContext retryContext = new RetryContext(TestRetryCount, TestMaxRetryCount, TestException);
+
             try
             {
                 FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
 
-                Hashtable result = InvokeFunction(testManager, functionInfo, triggerMetadata);
+                Hashtable result = InvokeFunction(testManager, functionInfo, triggerMetadata, retryContext);
 
                 // The outputBinding hashtable for the runspace should be cleared after 'InvokeFunction'
                 Hashtable outputBindings = FunctionMetadata.GetOutputBindingHashtable(testManager.InstanceId);
                 Assert.Empty(outputBindings);
 
                 // A PowerShell function should be created fro the Az function.
-                string expectedResult = $"{TestStringData},{functionInfo.DeployedPSFuncName}";
+                string expectedResult = $"{TestStringData},{functionInfo.DeployedPSFuncName}:{TestRetryCount},{TestMaxRetryCount},{TestMessage}";
                 Assert.Equal(expectedResult, result[TestOutputBindingName]);
             }
             finally
@@ -391,7 +402,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
 
-                var result = testManager.InvokeFunction(functionInfo, null, null, CreateOrchestratorInputData(), new FunctionInvocationPerformanceStopwatch());
+                var result = testManager.InvokeFunction(functionInfo, null, null, null, CreateOrchestratorInputData(), new FunctionInvocationPerformanceStopwatch());
 
                 var relevantLogs = s_testLogger.FullLog.Where(message => message.StartsWith("Information: OUTPUT:")).ToList();
                 var expected = shouldSuppressPipelineTraces ? new string[0] : new[] { "Information: OUTPUT: Hello" };
@@ -421,9 +432,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             return testInputData;
         }
 
-        private static Hashtable InvokeFunction(PowerShellManager powerShellManager, AzFunctionInfo functionInfo, Hashtable triggerMetadata = null)
+        private static Hashtable InvokeFunction(
+            PowerShellManager powerShellManager,
+            AzFunctionInfo functionInfo,
+            Hashtable triggerMetadata = null,
+            RetryContext retryContext = null)
         {
-            return powerShellManager.InvokeFunction(functionInfo, triggerMetadata, null, s_testInputData, new FunctionInvocationPerformanceStopwatch());
+            return powerShellManager.InvokeFunction(functionInfo, triggerMetadata, null, retryContext, s_testInputData, new FunctionInvocationPerformanceStopwatch());
         }
 
         private class ContextValidatingLogger : ILogger
