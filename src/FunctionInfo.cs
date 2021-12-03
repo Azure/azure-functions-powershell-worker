@@ -24,10 +24,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     {
         internal const string TriggerMetadata = "TriggerMetadata";
         internal const string TraceContext = "TraceContext";
+        internal const string RetryContext = "RetryContext";
         internal const string DollarReturn = "$return";
 
         internal readonly bool HasTriggerMetadataParam;
         internal readonly bool HasTraceContextParam;
+        internal readonly bool HasRetryContextParam;
 
         internal readonly string FuncDirectory;
         internal readonly string FuncName;
@@ -76,6 +78,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             var parametersCopy = new Dictionary<string, PSScriptParamInfo>(psScriptParams, StringComparer.OrdinalIgnoreCase);
             HasTriggerMetadataParam = parametersCopy.Remove(TriggerMetadata);
             HasTraceContextParam = parametersCopy.Remove(TraceContext);
+            HasRetryContextParam = parametersCopy.Remove(RetryContext);
 
             var allBindings = new Dictionary<string, ReadOnlyBindingInfo>(StringComparer.OrdinalIgnoreCase);
             var inputBindings = new Dictionary<string, ReadOnlyBindingInfo>(StringComparer.OrdinalIgnoreCase);
