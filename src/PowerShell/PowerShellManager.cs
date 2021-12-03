@@ -199,6 +199,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             AzFunctionInfo functionInfo,
             Hashtable triggerMetadata,
             TraceContext traceContext,
+            RetryContext retryContext,
             IList<ParameterBinding> inputData,
             FunctionInvocationPerformanceStopwatch stopwatch)
         {
@@ -213,7 +214,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 AddEntryPointInvocationCommand(functionInfo);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.FunctionCodeReady);
 
-                SetInputBindingParameterValues(functionInfo, inputData, durableController, triggerMetadata, traceContext);
+                SetInputBindingParameterValues(functionInfo, inputData, durableController, triggerMetadata, traceContext, retryContext);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InputBindingValuesReady);
 
                 if (!durableController.ShouldSuppressPipelineTraces())
@@ -258,7 +259,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             IEnumerable<ParameterBinding> inputData,
             DurableController durableController,
             Hashtable triggerMetadata,
-            TraceContext traceContext)
+            TraceContext traceContext,
+            RetryContext retryContext)
         {
             foreach (var binding in inputData)
             {
@@ -283,6 +285,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             if (functionInfo.HasTraceContextParam)
             {
                 _pwsh.AddParameter(AzFunctionInfo.TraceContext, traceContext);
+            }
+
+            if (functionInfo.HasRetryContextParam)
+            {
+                _pwsh.AddParameter(AzFunctionInfo.RetryContext, retryContext);
             }
         }
 
