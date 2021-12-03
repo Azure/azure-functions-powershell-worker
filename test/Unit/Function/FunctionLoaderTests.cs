@@ -100,10 +100,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Single(funcInfo.OutputBindings);
         }
 
-        [Fact]
-        public void TestFunctionLoaderGetFuncWithTriggerMetadataParam()
+        [Theory]
+        [InlineData("TriggerMetadata")]
+        [InlineData("RetryContext")]
+        public void TestFunctionLoaderGetFuncWithSingleParam(string paramName)
         {
-            var scriptFileToUse = Path.Join(_functionDirectory, "BasicFuncScriptWithTriggerMetadata.ps1");
+            var scriptFileToUse = Path.Join(_functionDirectory, $"BasicFuncScriptWith{paramName}.ps1");
             var entryPointToUse = string.Empty;
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
 
@@ -118,7 +120,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(3, funcInfo.FuncParameters.Count);
             Assert.True(funcInfo.FuncParameters.ContainsKey("req"));
             Assert.True(funcInfo.FuncParameters.ContainsKey("inputBlob"));
-            Assert.True(funcInfo.FuncParameters.ContainsKey("TriggerMetadata"));
+            Assert.True(funcInfo.FuncParameters.ContainsKey(paramName));
 
             Assert.Equal(3, funcInfo.AllBindings.Count);
             Assert.Equal(2, funcInfo.InputBindings.Count);
@@ -229,10 +231,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Contains("inputBlob", exception.Message);
         }
 
-        [Fact]
-        public void ParametersShouldMatchInputBindingWithTriggerMetadataParam()
+        [Theory]
+        [InlineData("TriggerMetadata")]
+        [InlineData("RetryContext")]
+        public void ParametersShouldMatchInputBindingWithSingleParam(string paramName)
         {
-            var scriptFileToUse = Path.Join(_functionDirectory, "BasicFuncScriptWithTriggerMetadata.ps1");
+            var scriptFileToUse = Path.Join(_functionDirectory, $"BasicFuncScriptWith{paramName}.ps1");
             var entryPointToUse = string.Empty;
 
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);
@@ -262,9 +266,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
-        public void EntryPointParametersShouldMatchInputBindingWithTriggerMetadataParam()
+        public void EntryPointParametersShouldMatchInputBindingWithTriggerMetadataAndRetryContextParams()
         {
-            var scriptFileToUse = Path.Join(_functionDirectory, "FuncWithEntryPointAndTriggerMetadata.psm1");
+            var scriptFileToUse = Path.Join(_functionDirectory, "FuncWithEntryPointAndTriggerMetadataAndRetryContext.psm1");
             var entryPointToUse = "Run";
 
             var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPointToUse);

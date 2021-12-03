@@ -329,9 +329,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             var triggerMetadata = GetTriggerMetadata(functionInfo, invocationRequest);
             var traceContext = GetTraceContext(functionInfo, invocationRequest);
+            var retryContext = GetRetryContext(functionInfo, invocationRequest);
             stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.MetadataAndTraceContextReady);
 
-            return psManager.InvokeFunction(functionInfo, triggerMetadata, traceContext, invocationRequest.InputData, stopwatch);
+            return psManager.InvokeFunction(functionInfo, triggerMetadata, traceContext, retryContext, invocationRequest.InputData, stopwatch);
         }
 
         internal StreamingMessage ProcessInvocationCancelRequest(StreamingMessage request)
@@ -450,6 +451,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 invocationRequest.TraceContext.TraceParent,
                 invocationRequest.TraceContext.TraceState,
                 invocationRequest.TraceContext.Attributes);
+        }
+
+        private static RetryContext GetRetryContext(AzFunctionInfo functionInfo, InvocationRequest invocationRequest)
+        {
+            if (!functionInfo.HasRetryContextParam)
+            {
+                return null;
+            }
+
+            return new RetryContext(
+                invocationRequest.RetryContext.RetryCount,
+                invocationRequest.RetryContext.MaxRetryCount,
+                invocationRequest.RetryContext.Exception);
         }
 
         /// <summary>
