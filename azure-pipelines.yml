@@ -68,6 +68,12 @@ steps:
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
   displayName: 'Copy package to artifacts directory'
 
+- task: ManifestGeneratorTask@0
+  inputs:
+    BuildDropPath: '$(Build.ArtifactStagingDirectory)'
+    Verbosity: 'Information'
+  displayName: 'SBOM Generation Task'
+
 - task: NuGetCommand@2
   condition: and(ne(variables['Build.Reason'], 'PullRequest'), in(variables['Build.SourceBranch'], 'refs/heads/v4.x/ps7.2', 'refs/heads/v4.x/ps7.0' , 'refs/heads/v3.x/ps7', 'refs/heads/v3.x/ps6', 'refs/heads/v2.x'), eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], false))
   inputs:
