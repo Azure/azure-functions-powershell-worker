@@ -9,6 +9,13 @@ $IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
 $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 
 $DotnetSDKVersionRequirements = @{
+
+    # .NET SDK 3.1 is required by the Microsoft.ManifestTool.dll tool
+    '3.1' = @{
+        MinimalPatch = '415'
+        DefaultPatch = '415'
+    }
+
     '6.0' = @{
         MinimalPatch = '100'
         DefaultPatch = '100'
