@@ -27,8 +27,10 @@ steps:
 
 - pwsh: |
       $ErrorActionPreference = "Stop"
-      ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)"
+      ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)" -AddSBOM -SBOMUtilSASUrl $env:SBOMUtilSASUrl
   displayName: 'Build worker code'
+  env:
+    SBOMUtilSASUrl: $(SBOMUtilSASUrl)
 
 - pwsh: ./build.ps1 -NoBuild -Test
   displayName: 'Running UnitTest'
