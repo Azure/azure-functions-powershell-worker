@@ -8,7 +8,8 @@
 #- dev
 
 pool:
-    vmImage: 'vs2017-win2016'
+    name: '1ES-Hosted-AzFunc'
+    vmImage: 'MMS2019TLS'
 
 variables:
   Configuration: Release
