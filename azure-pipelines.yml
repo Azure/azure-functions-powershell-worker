@@ -55,12 +55,13 @@ steps:
     PSWorkerEnableExperimentalDurableFunctions: "true"
   displayName: 'Running E2ETest'
 
-- task: CopyFiles@2
+- task: PublishTestResults@2
   inputs:
-    SourceFolder: '$(System.DefaultWorkingDirectory)/testResults'
-    Contents: '*.trx'
-    TargetFolder: '$(Build.ArtifactStagingDirectory)'
-  displayName: 'Copying test result file for artifacts'
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/*.trx'
+    failTaskOnFailedTests: true
+  condition: succeededOrFailed()
+  displayName: 'Publish tests results'
   
 - task: PublishBuildArtifacts@1
   inputs:
