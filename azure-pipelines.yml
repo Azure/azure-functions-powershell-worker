@@ -63,12 +63,12 @@ steps:
   condition: succeededOrFailed()
   displayName: 'Publish tests results'
   
-- task: PublishBuildArtifacts@1
+- task: CopyFiles@2
   inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
-    publishLocation: 'Container'
-  displayName: 'Publishing build and test result artifacts'
+    SourceFolder: '$(System.DefaultWorkingDirectory)/package'
+    Contents: '**/*.nupkg'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+  displayName: 'Copy package to artifacts directory'
   
 - pwsh: |
       $sourcePath  = (ls package/**/*/Microsoft.Azure.Functions.PowerShellWorker*.nupkg).FullName
