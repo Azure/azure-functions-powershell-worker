@@ -24,14 +24,8 @@ variables:
 
 steps:
 - pwsh: |
-    $isReleaseBuild = $false
     $releaseBranches = @('v4.x/ps7.2', 'v4.x/ps7.0', 'v3.x/ps7', 'v3.x/ps6', 'v2.x')
-
-    if ($releaseBranches -contains $env:BuildSourceBranchName)
-    {
-        $isReleaseBuild = $true
-    }
-
+    $isReleaseBuild = ($releaseBranches -contains $env:BuildSourceBranchName)
     Write-Host "##vso[task.setvariable variable=IsReleaseBuild]$isReleaseBuild"
     Write-Host "IsReleaseBuild: $isReleaseBuild"
   displayName: 'Set IsReleaseBuild variable'
