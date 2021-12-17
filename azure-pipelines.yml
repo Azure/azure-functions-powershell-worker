@@ -16,12 +16,28 @@ variables:
   buildNumber: $[ counter('build', 400) ] # Start higher than our AppVeyor versions. Every build (pr or branch) will increment.
 
 steps:
+- pwsh: |
+    $releaseBranches = @('v4.x/ps7.2', 'v4.x/ps7.0', 'v3.x/ps7', 'v3.x/ps6', 'v2.x')
+    $isReleaseBuild = ($releaseBranches -contains $env:BuildSourceBranchName)
+    Write-Host "##vso[task.setvariable variable=IsReleaseBuild]$isReleaseBuild"
+    Write-Host "IsReleaseBuild: $isReleaseBuild"
+  displayName: 'Set IsReleaseBuild variable'
+  env:
+    BuildSourceBranchName: $(Build.SourceBranchName)
+
 - pwsh: ./build.ps1 -NoBuild -Bootstrap
   displayName: 'Running ./build.ps1 -NoBuild -Bootstrap'
 
 - pwsh: |
       $ErrorActionPreference = "Stop"
-      ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)" -AddSBOM -SBOMUtilSASUrl $env:SBOMUtilSASUrl
+      if ($isReleaseBuild)
+      {
+        ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)" -AddSBOM -SBOMUtilSASUrl $env:SBOMUtilSASUrl
+      }
+      else
+      {
+        ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)"
+      }
   displayName: 'Build worker code'
   env:
     SBOMUtilSASUrl: $(SBOMUtilSASUrl)
@@ -73,7 +89,7 @@ steps:
   displayName: 'Set UploadPackage variable'
 
 - task: NuGetCommand@2
-  condition: and(ne(variables['Build.Reason'], 'PullRequest'), in(variables['Build.SourceBranch'], 'refs/heads/v3.x/ps7', 'refs/heads/v3.x/ps6', 'refs/heads/v2.x'), eq(variables.UploadPackage, false))
+  condition: and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['IsReleaseBuild'], true), eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], false))
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
