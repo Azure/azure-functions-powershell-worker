@@ -164,6 +164,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 if (scheduledHistoryEvent != null)
                 {
                     scheduledHistoryEvent.IsProcessed = true;
+                    scheduledHistoryEvent.IsPlayed = true;
                 }
 
                 if (completedHistoryEvent != null)
@@ -179,6 +180,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     }
 
                     completedHistoryEvent.IsProcessed = true;
+                    completedHistoryEvent.IsPlayed = true;
                 }
             }
 
@@ -192,6 +194,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             else
             {
                 InitiateAndWaitForStop(context);
+            }
+        }
+
+        public void GetTaskResult(
+            IReadOnlyCollection<DurableTask> tasksToQueryResultFor,
+            OrchestrationContext context,
+            Action<object> output)
+        {
+            foreach (var task in tasksToQueryResultFor) {
+                var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context, true);
+                var processedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent, true);
+                if (processedHistoryEvent != null)
+                {
+                    output(GetEventResult(processedHistoryEvent));
+                }
             }
         }
 
