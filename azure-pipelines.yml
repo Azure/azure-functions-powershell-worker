@@ -18,12 +18,17 @@ variables:
 steps:
 - pwsh: |
     $releaseBranches = @('v4.x/ps7.2', 'v4.x/ps7.0', 'v3.x/ps7', 'v3.x/ps6', 'v2.x')
-    $isReleaseBuild = ($releaseBranches -contains $env:BuildSourceBranchName)
+
+    Write-Host "BuildSourceBranch: $($env:BuildSourceBranch)"
+    $branchName = $env:BuildSourceBranch.Replace("refs/heads/", "")
+    Write-Host "BranchName: $branchName"
+
+    $isReleaseBuild = ($releaseBranches -contains $branchName)
     Write-Host "##vso[task.setvariable variable=IsReleaseBuild]$isReleaseBuild"
     Write-Host "IsReleaseBuild: $isReleaseBuild"
   displayName: 'Set IsReleaseBuild variable'
   env:
-    BuildSourceBranchName: $(Build.SourceBranchName)
+    BuildSourceBranch: $(Build.SourceBranch)
 
 - pwsh: |
     Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.ps1' -OutFile 'dotnet-install.ps1'
