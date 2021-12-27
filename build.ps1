@@ -28,7 +28,13 @@ param(
     $Configuration = "Debug",
 
     [string]
-    $BuildNumber = '0'
+    $BuildNumber = '0',
+
+    [switch]
+    $AddSBOM,
+
+    [string]
+    $SBOMUtilSASUrl
 )
 
 #Requires -Version 6.0
@@ -60,6 +66,35 @@ function Get-FunctionsCoreToolsDir {
 
         $funcParentDir
     }
+}
+
+function Install-SBOMUtil
+{
+    if ([string]::IsNullOrEmpty($SBOMUtilSASUrl))
+    {
+        throw "The `$SBOMUtilSASUrl parameter cannot be null or empty when specifying the `$AddSBOM switch"
+    }
+
+    $MANIFESTOOLNAME = "ManifestTool"
+    Write-Host "Installing $MANIFESTOOLNAME..."
+
+    $MANIFESTOOL_DIRECTORY = Join-Path $PSScriptRoot $MANIFESTOOLNAME
+    Remove-Item -Recurse -Force $MANIFESTOOL_DIRECTORY -ErrorAction Ignore
+
+    Invoke-RestMethod -Uri $SBOMUtilSASUrl -OutFile "$MANIFESTOOL_DIRECTORY.zip"
+    Expand-Archive "$MANIFESTOOL_DIRECTORY.zip" -DestinationPath $MANIFESTOOL_DIRECTORY
+
+    $dllName = "Microsoft.ManifestTool.dll"
+    $manifestToolPath = "$MANIFESTOOL_DIRECTORY/$dllName"
+
+    if (-not (Test-Path $manifestToolPath))
+    {
+        throw "$MANIFESTOOL_DIRECTORY does not contain '$dllName'"
+    }
+
+    Write-Host 'Done.'
+
+    return $manifestToolPath
 }
 
 function Deploy-PowerShellWorker {
@@ -140,6 +175,29 @@ if (!$NoBuild.IsPresent) {
         -OutFile "$PSScriptRoot/src/Modules/Microsoft.PowerShell.Management/Microsoft.PowerShell.Management.psd1" 
 
     dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot
+
+    if ($AddSBOM)
+    {
+        # Install manifest tool
+        $manifestTool = Install-SBOMUtil
+        Write-Log "manifestTool: $manifestTool "
+
+        # Generate manifest
+        $buildPath = "$PSScriptRoot/src/bin/$Configuration/$TargetFramework/publish"
+        $telemetryFilePath = Join-Path $PSScriptRoot ((New-Guid).Guid + ".json")
+        $packageName = "Microsoft.Azure.Functions.PowerShellWorker.nuspec"
+
+        # Delete the manifest folder if it exists
+        $manifestFolderPath = Join-Path $buildPath "_manifest"
+        if (Test-Path $manifestFolderPath)
+        {
+            Remove-Item $manifestFolderPath -Recurse -Force -ErrorAction Ignore
+        }
+
+        Write-Log "Running: dotnet $manifestTool generate -BuildDropPath $buildPath -BuildComponentPath $buildPath -Verbosity Information -t $telemetryFilePath"
+        & { dotnet $manifestTool generate -BuildDropPath $buildPath -BuildComponentPath $buildPath -Verbosity Information -t $telemetryFilePath -PackageName $packageName }
+    }
+
     dotnet pack -c $Configuration "/p:BuildNumber=$BuildNumber" "$PSScriptRoot/package"
 }
 
