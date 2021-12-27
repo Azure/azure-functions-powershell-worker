@@ -82,7 +82,7 @@ steps:
   displayName: 'Copy package to artifacts directory'
   
 - task: NuGetCommand@2
-  condition: and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['IsReleaseBuild'], true), eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], false))
+  condition: and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['IsReleaseBuild'], 'true'), eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], 'false'))
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
@@ -92,7 +92,7 @@ steps:
   displayName: 'Push NuGet package'
 
 - task: NuGetCommand@2
-  condition: eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true)
+  condition: eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], 'true')
   inputs:
     command: 'push'
     packagesToPush: '$(Build.ArtifactStagingDirectory)/**/*.nupkg;!$(Build.ArtifactStagingDirectory)/**/*.symbols.nupkg'
