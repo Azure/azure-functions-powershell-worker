@@ -16,7 +16,8 @@ strategy:
 
 pool:
     name: '1ES-Hosted-AzFunc'
-    vmImage: $(imageName)
+    demands:
+      - ImageOverride -equals $(imageName)
 
 variables:
   Configuration: Release
