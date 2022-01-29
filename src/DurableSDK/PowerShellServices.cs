@@ -7,7 +7,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     using System;
     using System.Management.Automation;
-    using PowerShell;
 
     internal class PowerShellServices : IPowerShellServices
     {

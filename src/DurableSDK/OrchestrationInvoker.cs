@@ -11,7 +11,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Linq;
     using System.Management.Automation;
 
-    using PowerShellWorker.Utility;
+    // using PowerShellWorker.Utility;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
 
     internal class OrchestrationInvoker : IOrchestrationInvoker
@@ -54,7 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     {
                         // The orchestration function completed
                         pwsh.EndInvoke(asyncResult);
-                        var result = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(outputBuffer);
+                        var result = CreateReturnValueFromFunctionOutput(outputBuffer);
                         return CreateOrchestrationResult(isDone: true, actions, output: result, context.CustomStatus);
                     }
                     catch (Exception e)
@@ -71,6 +71,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
         }
 
+        public static object CreateReturnValueFromFunctionOutput(IList<object> pipelineItems)
+        {
+            if (pipelineItems == null || pipelineItems.Count <= 0)
+            {
+                return null;
+            }
+
+            return pipelineItems.Count == 1 ? pipelineItems[0] : pipelineItems.ToArray();
+        }
+
         private static Hashtable CreateOrchestrationResult(
             bool isDone,
             List<List<OrchestrationAction>> actions,
@@ -78,7 +88,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             object customStatus)
         {
             var orchestrationMessage = new OrchestrationMessage(isDone, actions, output, customStatus);
-            return new Hashtable { { AzFunctionInfo.DollarReturn, orchestrationMessage } };
+            return new Hashtable { { "$return", orchestrationMessage } };
         }
     }
 }
