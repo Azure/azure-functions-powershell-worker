@@ -5,7 +5,6 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
-    using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
@@ -16,6 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using WebJobs.Script.Grpc.Messages;
 
     using PowerShellWorker.Utility;
+    using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
 
     /// <summary>
     /// The main entry point for durable functions support.
@@ -47,9 +47,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _orchestrationInvoker = orchestrationInvoker;
         }
 
-        public void BeforeFunctionInvocation(IList<ParameterBinding> inputData)
+        public string GetOrchestrationParameterName()
         {
-            // If the function is an orchestration client, then we set the DurableClient
+            return _orchestrationBindingInfo?.ParameterName;
+        }
+
+        public void InitializeBindings(IList<ParameterBinding> inputData)
+        {
+            // If the function is an durable client, then we set the DurableClient
             // in the module context for the 'Start-DurableOrchestration' function to use.
             if (_durableFunctionInfo.IsDurableClient)
             {
@@ -58,11 +63,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                         .Data.ToObject();
 
                 _powerShellServices.SetDurableClient(durableClient);
+
             }
             else if (_durableFunctionInfo.IsOrchestrationFunction)
             {
-                _orchestrationBindingInfo = CreateOrchestrationBindingInfo(inputData);
-                _powerShellServices.SetOrchestrationContext(_orchestrationBindingInfo.Context);
+                _orchestrationBindingInfo = _powerShellServices.SetOrchestrationContext(
+                    inputData[0],
+                    out IExternalInvoker externalInvoker);
+                _orchestrationInvoker.SetExternalInvoker(externalInvoker);
             }
         }
 
@@ -87,46 +95,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void AddPipelineOutputIfNecessary(Collection<object> pipelineItems, Hashtable result)
         {
-            var shouldAddPipelineOutput =
-                _durableFunctionInfo.Type == DurableFunctionType.ActivityFunction;
-
-            if (shouldAddPipelineOutput)
+ 
+            if (ShouldSuppressPipelineTraces())
             {
                 var returnValue = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(pipelineItems);
                 result.Add(AzFunctionInfo.DollarReturn, returnValue);
             }
         }
 
-        public bool TryInvokeOrchestrationFunction(out Hashtable result)
+        public Hashtable InvokeOrchestrationFunction()
         {
-            if (!_durableFunctionInfo.IsOrchestrationFunction)
-            {
-                result = null;
-                return false;
-            }
-
-            result = _orchestrationInvoker.Invoke(_orchestrationBindingInfo, _powerShellServices);
-            return true;
+            return _orchestrationInvoker.Invoke(_orchestrationBindingInfo, _powerShellServices);
         }
 
         public bool ShouldSuppressPipelineTraces()
         {
             return _durableFunctionInfo.Type == DurableFunctionType.ActivityFunction;
-        }
-
-        private static OrchestrationBindingInfo CreateOrchestrationBindingInfo(IList<ParameterBinding> inputData)
-        {
-            // Quote from https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings:
-            //
-            // "Orchestrator functions should never use any input or output bindings other than the orchestration trigger binding.
-            //  Doing so has the potential to cause problems with the Durable Task extension because those bindings may not obey the single-threading and I/O rules."
-            //
-            // Therefore, it's by design that input data contains only one item, which is the metadata of the orchestration context.
-            var context = inputData[0];
-
-            return new OrchestrationBindingInfo(
-                context.Name,
-                JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String));
         }
     }
 }

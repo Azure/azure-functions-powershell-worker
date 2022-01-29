@@ -7,13 +7,7 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
 {
-    using System;
     using System.Linq;
-    using System.Collections.Generic;
-
-    using WebJobs.Script.Grpc.Messages;
-
-    using Microsoft.Azure.Functions.PowerShellWorker;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
 
@@ -37,15 +31,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
         {
         }
 
-        internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context)
+        internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context, bool processed)
         {
             return context.History.FirstOrDefault(
                 e => e.EventType == HistoryEventType.TaskScheduled &&
                      e.Name == FunctionName &&
-                     !e.IsProcessed);
+                     e.IsProcessed == processed);
         }
 
-        internal override HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent scheduledHistoryEvent)
+        internal override HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent scheduledHistoryEvent, bool processed)
         {
             return scheduledHistoryEvent == null
                 ? null
@@ -60,25 +54,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
             return RetryOptions == null
                 ? new CallActivityAction(FunctionName, Input)
                 : new CallActivityWithRetryAction(FunctionName, Input, RetryOptions);
-        }
-
-        internal static void ValidateTask(ActivityInvocationTask task, IEnumerable<AzFunctionInfo> loadedFunctions)
-        {
-            var functionInfo = loadedFunctions.FirstOrDefault(fi => fi.FuncName == task.FunctionName);
-            if (functionInfo == null)
-            {
-                var message = string.Format(PowerShellWorkerStrings.FunctionNotFound, task.FunctionName);
-                throw new InvalidOperationException(message);
-            }
-
-            var activityTriggerBinding = functionInfo.InputBindings.FirstOrDefault(
-                                            entry => DurableBindings.IsActivityTrigger(entry.Value.Type)
-                                                     && entry.Value.Direction == BindingInfo.Types.Direction.In);
-            if (activityTriggerBinding.Key == null)
-            {
-                var message = string.Format(PowerShellWorkerStrings.FunctionDoesNotHaveProperActivityFunctionBinding, task.FunctionName);
-                throw new InvalidOperationException(message);
-            }
         }
     }
 }

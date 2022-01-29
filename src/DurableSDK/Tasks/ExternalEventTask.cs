@@ -21,17 +21,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
         }
 
         // There is no corresponding history event for an expected external event
-        internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context)
+        internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context, bool processed)
         {
             return null;
         }
 
-        internal override HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent taskScheduled)
+        internal override HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent taskScheduled, bool processed)
         {
             return context.History.FirstOrDefault(
                     e => e.EventType == HistoryEventType.EventRaised &&
                          e.Name == ExternalEventName &&
-                         !e.IsProcessed);
+                         e.IsPlayed == processed);
         }
 
         internal override OrchestrationAction CreateOrchestrationAction()

@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
+namespace Microsoft.Azure.Functions.PowerShellWorker.DurableWorker
 {
     internal class DurableFunctionInfo
     {
@@ -13,9 +13,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             DurableClientBindingName = durableClientBindingName;
         }
 
+        public bool IsActivityFunction => Type == DurableFunctionType.ActivityFunction;
+
         public bool IsDurableClient => DurableClientBindingName != null;
 
         public bool IsOrchestrationFunction => Type == DurableFunctionType.OrchestrationFunction;
+        
 
         public string DurableClientBindingName { get; }
 

@@ -17,6 +17,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
     internal class Utils
     {
+        internal readonly static CmdletInfo GetModuleCmdletInfo = new CmdletInfo("Get-Module", typeof(GetModuleCommand));
         internal readonly static CmdletInfo ImportModuleCmdletInfo = new CmdletInfo("Import-Module", typeof(ImportModuleCommand));
         internal readonly static CmdletInfo RemoveModuleCmdletInfo = new CmdletInfo("Remove-Module", typeof(RemoveModuleCommand));
         internal readonly static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
