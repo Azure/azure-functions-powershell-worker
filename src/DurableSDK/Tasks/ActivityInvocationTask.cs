@@ -62,7 +62,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
                 : new CallActivityWithRetryAction(FunctionName, Input, RetryOptions);
         }
 
-        internal static void ValidateTask(ActivityInvocationTask task, IEnumerable<AzFunctionInfo> loadedFunctions)
+        /*internal static void ValidateTask(ActivityInvocationTask task, IEnumerable<AzFunctionInfo> loadedFunctions)
         {
             var functionInfo = loadedFunctions.FirstOrDefault(fi => fi.FuncName == task.FunctionName);
             if (functionInfo == null)
@@ -79,6 +79,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
                 var message = string.Format(PowerShellWorkerStrings.FunctionDoesNotHaveProperActivityFunctionBinding, task.FunctionName);
                 throw new InvalidOperationException(message);
             }
-        }
+        }*/
     }
 }

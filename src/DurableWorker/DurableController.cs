@@ -3,6 +3,8 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+// TODO: Some of this functionality may need to go into the DurableSDK component.
+// I expect this file will need to be split between DurableWorker and DurableSDK
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     using System;
@@ -16,6 +18,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using WebJobs.Script.Grpc.Messages;
 
     using PowerShellWorker.Utility;
+    using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
 
     /// <summary>
     /// The main entry point for durable functions support.

@@ -163,7 +163,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Equal(FunctionName, allOutput.Single().FunctionName);
         }
 
-        [Fact]
+        /*[Fact]
         public void ValidateTask_Throws_WhenActivityFunctionDoesNotExist()
         {
             var history = CreateHistory(scheduled: false, completed: false, failed: false, output: InvocationResultJson);
@@ -187,9 +187,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.DoesNotContain(ActivityTriggerBindingType, exception.Message);
 
             DurableTestUtilities.VerifyNoActionAdded(orchestrationContext);
-        }
+        }*/
 
-        [Theory]
+        /*[Theory]
         [InlineData("IncorrectBindingType", BindingInfo.Types.Direction.In)]
         [InlineData(ActivityTriggerBindingType, BindingInfo.Types.Direction.Out)]
         public void ValidateTask_Throws_WhenActivityFunctionHasNoProperBinding(
@@ -214,7 +214,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Contains(ActivityTriggerBindingType, exception.Message);
 
             DurableTestUtilities.VerifyNoActionAdded(orchestrationContext);
-        }
+        }*/
 
         [Theory]
         [InlineData(false)]
