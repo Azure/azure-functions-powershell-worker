@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 // When using the new SDK, we'll want the user-code to send an `asyncResult`
                 // with a specific flag/signature that tells the worker to short-circuit
                 // its regular DF logic, and to return the value its been provided without further processing.
-                // All weed is to make the orchestrationBinding info viewable to the user-code.
+                // All we need is to make the orchestrationBinding info viewable to the user-code. < This should be our next step
                 var asyncResult = pwsh.BeginInvoke(outputBuffer);
 
                 var (shouldStop, actions) =
