@@ -38,6 +38,11 @@ steps:
   env:
     BuildSourceBranch: $(Build.SourceBranch)
 
+- task: UseDotNet@2
+  displayName: 'Install .NET 6'
+  inputs:
+    version: 6.0.x
+
 - pwsh: ./build.ps1 -NoBuild -Bootstrap
   displayName: 'Running ./build.ps1 -NoBuild -Bootstrap'
 
@@ -57,17 +62,6 @@ steps:
 
 - pwsh: ./build.ps1 -NoBuild -Test
   displayName: 'Running UnitTest'
-
-- pwsh: |
-    Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.ps1' -OutFile 'dotnet-install.ps1'
-    ./dotnet-install.ps1 -InstallDir "$env:ProgramFiles/dotnet" -Version "6.0.100" -Channel 'release'
-  displayName: 'Install the .Net version used by the Core Tools for Windows'
-  condition: eq( variables['Agent.OS'], 'Windows_NT' )
-
-- bash: |
-    curl -sSL https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.sh | bash /dev/stdin -v '6.0.100' -c 'release' --install-dir /usr/share/dotnet
-  displayName: 'Install the .Net version used by the Core Tools for Linux'
-  condition: eq( variables['Agent.OS'], 'Linux' )
 
 - pwsh: ./test/E2E/Start-E2ETest.ps1
   env:
