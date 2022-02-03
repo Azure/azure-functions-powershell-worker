@@ -143,6 +143,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             // Therefore, it's by design that input data contains only one item, which is the metadata of the orchestration context.
             var context = inputData[0];
 
+            // TODO: make this de-serialization constructor depend on the external SDK
             return new OrchestrationBindingInfo(
                 context.Name,
                 JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String));
