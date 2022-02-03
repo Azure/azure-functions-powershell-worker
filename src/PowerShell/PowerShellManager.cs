@@ -204,7 +204,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             FunctionInvocationPerformanceStopwatch stopwatch)
         {
             var outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
-
             var durableController = new DurableController(functionInfo.DurableFunctionInfo, _pwsh);
 
             try
@@ -227,6 +226,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 try
                 {
+
                     return durableController.TryInvokeOrchestrationFunction(out var result)
                                 ? result
                                 : InvokeNonOrchestrationFunction(durableController, outputBindings);

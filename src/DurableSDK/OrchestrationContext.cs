@@ -20,13 +20,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         public object Input { get; internal set; }
 
         [DataMember]
-        internal string InstanceId { get; set; }
+        public string InstanceId { get; set; }
 
         [DataMember]
         internal string ParentInstanceId { get; set; }
 
         [DataMember]
-        internal bool IsReplaying { get; set; }
+        public bool IsReplaying { get; set; }
 
         [DataMember]
         internal HistoryEvent[] History { get; set; }
@@ -34,6 +34,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         public DateTime CurrentUtcDateTime { get; internal set; }
 
         internal OrchestrationActionCollector OrchestrationActionCollector { get; } = new OrchestrationActionCollector();
+
+        internal object ExternalResult;
+        internal bool ExternalIsError;
+
+        internal void SetExternalResult(object result, bool isError)
+        {
+            this.ExternalResult = result;
+            this.ExternalIsError = isError;
+        }
 
         internal object CustomStatus { get; set; }
     }

@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     internal interface IPowerShellServices
     {
+        PowerShell GetPowerShell();
         void SetDurableClient(object durableClient);
 
         void SetOrchestrationContext(OrchestrationContext orchestrationContext);

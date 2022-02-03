@@ -29,6 +29,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private readonly IPowerShellServices _powerShellServices;
         private readonly IOrchestrationInvoker _orchestrationInvoker;
         private OrchestrationBindingInfo _orchestrationBindingInfo;
+        private PowerShell pwsh;
 
         public DurableController(
             DurableFunctionInfo durableDurableFunctionInfo,
@@ -38,6 +39,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 new PowerShellServices(pwsh),
                 new OrchestrationInvoker())
         {
+            this.pwsh = pwsh;
         }
 
         internal DurableController(
@@ -66,6 +68,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 _orchestrationBindingInfo = CreateOrchestrationBindingInfo(inputData);
                 _powerShellServices.SetOrchestrationContext(_orchestrationBindingInfo.Context);
+
+                // Bote: Cannot find the DurableSDK module here, somehow.
+                Collection<object> output2 = this.pwsh.AddCommand("Get-Module")
+                    .InvokeAndClearCommands<object>();
+
+                var context = inputData[0];
+                Collection<Action<object>> output = this.pwsh.AddCommand("Set-BindingData")
+                    .AddParameter("Input", context.Data.String)
+                    .AddParameter("SetResult", (Action<object, bool>)_orchestrationBindingInfo.Context.SetExternalResult)
+                    .InvokeAndClearCommands<Action<object>>();
+                if (output.Count() == 1)
+                {
+                    this._orchestrationInvoker.SetExternalInvoker(output[0]);
+                }
             }
         }
 

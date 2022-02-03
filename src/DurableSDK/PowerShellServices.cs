@@ -21,11 +21,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _pwsh = pwsh;
         }
 
+        public PowerShell GetPowerShell()
+        {
+            return this._pwsh;
+        }
+
         public void SetDurableClient(object durableClient)
         {
             _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                 .AddParameter("DurableClient", durableClient)
                 .InvokeAndClearCommands();
+
 
             _hasSetOrchestrationContext = true;
         }

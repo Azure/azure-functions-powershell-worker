@@ -16,6 +16,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     internal class OrchestrationInvoker : IOrchestrationInvoker
     {
+        private Action<PowerShell> externalInvoker = null;
+
         public Hashtable Invoke(OrchestrationBindingInfo orchestrationBindingInfo, IPowerShellServices pwsh)
         {
             try
@@ -30,13 +32,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
                 // Marks the first OrchestratorStarted event as processed
                 orchestrationStart.IsProcessed = true;
+
+                var useExternalSDK = externalInvoker != null;
+                if (useExternalSDK)
+                {
+                    externalInvoker.Invoke(pwsh.GetPowerShell());
+                    var result = orchestrationBindingInfo.Context.ExternalResult;
+                    var isError = orchestrationBindingInfo.Context.ExternalIsError;
+                    if (isError)
+                    {
+                        throw (Exception)result;
+                    }
+                    else
+                    {
+                        return (Hashtable)result;
+                    }
+                }
                 
-                // IDEA:
-                // This seems to be where the user-code is allowed to run.
-                // When using the new SDK, we'll want the user-code to send an `asyncResult`
-                // with a specific flag/signature that tells the worker to short-circuit
-                // its regular DF logic, and to return the value its been provided without further processing.
-                // All we need is to make the orchestrationBinding info viewable to the user-code. < This should be our next step
                 var asyncResult = pwsh.BeginInvoke(outputBuffer);
 
                 var (shouldStop, actions) =
@@ -46,6 +58,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 {
                     // The orchestration function should be stopped and restarted
                     pwsh.StopInvoke();
+                    // return (Hashtable)orchestrationBindingInfo.Context.OrchestrationActionCollector.output;
                     return CreateOrchestrationResult(isDone: false, actions, output: null, context.CustomStatus);
                 }
                 else
@@ -89,6 +102,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             var orchestrationMessage = new OrchestrationMessage(isDone, actions, output, customStatus);
             return new Hashtable { { "$return", orchestrationMessage } };
+        }
+
+        public void SetExternalInvoker(Action<PowerShell> externalInvoker)
+        {
+            this.externalInvoker = externalInvoker;
         }
     }
 }
