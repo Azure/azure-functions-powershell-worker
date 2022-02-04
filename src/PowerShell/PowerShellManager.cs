@@ -208,6 +208,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             try
             {
+
                 durableController.BeforeFunctionInvocation(inputData);
 
                 AddEntryPointInvocationCommand(functionInfo);
@@ -216,10 +217,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 SetInputBindingParameterValues(functionInfo, inputData, durableController, triggerMetadata, traceContext, retryContext);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InputBindingValuesReady);
 
-                if (!durableController.ShouldSuppressPipelineTraces())
+                /* This has been moved to the DF SDK (although it should also be moved down within the worker)
+                 * if (!durableController.ShouldSuppressPipelineTraces())
                 {
                     _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
-                }
+                }*/
 
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InvokingFunctionCode);
                 Logger.Log(isUserOnlyLog: false, LogLevel.Trace, CreateInvocationPerformanceReportMessage(functionInfo.FuncName, stopwatch));
@@ -270,9 +272,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     {
                         var bindingInfo = functionInfo.InputBindings[binding.Name];
                         valueToUse = Utils.TransformInBindingValueAsNeeded(paramInfo, bindingInfo, binding.Data.ToObject());
+                        _pwsh.AddParameter(binding.Name, valueToUse);
+                    }
+                    else
+                    {
+                        // move this further down in the worker
+                        // _pwsh.AddParameter(binding.Name, valueToUse);
+
                     }
 
-                    _pwsh.AddParameter(binding.Name, valueToUse);
                 }
             }
 
