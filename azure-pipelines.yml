@@ -38,10 +38,17 @@ steps:
   env:
     BuildSourceBranch: $(Build.SourceBranch)
 
+- pwsh: |
+    $dotNetInstallationPath = if ($IsWindows) { "$env:ProgramFiles/dotnet" } else { "/usr/share/dotnet" }
+    Write-Host "##vso[task.setvariable variable=DotNetInstallationPath]$dotNetInstallationPath"
+    Write-Host "DotNetInstallationPath: $dotNetInstallationPath"
+  displayName: 'Set .Net 6 installation path'
+
 - task: UseDotNet@2
   displayName: 'Install .NET 6'
   inputs:
     version: 6.0.x
+    installationPath: variables["DotNetInstallationPath"]
 
 - pwsh: ./build.ps1 -NoBuild -Bootstrap
   displayName: 'Running ./build.ps1 -NoBuild -Bootstrap'
