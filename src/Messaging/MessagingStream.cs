@@ -3,31 +3,33 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Grpc.Core;
+using Grpc.Net.Client;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
 {
     internal class MessagingStream
     {
-        private readonly AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
+        private readonly Grpc.Core.AsyncDuplexStreamingCall<StreamingMessage, StreamingMessage> _call;
         private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(initialCount: 1, maxCount: 1);
 
         internal MessagingStream(string host, int port)
         {
+            // To call unsecured gRPC services, ensure the address starts with 'http' as opposed to 'https'.
+            // For more detail, see https://docs.microsoft.com/en-us/aspnet/core/grpc/client?view=aspnetcore-6.0
+            string address = $"{host}:{port}";
             const int maxMessageLength = int.MaxValue;
 
-            var channelOptions = new []
+            var channelOptions = new GrpcChannelOptions
             {
-                new ChannelOption(ChannelOptions.MaxReceiveMessageLength, maxMessageLength),
-                new ChannelOption(ChannelOptions.MaxSendMessageLength, maxMessageLength)
+                MaxReceiveMessageSize = maxMessageLength,
+                MaxSendMessageSize = maxMessageLength,
             };
 
-            Channel channel = new Channel(host, port, ChannelCredentials.Insecure, channelOptions);
+            GrpcChannel channel = GrpcChannel.ForAddress(address, channelOptions);
             _call = new FunctionRpc.FunctionRpcClient(channel).EventStream();
         }
 
