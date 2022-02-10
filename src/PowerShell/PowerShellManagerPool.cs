@@ -82,7 +82,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 if (psManager == null)
                 {
                     var logger = CreateLoggerWithContext(requestId, invocationId);
-                    logger.Log(isUserOnlyLog: true, LogLevel.Warning, string.Format(PowerShellWorkerStrings.FunctionQueuingRequest, functionName));
+                    logger.Log(isUserOnlyLog: false, LogLevel.Warning, string.Format(PowerShellWorkerStrings.FunctionQueuingRequest, functionName));
 
                     // If the pool has reached its bounded capacity, then the thread
                     // should be blocked until an idle one becomes available.
