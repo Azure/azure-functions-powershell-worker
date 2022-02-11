@@ -22,8 +22,8 @@ $DotnetSDKVersionRequirements = @{
     }
 }
 
-$GrpcToolsVersion = '2.27.0' # grpc.tools
-$GoogleProtobufToolsVersion = '3.11.4' # google.protobuf.tools
+$GrpcToolsVersion = '2.43.0' # grpc.tools
+$GoogleProtobufToolsVersion = '3.19.4' # google.protobuf.tools
 
 function Find-Dotnet
 {
