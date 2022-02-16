@@ -22,7 +22,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
 
 
-            pwsh.GetPowerShell().AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
+            pwsh.GetPowerShell()?.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
 
             try
             {
