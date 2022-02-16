@@ -12,7 +12,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Threading;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
     using Microsoft.PowerShell.Commands;
-    // using Utility;
 
     internal class DurableTaskHandler
     {

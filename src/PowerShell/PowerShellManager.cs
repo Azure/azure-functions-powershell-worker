@@ -217,18 +217,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 SetInputBindingParameterValues(functionInfo, inputData, durableController, triggerMetadata, traceContext, retryContext);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InputBindingValuesReady);
 
-                /* This has been moved to the DF SDK (although it should also be moved down within the worker)
-                 * if (!durableController.ShouldSuppressPipelineTraces())
-                {
-                    _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
-                }*/
-
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InvokingFunctionCode);
                 Logger.Log(isUserOnlyLog: false, LogLevel.Trace, CreateInvocationPerformanceReportMessage(functionInfo.FuncName, stopwatch));
 
                 try
                 {
-
                     return durableController.TryInvokeOrchestrationFunction(out var result)
                                 ? result
                                 : InvokeNonOrchestrationFunction(durableController, outputBindings);

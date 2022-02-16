@@ -20,6 +20,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public Hashtable Invoke(OrchestrationBindingInfo orchestrationBindingInfo, IPowerShellServices pwsh)
         {
+
+
+            pwsh.GetPowerShell().AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
+
             try
             {
                 var outputBuffer = new PSDataCollection<object>();
