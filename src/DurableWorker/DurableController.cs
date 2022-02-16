@@ -62,7 +62,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     inputData.First(item => item.Name == _durableFunctionInfo.DurableClientBindingName)
                         .Data.ToObject();
 
+                this.pwsh.AddCommand("Import-Module")
+                    .AddParameter("Name", "DurableSDK")
+                    .InvokeAndClearCommands<Action<object>>();
+
+                //this.pwsh.AddCommand("Import-Module")
+                //        .AddParameter("Name", "C:\\Users\\dajusto\\source\\repos\\azure-functions-durable-powershell-private\\samples\\durableApp\\Modules\\DurableSDK\\bin\\Debug\\net6.0\\DurableSDK.dll")
+                //        .InvokeAndClearCommands<Action<object>>();
+
+                //this.pwsh.AddCommand("Set-BindingData")
+                //        .AddParameter("Input", "")
+                //        .InvokeAndClearCommands<Action<object>>();
+
                 _powerShellServices.SetDurableClient(durableClient);
+
             }
             else if (_durableFunctionInfo.IsOrchestrationFunction)
             {
