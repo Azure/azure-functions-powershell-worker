@@ -27,6 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
             {
                 MaxReceiveMessageSize = maxMessageLength,
                 MaxSendMessageSize = maxMessageLength,
+                Credentials = Grpc.Core.ChannelCredentials.Insecure
             };
 
             GrpcChannel channel = GrpcChannel.ForAddress(address, channelOptions);
