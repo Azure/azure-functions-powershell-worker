@@ -7,11 +7,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     using System;
     using System.Management.Automation;
+    using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 
     internal class PowerShellServices : IPowerShellServices
     {
         private const string SetFunctionInvocationContextCommand =
             "Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext";
+        private const string SetFunctionInvocationContextExternalCommand =
+            "DurableSDK\\Set-FunctionInvocationContextExternal";
 
         private readonly PowerShell _pwsh;
         private bool _hasSetOrchestrationContext = false;
@@ -28,7 +31,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void SetDurableClient(object durableClient)
         {
-            _pwsh.AddCommand(SetFunctionInvocationContextCommand)
+            _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
+                    .AddParameter("Name", "DurableSDK");
+            _pwsh.AddCommand(SetFunctionInvocationContextExternalCommand)
                 .AddParameter("DurableClient", durableClient)
                 .InvokeAndClearCommands();
 
@@ -38,7 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void SetOrchestrationContext(OrchestrationContext orchestrationContext)
         {
-            _pwsh.AddCommand(SetFunctionInvocationContextCommand)
+            _pwsh.AddCommand(SetFunctionInvocationContextExternalCommand)
                 .AddParameter("OrchestrationContext", orchestrationContext)
                 .InvokeAndClearCommands();
 
@@ -49,7 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             if (_hasSetOrchestrationContext)
             {
-                _pwsh.AddCommand(SetFunctionInvocationContextCommand)
+                _pwsh.AddCommand(SetFunctionInvocationContextExternalCommand)
                     .AddParameter("Clear", true)
                     .InvokeAndClearCommands();
             }
