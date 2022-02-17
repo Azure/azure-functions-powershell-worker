@@ -40,6 +40,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             _mockPowerShellServices.Verify(_ => _.BeginInvoke(It.IsAny<PSDataCollection<object>>()), Times.Once);
             _mockPowerShellServices.Verify(_ => _.EndInvoke(invocationAsyncResult), Times.Once);
             _mockPowerShellServices.Verify(_ => _.ClearStreamsAndCommands(), Times.Once);
+            _mockPowerShellServices.Verify(_ => _.TracePipelineObject(), Times.Once);
+            _mockPowerShellServices.Verify(_ => _.AddParameter(It.IsAny<string>(), It.IsAny<object>()), Times.Once);
             _mockPowerShellServices.VerifyNoOtherCalls();
         }
 
@@ -51,6 +53,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             _mockPowerShellServices.Verify(_ => _.BeginInvoke(It.IsAny<PSDataCollection<object>>()), Times.Once);
             _mockPowerShellServices.Verify(_ => _.StopInvoke(), Times.Once);
             _mockPowerShellServices.Verify(_ => _.ClearStreamsAndCommands(), Times.Once);
+            _mockPowerShellServices.Verify(_ => _.TracePipelineObject(), Times.Once);
+            _mockPowerShellServices.Verify(_ => _.AddParameter(It.IsAny<string>(), It.IsAny<object>()), Times.Once);
             _mockPowerShellServices.VerifyNoOtherCalls();
         }
 

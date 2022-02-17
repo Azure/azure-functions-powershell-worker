@@ -15,6 +15,7 @@ using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
+    using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
     using System.Management.Automation;
     using System.Text;
 
@@ -204,17 +205,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             FunctionInvocationPerformanceStopwatch stopwatch)
         {
             var outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
-            var durableController = new DurableController(functionInfo.DurableFunctionInfo, _pwsh);
+            var durableFunctionsUtils = new DurableController(functionInfo.DurableFunctionInfo, _pwsh);
 
             try
             {
-
-                durableController.BeforeFunctionInvocation(inputData);
+                durableFunctionsUtils.InitializeBindings(inputData);
 
                 AddEntryPointInvocationCommand(functionInfo);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.FunctionCodeReady);
 
-                SetInputBindingParameterValues(functionInfo, inputData, durableController, triggerMetadata, traceContext, retryContext);
+                var orchestrationParamName = durableFunctionsUtils.GetOrchestrationParameterName();
+                SetInputBindingParameterValues(functionInfo, inputData, orchestrationParamName, triggerMetadata, traceContext, retryContext);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InputBindingValuesReady);
 
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InvokingFunctionCode);
@@ -222,9 +223,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 try
                 {
-                    return durableController.TryInvokeOrchestrationFunction(out var result)
-                                ? result
-                                : InvokeNonOrchestrationFunction(durableController, outputBindings);
+                    if(functionInfo.DurableFunctionInfo.IsOrchestrationFunction)
+                    {
+                        return durableFunctionsUtils.InvokeOrchestrationFunction();
+                    }
+                    else
+                    {
+                        var addPipelineOutput = functionInfo.DurableFunctionInfo.Type != DurableFunctionType.ActivityFunction;
+                        if (addPipelineOutput)
+                        {
+                            _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
+                        }
+                        return ExecuteUserCode(addPipelineOutput, outputBindings);
+                    }
+
                 }
                 catch (RuntimeException e)
                 {
@@ -243,7 +255,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
             finally
             {
-                durableController.AfterFunctionInvocation();
+                // TODO: determine if external SDK also needs this call
+                durableFunctionsUtils.AfterFunctionInvocation();
                 outputBindings.Clear();
                 ResetRunspace();
             }
@@ -252,7 +265,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private void SetInputBindingParameterValues(
             AzFunctionInfo functionInfo,
             IEnumerable<ParameterBinding> inputData,
-            DurableController durableController,
+            string orchParamName,
             Hashtable triggerMetadata,
             TraceContext traceContext,
             RetryContext retryContext)
@@ -261,10 +274,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 if (functionInfo.FuncParameters.TryGetValue(binding.Name, out var paramInfo))
                 {
-                    if (!durableController.TryGetInputBindingParameterValue(binding.Name, out var valueToUse))
+                    if (string.CompareOrdinal(binding.Name, orchParamName) != 0)
                     {
                         var bindingInfo = functionInfo.InputBindings[binding.Name];
-                        valueToUse = Utils.TransformInBindingValueAsNeeded(paramInfo, bindingInfo, binding.Data.ToObject());
+                        var valueToUse = Utils.TransformInBindingValueAsNeeded(paramInfo, bindingInfo, binding.Data.ToObject());
                         _pwsh.AddParameter(binding.Name, valueToUse);
                     }
                     else
@@ -297,11 +310,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Execution a function fired by a trigger or an activity function scheduled by an orchestration.
         /// </summary>
-        private Hashtable InvokeNonOrchestrationFunction(DurableController durableController, IDictionary outputBindings)
+        private Hashtable ExecuteUserCode(bool addPipelineOutput, IDictionary outputBindings)
         {
             var pipelineItems = _pwsh.InvokeAndClearCommands<object>();
             var result = new Hashtable(outputBindings, StringComparer.OrdinalIgnoreCase);
-            durableController.AddPipelineOutputIfNecessary(pipelineItems, result);
+            if (addPipelineOutput)
+            {
+                var returnValue = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(pipelineItems);
+                result.Add(AzFunctionInfo.DollarReturn, returnValue);
+            }
             return result;
         }
 

@@ -26,6 +26,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             return this._pwsh;
         }
 
+        public bool UsesExternalDurableSDK()
+        {
+            this._pwsh.AddCommand("Import-Module")
+                .AddParameter("Name", "DurableSDK")
+                .InvokeAndClearCommands<Action<object>>();
+            return false;
+        }
+
         public void SetDurableClient(object durableClient)
         {
             _pwsh.AddCommand(SetFunctionInvocationContextCommand)
@@ -45,6 +53,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _hasSetOrchestrationContext = true;
         }
 
+        public void AddParameter(string name, object value)
+        {
+            _pwsh.AddParameter(name, value);
+        }
+
         public void ClearOrchestrationContext()
         {
             if (_hasSetOrchestrationContext)
@@ -53,6 +66,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     .AddParameter("Clear", true)
                     .InvokeAndClearCommands();
             }
+        }
+
+        public void TracePipelineObject()
+        {
+            _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
         }
 
         public IAsyncResult BeginInvoke(PSDataCollection<object> output)

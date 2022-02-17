@@ -136,7 +136,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var allTasksCompleted = completedEvents.Count == tasksToWaitFor.Count;
             if (allTasksCompleted)
             {
-                context.IsReplaying = completedEvents[0].IsPlayed;
+                context.IsReplaying = completedEvents.Count == 0 ? false : completedEvents[0].IsPlayed;
                 CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
 
                 foreach (var completedHistoryEvent in completedEvents)

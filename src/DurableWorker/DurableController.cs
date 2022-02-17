@@ -50,7 +50,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _orchestrationInvoker = orchestrationInvoker;
         }
 
-        public void BeforeFunctionInvocation(IList<ParameterBinding> inputData)
+        public string GetOrchestrationParameterName()
+        {
+            return _orchestrationBindingInfo?.ParameterName;
+        }
+
+        public void InitializeBindings(IList<ParameterBinding> inputData)
         {
             // If the function is an orchestration client, then we set the DurableClient
             // in the module context for the 'Start-DurableOrchestration' function to use.
@@ -59,18 +64,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 var durableClient =
                     inputData.First(item => item.Name == _durableFunctionInfo.DurableClientBindingName)
                         .Data.ToObject();
-
-                this.pwsh.AddCommand("Import-Module")
-                    .AddParameter("Name", "DurableSDK")
-                    .InvokeAndClearCommands<Action<object>>();
-
-                //this.pwsh.AddCommand("Import-Module")
-                //        .AddParameter("Name", "C:\\Users\\dajusto\\source\\repos\\azure-functions-durable-powershell-private\\samples\\durableApp\\Modules\\DurableSDK\\bin\\Debug\\net6.0\\DurableSDK.dll")
-                //        .InvokeAndClearCommands<Action<object>>();
-
-                //this.pwsh.AddCommand("Set-BindingData")
-                //        .AddParameter("Input", "")
-                //        .InvokeAndClearCommands<Action<object>>();
 
                 _powerShellServices.SetDurableClient(durableClient);
 
@@ -122,26 +115,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void AddPipelineOutputIfNecessary(Collection<object> pipelineItems, Hashtable result)
         {
-            var shouldAddPipelineOutput =
-                _durableFunctionInfo.Type == DurableFunctionType.ActivityFunction;
-
-            if (shouldAddPipelineOutput)
+ 
+            if (ShouldSuppressPipelineTraces())
             {
                 var returnValue = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(pipelineItems);
                 result.Add(AzFunctionInfo.DollarReturn, returnValue);
             }
         }
 
-        public bool TryInvokeOrchestrationFunction(out Hashtable result)
+        public Hashtable InvokeOrchestrationFunction()
         {
-            if (!_durableFunctionInfo.IsOrchestrationFunction)
-            {
-                result = null;
-                return false;
-            }
-
-            result = _orchestrationInvoker.Invoke(_orchestrationBindingInfo, _powerShellServices);
-            return true;
+            return _orchestrationInvoker.Invoke(_orchestrationBindingInfo, _powerShellServices);
         }
 
         public bool ShouldSuppressPipelineTraces()

@@ -11,11 +11,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     internal interface IPowerShellServices
     {
         PowerShell GetPowerShell();
+
+        bool UsesExternalDurableSDK();
         void SetDurableClient(object durableClient);
 
         void SetOrchestrationContext(OrchestrationContext orchestrationContext);
 
         void ClearOrchestrationContext();
+
+        public void TracePipelineObject();
+        public void AddParameter(string name, object value);
+
 
         IAsyncResult BeginInvoke(PSDataCollection<object> output);
 
