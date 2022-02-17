@@ -229,12 +229,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     }
                     else
                     {
-                        var addPipelineOutput = functionInfo.DurableFunctionInfo.Type != DurableFunctionType.ActivityFunction;
-                        if (addPipelineOutput)
+                        var isActivityFunction = functionInfo.DurableFunctionInfo.Type == DurableFunctionType.ActivityFunction;
+                        if (!isActivityFunction)
                         {
                             _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
                         }
-                        return ExecuteUserCode(addPipelineOutput, outputBindings);
+                        return ExecuteUserCode(isActivityFunction, outputBindings);
                     }
 
                 }
@@ -280,13 +280,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                         var valueToUse = Utils.TransformInBindingValueAsNeeded(paramInfo, bindingInfo, binding.Data.ToObject());
                         _pwsh.AddParameter(binding.Name, valueToUse);
                     }
-                    else
-                    {
-                        // move this further down in the worker
-                        // _pwsh.AddParameter(binding.Name, valueToUse);
-
-                    }
-
                 }
             }
 
