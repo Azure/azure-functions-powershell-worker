@@ -20,14 +20,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Messaging
         {
             // To call unsecured gRPC services, ensure the address starts with 'http' as opposed to 'https'.
             // For more detail, see https://docs.microsoft.com/en-us/aspnet/core/grpc/client?view=aspnetcore-6.0
-            string address = $"{host}:{port}";
+            string address = $"http://{host}:{port}";
             const int maxMessageLength = int.MaxValue;
 
             var channelOptions = new GrpcChannelOptions
             {
                 MaxReceiveMessageSize = maxMessageLength,
-                MaxSendMessageSize = maxMessageLength,
-                Credentials = Grpc.Core.ChannelCredentials.Insecure
+                MaxSendMessageSize = maxMessageLength
             };
 
             GrpcChannel channel = GrpcChannel.ForAddress(address, channelOptions);
