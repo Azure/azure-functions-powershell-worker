@@ -51,7 +51,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void SetOrchestrationContext(OrchestrationContext orchestrationContext)
         {
-            _pwsh.AddCommand(SetFunctionInvocationContextExternalCommand)
+            _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                 .AddParameter("OrchestrationContext", orchestrationContext)
                 .InvokeAndClearCommands();
 
@@ -67,7 +67,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             if (_hasSetOrchestrationContext)
             {
-                _pwsh.AddCommand(SetFunctionInvocationContextExternalCommand)
+                _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                     .AddParameter("Clear", true)
                     .InvokeAndClearCommands();
             }

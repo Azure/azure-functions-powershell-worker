@@ -75,7 +75,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             else if (_durableFunctionInfo.IsOrchestrationFunction)
             {
-                /*try
+                try
                 {
                     _orchestrationBindingInfo = CreateOrchestrationBindingInfo(inputData);
                     var context = inputData[0];
@@ -91,10 +91,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     _powerShellServices.SetOrchestrationContext(_orchestrationBindingInfo.Context);
                 }
                 catch
-                {*/
+                {
                     _orchestrationBindingInfo = CreateOrchestrationBindingInfo(inputData);
                     _powerShellServices.SetOrchestrationContext(_orchestrationBindingInfo.Context);
-                //}
+                }
 
             }
         }
