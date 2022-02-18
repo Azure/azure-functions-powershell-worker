@@ -75,25 +75,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             else if (_durableFunctionInfo.IsOrchestrationFunction)
             {
-                try
+                var contextBindingData = inputData[0];
+                _powerShellServices.SetOrchestrationContext(contextBindingData, out var externalInvoker);
+                if (externalInvoker != null)
                 {
-                    _orchestrationBindingInfo = CreateOrchestrationBindingInfo(inputData);
-                    var context = inputData[0];
-                    Collection<Action<object>> output = this.pwsh.AddCommand("Set-BindingData")
-                        .AddParameter("Input", context.Data.String)
-                        .AddParameter("SetResult", (Action<object, bool>)_orchestrationBindingInfo.Context.SetExternalResult)
-                        .InvokeAndClearCommands<Action<object>>();
-                    if (output.Count() == 1)
-                    {
-                        this._orchestrationInvoker.SetExternalInvoker(output[0]);
-                    }
-
-                    _powerShellServices.SetOrchestrationContext(_orchestrationBindingInfo.Context);
-                }
-                catch
-                {
-                    _orchestrationBindingInfo = CreateOrchestrationBindingInfo(inputData);
-                    _powerShellServices.SetOrchestrationContext(_orchestrationBindingInfo.Context);
+                    this._orchestrationInvoker.SetExternalInvoker(externalInvoker);
                 }
 
             }

@@ -5,6 +5,7 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
+    using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
     using System;
     using System.Management.Automation;
 
@@ -15,7 +16,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         bool UsesExternalDurableSDK();
         void SetDurableClient(object durableClient);
 
-        void SetOrchestrationContext(OrchestrationContext orchestrationContext);
+        void SetOrchestrationContext(ParameterBinding orchestrationContext, out Action<object> externalInvoker);
 
         void ClearOrchestrationContext();
 
