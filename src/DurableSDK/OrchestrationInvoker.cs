@@ -23,17 +23,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
             try
             {
-                var outputBuffer = new PSDataCollection<object>();
-                var context = orchestrationBindingInfo.Context;
-
-                // context.History should never be null when initializing CurrentUtcDateTime
-                var orchestrationStart = context.History.First(
-                    e => e.EventType == HistoryEventType.OrchestratorStarted);
-                context.CurrentUtcDateTime = orchestrationStart.Timestamp.ToUniversalTime();
-
-                // Marks the first OrchestratorStarted event as processed
-                orchestrationStart.IsProcessed = true;
-
                 var useExternalSDK = externalInvoker != null;
                 if (useExternalSDK)
                 {
@@ -49,6 +38,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                         return (Hashtable)result;
                     }
                 }
+
+                var outputBuffer = new PSDataCollection<object>();
+                var context = orchestrationBindingInfo.Context;
+
+                // context.History should never be null when initializing CurrentUtcDateTime
+                var orchestrationStart = context.History.First(
+                    e => e.EventType == HistoryEventType.OrchestratorStarted);
+                context.CurrentUtcDateTime = orchestrationStart.Timestamp.ToUniversalTime();
+
+                // Marks the first OrchestratorStarted event as processed
+                orchestrationStart.IsProcessed = true;
+
+
                 pwsh.AddParameter(orchestrationBindingInfo.ParameterName, context);
                 pwsh.TracePipelineObject();
 

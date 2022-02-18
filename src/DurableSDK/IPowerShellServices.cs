@@ -16,7 +16,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         bool UsesExternalDurableSDK();
         void SetDurableClient(object durableClient);
 
-        void SetOrchestrationContext(ParameterBinding orchestrationContext, out Action<object> externalInvoker);
+        OrchestrationBindingInfo SetOrchestrationContext(ParameterBinding orchestrationContext, out Action<object> externalInvoker);
 
         void ClearOrchestrationContext();
 

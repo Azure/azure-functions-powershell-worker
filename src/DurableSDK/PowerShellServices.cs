@@ -39,8 +39,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 this._pwsh.AddCommand("Import-Module")
                     .AddParameter("Name", "DurableSDK")
+                    .AddParameter("ErrorAction", ActionPreference.Stop)
                     .InvokeAndClearCommands<Action<object>>();
-                return true;
+                 return true;
             }
             catch
             {
@@ -63,31 +64,35 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _hasSetOrchestrationContext = true;
         }
 
-        public void SetOrchestrationContext(ParameterBinding context, out Action<object> externalInvoker)
+        public OrchestrationBindingInfo SetOrchestrationContext(ParameterBinding context, out Action<object> externalInvoker)
         {
             externalInvoker = null;
-            var cmdlet = SetFunctionInvocationContextCommand;
-            object arg = context.Data.String;
+            var orchBindingInfo = new OrchestrationBindingInfo(
+                context.Name,
+                JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String));
+
             if (UsesExternalDurableSDK())
             {
-                cmdlet = SetFunctionInvocationContextExternalCommand;
+                Collection<Action<object>> output = _pwsh.AddCommand(SetFunctionInvocationContextExternalCommand)
+                    .AddParameter("OrchestrationContext", context.Data.String)
+                    .AddParameter("SetResult", (Action<object, bool>) orchBindingInfo.Context.SetExternalResult)
+                    .InvokeAndClearCommands<Action<object>>();
+                if (output.Count() == 1)
+                {
+                    externalInvoker = output[0];
+                }
             }
             else
             {
-                arg = new OrchestrationBindingInfo(
-                    context.Name,
-                JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String));
+                _pwsh.AddCommand(SetFunctionInvocationContextCommand)
+                    .AddParameter("OrchestrationContext", orchBindingInfo.Context)
+                    .InvokeAndClearCommands<Action<object>>();
             }
 
-            Collection<Action<object>> output = _pwsh.AddCommand(cmdlet)
-                .AddParameter("OrchestrationContext", arg)
-                .InvokeAndClearCommands<Action<object>>();
-            if (output.Count() == 1)
-            {
-                externalInvoker = output[0];
-            }
+
 
             _hasSetOrchestrationContext = true;
+            return orchBindingInfo;
         }
 
         public void AddParameter(string name, object value)

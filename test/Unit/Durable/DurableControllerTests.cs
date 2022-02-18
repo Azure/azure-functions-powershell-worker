@@ -58,13 +58,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 CreateParameterBinding("ParameterName", orchestrationContext)
             };
 
-            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<OrchestrationContext>()));
+            Action<object> externalInvoker;
+            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<ParameterBinding>(), out externalInvoker));
 
             durableController.InitializeBindings(inputData);
 
             _mockPowerShellServices.Verify(
                 _ => _.SetOrchestrationContext(
-                    It.Is<OrchestrationContext>(c => c.InstanceId == orchestrationContext.InstanceId)),
+                    It.Is<ParameterBinding>(c => c.Data.ToString().Contains(orchestrationContext.InstanceId)), out externalInvoker),
                 Times.Once);
         }
 
@@ -120,7 +121,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 CreateParameterBinding(contextParameterName, orchestrationContext)
             };
 
-            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<OrchestrationContext>()));
+            Action<object> externalInvoker;
+            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<ParameterBinding>(), out externalInvoker));
             durableController.InitializeBindings(inputData);
 
             Assert.True(durableController.TryGetInputBindingParameterValue(contextParameterName, out var value));
@@ -141,7 +143,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 CreateParameterBinding(contextParameterName, orchestrationContext)
             };
 
-            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<OrchestrationContext>()));
+            Action<object> externalInvoker;
+            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<ParameterBinding>(), out externalInvoker));
             durableController.InitializeBindings(inputData);
 
             Assert.False(durableController.TryGetInputBindingParameterValue(contextParameterName, out var value));
@@ -157,7 +160,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             var durableController = CreateDurableController(DurableFunctionType.OrchestrationFunction);
 
-            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<OrchestrationContext>()));
+            Action<object> externalInvoker;
+            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<ParameterBinding>(), out externalInvoker));
             durableController.InitializeBindings(inputData);
 
             var expectedResult = new Hashtable();
