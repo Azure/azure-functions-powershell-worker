@@ -57,6 +57,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void InitializeBindings(IList<ParameterBinding> inputData)
         {
+
+            this.pwsh.AddCommand("Import-Module")
+                .AddParameter("Name", "DurableSDK")
+                .InvokeAndClearCommands<Action<object>>();
+
             // If the function is an orchestration client, then we set the DurableClient
             // in the module context for the 'Start-DurableOrchestration' function to use.
             if (_durableFunctionInfo.IsDurableClient)
