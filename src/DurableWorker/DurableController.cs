@@ -5,7 +5,6 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
-    using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
@@ -27,7 +26,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private readonly IPowerShellServices _powerShellServices;
         private readonly IOrchestrationInvoker _orchestrationInvoker;
         private OrchestrationBindingInfo _orchestrationBindingInfo;
-        private PowerShell pwsh;
 
         public DurableController(
             DurableFunctionInfo durableDurableFunctionInfo,
@@ -37,7 +35,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 new PowerShellServices(pwsh),
                 new OrchestrationInvoker())
         {
-            this.pwsh = pwsh;
         }
 
         internal DurableController(
@@ -57,8 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void InitializeBindings(IList<ParameterBinding> inputData)
         {
-
-            // If the function is an orchestration client, then we set the DurableClient
+            // If the function is an durable client, then we set the DurableClient
             // in the module context for the 'Start-DurableOrchestration' function to use.
             if (_durableFunctionInfo.IsDurableClient)
             {
@@ -77,7 +73,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 {
                     this._orchestrationInvoker.SetExternalInvoker(externalInvoker);
                 }
-
             }
         }
 

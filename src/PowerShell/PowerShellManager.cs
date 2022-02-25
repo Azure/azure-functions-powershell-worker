@@ -205,16 +205,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             FunctionInvocationPerformanceStopwatch stopwatch)
         {
             var outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
-            var durableFunctionsUtils = new DurableController(functionInfo.DurableFunctionInfo, _pwsh);
+            var durableController = new DurableController(functionInfo.DurableFunctionInfo, _pwsh);
 
             try
             {
-                durableFunctionsUtils.InitializeBindings(inputData);
+                durableController.InitializeBindings(inputData);
 
                 AddEntryPointInvocationCommand(functionInfo);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.FunctionCodeReady);
 
-                var orchestrationParamName = durableFunctionsUtils.GetOrchestrationParameterName();
+                var orchestrationParamName = durableController.GetOrchestrationParameterName();
                 SetInputBindingParameterValues(functionInfo, inputData, orchestrationParamName, triggerMetadata, traceContext, retryContext);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InputBindingValuesReady);
 
@@ -225,18 +225,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 {
                     if(functionInfo.DurableFunctionInfo.IsOrchestrationFunction)
                     {
-                        return durableFunctionsUtils.InvokeOrchestrationFunction();
+                        return durableController.InvokeOrchestrationFunction();
                     }
                     else
                     {
-                        var isActivityFunction = functionInfo.DurableFunctionInfo.Type == DurableFunctionType.ActivityFunction;
+                        var isActivityFunction = functionInfo.DurableFunctionInfo.IsActivityFunction;
                         if (!isActivityFunction)
                         {
                             _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
                         }
                         return ExecuteUserCode(isActivityFunction, outputBindings);
                     }
-
                 }
                 catch (RuntimeException e)
                 {
@@ -256,7 +255,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             finally
             {
                 // TODO: determine if external SDK also needs this call
-                durableFunctionsUtils.AfterFunctionInvocation();
+                durableController.AfterFunctionInvocation();
                 outputBindings.Clear();
                 ResetRunspace();
             }

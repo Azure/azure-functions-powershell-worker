@@ -23,8 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
             try
             {
-                var useExternalSDK = externalInvoker != null;
-                if (useExternalSDK)
+                if (pwsh.UseExternalDurableSDK())
                 {
                     externalInvoker.Invoke(pwsh.GetPowerShell());
                     var result = orchestrationBindingInfo.Context.ExternalResult;

@@ -15,17 +15,57 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     internal class PowerShellServices : IPowerShellServices
     {
-        private const string SetFunctionInvocationContextCommand =
-            "Microsoft.Azure.Functions.PowerShellWorker\\Set-FunctionInvocationContext";
-        private const string SetFunctionInvocationContextExternalCommand =
-            "DurableSDK\\Set-FunctionInvocationContextExternal";
+        private readonly string SetFunctionInvocationContextCommand;
+        private const string ExternalDurableSDKName = "DurableSDK";
+        private const string InternalDurableSDKName = "Microsoft.Azure.Functions.PowerShellWorker";
 
         private readonly PowerShell _pwsh;
         private bool _hasSetOrchestrationContext = false;
+        private readonly bool _useExternalDurableSDK = false;
 
         public PowerShellServices(PowerShell pwsh)
         {
+            // Attempt to import the external SDK
+            try
+            {
+                pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
+                    .AddParameter("Name", ExternalDurableSDKName)
+                    .AddParameter("ErrorAction", ActionPreference.Stop)
+                    .InvokeAndClearCommands();
+                _useExternalDurableSDK = true;
+            }
+            catch (Exception e)
+            {
+                // Check to see if ExternalDurableSDK is among the modules imported or
+                // available to be imported: if it is, then something went wrong with
+                // the Import-Module statement and we should throw an Exception.
+                // Otherwise, we use the InternalDurableSDK
+                var availableModules = pwsh.AddCommand(Utils.GetModuleCmdletInfo)
+                    .AddParameter("Name", ExternalDurableSDKName)
+                    .InvokeAndClearCommands<PSModuleInfo>();
+                if (availableModules.Count() > 0)
+                {
+                    // throw new Exception(errorRecords);
+                    // InvalidOperationException
+                    throw e;
+                }
+                _useExternalDurableSDK = false;
+            }
+
+            if (_useExternalDurableSDK)
+            {
+                SetFunctionInvocationContextCommand = $"{ExternalDurableSDKName}\\Set-FunctionInvocationContext";
+            }
+            else
+            {
+                SetFunctionInvocationContextCommand = $"{InternalDurableSDKName}\\Set-FunctionInvocationContext";
+            }
             _pwsh = pwsh;
+        }
+
+        public bool UseExternalDurableSDK()
+        {
+            return _useExternalDurableSDK;
         }
 
         public PowerShell GetPowerShell()
@@ -33,31 +73,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             return this._pwsh;
         }
 
-        public bool UsesExternalDurableSDK()
-        {
-            try
-            {
-                this._pwsh.AddCommand("Import-Module")
-                    .AddParameter("Name", "DurableSDK")
-                    .AddParameter("ErrorAction", ActionPreference.Stop)
-                    .InvokeAndClearCommands<Action<object>>();
-                 return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
         public void SetDurableClient(object durableClient)
         {
-            var cmdlet = SetFunctionInvocationContextCommand;
-            if (UsesExternalDurableSDK())
-            {
-                cmdlet = SetFunctionInvocationContextExternalCommand;
-            }
-
-            _pwsh.AddCommand(cmdlet)
+            _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                 .AddParameter("DurableClient", durableClient)
                 .InvokeAndClearCommands();
 
@@ -71,9 +89,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 context.Name,
                 JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String));
 
-            if (UsesExternalDurableSDK())
+            if (_useExternalDurableSDK)
             {
-                Collection<Action<object>> output = _pwsh.AddCommand(SetFunctionInvocationContextExternalCommand)
+                Collection<Action<object>> output = _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                     .AddParameter("OrchestrationContext", context.Data.String)
                     .AddParameter("SetResult", (Action<object, bool>) orchBindingInfo.Context.SetExternalResult)
                     .InvokeAndClearCommands<Action<object>>();
@@ -102,15 +120,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void ClearOrchestrationContext()
         {
-            var cmdlet = SetFunctionInvocationContextCommand;
-            if (UsesExternalDurableSDK())
-            {
-                cmdlet = SetFunctionInvocationContextExternalCommand;
-            }
-
             if (_hasSetOrchestrationContext)
             {
-                _pwsh.AddCommand(cmdlet)
+                _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                     .AddParameter("Clear", true)
                     .InvokeAndClearCommands();
             }
