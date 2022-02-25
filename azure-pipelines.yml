@@ -43,17 +43,10 @@ steps:
 
 - pwsh: |
       $ErrorActionPreference = "Stop"
-      if ($isReleaseBuild)
-      {
-        ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)" -AddSBOM -SBOMUtilSASUrl $env:SBOMUtilSASUrl
-      }
-      else
-      {
-        ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)"
-      }
+      $shouldAddSBOM = [bool]"$(IsReleaseBuild)"
+
+      ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)" -AddSBOM:$shouldAddSBOM -SBOMUtilSASUrl "$(SBOMUtilSASUrl)"
   displayName: 'Build worker code'
-  env:
-    SBOMUtilSASUrl: $(SBOMUtilSASUrl)
 
 - pwsh: ./build.ps1 -NoBuild -Test
   displayName: 'Running UnitTest'
