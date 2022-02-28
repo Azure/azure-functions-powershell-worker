@@ -24,6 +24,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private readonly Mock<IPowerShellServices> _mockPowerShellServices = new Mock<IPowerShellServices>(MockBehavior.Strict);
         private readonly Mock<IOrchestrationInvoker> _mockOrchestrationInvoker = new Mock<IOrchestrationInvoker>(MockBehavior.Strict);
 
+        // TODO: change the name of the method being tested to InitializeBindings
         [Fact]
         public void BeforeFunctionInvocation_SetsDurableClient_ForDurableClientFunction()
         {
@@ -47,19 +48,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 Times.Once);
         }
 
+        // TODO: change the name of the method being tested to InitializeBindings
         [Fact]
         public void BeforeFunctionInvocation_SetsOrchestrationContext_ForOrchestrationFunction()
         {
             var durableController = CreateDurableController(DurableFunctionType.OrchestrationFunction);
-
+            const string contextParameterName = "ParameterName";
             var orchestrationContext = new OrchestrationContext { InstanceId = Guid.NewGuid().ToString() };
+            var orchestrationBindingInfo = new OrchestrationBindingInfo(contextParameterName, orchestrationContext);
             var inputData = new[]
             {
                 CreateParameterBinding("ParameterName", orchestrationContext)
             };
 
             Action<object> externalInvoker;
-            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<ParameterBinding>(), out externalInvoker));
+            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<ParameterBinding>(), out externalInvoker)).Returns(orchestrationBindingInfo);
 
             durableController.InitializeBindings(inputData);
 
@@ -69,6 +72,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 Times.Once);
         }
 
+        // TODO: change the name of the method being tested to InitializeBindings
         [Fact]
         public void BeforeFunctionInvocation_Throws_OnOrchestrationFunctionWithoutContextParameter()
         {
@@ -78,6 +82,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.ThrowsAny<ArgumentException>(() => durableController.InitializeBindings(inputData));
         }
 
+        // TODO: change the name of the method being tested to InitializeBindings
         [Theory]
         [InlineData(DurableFunctionType.None)]
         [InlineData(DurableFunctionType.ActivityFunction)]
@@ -116,13 +121,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             var orchestrationContext = new OrchestrationContext { InstanceId = Guid.NewGuid().ToString() };
             const string contextParameterName = "ParameterName";
+            var orchestrationBindingInfo = new OrchestrationBindingInfo(contextParameterName, orchestrationContext);
             var inputData = new[]
             {
                 CreateParameterBinding(contextParameterName, orchestrationContext)
             };
 
             Action<object> externalInvoker;
-            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<ParameterBinding>(), out externalInvoker));
+            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<ParameterBinding>(), out externalInvoker)).Returns(orchestrationBindingInfo);
             durableController.InitializeBindings(inputData);
 
             Assert.True(durableController.TryGetInputBindingParameterValue(contextParameterName, out var value));
@@ -157,11 +163,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var contextParameterName = "ParameterName";
             var orchestrationContext = new OrchestrationContext { InstanceId = Guid.NewGuid().ToString() };
             var inputData = new[] { CreateParameterBinding(contextParameterName, orchestrationContext) };
+            var orchestrationBindingInfo = new OrchestrationBindingInfo(contextParameterName, orchestrationContext);
 
             var durableController = CreateDurableController(DurableFunctionType.OrchestrationFunction);
 
             Action<object> externalInvoker;
-            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<ParameterBinding>(), out externalInvoker));
+            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<ParameterBinding>(), out externalInvoker)).Returns(orchestrationBindingInfo);
             durableController.InitializeBindings(inputData);
 
             var expectedResult = new Hashtable();

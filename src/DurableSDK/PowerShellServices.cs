@@ -89,8 +89,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     .InvokeAndClearCommands<Action<object>>();
             }
 
-
-
             _hasSetOrchestrationContext = true;
             return orchBindingInfo;
         }
