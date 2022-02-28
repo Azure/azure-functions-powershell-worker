@@ -24,9 +24,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private readonly Mock<IPowerShellServices> _mockPowerShellServices = new Mock<IPowerShellServices>(MockBehavior.Strict);
         private readonly Mock<IOrchestrationInvoker> _mockOrchestrationInvoker = new Mock<IOrchestrationInvoker>(MockBehavior.Strict);
 
-        // TODO: change the name of the method being tested to InitializeBindings
         [Fact]
-        public void BeforeFunctionInvocation_SetsDurableClient_ForDurableClientFunction()
+        public void InitializeBindings_SetsDurableClient_ForDurableClientFunction()
         {
             var durableController = CreateDurableController(DurableFunctionType.None, "DurableClientBindingName");
 
@@ -48,9 +47,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 Times.Once);
         }
 
-        // TODO: change the name of the method being tested to InitializeBindings
         [Fact]
-        public void BeforeFunctionInvocation_SetsOrchestrationContext_ForOrchestrationFunction()
+        public void InitializeBindings_SetsOrchestrationContext_ForOrchestrationFunction()
         {
             var durableController = CreateDurableController(DurableFunctionType.OrchestrationFunction);
             const string contextParameterName = "ParameterName";
@@ -72,9 +70,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 Times.Once);
         }
 
-        // TODO: change the name of the method being tested to InitializeBindings
         [Fact]
-        public void BeforeFunctionInvocation_Throws_OnOrchestrationFunctionWithoutContextParameter()
+        public void InitializeBindings_Throws_OnOrchestrationFunctionWithoutContextParameter()
         {
             var durableController = CreateDurableController(DurableFunctionType.OrchestrationFunction);
             var inputData = new ParameterBinding[0];
@@ -82,11 +79,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.ThrowsAny<ArgumentException>(() => durableController.InitializeBindings(inputData));
         }
 
-        // TODO: change the name of the method being tested to InitializeBindings
         [Theory]
         [InlineData(DurableFunctionType.None)]
         [InlineData(DurableFunctionType.ActivityFunction)]
-        internal void BeforeFunctionInvocation_DoesNothing_ForNonOrchestrationFunction(DurableFunctionType durableFunctionType)
+        internal void InitializeBindings_DoesNothing_ForNonOrchestrationFunction(DurableFunctionType durableFunctionType)
         {
             var durableController = CreateDurableController(durableFunctionType);
             var orchestrationContext = new OrchestrationContext { InstanceId = Guid.NewGuid().ToString() };
