@@ -205,16 +205,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             FunctionInvocationPerformanceStopwatch stopwatch)
         {
             var outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
-            var durableController = new DurableController(functionInfo.DurableFunctionInfo, _pwsh);
+            var durableFunctionsUtils = new DurableController(functionInfo.DurableFunctionInfo, _pwsh);
 
             try
             {
-                durableController.InitializeBindings(inputData);
+                durableFunctionsUtils.InitializeBindings(inputData);
 
                 AddEntryPointInvocationCommand(functionInfo);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.FunctionCodeReady);
 
-                var orchestrationParamName = durableController.GetOrchestrationParameterName();
+                var orchestrationParamName = durableFunctionsUtils.GetOrchestrationParameterName();
                 SetInputBindingParameterValues(functionInfo, inputData, orchestrationParamName, triggerMetadata, traceContext, retryContext);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.InputBindingValuesReady);
 
@@ -225,7 +225,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 {
                     if(functionInfo.DurableFunctionInfo.IsOrchestrationFunction)
                     {
-                        return durableController.InvokeOrchestrationFunction();
+                        return durableFunctionsUtils.InvokeOrchestrationFunction();
                     }
                     else
                     {
@@ -255,7 +255,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             finally
             {
                 // TODO: determine if external SDK also needs this call
-                durableController.AfterFunctionInvocation();
+                durableFunctionsUtils.AfterFunctionInvocation();
                 outputBindings.Clear();
                 ResetRunspace();
             }
