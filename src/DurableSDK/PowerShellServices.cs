@@ -45,9 +45,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     .InvokeAndClearCommands<PSModuleInfo>();
                 if (availableModules.Count() > 0)
                 {
-                    // throw new Exception(errorRecords);
-                    // InvalidOperationException
-                    throw e;
+                    // TODO: evaluate if there is a better error message or exception type to be throwing.
+                    // Ideally, this should never happen
+                    throw new InvalidOperationException("The external Durable SDK was detected, but unable to be imported.", e);
                 }
                 _useExternalDurableSDK = false;
             }
