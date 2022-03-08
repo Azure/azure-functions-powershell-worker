@@ -34,6 +34,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         {
             var invocationAsyncResult = DurableTestUtilities.CreateInvocationResult(completed: true);
             DurableTestUtilities.ExpectBeginInvoke(_mockPowerShellServices, invocationAsyncResult);
+            _mockPowerShellServices.Setup(_ => _.UseExternalDurableSDK()).Returns(false);
 
             _orchestrationInvoker.Invoke(_orchestrationBindingInfo, _mockPowerShellServices.Object);
 
@@ -42,6 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             _mockPowerShellServices.Verify(_ => _.ClearStreamsAndCommands(), Times.Once);
             _mockPowerShellServices.Verify(_ => _.TracePipelineObject(), Times.Once);
             _mockPowerShellServices.Verify(_ => _.AddParameter(It.IsAny<string>(), It.IsAny<object>()), Times.Once);
+            _mockPowerShellServices.Verify(_ => _.UseExternalDurableSDK(), Times.Once);
             _mockPowerShellServices.VerifyNoOtherCalls();
         }
 
