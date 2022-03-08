@@ -98,7 +98,11 @@ function Start-DurableOrchestration {
 
 		[Parameter(
             ValueFromPipelineByPropertyName=$true)]
-        [object] $DurableClient
+        [object] $DurableClient,
+
+        [Parameter(
+            ValueFromPipelineByPropertyName=$true)]
+        [string] $InstanceId
     )
 
     $ErrorActionPreference = 'Stop'
@@ -107,7 +111,10 @@ function Start-DurableOrchestration {
         $DurableClient = GetDurableClientFromModulePrivateData
     }
 
-    $InstanceId = (New-Guid).Guid
+    # TODO: Port this change to the External SDK
+    if (-not $InstanceId) {
+        $InstanceId = (New-Guid).Guid
+    }
 
     $Uri =
         if ($DurableClient.rpcBaseUrl) {

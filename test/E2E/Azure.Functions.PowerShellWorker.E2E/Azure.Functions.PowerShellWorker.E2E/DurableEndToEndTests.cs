@@ -187,7 +187,9 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                         {
                             var statusResponseBody = await GetResponseBodyAsync(statusResponse);
                             Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
-                            Assert.Equal("myInstanceId", statusResponseBody.output[0].ToString());
+                            Assert.Equal("true", statusResponseBody.output[0].ToString());
+                            Assert.Equal("Hello myInstanceId", statusResponseBody.output[1].ToString());
+                            Assert.Equal("false", statusResponseBody.output[2].ToString());
                             return;
                         }
 
