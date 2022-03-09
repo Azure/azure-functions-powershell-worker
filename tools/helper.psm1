@@ -22,20 +22,11 @@ $DotnetSDKVersionRequirements = @{
     }
 }
 
-$GrpcToolsVersion = '2.27.0' # grpc.tools
-$GoogleProtobufToolsVersion = '3.11.4' # google.protobuf.tools
-
-function AddLocalDotnetDirPath {
-    $LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
-    if (($env:PATH -split [IO.Path]::PathSeparator) -notcontains $LocalDotnetDirPath) {
-        $env:PATH = $LocalDotnetDirPath + [IO.Path]::PathSeparator + $env:PATH
-    }
-}
+$GrpcToolsVersion = '2.43.0' # grpc.tools
+$GoogleProtobufToolsVersion = '3.19.4' # google.protobuf.tools
 
 function Find-Dotnet
 {
-    AddLocalDotnetDirPath
-
     $listSdksOutput = dotnet --list-sdks
     $installedDotnetSdks = $listSdksOutput | ForEach-Object { $_.Split(" ")[0] }
     Write-Log "Detected dotnet SDKs: $($installedDotnetSdks -join ', ')"
@@ -65,7 +56,7 @@ function Install-Dotnet {
         return  # Simply return if we find dotnet SDk with the correct version
     } catch { }
 
-    $obtainUrl = "https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain"
+    $obtainUrl = "https://raw.githubusercontent.com/dotnet/install-scripts/main/src"
 
     try {
         $installScript = if ($IsWindowsEnv) { "dotnet-install.ps1" } else { "dotnet-install.sh" }
@@ -75,13 +66,12 @@ function Install-Dotnet {
             $version = "$majorMinorVersion.$($DotnetSDKVersionRequirements[$majorMinorVersion].DefaultPatch)"
             Write-Log "Installing dotnet SDK version $version" -Warning
             if ($IsWindowsEnv) {
-                & .\$installScript -Channel $Channel -Version $Version
+                & .\$installScript -Channel $Channel -Version $Version -InstallDir "$env:ProgramFiles/dotnet"
             } else {
-                bash ./$installScript -c $Channel -v $Version
+                bash ./$installScript -c $Channel -v $Version --install-dir /usr/share/dotnet
             }
         }
 
-        AddLocalDotnetDirPath
     }
     finally {
         Remove-Item $installScript -Force -ErrorAction SilentlyContinue
