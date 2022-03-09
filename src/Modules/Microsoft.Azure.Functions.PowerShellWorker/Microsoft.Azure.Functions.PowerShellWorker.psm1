@@ -235,6 +235,8 @@ function New-DurableOrchestrationCheckStatusResponse {
     The TaskHubName of the orchestration instance that will handle the external event.
 .PARAMETER ConnectionName
     The name of the connection string associated with TaskHubName
+.PARAMETER AppCode
+    The Azure Functions system key
 #>
 function Send-DurableExternalEvent {
     [CmdletBinding()]
@@ -263,12 +265,16 @@ function Send-DurableExternalEvent {
 
         [Parameter(
             ValueFromPipelineByPropertyName=$true)]
-        [string] $ConnectionName
+        [string] $ConnectionName,
+
+        [Parameter(
+            ValueFromPipelineByPropertyName=$true)]
+        [string] $AppCode
     )
     
     $DurableClient = GetDurableClientFromModulePrivateData
 
-    $RequestUrl = GetRaiseEventUrl -DurableClient $DurableClient -InstanceId $InstanceId -EventName $EventName -TaskHubName $TaskHubName -ConnectionName $ConnectionName
+    $RequestUrl = GetRaiseEventUrl -DurableClient $DurableClient -InstanceId $InstanceId -EventName $EventName -TaskHubName $TaskHubName -ConnectionName $ConnectionName -AppCode $AppCode
 
     $Body = $EventData | ConvertTo-Json -Compress
               
@@ -280,7 +286,8 @@ function GetRaiseEventUrl(
     [string] $InstanceId,
     [string] $EventName,
     [string] $TaskHubName,
-    [string] $ConnectionName) {
+    [string] $ConnectionName,
+    [string] $AppCode) {
 
     $RequestUrl = $DurableClient.BaseUrl + "/instances/$InstanceId/raiseEvent/$EventName"
     
@@ -290,6 +297,9 @@ function GetRaiseEventUrl(
     }
     if ($null -eq $ConnectionName) {
         $query += "connection=$ConnectionName"
+    }
+    if ($null -eq $AppCode) {
+        $query += "code=$AppCode"
     }
     if ($query.Count -gt 0) {
         $RequestUrl += "?" + [string]::Join("&", $query)
