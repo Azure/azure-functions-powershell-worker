@@ -204,7 +204,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         [Fact]
         public async Task OrchestratationCanAlwaysObtainTaskResult()
         {
-            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClient", queryString: "DurableOrchestratorGetTaskResult");
+            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClient", queryString: "?FunctionName=DurableOrchestratorGetTaskResult");
             Assert.Equal(HttpStatusCode.Accepted, initialResponse.StatusCode);
 
             var initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
