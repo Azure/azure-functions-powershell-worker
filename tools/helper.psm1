@@ -7,60 +7,48 @@ using namespace System.Runtime.InteropServices
 
 $IsWindowsEnv = [RuntimeInformation]::IsOSPlatform([OSPlatform]::Windows)
 $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
-$MinimalSDKVersion = '2.1.805'
-$DefaultSDKVersion = '2.1.805'
-$LocalDotnetDirPath = if ($IsWindowsEnv) { "$env:LocalAppData\Microsoft\dotnet" } else { "$env:HOME/.dotnet" }
+
+$DotnetSDKVersionRequirements = @{
+
+    '2.1' = @{
+        MinimalPatch = '805'
+        DefaultPatch = '805'
+    }
+
+    # .NET SDK 3.1 is required by the Microsoft.ManifestTool.dll tool
+    '3.1' = @{
+        MinimalPatch = '417'
+        DefaultPatch = '417'
+    }
+}
+
 $GrpcToolsVersion = '2.27.0' # grpc.tools
 $GoogleProtobufToolsVersion = '3.11.4' # google.protobuf.tools
 
 function Find-Dotnet
 {
-    $dotnetFile = if ($IsWindowsEnv) { "dotnet.exe" } else { "dotnet" }
-    $dotnetExePath = Join-Path -Path $LocalDotnetDirPath -ChildPath $dotnetFile
+    $listSdksOutput = dotnet --list-sdks
+    $installedDotnetSdks = $listSdksOutput | ForEach-Object { $_.Split(" ")[0] }
+    Write-Log "Detected dotnet SDKs: $($installedDotnetSdks -join ', ')"
 
-    # If dotnet is already in the PATH, check to see if that version of dotnet can find the required SDK.
-    # This is "typically" the globally installed dotnet.
-    $foundDotnetWithRightVersion = $false
-    $dotnetInPath = Get-Command 'dotnet' -ErrorAction SilentlyContinue
-    if ($dotnetInPath) {
-        $foundDotnetWithRightVersion = Test-DotnetSDK $dotnetInPath.Source
-    }
+    foreach ($majorMinorVersion in $DotnetSDKVersionRequirements.Keys) {
+        $minimalVersion = "$majorMinorVersion.$($DotnetSDKVersionRequirements[$majorMinorVersion].MinimalPatch)"
 
-    if (-not $foundDotnetWithRightVersion) {
-        if (Test-DotnetSDK $dotnetExePath) {
-            Write-Warning "Can't find the dotnet SDK version $MinimalSDKVersion or higher, prepending '$LocalDotnetDirPath' to PATH."
-            $env:PATH = $LocalDotnetDirPath + [IO.Path]::PathSeparator + $env:PATH
-        }
-        else {
-            throw "Cannot find the dotnet SDK for .NET Core 2.1. Please specify '-Bootstrap' to install build dependencies."
+        $firstAcceptable = $installedDotnetSdks |
+                                Where-Object { $_.StartsWith("$majorMinorVersion.") } |
+                                Where-Object { [System.Management.Automation.SemanticVersion]::new($_) -ge [System.Management.Automation.SemanticVersion]::new($minimalVersion) } |
+                                Select-Object -First 1
+
+        if (-not $firstAcceptable) {
+            throw "Cannot find the dotnet SDK for .NET Core $majorMinorVersion. Version $minimalVersion or higher is required. Please specify '-Bootstrap' to install build dependencies."
         }
     }
-}
-
-function Get-VersionCore($Version) {
-    if ($Version -match '^\d+\.\d+\.\d+') {
-        $Matches.0
-    } else {
-        throw "Unexpected version: '$Version'"
-    }
-}
-
-function Test-DotnetSDK
-{
-    param($dotnetExePath)
-
-    if (Test-Path $dotnetExePath) {
-        $installedVersion = Get-VersionCore (& $dotnetExePath --version)
-        return [version]$installedVersion -ge [version]$MinimalSDKVersion
-    }
-    return $false
 }
 
 function Install-Dotnet {
     [CmdletBinding()]
     param(
-        [string]$Channel = 'release',
-        [string]$Version = $DefaultSDKVersion
+        [string]$Channel = 'release'
     )
 
     try {
@@ -68,24 +56,20 @@ function Install-Dotnet {
         return  # Simply return if we find dotnet SDk with the correct version
     } catch { }
 
-    $logMsg = if (Get-Command 'dotnet' -ErrorAction SilentlyContinue) {
-        "dotent SDK is not present. Installing dotnet SDK."
-    } else {
-        "dotnet SDK out of date. Require '$MinimalSDKVersion' but found '$dotnetSDKVersion'. Updating dotnet."
-    }
-    Write-Log $logMsg -Warning
-
-    $obtainUrl = "https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain"
+    $obtainUrl = "https://raw.githubusercontent.com/dotnet/install-scripts/main/src"
 
     try {
-        Remove-Item $LocalDotnetDirPath -Recurse -Force -ErrorAction SilentlyContinue
         $installScript = if ($IsWindowsEnv) { "dotnet-install.ps1" } else { "dotnet-install.sh" }
         Invoke-WebRequest -Uri $obtainUrl/$installScript -OutFile $installScript
 
-        if ($IsWindowsEnv) {
-            & .\$installScript -Channel $Channel -Version $Version
-        } else {
-            bash ./$installScript -c $Channel -v $Version
+        foreach ($majorMinorVersion in $DotnetSDKVersionRequirements.Keys) {
+            $version = "$majorMinorVersion.$($DotnetSDKVersionRequirements[$majorMinorVersion].DefaultPatch)"
+            Write-Log "Installing dotnet SDK version $version" -Warning
+            if ($IsWindowsEnv) {
+                & .\$installScript -Channel $Channel -Version $Version -InstallDir "$env:ProgramFiles/dotnet"
+            } else {
+                bash ./$installScript -c $Channel -v $Version --install-dir /usr/share/dotnet
+            }
         }
     }
     finally {
@@ -131,7 +115,7 @@ function Resolve-ProtoBufToolPath
 {
     if (-not $Script:protoc_Path) {
         Write-Log "Resolve the protobuf tools for auto-generating code"
-        $nugetPath = "~/.nuget/packages"
+        $nugetPath = Get-NugetPackagesPath
         $toolsPath = "$RepoRoot/tools"
 
         if (-not (Test-Path "$toolsPath/obj/project.assets.json")) {
@@ -203,6 +187,23 @@ function Write-Log
     $foregroundColor = if ($Warning) { "Yellow" } else { "Green" }
     $indentPrefix = if ($Indent) { "    " } else { "" }
     Write-Host -ForegroundColor $foregroundColor "${indentPrefix}${Message}"
+}
+
+function Get-NugetPackagesPath
+{
+    if ($env:NUGET_PACKAGES)
+    {
+        return $env:NUGET_PACKAGES
+    }
+
+    if ($IsWindowsEnv)
+    {
+        return "${env:USERPROFILE}\.nuget\packages"
+    }
+    else
+    {
+        return "${env:HOME}/.nuget/packages"
+    }
 }
 
 #region Start-ResGen
