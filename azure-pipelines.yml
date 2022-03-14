@@ -31,28 +31,15 @@ steps:
   env:
     BuildSourceBranch: $(Build.SourceBranch)
 
-- pwsh: |
-    Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/master/scripts/obtain/dotnet-install.ps1' -OutFile 'dotnet-install.ps1'
-    ./dotnet-install.ps1 -InstallDir "$env:ProgramFiles/dotnet" -Version "3.1.415" -Channel 'release'
-  displayName: 'Install .Net 3.1 which is required by the Microsoft.ManifestTool.dll tool'
-  condition: eq(variables['IsReleaseBuild'], 'true')
-
 - pwsh: ./build.ps1 -NoBuild -Bootstrap
   displayName: 'Running ./build.ps1 -NoBuild -Bootstrap'
 
 - pwsh: |
       $ErrorActionPreference = "Stop"
-      if ($isReleaseBuild)
-      {
-        ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)" -AddSBOM -SBOMUtilSASUrl $env:SBOMUtilSASUrl
-      }
-      else
-      {
-        ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)"
-      }
+      $shouldAddSBOM = [bool]"$(IsReleaseBuild)"
+
+      ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)" -AddSBOM:$shouldAddSBOM -SBOMUtilSASUrl "$(SBOMUtilSASUrl)"
   displayName: 'Build worker code'
-  env:
-    SBOMUtilSASUrl: $(SBOMUtilSASUrl)
 
 - pwsh: ./build.ps1 -NoBuild -Test
   displayName: 'Running UnitTest'
