@@ -49,7 +49,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 // Marks the first OrchestratorStarted event as processed
                 orchestrationStart.IsProcessed = true;
 
-
+                // Finish initializing the Function invocation
                 pwsh.AddParameter(orchestrationBindingInfo.ParameterName, context);
                 pwsh.TracePipelineObject();
 
@@ -62,7 +62,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 {
                     // The orchestration function should be stopped and restarted
                     pwsh.StopInvoke();
-                    // return (Hashtable)orchestrationBindingInfo.Context.OrchestrationActionCollector.output;
                     return CreateOrchestrationResult(isDone: false, actions, output: null, context.CustomStatus);
                 }
                 else

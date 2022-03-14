@@ -38,6 +38,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         internal object ExternalResult;
         internal bool ExternalIsError;
 
+        // Called by the External DF SDK to communicate its orchestration result
+        // back to the worker.
         internal void SetExternalResult(object result, bool isError)
         {
             this.ExternalResult = result;

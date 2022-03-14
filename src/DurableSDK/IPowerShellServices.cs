@@ -21,9 +21,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         void ClearOrchestrationContext();
 
-        public void TracePipelineObject();
-        public void AddParameter(string name, object value);
+        void TracePipelineObject();
 
+        void AddParameter(string name, object value);
 
         IAsyncResult BeginInvoke(PSDataCollection<object> output);
 
