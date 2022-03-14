@@ -26,6 +26,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private const string _contextParameterName = "ParameterName";
         private static readonly OrchestrationContext _orchestrationContext = new OrchestrationContext { InstanceId = Guid.NewGuid().ToString() };
         private static readonly OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo(_contextParameterName, _orchestrationContext);
+        private readonly Mock<IExternalInvoker> _mockExternalInvoker = new Mock<IExternalInvoker>(MockBehavior.Strict);
 
         [Fact]
         public void InitializeBindings_SetsDurableClient_ForDurableClientFunction()
@@ -119,7 +120,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             {
                 CreateParameterBinding(_contextParameterName, _orchestrationContext)
             };
-
             _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
                 It.IsAny<ParameterBinding>(),
                 out It.Ref<IExternalInvoker>.IsAny))
