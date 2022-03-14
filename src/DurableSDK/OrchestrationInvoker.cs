@@ -17,7 +17,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         private IExternalInvoker _externalInvoker;
 
-        public Hashtable Invoke(OrchestrationBindingInfo orchestrationBindingInfo, IPowerShellServices powerShellServices)
+        public Hashtable Invoke(
+            OrchestrationBindingInfo orchestrationBindingInfo,
+            IPowerShellServices powerShellServices)
         {
             try
             {
@@ -33,7 +35,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
         }
 
-        public Hashtable InvokeExternalDurableSDK(OrchestrationBindingInfo orchestrationBindingInfo, IPowerShellServices pwsh)
+        public Hashtable InvokeExternalDurableSDK(
+            OrchestrationBindingInfo orchestrationBindingInfo,
+            IPowerShellServices powerShellServices)
         {
 
             _externalInvoker.Invoke();
@@ -49,7 +53,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
         }
 
-        public Hashtable InvokeInternalDurableSDK(OrchestrationBindingInfo orchestrationBindingInfo, IPowerShellServices pwsh)
+        public Hashtable InvokeInternalDurableSDK(
+            OrchestrationBindingInfo orchestrationBindingInfo,
+            IPowerShellServices powerShellServices)
         {
             var outputBuffer = new PSDataCollection<object>();
             var context = orchestrationBindingInfo.Context;
@@ -62,10 +68,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             // Marks the first OrchestratorStarted event as processed
             orchestrationStart.IsProcessed = true;
 
-            pwsh.AddParameter(orchestrationBindingInfo.ParameterName, context);
-            pwsh.TracePipelineObject();
+            // Finish initializing the Function invocation
+            powerShellServices.AddParameter(orchestrationBindingInfo.ParameterName, context);
+            powerShellServices.TracePipelineObject();
 
-            var asyncResult = pwsh.BeginInvoke(outputBuffer);
+            var asyncResult = powerShellServices.BeginInvoke(outputBuffer);
 
             var (shouldStop, actions) =
                 orchestrationBindingInfo.Context.OrchestrationActionCollector.WaitForActions(asyncResult.AsyncWaitHandle);
@@ -73,7 +80,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             if (shouldStop)
             {
                 // The orchestration function should be stopped and restarted
-                pwsh.StopInvoke();
+                powerShellServices.StopInvoke();
                 // return (Hashtable)orchestrationBindingInfo.Context.OrchestrationActionCollector.output;
                 return CreateOrchestrationResult(isDone: false, actions, output: null, context.CustomStatus);
             }
@@ -82,7 +89,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 try
                 {
                     // The orchestration function completed
-                    pwsh.EndInvoke(asyncResult);
+                    powerShellServices.EndInvoke(asyncResult);
                     var result = CreateReturnValueFromFunctionOutput(outputBuffer);
                     return CreateOrchestrationResult(isDone: true, actions, output: result, context.CustomStatus);
                 }
