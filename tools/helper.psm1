@@ -11,8 +11,8 @@ $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 $DotnetSDKVersionRequirements = @{
 
     '2.1' = @{
-        MinimalPatch = '805'
-        DefaultPatch = '805'
+        MinimalPatch = '818'
+        DefaultPatch = '818'
     }
 
     # .NET SDK 3.1 is required by the Microsoft.ManifestTool.dll tool
