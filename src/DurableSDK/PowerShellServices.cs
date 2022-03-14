@@ -25,7 +25,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public PowerShellServices(PowerShell pwsh)
         {
-            // Attempt to import the external SDK
+            // We attempt to import the external SDK upon construction of the PowerShellServices object.
+            // We maintain the boolean member _useExternalDurableSDK in this object rather than
+            // DurableController because the expected input and functionality of SetFunctionInvocationContextCommand
+            // may differ between the internal and external implementations.
             try
             {
                 pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
@@ -46,7 +49,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 if (availableModules.Count() > 0)
                 {
                     // TODO: evaluate if there is a better error message or exception type to be throwing.
-                    // Ideally, this should never happen
+                    // Ideally, this should never happen.
                     throw new InvalidOperationException("The external Durable SDK was detected, but unable to be imported.", e);
                 }
                 _useExternalDurableSDK = false;
@@ -78,38 +81,46 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                 .AddParameter("DurableClient", durableClient)
                 .InvokeAndClearCommands();
-
+            // TODO: is _hasSetOrchestrationContext properly named?
             _hasSetOrchestrationContext = true;
         }
 
-        public OrchestrationBindingInfo SetOrchestrationContext(ParameterBinding context, out Action<object> externalInvoker)
+        public OrchestrationBindingInfo SetOrchestrationContext(
+            ParameterBinding context,
+            out IExternalInvoker externalInvoker)
         {
             externalInvoker = null;
-            var orchBindingInfo = new OrchestrationBindingInfo(
+            OrchestrationBindingInfo orchestrationBindingInfo = new OrchestrationBindingInfo(
                 context.Name,
                 JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String));
 
             if (_useExternalDurableSDK)
             {
-                Collection<Action<object>> output = _pwsh.AddCommand(SetFunctionInvocationContextCommand)
+                Collection<Func<PowerShell, object>> output = _pwsh.AddCommand(SetFunctionInvocationContextCommand)
+                    // The external SetFunctionInvocationContextCommand expects a .json string to deserialize
+                    // and writes an invoker function to the output pipeline.
                     .AddParameter("OrchestrationContext", context.Data.String)
-                    .AddParameter("SetResult", (Action<object, bool>) orchBindingInfo.Context.SetExternalResult)
-                    .InvokeAndClearCommands<Action<object>>();
+                    .AddParameter("SetResult", (Action<object, bool>) orchestrationBindingInfo.Context.SetExternalResult)
+                    .InvokeAndClearCommands<Func<PowerShell, object>>();
                 if (output.Count() == 1)
                 {
-                    externalInvoker = output[0];
+                    externalInvoker = new ExternalInvoker(output[0], this);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Only a single output was expected for an invocation of {SetFunctionInvocationContextCommand}");
                 }
             }
             else
             {
                 _pwsh.AddCommand(SetFunctionInvocationContextCommand)
-                    .AddParameter("OrchestrationContext", orchBindingInfo.Context)
-                    .InvokeAndClearCommands<Action<object>>();
+                    .AddParameter("OrchestrationContext", orchestrationBindingInfo.Context)
+                    .InvokeAndClearCommands();
             }
-
             _hasSetOrchestrationContext = true;
-            return orchBindingInfo;
+            return orchestrationBindingInfo;
         }
+        
 
         public void AddParameter(string name, object value)
         {

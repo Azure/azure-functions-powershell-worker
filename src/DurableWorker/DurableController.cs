@@ -67,12 +67,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             else if (_durableFunctionInfo.IsOrchestrationFunction)
             {
-                var contextBindingData = inputData[0];
-                _orchestrationBindingInfo = _powerShellServices.SetOrchestrationContext(contextBindingData, out var externalInvoker);
-                if (externalInvoker != null)
-                {
-                    this._orchestrationInvoker.SetExternalInvoker(externalInvoker);
-                }
+                _orchestrationBindingInfo = _powerShellServices.SetOrchestrationContext(
+                    inputData[0],
+                    out IExternalInvoker externalInvoker);
+                _orchestrationInvoker.SetExternalInvoker(externalInvoker);
             }
         }
 
