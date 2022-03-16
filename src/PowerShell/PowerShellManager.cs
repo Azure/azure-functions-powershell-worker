@@ -254,7 +254,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
             finally
             {
-                // TODO: determine if external SDK also needs this call
                 durableFunctionsUtils.AfterFunctionInvocation();
                 outputBindings.Clear();
                 ResetRunspace();
