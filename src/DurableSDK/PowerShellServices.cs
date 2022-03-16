@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private const string InternalDurableSDKName = "Microsoft.Azure.Functions.PowerShellWorker";
 
         private readonly PowerShell _pwsh;
-        private bool _hasSetOrchestrationContext = false;
+        private bool _hasInitializedDurableFunction = false;
         private readonly bool _useExternalDurableSDK = false;
 
         public PowerShellServices(PowerShell pwsh)
@@ -81,8 +81,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                 .AddParameter("DurableClient", durableClient)
                 .InvokeAndClearCommands();
-            // TODO: is _hasSetOrchestrationContext properly named?
-            _hasSetOrchestrationContext = true;
+            _hasInitializedDurableFunction = true;
         }
 
         public OrchestrationBindingInfo SetOrchestrationContext(
@@ -117,7 +116,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     .AddParameter("OrchestrationContext", orchestrationBindingInfo.Context)
                     .InvokeAndClearCommands();
             }
-            _hasSetOrchestrationContext = true;
+            _hasInitializedDurableFunction = true;
             return orchestrationBindingInfo;
         }
         
@@ -129,7 +128,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void ClearOrchestrationContext()
         {
-            if (_hasSetOrchestrationContext)
+            if (_hasInitializedDurableFunction)
             {
                 _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                     .AddParameter("Clear", true)
