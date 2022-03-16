@@ -112,21 +112,5 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             return _durableFunctionInfo.Type == DurableFunctionType.ActivityFunction;
         }
-
-        private static OrchestrationBindingInfo CreateOrchestrationBindingInfo(IList<ParameterBinding> inputData)
-        {
-            // Quote from https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings:
-            //
-            // "Orchestrator functions should never use any input or output bindings other than the orchestration trigger binding.
-            //  Doing so has the potential to cause problems with the Durable Task extension because those bindings may not obey the single-threading and I/O rules."
-            //
-            // Therefore, it's by design that input data contains only one item, which is the metadata of the orchestration context.
-            var context = inputData[0];
-
-            // TODO: make this de-serialization constructor depend on the external SDK
-            return new OrchestrationBindingInfo(
-                context.Name,
-                JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String));
-        }
     }
 }
