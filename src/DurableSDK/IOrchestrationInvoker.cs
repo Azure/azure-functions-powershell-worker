@@ -5,13 +5,11 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
-    using System;
     using System.Collections;
-    using System.Management.Automation;
 
     internal interface IOrchestrationInvoker
     {
         Hashtable Invoke(OrchestrationBindingInfo orchestrationBindingInfo, IPowerShellServices pwsh);
-        void SetExternalInvoker(Action<PowerShell> externalInvoker);
+        void SetExternalInvoker(IExternalInvoker externalInvoker);
     }
 }
