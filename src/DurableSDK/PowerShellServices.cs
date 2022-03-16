@@ -99,11 +99,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     // The external SetFunctionInvocationContextCommand expects a .json string to deserialize
                     // and writes an invoker function to the output pipeline.
                     .AddParameter("OrchestrationContext", context.Data.String)
-                    .AddParameter("SetResult", (Action<object, bool>) orchestrationBindingInfo.Context.SetExternalResult)
                     .InvokeAndClearCommands<Func<PowerShell, object>>();
                 if (output.Count() == 1)
                 {
-                    externalInvoker = new ExternalInvoker(output[0], this);
+                    externalInvoker = new ExternalInvoker(output[0]);
                 }
                 else
                 {

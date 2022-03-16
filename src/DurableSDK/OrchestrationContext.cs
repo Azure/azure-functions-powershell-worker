@@ -35,18 +35,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         internal OrchestrationActionCollector OrchestrationActionCollector { get; } = new OrchestrationActionCollector();
 
-        internal object ExternalSDKResult;
-
-        internal bool ExternalSDKIsError;
-
-        // Called by the External DF SDK to communicate its orchestration result
-        // back to the worker.
-        internal void SetExternalResult(object result, bool isError)
-        {
-            this.ExternalSDKResult = result;
-            this.ExternalSDKIsError = isError;
-        }
-
         internal object CustomStatus { get; set; }
     }
 }
