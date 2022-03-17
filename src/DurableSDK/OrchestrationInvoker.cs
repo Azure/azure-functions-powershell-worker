@@ -92,7 +92,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     // this should be treated as an entire orchestration failure
                     throw new OrchestrationFailureException(actions, context.CustomStatus, e);
                 }
-
             }
         }
 
