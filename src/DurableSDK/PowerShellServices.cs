@@ -25,10 +25,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public PowerShellServices(PowerShell pwsh)
         {
+            /* This logic will be commented out until the external SDK is published on the PS Gallery
+
             // We attempt to import the external SDK upon construction of the PowerShellServices object.
             // We maintain the boolean member _useExternalDurableSDK in this object rather than
             // DurableController because the expected input and functionality of SetFunctionInvocationContextCommand
             // may differ between the internal and external implementations.
+
             try
             {
                 pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
@@ -53,7 +56,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     throw new InvalidOperationException("The external Durable SDK was detected, but unable to be imported.", e);
                 }
                 _useExternalDurableSDK = false;
-            }
+            }*/
+            _useExternalDurableSDK = false;
 
             if (_useExternalDurableSDK)
             {
