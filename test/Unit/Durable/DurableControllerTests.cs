@@ -119,7 +119,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             {
                 CreateParameterBinding(_contextParameterName, _orchestrationContext)
             };
-
             _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
                 It.IsAny<ParameterBinding>(),
                 out It.Ref<IExternalInvoker>.IsAny))

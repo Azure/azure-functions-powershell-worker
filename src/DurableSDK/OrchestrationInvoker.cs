@@ -16,6 +16,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     internal class OrchestrationInvoker : IOrchestrationInvoker
     {
         private IExternalInvoker _externalInvoker;
+        internal static string isOrchestrationFailureKey = "IsOrchestrationFailure";
 
         public Hashtable Invoke(
             OrchestrationBindingInfo orchestrationBindingInfo,
@@ -25,9 +26,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 if (powerShellServices.UseExternalDurableSDK())
                 {
-                    return InvokeExternalDurableSDK(orchestrationBindingInfo, powerShellServices);
+                    return InvokeExternalDurableSDK(powerShellServices);
                 }
                 return InvokeInternalDurableSDK(orchestrationBindingInfo, powerShellServices);
+            }
+            catch (Exception ex)
+            {
+                ex.Data.Add(isOrchestrationFailureKey, true);
+                throw;
             }
             finally
             {
@@ -35,22 +41,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
         }
 
-        public Hashtable InvokeExternalDurableSDK(
-            OrchestrationBindingInfo orchestrationBindingInfo,
-            IPowerShellServices powerShellServices)
+        public Hashtable InvokeExternalDurableSDK(IPowerShellServices powerShellServices)
         {
-
-            _externalInvoker.Invoke();
-            var result = orchestrationBindingInfo.Context.ExternalSDKResult;
-            var isError = orchestrationBindingInfo.Context.ExternalSDKIsError;
-            if (isError)
-            {
-                throw (Exception)result;
-            }
-            else
-            {
-                return (Hashtable)result;
-            }
+            return _externalInvoker.Invoke(powerShellServices);
         }
 
         public Hashtable InvokeInternalDurableSDK(

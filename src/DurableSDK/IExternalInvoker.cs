@@ -5,10 +5,12 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
+    using System.Collections;
+
     // Represents a contract for the 
     internal interface IExternalInvoker
     {
         // Method to invoke an orchestration using the external Durable SDK
-        void Invoke();
+        Hashtable Invoke(IPowerShellServices powerShellServices);
     }
 }
