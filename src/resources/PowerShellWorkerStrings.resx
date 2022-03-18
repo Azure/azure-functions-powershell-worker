@@ -322,4 +322,7 @@
   <data name="PowerShell6EndOfLifeWarning" xml:space="preserve">
     <value>The Function app uses PowerShell Core 6. Your Function app is still supported, but this version of PowerShell reached end of life, so it is strongly recommended that you migrate the Function app to PowerShell 7. For more details, see https://aka.ms/functions-powershell-6-to-7.</value>
   </data>
+  <data name="AutomaticUpgradesAreDisabled" xml:space="preserve">
+    <value>Automatic upgrades are disabled in PowerShell 6 function apps. To enable this functionality back, please migrate your function app to PowerShell 7. For more details, see https://aka.ms/functions-powershell-6-to-7.</value>
+  </data>
 </root>
