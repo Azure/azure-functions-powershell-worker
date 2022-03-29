@@ -18,6 +18,12 @@ param(
     [switch]
     $NoBuild,
 
+    [switch]
+    $Deploy,
+
+    [string]
+    $CoreToolsDir,
+
     [string]
     $Configuration = "Debug",
 
@@ -32,6 +38,34 @@ param(
 )
 
 #Requires -Version 6.0
+
+$PowerShellVersion = '6'
+$TargetFramework = 'netcoreapp2.1'
+function Get-FunctionsCoreToolsDir {
+    if ($CoreToolsDir) {
+        $CoreToolsDir
+    } else {
+        $funcPath = (Get-Command func).Source
+        if (-not $funcPath) {
+            throw 'Cannot find "func" command. Please install Azure Functions Core Tools: ' +
+                  'see https://github.com/Azure/azure-functions-core-tools#installing for instructions'
+        }
+
+        # func may be just a symbolic link, so we need to follow it until we find the true location
+        while ((((Get-Item $funcPath).Attributes) -band 'ReparsePoint') -ne 0) {
+            $funcPath = (Get-Item $funcPath).Target
+        }
+
+        $funcParentDir = Split-Path -Path $funcPath -Parent
+
+        if (-not (Test-Path -Path $funcParentDir/workers/powershell -PathType Container)) {
+            throw 'Cannot find Azure Function Core Tools installation directory. ' +
+                  'Please provide the path in the CoreToolsDir parameter.'
+        }
+
+        $funcParentDir
+    }
+}
 
 function Install-SBOMUtil
 {
@@ -60,6 +94,24 @@ function Install-SBOMUtil
     Write-Host 'Done.'
 
     return $manifestToolPath
+}
+
+function Deploy-PowerShellWorker {
+    $ErrorActionPreference = 'Stop'
+
+    $powerShellWorkerDir = "$(Get-FunctionsCoreToolsDir)/workers/powershell/$PowerShellVersion"
+
+    Write-Log "Deploying worker to $powerShellWorkerDir..."
+
+    if (-not $IsWindows) {
+        sudo chmod -R a+w $powerShellWorkerDir
+    }
+
+    Remove-Item -Path $powerShellWorkerDir/* -Recurse -Force
+    Copy-Item -Path "./src/bin/$Configuration/$TargetFramework/publish/*" `
+        -Destination $powerShellWorkerDir -Recurse -Force
+
+    Write-Log "Deployed worker to $powerShellWorkerDir"
 }
 
 Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
@@ -152,4 +204,8 @@ if(!$NoBuild.IsPresent) {
 if($Test.IsPresent) {
     dotnet test "$PSScriptRoot/test/Unit"
     if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
+}
+
+if ($Deploy.IsPresent) {
+    Deploy-PowerShellWorker
 }
