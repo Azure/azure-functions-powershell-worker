@@ -105,6 +105,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 out StatusResult status);
 
             response.WorkerInitResponse.Capabilities.Add("RpcHttpBodyOnly", "true");
+            response.WorkerInitResponse.Capabilities.Add("WorkerStatus", "true");
 
             // If the environment variable is set, spin up the custom named pipe server.
             // This is typically used for debugging. It will throw a friendly exception if the
