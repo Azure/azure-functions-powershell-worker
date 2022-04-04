@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         internal string ParentInstanceId { get; set; }
 
         [DataMember]
-        internal bool IsReplaying { get; set; }
+        public bool IsReplaying { get; set; }
 
         [DataMember]
         internal HistoryEvent[] History { get; set; }
