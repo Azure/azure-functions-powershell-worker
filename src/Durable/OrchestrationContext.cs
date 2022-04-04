@@ -20,7 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         public object Input { get; internal set; }
 
         [DataMember]
-        internal string InstanceId { get; set; }
+        public string InstanceId { get; set; }
 
         [DataMember]
         internal string ParentInstanceId { get; set; }
