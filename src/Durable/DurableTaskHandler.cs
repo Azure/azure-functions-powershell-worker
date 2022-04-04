@@ -57,7 +57,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                                 output(eventResult);
                             }
                             break;
-
+                        case HistoryEventType.EventRaised:
+                            var eventRaisedResult = GetEventResult(completedHistoryEvent);
+                            if (eventRaisedResult != null)
+                            {
+                                output(eventRaisedResult);
+                            }
+                            break;
                         case HistoryEventType.TaskFailed:
                             if (retryOptions == null)
                             {
