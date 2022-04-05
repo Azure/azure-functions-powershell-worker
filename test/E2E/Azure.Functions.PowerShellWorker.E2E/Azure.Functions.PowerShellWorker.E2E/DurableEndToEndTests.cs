@@ -147,12 +147,6 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             }
         }
 
-
-Viewed
-@@ -147,6 +147,112 @@ public async Task LegacyDurableCommandNamesStillWork()
-            }
-        }
-
         [Fact]
         public async Task OrchestratationContextHasAllExpectedProperties()
         {
