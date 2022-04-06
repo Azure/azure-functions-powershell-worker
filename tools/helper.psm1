@@ -11,13 +11,13 @@ $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 $DotnetSDKVersionRequirements = @{
     # We need .NET SDK 3.1 for running the tests, as we still build against the 3.1 framework
     '3.1' = @{
-        MinimalPatch = '416'
-        DefaultPatch = '416'
+        MinimalPatch = '417'
+        DefaultPatch = '417'
     }
     # We need .NET SDK 5.0 for the updated C# compiler
     '5.0' = @{
-        MinimalPatch = '202'
-        DefaultPatch = '202'
+        MinimalPatch = '406'
+        DefaultPatch = '406'
     }
 }
 
