@@ -6,10 +6,12 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
+    using System.Management.Automation;
     using System.Threading;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
-    using Utility;
+    using Microsoft.PowerShell.Commands;
 
     internal class DurableTaskHandler
     {
@@ -47,6 +49,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     }
 
                     completedHistoryEvent.IsProcessed = true;
+                    context.IsReplaying = completedHistoryEvent.IsPlayed;
 
                     switch (completedHistoryEvent.EventType)
                     {
@@ -55,6 +58,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                             if (eventResult != null)
                             {
                                 output(eventResult);
+                            }
+                            break;
+                        case HistoryEventType.EventRaised:
+                            var eventRaisedResult = GetEventResult(completedHistoryEvent);
+                            if (eventRaisedResult != null)
+                            {
+                                output(eventRaisedResult);
                             }
                             break;
 
@@ -76,7 +86,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                                         retryOptions.MaxNumberOfAttempts,
                                         onSuccess:
                                             result => {
-                                                output(TypeExtensions.ConvertFromJson(result));
+                                                output(ConvertFromJson(result));
                                             },
                                         onFailure);
                                         
@@ -126,6 +136,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var allTasksCompleted = completedEvents.Count == tasksToWaitFor.Count;
             if (allTasksCompleted)
             {
+                context.IsReplaying = completedEvents.Count == 0 ? false : completedEvents[0].IsPlayed;
                 CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
 
                 foreach (var completedHistoryEvent in completedEvents)
@@ -164,6 +175,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 if (scheduledHistoryEvent != null)
                 {
                     scheduledHistoryEvent.IsProcessed = true;
+                    scheduledHistoryEvent.IsPlayed = true;
                 }
 
                 if (completedHistoryEvent != null)
@@ -179,12 +191,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     }
 
                     completedHistoryEvent.IsProcessed = true;
+                    completedHistoryEvent.IsPlayed = true;
                 }
             }
 
             var anyTaskCompleted = completedTasks.Count > 0;
             if (anyTaskCompleted)
             {
+                context.IsReplaying = context.History[firstCompletedHistoryEventIndex].IsPlayed;
                 CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
                 // Return a reference to the first completed task
                 output(firstCompletedTask);
@@ -192,6 +206,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             else
             {
                 InitiateAndWaitForStop(context);
+            }
+        }
+
+        public void GetTaskResult(
+            IReadOnlyCollection<DurableTask> tasksToQueryResultFor,
+            OrchestrationContext context,
+            Action<object> output)
+        {
+            foreach (var task in tasksToQueryResultFor) {
+                var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context, true);
+                var processedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent, true);
+                if (processedHistoryEvent != null)
+                {
+                    output(GetEventResult(processedHistoryEvent));
+                }
             }
         }
 
@@ -206,13 +235,39 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             
             if (historyEvent.EventType == HistoryEventType.TaskCompleted)
             {
-                return TypeExtensions.ConvertFromJson(historyEvent.Result);
+                return ConvertFromJson(historyEvent.Result);
             }
             else if (historyEvent.EventType == HistoryEventType.EventRaised)
             {
-                return TypeExtensions.ConvertFromJson(historyEvent.Input);
+                return ConvertFromJson(historyEvent.Input);
             }
             return null;
+        }
+
+        public static object ConvertFromJson(string json)
+        {
+            object retObj = JsonObject.ConvertFromJson(json, returnHashtable: true, error: out _);
+
+            if (retObj is PSObject psObj)
+            {
+                retObj = psObj.BaseObject;
+            }
+
+            if (retObj is Hashtable hashtable)
+            {
+                try
+                {
+                    // ConvertFromJson returns case-sensitive Hashtable by design -- JSON may contain keys that only differ in case.
+                    // We try casting the Hashtable to a case-insensitive one, but if that fails, we keep using the original one.
+                    retObj = new Hashtable(hashtable, StringComparer.OrdinalIgnoreCase);
+                }
+                catch
+                {
+                    retObj = hashtable;
+                }
+            }
+
+            return retObj;
         }
 
         private void InitiateAndWaitForStop(OrchestrationContext context)

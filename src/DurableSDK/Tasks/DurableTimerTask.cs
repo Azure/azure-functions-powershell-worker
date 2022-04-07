@@ -28,7 +28,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
             Action = new CreateDurableTimerAction(FireAt);
         }
 
-        internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context)
+        internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context, bool processed)
         {
             return context.History.FirstOrDefault(
                 e => e.EventType == HistoryEventType.TimerCreated &&
@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
                      !e.IsProcessed);
         }
 
-        internal override HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent scheduledHistoryEvent)
+        internal override HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent scheduledHistoryEvent, bool processed)
         {
             return scheduledHistoryEvent == null
                 ? null

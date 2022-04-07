@@ -5,16 +5,25 @@
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
+    using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
     using System;
     using System.Management.Automation;
 
     internal interface IPowerShellServices
     {
+        PowerShell GetPowerShell();
+
+        bool UseExternalDurableSDK();
+
         void SetDurableClient(object durableClient);
 
-        void SetOrchestrationContext(OrchestrationContext orchestrationContext);
+        OrchestrationBindingInfo SetOrchestrationContext(ParameterBinding context, out IExternalInvoker externalInvoker);
 
         void ClearOrchestrationContext();
+
+        void TracePipelineObject();
+
+        void AddParameter(string name, object value);
 
         IAsyncResult BeginInvoke(PSDataCollection<object> output);
 

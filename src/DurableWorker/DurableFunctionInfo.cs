@@ -13,9 +13,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DurableWorker
             DurableClientBindingName = durableClientBindingName;
         }
 
+        public bool IsActivityFunction => Type == DurableFunctionType.ActivityFunction;
+
         public bool IsDurableClient => DurableClientBindingName != null;
 
         public bool IsOrchestrationFunction => Type == DurableFunctionType.OrchestrationFunction;
+        
 
         public string DurableClientBindingName { get; }
 

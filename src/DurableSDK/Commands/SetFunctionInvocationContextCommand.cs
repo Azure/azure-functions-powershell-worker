@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
 {
     using System.Collections;
     using System.Management.Automation;
+    using Microsoft.PowerShell.Commands;
 
     /// <summary>
     /// Set the orchestration context.
