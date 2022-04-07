@@ -1,1 +1,1 @@
-* Bug fix: Activity Functions can now use output bindings (https://github.com/Azure/azure-functions-powershell-worker/issues/646)
+* New feature: The `Get-TaskResult` CmdLet can now be used to get the result of already completed DF Tasks! Thanks @oobegreg for your contribution!
