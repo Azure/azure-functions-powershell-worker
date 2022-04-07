@@ -44,7 +44,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
             var privateData = (Hashtable)MyInvocation.MyCommand.Module.PrivateData;
             var context = (OrchestrationContext)privateData[SetFunctionInvocationContextCommand.ContextKey];
 
+            var loadedFunctions = FunctionLoader.GetLoadedFunctions();
             var task = new ActivityInvocationTask(FunctionName, Input, RetryOptions);
+            ActivityInvocationTask.ValidateTask(task, loadedFunctions);
 
             _durableTaskHandler.StopAndInitiateDurableTaskOrReplay(
                 task, context, NoWait.IsPresent,
