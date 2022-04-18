@@ -314,7 +314,6 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             }
         }
 
-
         [Fact]
         public async Task ActivityCanHaveQueueBinding()
         {
