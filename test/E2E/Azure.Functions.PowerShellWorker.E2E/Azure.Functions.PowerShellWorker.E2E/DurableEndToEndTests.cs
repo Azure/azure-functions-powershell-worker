@@ -12,6 +12,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
     using System.Net.Http;
     using Newtonsoft.Json;
+    using System.Text;
 
     [Collection(Constants.FunctionAppCollectionName)]
     public class DurableEndToEndTests
