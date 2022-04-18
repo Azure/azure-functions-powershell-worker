@@ -225,8 +225,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var orchestrationContext = new OrchestrationContext { History = history };
 
             var task = new ActivityInvocationTask(FunctionName, FunctionInput);
-            var scheduledEvent = task.GetScheduledHistoryEvent(orchestrationContext);
-            var completedEvent = task.GetCompletedHistoryEvent(orchestrationContext, scheduledEvent);
+            var scheduledEvent = task.GetScheduledHistoryEvent(orchestrationContext, false);
+            var completedEvent = task.GetCompletedHistoryEvent(orchestrationContext, scheduledEvent, false);
 
             Assert.Equal(scheduledEvent.EventId, completedEvent.TaskScheduledId);
         }

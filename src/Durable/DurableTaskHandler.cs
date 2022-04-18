@@ -206,6 +206,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
         }
 
+        public void GetTaskResult(
+            IReadOnlyCollection<DurableTask> tasksToQueryResultFor,
+            OrchestrationContext context,
+            Action<object> output)
+        {
+            foreach (var task in tasksToQueryResultFor) {
+                var scheduledHistoryEvent = task.GetScheduledHistoryEvent(context, true);
+                var processedHistoryEvent = task.GetCompletedHistoryEvent(context, scheduledHistoryEvent, true);
+                if (processedHistoryEvent != null)
+                {
+                    output(GetEventResult(processedHistoryEvent));
+                }
+            }
+        }
+
         public void Stop()
         {
             _waitForStop.Set();

@@ -1,2 +1,3 @@
 * Bug fix: [Context.InstanceId can now be accessed](https://github.com/Azure/azure-functions-powershell-worker/issues/727)
 * Bug fix: [Data in External Events is now read and returned to orchestrator](https://github.com/Azure/azure-functions-powershell-worker/issues/68)
+* New feature (external contribution): [Get-TaskResult can now be used to obtain the result of an already-completed Durable Functions Task](https://github.com/Azure/azure-functions-powershell-worker/pull/786)
