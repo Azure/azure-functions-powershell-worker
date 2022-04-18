@@ -1,1 +1,2 @@
-* Bug fix: Activity Functions can now use output bindings (https://github.com/Azure/azure-functions-powershell-worker/issues/646)
+* Bug fix: [Context.InstanceId can now be accessed](https://github.com/Azure/azure-functions-powershell-worker/issues/727)
+* Bug fix: [Data in External Events is now read and returned to orchestrator](https://github.com/Azure/azure-functions-powershell-worker/issues/68)
