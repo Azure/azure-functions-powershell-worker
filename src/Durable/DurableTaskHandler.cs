@@ -47,6 +47,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     }
 
                     completedHistoryEvent.IsProcessed = true;
+                    context.IsReplaying = completedHistoryEvent.IsPlayed;
 
                     switch (completedHistoryEvent.EventType)
                     {
@@ -57,7 +58,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                                 output(eventResult);
                             }
                             break;
-
+                        case HistoryEventType.EventRaised:
+                            var eventRaisedResult = GetEventResult(completedHistoryEvent);
+                            if (eventRaisedResult != null)
+                            {
+                                output(eventRaisedResult);
+                            }
+                            break;
                         case HistoryEventType.TaskFailed:
                             if (retryOptions == null)
                             {
@@ -126,6 +133,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var allTasksCompleted = completedEvents.Count == tasksToWaitFor.Count;
             if (allTasksCompleted)
             {
+                context.IsReplaying = completedEvents.Count == 0 ? false : completedEvents[0].IsPlayed;
                 CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
 
                 foreach (var completedHistoryEvent in completedEvents)
@@ -187,6 +195,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var anyTaskCompleted = completedTasks.Count > 0;
             if (anyTaskCompleted)
             {
+                context.IsReplaying = context.History[firstCompletedHistoryEventIndex].IsPlayed;
                 CurrentUtcDateTimeUpdater.UpdateCurrentUtcDateTime(context);
                 // Return a reference to the first completed task
                 output(firstCompletedTask);
