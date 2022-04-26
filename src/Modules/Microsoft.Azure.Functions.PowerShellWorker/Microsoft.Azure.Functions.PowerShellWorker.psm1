@@ -80,6 +80,8 @@ function Get-DurableStatus {
     The input value that will be passed to the orchestration Azure Function.
 .PARAMETER DurableClient
     The orchestration client object.
+.PARAMETER InstanceId
+    The InstanceId for the new orchestration.
 #>
 function Start-DurableOrchestration {
     [CmdletBinding()]
@@ -98,7 +100,11 @@ function Start-DurableOrchestration {
 
 		[Parameter(
             ValueFromPipelineByPropertyName=$true)]
-        [object] $DurableClient
+        [object] $DurableClient,
+
+        [Parameter(
+            ValueFromPipelineByPropertyName=$true)]
+        [string] $InstanceId
     )
 
     $ErrorActionPreference = 'Stop'
@@ -107,7 +113,9 @@ function Start-DurableOrchestration {
         $DurableClient = GetDurableClientFromModulePrivateData
     }
 
-    $InstanceId = (New-Guid).Guid
+    if (-not $InstanceId) {
+        $InstanceId = (New-Guid).Guid
+    }
 
     $Uri =
         if ($DurableClient.rpcBaseUrl) {
