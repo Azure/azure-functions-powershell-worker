@@ -164,19 +164,6 @@ function Resolve-ProtoBufToolPath
     }
 }
 
-function Get-WebFile {
-    param (
-        [string] $Url,
-        [string] $OutFile
-    )
-    $directoryName = [System.IO.Path]::GetDirectoryName($OutFile)
-    if (!(Test-Path $directoryName)) {
-        New-Item -Type Directory $directoryName
-    }
-    Remove-Item $OutFile -ErrorAction SilentlyContinue
-    Invoke-RestMethod $Url -OutFile $OutFile
-}
-
 function Write-Log
 {
     param(
