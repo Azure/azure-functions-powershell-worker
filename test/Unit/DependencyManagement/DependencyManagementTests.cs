@@ -11,8 +11,10 @@ using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 {
+    using System.Diagnostics;
     using System.Linq;
     using System.Management.Automation;
+    using System.Threading;
 
     public class DependencyManagementTests : IDisposable
     {
@@ -481,8 +483,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             if (SuccessfulDownload || (SaveModuleCount >= ShouldNotThrowAfterCount))
             {
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+                Thread.Sleep(10); // wait for 10 milliseconds
+
                 // Save the module name and version for a successful download.
-                DownloadedModuleInfo = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, version);
+                DownloadedModuleInfo = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, moduleName, version, stopwatch.ElapsedMilliseconds);
                 return;
             }
 
