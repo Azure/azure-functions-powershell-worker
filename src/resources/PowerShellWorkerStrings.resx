@@ -179,7 +179,7 @@
     <value>Started installing module '{0}' version '{1}'.</value>
   </data>
   <data name="ModuleHasBeenInstalled" xml:space="preserve">
-    <value>Module name '{0}' version '{1}' has been installed.</value>
+    <value>Module name '{0}' version '{1}' has been installed. Module installation completed in {2} ms.</value>
   </data>
   <data name="AcceptableFunctionAppDependenciesAlreadyInstalled" xml:space="preserve">
     <value>The function app has existing dependencies installed. Updating the dependencies to the latest versions will be performed in the background. New function app instances will pick up any new dependencies.</value>
