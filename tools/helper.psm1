@@ -11,13 +11,13 @@ $RepoRoot = (Resolve-Path "$PSScriptRoot/..").Path
 $DotnetSDKVersionRequirements = @{
     # We need .NET SDK 3.1 for running the tests, as we still build against the 3.1 framework
     '3.1' = @{
-        MinimalPatch = '417'
-        DefaultPatch = '417'
+        MinimalPatch = '419'
+        DefaultPatch = '419'
     }
     # We need .NET SDK 5.0 for the updated C# compiler
     '5.0' = @{
-        MinimalPatch = '406'
-        DefaultPatch = '406'
+        MinimalPatch = '408'
+        DefaultPatch = '408'
     }
 }
 
@@ -171,19 +171,6 @@ function Resolve-ProtoBufToolPath
 
         $Script:protobuf_dir_Path = "$RepoRoot/protobuf/src/proto"
     }
-}
-
-function Get-WebFile {
-    param (
-        [string] $Url,
-        [string] $OutFile
-    )
-    $directoryName = [System.IO.Path]::GetDirectoryName($OutFile)
-    if (!(Test-Path $directoryName)) {
-        New-Item -Type Directory $directoryName
-    }
-    Remove-Item $OutFile -ErrorAction SilentlyContinue
-    Invoke-RestMethod $Url -OutFile $OutFile
 }
 
 function Write-Log
