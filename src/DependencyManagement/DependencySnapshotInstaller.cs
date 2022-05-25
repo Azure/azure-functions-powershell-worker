@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     using System.Collections.Generic;
     using System.Management.Automation;
     using System.Threading;
+    using System.Diagnostics;
 
     using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 
@@ -129,9 +130,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             {
                 try
                 {
+                    var stopwatch = new Stopwatch();
+                    stopwatch.Start();
+
                     _moduleProvider.SaveModule(pwsh, module.Name, module.ExactVersion, installingPath);
 
-                    var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, module.Name, module.ExactVersion);
+                    var message = string.Format(PowerShellWorkerStrings.ModuleHasBeenInstalled, module.Name, module.ExactVersion, stopwatch.ElapsedMilliseconds);
                     logger.Log(isUserOnlyLog: false, LogLevel.Trace, message);
 
                     break;
