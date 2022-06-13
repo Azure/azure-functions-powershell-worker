@@ -20,7 +20,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc.Core" Version="2.42.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.42.0" />
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.11" />
     <PackageReference Include="CommandLineParser" Version="2.3.0" />
     <PackageReference Include="Google.Protobuf" Version="3.19.4" />
