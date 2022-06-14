@@ -67,6 +67,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.InvocationCancel, ProcessInvocationCancelRequest);
 
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadRequest, ProcessFunctionEnvironmentReloadRequest);
+
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionsMetadataRequest, ProcessFunctionMetadataRequest);
         }
 
         internal async Task ProcessRequestLoop()
@@ -366,6 +368,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             return response;
         }
 
+        internal StreamingMessage ProcessFunctionMetadataRequest(StreamingMessage request)
+        {
+            //_ = FunctionLoader.ParseFunctions(request.FunctionsMetadataRequest.FunctionAppDirectory);
+
+            StreamingMessage response = NewStreamingMessageTemplate(
+                request.RequestId,
+                StreamingMessage.ContentOneofCase.FunctionMetadataResponses,
+                out StatusResult status);
+
+            return response;
+        }
+
         #region Helper_Methods
 
         /// <summary>
@@ -393,6 +407,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     break;
                 case StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse:
                     response.FunctionEnvironmentReloadResponse = new FunctionEnvironmentReloadResponse() { Result = status };
+                    break;
+                case StreamingMessage.ContentOneofCase.FunctionMetadataResponses:
+                    response.FunctionMetadataResponses = new FunctionMetadataResponses() { Result = status };
                     break;
                 default:
                     throw new InvalidOperationException("Unreachable code.");
