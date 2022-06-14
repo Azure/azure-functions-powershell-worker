@@ -13,13 +13,12 @@ using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
-using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
+using Microsoft.Azure.Functions.PowerShellWorker.Durable;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     using System.Diagnostics;
-    using System.Text.Json;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
     internal class RequestProcessor
@@ -31,9 +30,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         // Holds the exception if an issue is encountered while processing the function app dependencies.
         private Exception _initTerminatingError;
-        
-        // Indicate whether the dependencies have been installed
-        private bool _areDependenciesInstalled;
+
+        // Indicate whether the FunctionApp has been initialized.
+        private bool _isFunctionAppInitialized;
 
         private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
             new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
@@ -67,9 +66,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // If an invocation is cancelled, host will receive an invocation response with status cancelled.
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.InvocationCancel, ProcessInvocationCancelRequest);
 
-            _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionsMetadataRequest, ProcessFunctionMetadataRequest);
-
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadRequest, ProcessFunctionEnvironmentReloadRequest);
+
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionsMetadataRequest, ProcessFunctionMetadataRequest);
         }
 
         internal async Task ProcessRequestLoop()
@@ -98,9 +97,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         internal StreamingMessage ProcessWorkerInitRequest(StreamingMessage request)
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
-
             var workerInitRequest = request.WorkerInitRequest;
             Environment.SetEnvironmentVariable("AZUREPS_HOST_ENVIRONMENT", $"AzureFunctions/{workerInitRequest.HostVersion}");
             Environment.SetEnvironmentVariable("POWERSHELL_DISTRIBUTION_CHANNEL", $"Azure-Functions:{workerInitRequest.HostVersion}");
@@ -121,28 +117,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             {
                 RpcLogger.WriteSystemLog(LogLevel.Trace, string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
                 RemoteSessionNamedPipeServer.CreateCustomNamedPipeServer(pipeName);
-            }
-
-            try
-            {
-                var rpcLogger = new RpcLogger(_msgStream);
-                rpcLogger.SetContext(request.RequestId, null);
-
-                _dependencyManager = new DependencyManager(request.WorkerInitRequest.FunctionAppDirectory, logger: rpcLogger);
-
-                _powershellPool.Initialize(_firstPwshInstance);
-
-                rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.FirstFunctionLoadCompleted, stopwatch.ElapsedMilliseconds));
-            }
-            catch (Exception e)
-            {
-                // Failure that happens during this step is terminating and we will need to return a failure response to
-                // all subsequent 'FunctionLoadRequest'. Cache the exception so we can reuse it in future calls.
-                _initTerminatingError = e;
-
-                status.Status = StatusResult.Types.Status.Failure;
-                status.Exception = e.ToRpcException();
-                return response;
             }
 
             return response;
@@ -181,7 +155,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             stopwatch.Start();
 
             FunctionLoadRequest functionLoadRequest = request.FunctionLoadRequest;
-            string lrs = System.Text.Json.JsonSerializer.Serialize<FunctionLoadRequest>(functionLoadRequest);
 
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
@@ -214,20 +187,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // 'FunctionLoadRequest' comes in. Therefore, we run initialization here.
             // Also, we receive a FunctionLoadRequest when a proxy is configured. Proxies don't have the Metadata.Directory set
             // which would cause initialization issues with the PSModulePath. Since they don't have that set, we skip over them.
-            if (!_areDependenciesInstalled && !functionLoadRequest.Metadata.IsProxy)
+            if (!_isFunctionAppInitialized && !functionLoadRequest.Metadata.IsProxy)
             {
                 try
                 {
+                    _isFunctionAppInitialized = true;
+
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, null);
 
-                    _areDependenciesInstalled = true;
-
+                    _dependencyManager = new DependencyManager(request.FunctionLoadRequest.Metadata.Directory, logger: rpcLogger);
                     var managedDependenciesPath = _dependencyManager.Initialize(request, rpcLogger);
 
-                    SetupAppRootPathAndModulePath(request.FunctionLoadRequest, managedDependenciesPath);
+                    SetupAppRootPathAndModulePath(functionLoadRequest, managedDependenciesPath);
+
+                    _powershellPool.Initialize(_firstPwshInstance);
+
                     // Start the download asynchronously if needed.
                     _dependencyManager.StartDependencyInstallationIfNeeded(request, _firstPwshInstance, rpcLogger);
+
+                    rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.FirstFunctionLoadCompleted, stopwatch.ElapsedMilliseconds));
                 }
                 catch (Exception e)
                 {
@@ -263,7 +242,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             try
             {
-                string ins = System.Text.Json.JsonSerializer.Serialize<InvocationRequest>(request.InvocationRequest);
                 var stopwatch = new FunctionInvocationPerformanceStopwatch();
                 stopwatch.OnStart();
 
@@ -364,21 +342,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             return null;
         }
-        
-        private StreamingMessage ProcessFunctionMetadataRequest(StreamingMessage request)
-        {
-            // WorkerStatusResponse type says that it is not used but this will create an empty one anyway to return to the host
-            StreamingMessage response = NewStreamingMessageTemplate(
-                request.RequestId,
-                StreamingMessage.ContentOneofCase.FunctionMetadataResponse,
-                out StatusResult status);
-
-            response.FunctionMetadataResponse.FunctionMetadataResults.AddRange(WorkerIndexingHelper.IndexFunctions(request.FunctionsMetadataRequest.FunctionAppDirectory));
-
-            string rawresp = JsonSerializer.Serialize<FunctionMetadataResponse>(response.FunctionMetadataResponse);
-
-            return response;
-        }
 
         internal StreamingMessage ProcessFunctionEnvironmentReloadRequest(StreamingMessage request)
         {
@@ -400,6 +363,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse,
+                out StatusResult status);
+
+            return response;
+        }
+
+        internal StreamingMessage ProcessFunctionMetadataRequest(StreamingMessage request)
+        {
+            //_ = FunctionLoader.ParseFunctions(request.FunctionsMetadataRequest.FunctionAppDirectory);
+
+            StreamingMessage response = NewStreamingMessageTemplate(
+                request.RequestId,
+                StreamingMessage.ContentOneofCase.FunctionMetadataResponses,
                 out StatusResult status);
 
             return response;
@@ -433,8 +408,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 case StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse:
                     response.FunctionEnvironmentReloadResponse = new FunctionEnvironmentReloadResponse() { Result = status };
                     break;
-                case StreamingMessage.ContentOneofCase.FunctionMetadataResponse:
-                    response.FunctionMetadataResponse = new FunctionMetadataResponse() { Result = status };
+                case StreamingMessage.ContentOneofCase.FunctionMetadataResponses:
+                    response.FunctionMetadataResponses = new FunctionMetadataResponses() { Result = status };
                     break;
                 default:
                     throw new InvalidOperationException("Unreachable code.");
