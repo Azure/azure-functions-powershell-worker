@@ -377,6 +377,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 StreamingMessage.ContentOneofCase.FunctionMetadataResponses,
                 out StatusResult status);
 
+            response.FunctionMetadataResponses.FunctionLoadRequestsResults.AddRange(WorkerIndexingHelper.FormatMetadata());
+
             return response;
         }
 
