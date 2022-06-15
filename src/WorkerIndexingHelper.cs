@@ -22,9 +22,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             bindings[bindingName] = binding;
         }
 
-        internal static FunctionMetadataResponses FormatMetadata()
+        internal static List<FunctionLoadRequest> FormatMetadata()
         {
-
+            return null;
         }
     }
 }
