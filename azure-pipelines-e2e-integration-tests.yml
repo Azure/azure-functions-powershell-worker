@@ -9,9 +9,9 @@ trigger: none
 strategy:
   matrix:
     linux:
-      imageName: 'ubuntu-latest'
+      imageName: 'MMSUbuntu20.04TLS'
     windows:
-      imageName: 'vs2017-win2016'
+      imageName: 'MMS2019TLS'
 
 pool:
     vmImage: $(imageName)
