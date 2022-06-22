@@ -1,4 +1,4 @@
-<!--
+﻿<!--
 Copyright (c) Microsoft. All rights reserved.
 Licensed under the MIT license. See LICENSE file in the project root for full license information.
 -->
@@ -34,5 +34,9 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
       <Link>Modules\%(RecursiveDir)\%(FileName)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Messaging\protobuf\" />
   </ItemGroup>
 </Project>

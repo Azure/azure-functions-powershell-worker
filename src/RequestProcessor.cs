@@ -66,6 +66,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // If an invocation is cancelled, host will receive an invocation response with status cancelled.
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.InvocationCancel, ProcessInvocationCancelRequest);
 
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionsMetadataRequest, ProcessFunctionMetadataRequest);
+
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadRequest, ProcessFunctionEnvironmentReloadRequest);
         }
 
@@ -340,6 +342,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             return null;
         }
+        
+        private StreamingMessage ProcessFunctionMetadataRequest(StreamingMessage request)
+        {
+            // WorkerStatusResponse type says that it is not used but this will create an empty one anyway to return to the host
+            StreamingMessage response = NewStreamingMessageTemplate(
+                request.RequestId,
+                StreamingMessage.ContentOneofCase.FunctionMetadataResponse,
+                out StatusResult status);
+
+            response.FunctionMetadataResponse.FunctionMetadataResults.AddRange(WorkerIndexingHelper.IndexFunctions());
+
+            return response;
+        }
 
         internal StreamingMessage ProcessFunctionEnvironmentReloadRequest(StreamingMessage request)
         {
@@ -393,6 +408,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     break;
                 case StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse:
                     response.FunctionEnvironmentReloadResponse = new FunctionEnvironmentReloadResponse() { Result = status };
+                    break;
+                case StreamingMessage.ContentOneofCase.FunctionMetadataResponse:
+                    response.FunctionMetadataResponse = new FunctionMetadataResponse() { Result = status };
                     break;
                 default:
                     throw new InvalidOperationException("Unreachable code.");
