@@ -177,7 +177,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                             bindingInfo.Direction = BindingInfo.Types.Direction.Out;
                             bindingInfo.Type = "httpTrigger";
                             var rawTimerBinding = new
-                            {
+    {
                                 schedule = chronExpression,
                                 type = bindingInfo.Type,
                                 direction = "in",
@@ -199,7 +199,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             if (bindings.Count == 0)
             {
                 return new List<Tuple<string, BindingInfo, string>>();
-            }
+        }
             else
             {
                 var outputBindingInfo = new List<Tuple<string, BindingInfo, string>>();
@@ -232,7 +232,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                         break;
                     default:
                         break;
-                }
+        }
             }
             return outputBindingInfo;
         }
@@ -256,7 +256,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 List<string> values = new List<string>();
                 var arrayValues = ((ArrayExpressionAst)expressionAst).FindAll(x => x is StringConstantExpressionAst, false);
                 foreach (StringConstantExpressionAst one in arrayValues)
-                {
+        {
                     values.Add(one.Value);
                 }
                 return values;
