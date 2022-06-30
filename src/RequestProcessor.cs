@@ -67,8 +67,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.InvocationCancel, ProcessInvocationCancelRequest);
 
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadRequest, ProcessFunctionEnvironmentReloadRequest);
-
-            _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionsMetadataRequest, ProcessFunctionMetadataRequest);
         }
 
         internal async Task ProcessRequestLoop()
@@ -364,20 +362,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse,
                 out StatusResult status);
-
-            return response;
-        }
-
-        internal StreamingMessage ProcessFunctionMetadataRequest(StreamingMessage request)
-        {
-            //_ = FunctionLoader.ParseFunctions(request.FunctionsMetadataRequest.FunctionAppDirectory);
-
-            StreamingMessage response = NewStreamingMessageTemplate(
-                request.RequestId,
-                StreamingMessage.ContentOneofCase.FunctionMetadataResponses,
-                out StatusResult status);
-
-            response.FunctionMetadataResponses.FunctionLoadRequestsResults.AddRange(WorkerIndexingHelper.FormatMetadata());
 
             return response;
         }

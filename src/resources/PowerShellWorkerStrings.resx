@@ -217,9 +217,6 @@
   <data name="BindingNameNotExist" xml:space="preserve">
     <value>The specified name '{0}' cannot be resolved to a valid output binding of this function.</value>
   </data>
-  <data name="InvalidBindingDirection" xml:space="preserve">
-    <value>The specified binding direction '{0}' cannot be resolved to a valid binding direction.</value>
-  </data>
   <data name="UnrecognizedBehavior" xml:space="preserve">
     <value>Unrecognized data collecting behavior '{0}'.</value>
   </data>

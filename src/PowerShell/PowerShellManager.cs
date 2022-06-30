@@ -205,6 +205,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             var outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
 
+            //TODO: This absolutely sucks and will not stay this way
+            _pwsh.AddScript("using module 'C:\\Users\\t-anstaples\\source\\powershell\\apat2\\azure-functions.psm1'");
+            _pwsh.InvokeAndClearCommands();
+
             var durableController = new DurableController(functionInfo.DurableFunctionInfo, _pwsh);
 
             try
