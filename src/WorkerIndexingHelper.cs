@@ -110,7 +110,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 return;
             }
 
-            var functionAttribute = paramBlock.Attributes.Where(x => x.TypeName.ToString() == "Function" && x.PositionalArguments.Count > 0);
+            var functionAttribute = paramBlock.Attributes.Where(x => x.TypeName.Name == "Function" && x.PositionalArguments.Count > 0);
             if (functionAttribute.Any())
             {
                 thisFunction.Name = functionAttribute.First().PositionalArguments[0].ToString();
@@ -157,7 +157,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                             {
                                 bindingMethods = new List<string>() { "GET", "POST" };
                             }
-                            bindingInfo.Direction = BindingInfo.Types.Direction.Out;
+                            bindingInfo.Direction = BindingInfo.Types.Direction.In;
                             bindingInfo.Type = "httpTrigger";
                             var rawHttpBinding = new
                             {
