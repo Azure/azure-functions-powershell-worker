@@ -128,7 +128,8 @@ function Resolve-ProtoBufToolPath
         $nugetPath = Get-NugetPackagesPath
         $toolsPath = "$RepoRoot/tools"
 
-        if (-not (Test-Path "$toolsPath/obj/project.assets.json")) {
+        if (-not (Test-Path "$toolsPath/obj/project.assets.json") -or
+            -not (Test-Path "$nugetPath/grpc.tools/$GrpcToolsVersion")) {
             dotnet restore $toolsPath --verbosity quiet
             if ($LASTEXITCODE -ne 0) {
                 throw "Cannot resolve protobuf tools. 'dotnet restore $toolsPath' failed."
