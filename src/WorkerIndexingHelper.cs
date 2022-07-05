@@ -19,13 +19,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     {
         internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string baseDir)
         {
-            List<string> powerShellFiles = GetPowerShellFiles(baseDir);
+            if (!Directory.Exists(baseDir))
+            {
+                throw new FileNotFoundException();
+            }
+            List<FileInfo> powerShellFiles = GetPowerShellFiles(Directory.CreateDirectory(baseDir));
             //this is only necessary until we fix the worker init crap
-            powerShellFiles = powerShellFiles.OrderBy(x => x.Split(Path.DirectorySeparatorChar).Count() - baseDir.Split(Path.DirectorySeparatorChar).Count() == 2 ? 0 : 1).ToList();
+            powerShellFiles = powerShellFiles.OrderBy(x => x.FullName.Split(Path.DirectorySeparatorChar).Count() - baseDir.Split(Path.DirectorySeparatorChar).Count() == 2 ? 0 : 1).ToList();
 
             List<RpcFunctionMetadata> rpcFunctionMetadatas = new List<RpcFunctionMetadata>();
             //rpcFunctionMetadatas.Add(CreateFirstFunction());
-            foreach (string powerShellFile in powerShellFiles)
+            foreach (FileInfo powerShellFile in powerShellFiles)
             {
                 rpcFunctionMetadatas.AddRange(IndexFunctionsInFile(powerShellFile));
             }
@@ -33,27 +37,27 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             return rpcFunctionMetadatas;
         }
 
-        private static IEnumerable<RpcFunctionMetadata> IndexFunctionsInFile(string powerShellFile)
+        private static IEnumerable<RpcFunctionMetadata> IndexFunctionsInFile(FileInfo powerShellFile)
         {
             List<RpcFunctionMetadata> fileFunctions = new List<RpcFunctionMetadata>();
-            var fileAst = Parser.ParseFile(powerShellFile, out _, out ParseError[] errors);
+            var fileAst = Parser.ParseFile(powerShellFile.FullName, out _, out ParseError[] errors);
             if (errors.Any())
             {
                 throw new Exception("Couldn't parse this file");
                 // TODO: Probably don't throw here?
                 //return fileFunctions;
             }
-            if (powerShellFile.EndsWith(".ps1")) 
+            if (powerShellFile.Extension == ".ps1") 
             {
                 // parse only the file param block, return one RpcFunctionMetadata assuming the file is the entry point
                 var paramAsts = fileAst.ParamBlock;
                 if (paramAsts != null && paramAsts.Attributes.Where(x => x.TypeName.ToString() == "Function").Any()) 
                 {
                     // This is a function, return it 
-                    fileFunctions.Add(CreateRpcMetadataFromFile(powerShellFile));
+                    fileFunctions.Add(CreateRpcMetadataFromFile(powerShellFile.FullName));
                 }
             }
-            else if (powerShellFile.EndsWith(".psm1"))
+            else if (powerShellFile.Extension == ".psm1")
             {
                 var potentialFunctions = fileAst.FindAll(x => x is FunctionDefinitionAst, false);
                 foreach (var potentialFunction in potentialFunctions)
@@ -61,7 +65,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     var matchingBlocks = potentialFunction.FindAll(x => x is ParamBlockAst && ((ParamBlockAst)x).Attributes.Where(z => z.TypeName.ToString() == "Function").Any(), true);
                     if (matchingBlocks.Any()) {
                         //This function is one we need to register
-                        fileFunctions.Add(CreateRpcMetadataFromFunctionAst(powerShellFile, (FunctionDefinitionAst)potentialFunction));
+                        fileFunctions.Add(CreateRpcMetadataFromFunctionAst(powerShellFile.FullName, (FunctionDefinitionAst)potentialFunction));
                     }
                 }
                 // parse all function definitions, return as many RpcFunctionMetadatas as exist in the file
@@ -111,9 +115,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
 
             var functionAttribute = paramBlock.Attributes.Where(x => x.TypeName.Name == "Function" && x.PositionalArguments.Count > 0);
-            if (functionAttribute.Any())
+            if (functionAttribute.Any() && functionAttribute.First().PositionalArguments[0].GetType() == typeof(StringConstantExpressionAst))
             {
-                thisFunction.Name = functionAttribute.First().PositionalArguments[0].ToString();
+                thisFunction.Name = ((StringConstantExpressionAst)functionAttribute.First().PositionalArguments[0]).Value;
             }
 
             List<Tuple<string, BindingInfo, string>> inputBindings = GetInputBindingInfo(paramBlock);
@@ -151,7 +155,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                         case "HttpTrigger":
                             bindingName = "Request";
                             //Todo: Named arguments?
-                            string bindingAuthLevel = attribute.PositionalArguments.Count > 0 ? attribute.PositionalArguments[0].ToString() : "anonymous";
+                            string bindingAuthLevel = GetPositionalArgumentStringValue(attribute, 0, "anonymous");
                             List<string> bindingMethods = attribute.PositionalArguments.Count > 1 ? ExtractOneOrMore(attribute.PositionalArguments[1]) : new List<string>() { "GET", "POST" };
                             if (bindingMethods == null)
                             {
@@ -173,11 +177,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                         case "TimerTrigger":
                             //Todo: Named arguments?
                             bindingName = "Timer";
-                            string chronExpression = attribute.PositionalArguments.Count > 0 ? attribute.PositionalArguments[0].ToString() : null;
+                            string chronExpression = GetPositionalArgumentStringValue(attribute, 0);
                             bindingInfo.Direction = BindingInfo.Types.Direction.Out;
                             bindingInfo.Type = "httpTrigger";
                             var rawTimerBinding = new
-    {
+                            {
                                 schedule = chronExpression,
                                 type = bindingInfo.Type,
                                 direction = "in",
@@ -192,6 +196,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 }
             }
             return outputBindingInfo;
+        }
+
+        private static string GetPositionalArgumentStringValue(AttributeAst attribute, int attributeIndex, string defaultValue = null)
+        {
+            return attribute.PositionalArguments.Count > attributeIndex 
+                   && attribute.PositionalArguments[attributeIndex].GetType() == typeof(StringConstantExpressionAst)
+                ? ((StringConstantExpressionAst)attribute.PositionalArguments[0]).Value : defaultValue;
         }
 
         private static IEnumerable<Tuple<string, BindingInfo, string>> CreateDefaultOutputBinding(MapField<string, BindingInfo> bindings)
@@ -263,18 +274,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
             return null;
         }
-        private static List<string> GetPowerShellFiles(string baseDir)
+        private static List<FileInfo> GetPowerShellFiles(DirectoryInfo baseDir, int depth=2)
         {
-            if (Directory.Exists(baseDir)) 
+            List<FileInfo> files = baseDir.GetFiles("*.ps1", SearchOption.TopDirectoryOnly).ToList();
+            files.AddRange(baseDir.GetFiles("*.psm1", SearchOption.TopDirectoryOnly).ToList());
+            if (depth > 0)
             {
-                var files = Directory.GetFiles(baseDir, "*.ps1", SearchOption.AllDirectories).ToList();
-                files.AddRange(Directory.GetFiles(baseDir, "*.psm1", SearchOption.AllDirectories).ToList());
-                return files;
+                foreach (DirectoryInfo d in baseDir.GetDirectories())
+                {
+                    //folders.Add(d);
+                    // if (MasterFolderCounter > maxFolders) 
+                    files.AddRange(GetPowerShellFiles(d, depth - 1));
+                }
             }
-            else
-            {
-                throw new FileNotFoundException();
-            }
+            return files;
         }
 
         private static RpcFunctionMetadata CreateSecondFunction()
