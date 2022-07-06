@@ -14,7 +14,9 @@ strategy:
       imageName: 'MMS2019TLS'
 
 pool:
-    vmImage: $(imageName)
+    name: '1ES-Hosted-AzFunc'
+    demands:
+      - ImageOverride -equals $(imageName)
 
 steps:
 - pwsh: |
