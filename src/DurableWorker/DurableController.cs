@@ -16,6 +16,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using WebJobs.Script.Grpc.Messages;
 
     using PowerShellWorker.Utility;
+    using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
 
     /// <summary>
     /// The main entry point for durable functions support.
