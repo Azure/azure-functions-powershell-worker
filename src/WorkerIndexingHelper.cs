@@ -179,7 +179,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                             bindingName = "Timer";
                             string chronExpression = GetPositionalArgumentStringValue(attribute, 0);
                             bindingInfo.Direction = BindingInfo.Types.Direction.Out;
-                            bindingInfo.Type = "httpTrigger";
+                            bindingInfo.Type = "timerTrigger";
                             var rawTimerBinding = new
                             {
                                 schedule = chronExpression,
@@ -188,6 +188,19 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                                 name = bindingName,
                             };
                             rawBindingString = JsonConvert.SerializeObject(rawTimerBinding);
+                            outputBindingInfo.Add(new Tuple<string, BindingInfo, string>(bindingName, bindingInfo, rawBindingString));
+                            break;
+                        case "EventGridTrigger":
+                            bindingName = parameter.Name.VariablePath.UserPath;
+                            bindingInfo.Direction = BindingInfo.Types.Direction.In;
+                            bindingInfo.Type = "eventGridTrigger";
+                            var rawEventGridBinding = new
+                            {
+                                type = bindingInfo.Type,
+                                direction = "in",
+                                name = bindingName
+                            };
+                            rawBindingString = JsonConvert.SerializeObject(rawEventGridBinding);
                             outputBindingInfo.Add(new Tuple<string, BindingInfo, string>(bindingName, bindingInfo, rawBindingString));
                             break;
                         default:
@@ -220,6 +233,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                         outputBindingInfo.Add(CreateHttpOutputBinding());
                         break;
                     case "timerTrigger":
+                        break;
+                    case "eventGridTrigger":
                         break;
                     default:
                         break;

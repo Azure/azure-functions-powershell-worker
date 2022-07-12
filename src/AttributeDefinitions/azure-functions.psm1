@@ -35,3 +35,8 @@ class TimerTrigger : Attribute {
         $this.chron = $chron
     }
 }
+
+class EventGridTrigger : Attribute { 
+    EventGridTrigger() {
+    }
+}
