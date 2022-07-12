@@ -15,7 +15,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
-    using Durable;
+    using DurableWorker;
 
     /// <summary>
     /// This type represents the metadata of an Azure PowerShell Function.
