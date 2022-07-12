@@ -12,13 +12,13 @@ $DotnetSDKVersionRequirements = @{
 
     # .NET SDK 3.1 is required by the Microsoft.ManifestTool.dll tool
     '3.1' = @{
-        MinimalPatch = '416'
-        DefaultPatch = '416'
+        MinimalPatch = '419'
+        DefaultPatch = '419'
     }
 
     '6.0' = @{
-        MinimalPatch = '101'
-        DefaultPatch = '101'
+        MinimalPatch = '300'
+        DefaultPatch = '300'
     }
 }
 
@@ -119,7 +119,8 @@ function Resolve-ProtoBufToolPath
         $nugetPath = Get-NugetPackagesPath
         $toolsPath = "$RepoRoot/tools"
 
-        if (-not (Test-Path "$toolsPath/obj/project.assets.json")) {
+        if (-not (Test-Path "$toolsPath/obj/project.assets.json") -or
+            -not (Test-Path "$nugetPath/grpc.tools/$GrpcToolsVersion")) {
             dotnet restore $toolsPath --verbosity quiet
             if ($LASTEXITCODE -ne 0) {
                 throw "Cannot resolve protobuf tools. 'dotnet restore $toolsPath' failed."
@@ -162,19 +163,6 @@ function Resolve-ProtoBufToolPath
 
         $Script:protobuf_dir_Path = "$RepoRoot/protobuf/src/proto"
     }
-}
-
-function Get-WebFile {
-    param (
-        [string] $Url,
-        [string] $OutFile
-    )
-    $directoryName = [System.IO.Path]::GetDirectoryName($OutFile)
-    if (!(Test-Path $directoryName)) {
-        New-Item -Type Directory $directoryName
-    }
-    Remove-Item $OutFile -ErrorAction SilentlyContinue
-    Invoke-RestMethod $Url -OutFile $OutFile
 }
 
 function Write-Log

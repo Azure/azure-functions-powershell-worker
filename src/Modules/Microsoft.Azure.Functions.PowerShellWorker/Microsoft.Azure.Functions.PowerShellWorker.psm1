@@ -80,6 +80,8 @@ function Get-DurableStatus {
     The input value that will be passed to the orchestration Azure Function.
 .PARAMETER DurableClient
     The orchestration client object.
+.PARAMETER InstanceId
+    The InstanceId for the new orchestration.
 #>
 function Start-DurableOrchestration {
     [CmdletBinding()]
@@ -111,7 +113,6 @@ function Start-DurableOrchestration {
         $DurableClient = GetDurableClientFromModulePrivateData
     }
 
-    # TODO: Port this change to the External SDK
     if (-not $InstanceId) {
         $InstanceId = (New-Guid).Guid
     }
