@@ -12,6 +12,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
     using System.Net.Http;
     using Newtonsoft.Json;
+    using System.Text;
 
     [Collection(Constants.FunctionAppCollectionName)]
     public class DurableEndToEndTests
@@ -136,6 +137,172 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                             var statusResponseBody = await GetResponseBodyAsync(statusResponse);
                             Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
                             Assert.Equal("Hello Tokyo", statusResponseBody.output[0].ToString());
+                            return;
+                        }
+
+                        default:
+                            Assert.True(false, $"Unexpected orchestration status code: {statusResponse.StatusCode}");
+                            break;
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task OrchestratationContextHasAllExpectedProperties()
+        {
+            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClientOrchContextProperties", queryString: string.Empty);
+            Assert.Equal(HttpStatusCode.Accepted, initialResponse.StatusCode);
+
+            var initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+            dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
+            var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
+
+            var startTime = DateTime.UtcNow;
+
+            using (var httpClient = new HttpClient())
+            {
+                while (true)
+                {
+                    var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
+                    switch (statusResponse.StatusCode)
+                    {
+                        case HttpStatusCode.Accepted:
+                            {
+                                var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                                var runtimeStatus = (string)statusResponseBody.runtimeStatus;
+                                Assert.True(
+                                    runtimeStatus == "Running" || runtimeStatus == "Pending",
+                                    $"Unexpected runtime status: {runtimeStatus}");
+
+                                if (DateTime.UtcNow > startTime + _orchestrationCompletionTimeout)
+                                {
+                                    Assert.True(false, $"The orchestration has not completed after {_orchestrationCompletionTimeout}");
+                                }
+
+                                await Task.Delay(TimeSpan.FromSeconds(2));
+                                break;
+                            }
+
+                        case HttpStatusCode.OK:
+                            {
+                                var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                                Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
+                                Assert.Equal("True", statusResponseBody.output[0].ToString());
+                                Assert.Equal("Hello myInstanceId", statusResponseBody.output[1].ToString());
+                                Assert.Equal("False", statusResponseBody.output[2].ToString());
+                                return;
+                            }
+
+                        default:
+                            Assert.True(false, $"Unexpected orchestration status code: {statusResponse.StatusCode}");
+                            break;
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task ExternalEventReturnsData()
+        {
+            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClient", queryString: "?FunctionName=DurableOrchestratorRaiseEvent");
+            Assert.Equal(HttpStatusCode.Accepted, initialResponse.StatusCode);
+
+            var initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+            dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
+            var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
+            var raiseEventUri = (string)initialResponseBodyObject.sendEventPostUri;
+
+            raiseEventUri = raiseEventUri.Replace("{eventName}", "TESTEVENTNAME");
+
+            var startTime = DateTime.UtcNow;
+
+            using (var httpClient = new HttpClient())
+            {
+                while (true)
+                {
+                    // Send external event payload
+                    var json = JsonConvert.SerializeObject("helloWorld!");
+                    var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
+                    await httpClient.PostAsync(raiseEventUri, httpContent);
+
+                    var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
+                    switch (statusResponse.StatusCode)
+                    {
+                        case HttpStatusCode.Accepted:
+                            {
+                                var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                                var runtimeStatus = (string)statusResponseBody.runtimeStatus;
+                                Assert.True(
+                                    runtimeStatus == "Running" || runtimeStatus == "Pending",
+                                    $"Unexpected runtime status: {runtimeStatus}");
+
+                                if (DateTime.UtcNow > startTime + _orchestrationCompletionTimeout)
+                                {
+                                    Assert.True(false, $"The orchestration has not completed after {_orchestrationCompletionTimeout}");
+                                }
+
+                                await Task.Delay(TimeSpan.FromSeconds(2));
+                                break;
+                            }
+
+                        case HttpStatusCode.OK:
+                            {
+                                var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                                Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
+                                Assert.Equal("helloWorld!", statusResponseBody.output.ToString());
+                                return;
+                            }
+
+                        default:
+                            Assert.True(false, $"Unexpected orchestration status code: {statusResponse.StatusCode}");
+                            break;
+                    }
+                }
+            }
+        }
+
+        [Fact]
+        public async Task OrchestratationCanAlwaysObtainTaskResult()
+        {
+            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClient", queryString: "?FunctionName=DurableOrchestratorGetTaskResult");
+            Assert.Equal(HttpStatusCode.Accepted, initialResponse.StatusCode);
+
+            var initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+            dynamic initialResponseBodyObject = JsonConvert.DeserializeObject(initialResponseBody);
+            var statusQueryGetUri = (string)initialResponseBodyObject.statusQueryGetUri;
+
+            var startTime = DateTime.UtcNow;
+
+            using (var httpClient = new HttpClient())
+            {
+                while (true)
+                {
+                    var statusResponse = await httpClient.GetAsync(statusQueryGetUri);
+                    switch (statusResponse.StatusCode)
+                    {
+                        case HttpStatusCode.Accepted:
+                        {
+                            var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                            var runtimeStatus = (string)statusResponseBody.runtimeStatus;
+                            Assert.True(
+                                runtimeStatus == "Running" || runtimeStatus == "Pending",
+                                $"Unexpected runtime status: {runtimeStatus}");
+
+                            if (DateTime.UtcNow > startTime + _orchestrationCompletionTimeout)
+                            {
+                                Assert.True(false, $"The orchestration has not completed after {_orchestrationCompletionTimeout}");
+                            }
+
+                            await Task.Delay(TimeSpan.FromSeconds(2));
+                            break;
+                        }
+
+                        case HttpStatusCode.OK:
+                        {
+                            var statusResponseBody = await GetResponseBodyAsync(statusResponse);
+                            Assert.Equal("Completed", (string)statusResponseBody.runtimeStatus);
+                            Assert.Equal("Hello world", statusResponseBody.output.ToString());
                             return;
                         }
 

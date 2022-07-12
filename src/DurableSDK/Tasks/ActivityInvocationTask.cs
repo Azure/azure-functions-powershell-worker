@@ -38,15 +38,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
         {
         }
 
-        internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context)
+        internal override HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context, bool processed)
         {
             return context.History.FirstOrDefault(
                 e => e.EventType == HistoryEventType.TaskScheduled &&
                      e.Name == FunctionName &&
-                     !e.IsProcessed);
+                     e.IsProcessed == processed);
         }
 
-        internal override HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent scheduledHistoryEvent)
+        internal override HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent scheduledHistoryEvent, bool processed)
         {
             return scheduledHistoryEvent == null
                 ? null

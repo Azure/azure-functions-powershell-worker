@@ -1,1 +1,0 @@
-* New feature: The `Get-TaskResult` CmdLet can now be used to get the result of already completed DF Tasks! Thanks @oobegreg for your contribution!

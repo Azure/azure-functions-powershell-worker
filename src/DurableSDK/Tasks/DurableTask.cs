@@ -11,9 +11,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
 
     public abstract class DurableTask
     {
-        internal abstract HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context);
+        internal abstract HistoryEvent GetScheduledHistoryEvent(OrchestrationContext context, bool processed = false);
 
-        internal abstract HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent scheduledHistoryEvent);
+        internal abstract HistoryEvent GetCompletedHistoryEvent(OrchestrationContext context, HistoryEvent scheduledHistoryEvent, bool processed = false);
 
         internal abstract OrchestrationAction CreateOrchestrationAction();
     }
