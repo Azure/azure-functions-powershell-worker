@@ -11,58 +11,98 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Linq;
     using System.Management.Automation;
 
-    using PowerShellWorker.Utility;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
 
     internal class OrchestrationInvoker : IOrchestrationInvoker
     {
-        public Hashtable Invoke(OrchestrationBindingInfo orchestrationBindingInfo, IPowerShellServices pwsh)
+        private IExternalInvoker _externalInvoker;
+        internal static string isOrchestrationFailureKey = "IsOrchestrationFailure";
+
+        public Hashtable Invoke(
+            OrchestrationBindingInfo orchestrationBindingInfo,
+            IPowerShellServices powerShellServices)
         {
             try
             {
-                var outputBuffer = new PSDataCollection<object>();
-                var context = orchestrationBindingInfo.Context;
-
-                // context.History should never be null when initializing CurrentUtcDateTime
-                var orchestrationStart = context.History.First(
-                    e => e.EventType == HistoryEventType.OrchestratorStarted);
-                context.CurrentUtcDateTime = orchestrationStart.Timestamp.ToUniversalTime();
-
-                // Marks the first OrchestratorStarted event as processed
-                orchestrationStart.IsProcessed = true;
-                
-                var asyncResult = pwsh.BeginInvoke(outputBuffer);
-
-                var (shouldStop, actions) =
-                    orchestrationBindingInfo.Context.OrchestrationActionCollector.WaitForActions(asyncResult.AsyncWaitHandle);
-
-                if (shouldStop)
+                if (powerShellServices.UseExternalDurableSDK())
                 {
-                    // The orchestration function should be stopped and restarted
-                    pwsh.StopInvoke();
-                    return CreateOrchestrationResult(isDone: false, actions, output: null, context.CustomStatus);
+                    return InvokeExternalDurableSDK(powerShellServices);
                 }
-                else
-                {
-                    try
-                    {
-                        // The orchestration function completed
-                        pwsh.EndInvoke(asyncResult);
-                        var result = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(outputBuffer);
-                        return CreateOrchestrationResult(isDone: true, actions, output: result, context.CustomStatus);
-                    }
-                    catch (Exception e)
-                    {
-                        // The orchestrator code has thrown an unhandled exception:
-                        // this should be treated as an entire orchestration failure
-                        throw new OrchestrationFailureException(actions, context.CustomStatus, e);
-                    }
-                }
+                return InvokeInternalDurableSDK(orchestrationBindingInfo, powerShellServices);
+            }
+            catch (Exception ex)
+            {
+                ex.Data.Add(isOrchestrationFailureKey, true);
+                throw;
             }
             finally
             {
-                pwsh.ClearStreamsAndCommands();
+                powerShellServices.ClearStreamsAndCommands();
             }
+        }
+
+        public Hashtable InvokeExternalDurableSDK(IPowerShellServices powerShellServices)
+        {
+            return _externalInvoker.Invoke(powerShellServices);
+        }
+
+        public Hashtable InvokeInternalDurableSDK(
+            OrchestrationBindingInfo orchestrationBindingInfo,
+            IPowerShellServices powerShellServices)
+        {
+            var outputBuffer = new PSDataCollection<object>();
+            var context = orchestrationBindingInfo.Context;
+
+            // context.History should never be null when initializing CurrentUtcDateTime
+            var orchestrationStart = context.History.First(
+                e => e.EventType == HistoryEventType.OrchestratorStarted);
+            context.CurrentUtcDateTime = orchestrationStart.Timestamp.ToUniversalTime();
+
+            // Marks the first OrchestratorStarted event as processed
+            orchestrationStart.IsProcessed = true;
+
+            // Finish initializing the Function invocation
+            powerShellServices.AddParameter(orchestrationBindingInfo.ParameterName, context);
+            powerShellServices.TracePipelineObject();
+
+            var asyncResult = powerShellServices.BeginInvoke(outputBuffer);
+
+            var (shouldStop, actions) =
+                orchestrationBindingInfo.Context.OrchestrationActionCollector.WaitForActions(asyncResult.AsyncWaitHandle);
+
+            if (shouldStop)
+            {
+                // The orchestration function should be stopped and restarted
+                powerShellServices.StopInvoke();
+                // return (Hashtable)orchestrationBindingInfo.Context.OrchestrationActionCollector.output;
+                return CreateOrchestrationResult(isDone: false, actions, output: null, context.CustomStatus);
+            }
+            else
+            {
+                try
+                {
+                    // The orchestration function completed
+                    powerShellServices.EndInvoke(asyncResult);
+                    var result = CreateReturnValueFromFunctionOutput(outputBuffer);
+                    return CreateOrchestrationResult(isDone: true, actions, output: result, context.CustomStatus);
+                }
+                catch (Exception e)
+                {
+                    // The orchestrator code has thrown an unhandled exception:
+                    // this should be treated as an entire orchestration failure
+                    throw new OrchestrationFailureException(actions, context.CustomStatus, e);
+                }
+            }
+        }
+
+        public static object CreateReturnValueFromFunctionOutput(IList<object> pipelineItems)
+        {
+            if (pipelineItems == null || pipelineItems.Count <= 0)
+            {
+                return null;
+            }
+
+            return pipelineItems.Count == 1 ? pipelineItems[0] : pipelineItems.ToArray();
         }
 
         private static Hashtable CreateOrchestrationResult(
@@ -72,7 +112,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             object customStatus)
         {
             var orchestrationMessage = new OrchestrationMessage(isDone, actions, output, customStatus);
-            return new Hashtable { { AzFunctionInfo.DollarReturn, orchestrationMessage } };
+            return new Hashtable { { "$return", orchestrationMessage } };
+        }
+
+        public void SetExternalInvoker(IExternalInvoker externalInvoker)
+        {
+            _externalInvoker = externalInvoker;
         }
     }
 }
