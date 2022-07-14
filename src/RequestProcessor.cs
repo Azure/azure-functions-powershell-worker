@@ -18,6 +18,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
+    using Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing;
     using System.Diagnostics;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
