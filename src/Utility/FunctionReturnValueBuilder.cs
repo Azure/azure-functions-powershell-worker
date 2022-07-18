@@ -16,7 +16,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             {
                 return null;
             }
-
             return pipelineItems.Count == 1 ? pipelineItems[0] : pipelineItems.ToArray();
         }
     }

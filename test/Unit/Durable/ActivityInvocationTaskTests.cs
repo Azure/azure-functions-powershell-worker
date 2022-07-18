@@ -163,6 +163,59 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Equal(FunctionName, allOutput.Single().FunctionName);
         }
 
+        [Fact]
+        public void ValidateTask_Throws_WhenActivityFunctionDoesNotExist()
+        {
+            var history = CreateHistory(scheduled: false, completed: false, failed: false, output: InvocationResultJson);
+            var orchestrationContext = new OrchestrationContext { History = history };
+
+            var loadedFunctions = new[]
+            {
+                DurableTestUtilities.CreateFakeAzFunctionInfo(FunctionName, "fakeTriggerBindingName", ActivityTriggerBindingType, BindingInfo.Types.Direction.In)
+            };
+
+            const string wrongFunctionName = "AnotherFunction";
+
+            var durableTaskHandler = new DurableTaskHandler();
+
+            var exception =
+                Assert.Throws<InvalidOperationException>(
+                    () => ActivityInvocationTask.ValidateTask(
+                                new ActivityInvocationTask(wrongFunctionName, FunctionInput), loadedFunctions));
+
+            Assert.Contains(wrongFunctionName, exception.Message);
+            Assert.DoesNotContain(ActivityTriggerBindingType, exception.Message);
+
+            DurableTestUtilities.VerifyNoActionAdded(orchestrationContext);
+        }
+
+        [Theory]
+        [InlineData("IncorrectBindingType", BindingInfo.Types.Direction.In)]
+        [InlineData(ActivityTriggerBindingType, BindingInfo.Types.Direction.Out)]
+        public void ValidateTask_Throws_WhenActivityFunctionHasNoProperBinding(
+            string bindingType, BindingInfo.Types.Direction bindingDirection)
+        {
+            var history = CreateHistory(scheduled: false, completed: false, failed: false, output: InvocationResultJson);
+            var orchestrationContext = new OrchestrationContext { History = history };
+
+            var loadedFunctions = new[]
+            {
+                DurableTestUtilities.CreateFakeAzFunctionInfo(FunctionName, "fakeTriggerBindingName", bindingType, bindingDirection)
+            };
+
+            var durableTaskHandler = new DurableTaskHandler();
+
+            var exception =
+                Assert.Throws<InvalidOperationException>(
+                    () => ActivityInvocationTask.ValidateTask(
+                                new ActivityInvocationTask(FunctionName, FunctionInput), loadedFunctions));
+
+            Assert.Contains(FunctionName, exception.Message);
+            Assert.Contains(ActivityTriggerBindingType, exception.Message);
+
+            DurableTestUtilities.VerifyNoActionAdded(orchestrationContext);
+        }
+
         [Theory]
         [InlineData(false)]
         [InlineData(true)]

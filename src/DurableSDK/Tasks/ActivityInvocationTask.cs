@@ -11,7 +11,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
     using System.Linq;
     using System.Collections.Generic;
 
-    using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+    using WebJobs.Script.Grpc.Messages;
 
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
