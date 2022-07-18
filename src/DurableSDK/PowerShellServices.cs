@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Collections.ObjectModel;
     using System.Linq;
     using System.Management.Automation;
+    using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
     using Microsoft.Azure.Functions.PowerShellWorker.Utility;
     using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
     using Newtonsoft.Json;

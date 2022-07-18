@@ -11,7 +11,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Threading;
 
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
-    using Newtonsoft.Json;
 
     internal class OrchestrationActionCollector
     {

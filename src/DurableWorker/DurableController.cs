@@ -63,7 +63,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                         .Data.ToObject();
 
                 _powerShellServices.SetDurableClient(durableClient);
-
             }
             else if (_durableFunctionInfo.IsOrchestrationFunction)
             {

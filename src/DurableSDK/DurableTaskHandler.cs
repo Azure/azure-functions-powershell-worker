@@ -6,12 +6,10 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 {
     using System;
-    using System.Collections;
     using System.Collections.Generic;
-    using System.Management.Automation;
     using System.Threading;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks;
-    using Microsoft.PowerShell.Commands;
+    using Utility;
 
     internal class DurableTaskHandler
     {
@@ -85,7 +83,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                                         retryOptions.MaxNumberOfAttempts,
                                         onSuccess:
                                             result => {
-                                                output(ConvertFromJson(result));
+                                                output(TypeExtensions.ConvertFromJson(result));
                                             },
                                         onFailure);
                                         
@@ -234,39 +232,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             
             if (historyEvent.EventType == HistoryEventType.TaskCompleted)
             {
-                return ConvertFromJson(historyEvent.Result);
+                return TypeExtensions.ConvertFromJson(historyEvent.Result);
             }
             else if (historyEvent.EventType == HistoryEventType.EventRaised)
             {
-                return ConvertFromJson(historyEvent.Input);
+                return TypeExtensions.ConvertFromJson(historyEvent.Input);
             }
             return null;
-        }
-
-        public static object ConvertFromJson(string json)
-        {
-            object retObj = JsonObject.ConvertFromJson(json, returnHashtable: true, error: out _);
-
-            if (retObj is PSObject psObj)
-            {
-                retObj = psObj.BaseObject;
-            }
-
-            if (retObj is Hashtable hashtable)
-            {
-                try
-                {
-                    // ConvertFromJson returns case-sensitive Hashtable by design -- JSON may contain keys that only differ in case.
-                    // We try casting the Hashtable to a case-insensitive one, but if that fails, we keep using the original one.
-                    retObj = new Hashtable(hashtable, StringComparer.OrdinalIgnoreCase);
-                }
-                catch
-                {
-                    retObj = hashtable;
-                }
-            }
-
-            return retObj;
         }
 
         private void InitiateAndWaitForStop(OrchestrationContext context)

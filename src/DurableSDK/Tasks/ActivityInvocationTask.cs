@@ -8,12 +8,14 @@
 namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
 {
     using System;
-    using System.Collections.Generic;
     using System.Linq;
+    using System.Collections.Generic;
+
+    using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
     using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
-    using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
     public class ActivityInvocationTask : DurableTask
     {
@@ -59,7 +61,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
                 ? new CallActivityAction(FunctionName, Input)
                 : new CallActivityWithRetryAction(FunctionName, Input, RetryOptions);
         }
-
 
         internal static void ValidateTask(ActivityInvocationTask task, IEnumerable<AzFunctionInfo> loadedFunctions)
         {
