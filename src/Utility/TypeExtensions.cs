@@ -142,7 +142,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         private static string ConvertToJson(object fromObj)
         {
             var context = new JsonObject.ConvertToJsonContext(
-                maxDepth: 10, //TODO: fix
+                maxDepth: 50,
                 enumsAsStrings: false,
                 compressOutput: true);
 
