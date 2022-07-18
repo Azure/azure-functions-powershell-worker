@@ -112,7 +112,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             object customStatus)
         {
             var orchestrationMessage = new OrchestrationMessage(isDone, actions, output, customStatus);
-            return new Hashtable { { "$return", orchestrationMessage } };
+            return new Hashtable { { AzFunctionInfo.DollarReturn, orchestrationMessage } };
         }
 
         public void SetExternalInvoker(IExternalOrchestrationInvoker externalInvoker)

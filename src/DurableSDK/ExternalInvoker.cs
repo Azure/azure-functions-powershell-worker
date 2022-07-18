@@ -10,7 +10,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Management.Automation;
 
 
-    // Contract for the orchestration invoker in external the Durable Functions SDK
+    // Contract for the orchestration invoker in the external Durable Functions SDK
     internal class ExternalInvoker : IExternalOrchestrationInvoker
     {
         private readonly Func<PowerShell, object> _externalSDKInvokerFunction;

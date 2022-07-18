@@ -20,15 +20,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private const string InternalDurableSDKName = "Microsoft.Azure.Functions.PowerShellWorker";
 
         private readonly PowerShell _pwsh;
-        private bool _hasInitializedDurableFunction = false;
-        private readonly bool _useExternalDurableSDK = false;
+        private bool hasInitializedDurableFunctions = false;
+        private readonly bool hasExternalDurableSDK = false;
 
         public PowerShellServices(PowerShell pwsh)
         {
-            //This logic will be commented out until the external SDK is published on the PS Gallery
-
             // We attempt to import the external SDK upon construction of the PowerShellServices object.
-            // We maintain the boolean member _useExternalDurableSDK in this object rather than
+            // We maintain the boolean member hasExternalDurableSDK in this object rather than
             // DurableController because the expected input and functionality of SetFunctionInvocationContextCommand
             // may differ between the internal and external implementations.
 
@@ -38,7 +36,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     .AddParameter("Name", ExternalDurableSDKName)
                     .AddParameter("ErrorAction", ActionPreference.Stop)
                     .InvokeAndClearCommands();
-                _useExternalDurableSDK = true;
+                hasExternalDurableSDK = true;
             }
             catch (Exception e)
             {
@@ -55,11 +53,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     // Ideally, this should never happen.
                     throw new InvalidOperationException("The external Durable SDK was detected, but unable to be imported.", e);
                 }
-                _useExternalDurableSDK = false;
+                hasExternalDurableSDK = false;
             }
-            //_useExternalDurableSDK = false;
 
-            if (_useExternalDurableSDK)
+            if (hasExternalDurableSDK)
             {
                 SetFunctionInvocationContextCommand = $"{ExternalDurableSDKName}\\Set-FunctionInvocationContext";
             }
@@ -72,7 +69,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public bool HasExternalDurableSDK()
         {
-            return _useExternalDurableSDK;
+            return hasExternalDurableSDK;
         }
 
         public PowerShell GetPowerShell()
@@ -85,7 +82,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                 .AddParameter("DurableClient", durableClient)
                 .InvokeAndClearCommands();
-            _hasInitializedDurableFunction = true;
+            hasInitializedDurableFunctions = true;
         }
 
         public OrchestrationBindingInfo SetOrchestrationContext(
@@ -97,14 +94,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 context.Name,
                 JsonConvert.DeserializeObject<OrchestrationContext>(context.Data.String));
 
-            if (_useExternalDurableSDK)
+            if (hasExternalDurableSDK)
             {
                 Collection<Func<PowerShell, object>> output = _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                     // The external SetFunctionInvocationContextCommand expects a .json string to deserialize
                     // and writes an invoker function to the output pipeline.
                     .AddParameter("OrchestrationContext", context.Data.String)
                     .InvokeAndClearCommands<Func<PowerShell, object>>();
-                if (output.Count() == 1)
+
+                // If more than 1 element is present in the output pipeline, we cannot trust that we have
+                // obtained the external orchestrator invoker; i.e the output contract is not met.
+                var outputContractIsMet = output.Count() == 1;
+                if (outputContractIsMet)
                 {
                     externalInvoker = new ExternalInvoker(output[0]);
                 }
@@ -119,7 +120,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     .AddParameter("OrchestrationContext", orchestrationBindingInfo.Context)
                     .InvokeAndClearCommands();
             }
-            _hasInitializedDurableFunction = true;
+            hasInitializedDurableFunctions = true;
             return orchestrationBindingInfo;
         }
         
@@ -131,7 +132,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void ClearOrchestrationContext()
         {
-            if (_hasInitializedDurableFunction)
+            if (hasInitializedDurableFunctions)
             {
                 _pwsh.AddCommand(SetFunctionInvocationContextCommand)
                     .AddParameter("Clear", true)
