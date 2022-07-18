@@ -13,11 +13,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     {
         PowerShell GetPowerShell();
 
-        bool UseExternalDurableSDK();
+        bool HasExternalDurableSDK();
 
         void SetDurableClient(object durableClient);
 
-        OrchestrationBindingInfo SetOrchestrationContext(ParameterBinding context, out IExternalInvoker externalInvoker);
+        OrchestrationBindingInfo SetOrchestrationContext(ParameterBinding context, out IExternalOrchestrationInvoker externalInvoker);
 
         void ClearOrchestrationContext();
 

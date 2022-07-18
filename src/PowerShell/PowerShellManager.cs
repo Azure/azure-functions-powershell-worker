@@ -263,7 +263,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private void SetInputBindingParameterValues(
             AzFunctionInfo functionInfo,
             IEnumerable<ParameterBinding> inputData,
-            string orchParamName,
+            string orchestratorParameter,
             Hashtable triggerMetadata,
             TraceContext traceContext,
             RetryContext retryContext)
@@ -272,7 +272,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 if (functionInfo.FuncParameters.TryGetValue(binding.Name, out var paramInfo))
                 {
-                    if (string.CompareOrdinal(binding.Name, orchParamName) != 0)
+                    if (string.CompareOrdinal(binding.Name, orchestratorParameter) != 0)
                     {
                         var bindingInfo = functionInfo.InputBindings[binding.Name];
                         var valueToUse = Utils.TransformInBindingValueAsNeeded(paramInfo, bindingInfo, binding.Data.ToObject());

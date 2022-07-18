@@ -60,16 +60,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             };
             
             _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(It.IsAny<ParameterBinding>(),
-                out It.Ref<IExternalInvoker>.IsAny))
+                out It.Ref<IExternalOrchestrationInvoker>.IsAny))
             .Returns(_orchestrationBindingInfo);
-            _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalInvoker>()));
+            _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
 
             durableController.InitializeBindings(inputData);
 
             _mockPowerShellServices.Verify(
                 _ => _.SetOrchestrationContext(
                     It.Is<ParameterBinding>(c => c.Data.ToString().Contains(_orchestrationContext.InstanceId)),
-                        out It.Ref<IExternalInvoker>.IsAny),
+                        out It.Ref<IExternalOrchestrationInvoker>.IsAny),
                 Times.Once);
         }
 
@@ -121,9 +121,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             };
             _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
                 It.IsAny<ParameterBinding>(),
-                out It.Ref<IExternalInvoker>.IsAny))
+                out It.Ref<IExternalOrchestrationInvoker>.IsAny))
             .Returns(_orchestrationBindingInfo);
-            _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalInvoker>()));
+            _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
             durableController.InitializeBindings(inputData);
 
             Assert.True(durableController.TryGetInputBindingParameterValue(_contextParameterName, out var value));
@@ -143,9 +143,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
                 It.IsAny<ParameterBinding>(),
-                out It.Ref<IExternalInvoker>.IsAny))
+                out It.Ref<IExternalOrchestrationInvoker>.IsAny))
             .Returns(_orchestrationBindingInfo);
-            _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalInvoker>()));
+            _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
             durableController.InitializeBindings(inputData);
 
             Assert.False(durableController.TryGetInputBindingParameterValue(_contextParameterName, out var value));
@@ -160,9 +160,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
             _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
                 It.IsAny<ParameterBinding>(),
-                out It.Ref<IExternalInvoker>.IsAny))
+                out It.Ref<IExternalOrchestrationInvoker>.IsAny))
             .Returns(_orchestrationBindingInfo);
-            _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalInvoker>()));
+            _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
             durableController.InitializeBindings(inputData);
 
             var expectedResult = new Hashtable();

@@ -11,7 +11,7 @@ Set-Alias -Name Start-NewOrchestration -Value Start-DurableOrchestration
 
 function GetDurableClientFromModulePrivateData {
     $PrivateData = $PSCmdlet.MyInvocation.MyCommand.Module.PrivateData
-    if ($null -eq $PrivateData -or $null -eq $PrivateData['DurableClient']) {
+    if ($PrivateData -eq $null -or $PrivateData['DurableClient'] -eq $null) {
         throw "No binding of the type 'durableClient' was defined."
     }
     else {

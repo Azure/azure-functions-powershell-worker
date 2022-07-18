@@ -70,7 +70,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _pwsh = pwsh;
         }
 
-        public bool UseExternalDurableSDK()
+        public bool HasExternalDurableSDK()
         {
             return _useExternalDurableSDK;
         }
@@ -90,7 +90,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public OrchestrationBindingInfo SetOrchestrationContext(
             ParameterBinding context,
-            out IExternalInvoker externalInvoker)
+            out IExternalOrchestrationInvoker externalInvoker)
         {
             externalInvoker = null;
             OrchestrationBindingInfo orchestrationBindingInfo = new OrchestrationBindingInfo(

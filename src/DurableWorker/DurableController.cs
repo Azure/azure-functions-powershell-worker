@@ -69,7 +69,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 _orchestrationBindingInfo = _powerShellServices.SetOrchestrationContext(
                     inputData[0],
-                    out IExternalInvoker externalInvoker);
+                    out IExternalOrchestrationInvoker externalInvoker);
                 _orchestrationInvoker.SetExternalInvoker(externalInvoker);
             }
         }
