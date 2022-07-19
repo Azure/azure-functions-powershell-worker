@@ -3,7 +3,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using AzureFunctionsHelpers;
+using Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Newtonsoft.Json;
 using System;
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             System.Management.Automation.PowerShell ps = System.Management.Automation.PowerShell.Create();
             ps.Runspace = runspace;
             //ps.AddCommand("Import-Module").AddArgument("C:\\Program Files\\WindowsPowerShell\\Modules\\AzureFunctionsHelpers\\AzureFunctionsHelpers.dll").Invoke();
-            ps.AddCommand("Get-AzureFunctionsMetadata").AddArgument("C:\\Users\\t-anstaples\\source\\powershell\\apat2");
+            ps.AddCommand("Get-FunctionsMetadata").AddArgument("C:\\Users\\t-anstaples\\source\\powershell\\apat2");
             string outputString = string.Empty;
             foreach (PSObject rawMetadata in ps.Invoke())
             {
@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
                     throw new Exception("Multiple results from metadata cmdlet");
                 }
                 outputString = rawMetadata.ToString();
-                Console.WriteLine(rawMetadata.ToString());
+                //Console.WriteLine(rawMetadata.ToString());
             }
             ps.Commands.Clear();
 

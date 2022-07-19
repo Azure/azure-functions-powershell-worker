@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 
-namespace AzureFunctionsHelpers
+namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 {
     internal class BindingInformation
     {
@@ -24,6 +24,7 @@ namespace AzureFunctionsHelpers
         {
             string rawBinding = string.Empty;
             JObject rawBindingObject = new JObject();
+            rawBindingObject.Add("name", Name);
             BindingInfo outInfo = new BindingInfo();
 
 
@@ -32,9 +33,9 @@ namespace AzureFunctionsHelpers
                 throw new Exception("The bindingInfo's Direction is not valid");
             }
             outInfo.Direction = (BindingInfo.Types.Direction)Direction;
-            rawBindingObject.Add("Direction", Direction);
+            rawBindingObject.Add("direction", Enum.GetName(typeof(BindingInfo.Types.Direction), Direction).ToLower());
             outInfo.Type = Type;
-            rawBindingObject.Add("Type", Type);
+            rawBindingObject.Add("type", Type);
 
             foreach (KeyValuePair<string, Object> pair in otherInformation)
             {
