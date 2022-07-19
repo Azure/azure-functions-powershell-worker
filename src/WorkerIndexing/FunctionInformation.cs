@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AzureFunctionsHelpers
+namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 {
     internal class FunctionInformation
     {
@@ -24,6 +24,7 @@ namespace AzureFunctionsHelpers
             returnMetadata.EntryPoint = EntryPoint;
             returnMetadata.Name = Name;
             returnMetadata.ScriptFile = ScriptFile;
+            returnMetadata.Language = "powershell";
             foreach(BindingInformation binding in Bindings)
             {
                 string rawBinding = binding.ConvertToRpcRawBinding(out BindingInfo bindingInfo);
