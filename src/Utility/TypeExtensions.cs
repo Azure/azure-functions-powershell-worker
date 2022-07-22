@@ -141,6 +141,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
         private static string ConvertToJson(object fromObj)
         {
+            /* we set the max-depth to 50 because the Durable Functions Extension
+             * may produce deeply nested JSON-Objects when callig its
+             * WhenAll/WhenAny APIs. The value 50 is arbitrarily chosen to be
+             * "deep enough" for the vast majority of cases.
+             */
             var context = new JsonObject.ConvertToJsonContext(
                 maxDepth: 50,
                 enumsAsStrings: false,

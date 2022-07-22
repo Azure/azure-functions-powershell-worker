@@ -74,7 +74,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 // The orchestration function should be stopped and restarted
                 powerShellServices.StopInvoke();
-                // return (Hashtable)orchestrationBindingInfo.Context.OrchestrationActionCollector.output;
                 return CreateOrchestrationResult(isDone: false, actions, output: null, context.CustomStatus);
             }
             else

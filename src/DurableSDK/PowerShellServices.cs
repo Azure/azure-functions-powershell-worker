@@ -17,8 +17,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     internal class PowerShellServices : IPowerShellServices
     {
         private readonly string SetFunctionInvocationContextCommand;
-        private const string ExternalDurableSDKName = "DurableSDK";
-        private const string InternalDurableSDKName = "Microsoft.Azure.Functions.PowerShellWorker";
 
         private readonly PowerShell _pwsh;
         private bool hasInitializedDurableFunctions = false;
@@ -34,7 +32,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             try
             {
                 pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
-                    .AddParameter("Name", ExternalDurableSDKName)
+                    .AddParameter("Name", PowerShellWorkerStrings.ExternalDurableSDKName)
                     .AddParameter("ErrorAction", ActionPreference.Stop)
                     .InvokeAndClearCommands();
                 hasExternalDurableSDK = true;
@@ -46,26 +44,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 // the Import-Module statement and we should throw an Exception.
                 // Otherwise, we use the InternalDurableSDK
                 var availableModules = pwsh.AddCommand(Utils.GetModuleCmdletInfo)
-                    .AddParameter("Name", ExternalDurableSDKName)
+                    .AddParameter("Name", PowerShellWorkerStrings.ExternalDurableSDKName)
                     .InvokeAndClearCommands<PSModuleInfo>();
                 if (availableModules.Count() > 0)
                 {
-                    // TODO: evaluate if there is a better error message or exception type to be throwing.
-                    // Ideally, this should never happen.
-                    throw new InvalidOperationException("The external Durable SDK was detected, but unable to be imported.", e);
+                    var exceptionMessage = string.Format(PowerShellWorkerStrings.FailedToImportModule, PowerShellWorkerStrings.ExternalDurableSDKName, "");
+                    throw new InvalidOperationException(exceptionMessage, e);
                 }
                 hasExternalDurableSDK = false;
             }
 
-            if (hasExternalDurableSDK)
-            {
-                SetFunctionInvocationContextCommand = $"{ExternalDurableSDKName}\\Set-FunctionInvocationContext";
-            }
-            else
-            {
-                SetFunctionInvocationContextCommand = $"{InternalDurableSDKName}\\Set-FunctionInvocationContext";
-            }
-            _pwsh = pwsh;
+            var templatedSetFunctionInvocationContextCommand = "{0}\\Set-FunctionInvocationContext";
+            var prefix = hasExternalDurableSDK ? PowerShellWorkerStrings.ExternalDurableSDKName : PowerShellWorkerStrings.InternalDurableSDKName;
+            SetFunctionInvocationContextCommand = string.Format(templatedSetFunctionInvocationContextCommand, prefix);
+            
+                _pwsh = pwsh;
         }
 
         public bool HasExternalDurableSDK()
@@ -112,7 +105,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Only a single output was expected for an invocation of {SetFunctionInvocationContextCommand}");
+                    var exceptionMessage = string.Format(PowerShellWorkerStrings.UnexpectedOutputInExternalDurableCommand, SetFunctionInvocationContextCommand);
+                    throw new InvalidOperationException(exceptionMessage);
                 }
             }
             else
@@ -143,7 +137,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void TracePipelineObject()
         {
-            _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
+            _pwsh.AddCommand(PowerShellWorkerStrings.TracePipelineObjectCommand);
         }
 
         public IAsyncResult BeginInvoke(PSDataCollection<object> output)
