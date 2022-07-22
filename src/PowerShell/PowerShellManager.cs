@@ -209,7 +209,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             try
             {
-                durableFunctionsUtils.InitializeBindings(inputData);
+                durableFunctionsUtils.InitializeBindings(inputData, out bool hasExternalDFsdk);
+                Logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(PowerShellWorkerStrings.UtilizingExternalDurableSDK, hasExternalDFsdk));
 
                 AddEntryPointInvocationCommand(functionInfo);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.FunctionCodeReady);

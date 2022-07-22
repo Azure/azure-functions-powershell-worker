@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             return _orchestrationBindingInfo?.ParameterName;
         }
 
-        public void InitializeBindings(IList<ParameterBinding> inputData)
+        public void InitializeBindings(IList<ParameterBinding> inputData, out bool hasExternalSDK)
         {
             // If the function is an durable client, then we set the DurableClient
             // in the module context for the 'Start-DurableOrchestration' function to use.
@@ -71,6 +71,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     out IExternalOrchestrationInvoker externalInvoker);
                 _orchestrationInvoker.SetExternalInvoker(externalInvoker);
             }
+            hasExternalSDK = _powerShellServices.HasExternalDurableSDK();
         }
 
         public void AfterFunctionInvocation()

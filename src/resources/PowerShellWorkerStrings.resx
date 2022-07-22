@@ -367,4 +367,7 @@
   <data name="UnexpectedOutputInExternalDurableCommand" xml:space="preserve">
     <value>Only a single output was expected for an invocation of '{0}'.</value>
   </data>
+  <data name="UtilizingExternalDurableSDK" xml:space="preserve">
+    <value>Utilizing external Durable Functions SDK: '{0}'.</value>
+  </data>
 </root>
