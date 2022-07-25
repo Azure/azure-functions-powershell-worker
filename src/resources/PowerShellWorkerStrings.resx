@@ -370,4 +370,7 @@
   <data name="UtilizingExternalDurableSDK" xml:space="preserve">
     <value>Utilizing external Durable Functions SDK: '{0}'.</value>
   </data>
+  <data name="isOrchestrationFailureKey" xml:space="preserve">
+    <value>IsOrchestrationFailure</value>
+  </data>
 </root>
