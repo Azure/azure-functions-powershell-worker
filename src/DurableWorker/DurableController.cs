@@ -16,6 +16,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     using PowerShellWorker.Utility;
     using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
+    using System;
 
     /// <summary>
     /// The main entry point for durable functions support.
@@ -66,6 +67,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             else if (_durableFunctionInfo.IsOrchestrationFunction)
             {
+                var numBindings = inputData.Count;
+                if (numBindings != 1)
+                {
+                    /* Quote from https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings:
+                     *
+                     * "Orchestrator functions should never use any input or output bindings other than the orchestration trigger binding.
+                     *  Doing so has the potential to cause problems with the Durable Task extension because those bindings may not obey the single-threading and I/O rules."
+                     *
+                     * Therefore, it's by design that input data contains only one item, which is the metadata of the orchestration context.
+                     */
+                    var exceptionMessage = string.Format(PowerShellWorkerStrings.UnableToInitializeOrchestrator, numBindings);
+                    throw new InvalidOperationException();
+                }
+
                 _orchestrationBindingInfo = _powerShellServices.SetOrchestrationContext(
                     inputData[0],
                     out IExternalOrchestrationInvoker externalInvoker);

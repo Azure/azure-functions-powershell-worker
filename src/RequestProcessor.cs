@@ -500,7 +500,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             if (functionInfo.DurableFunctionInfo.ProvidesForcedDollarReturnValue)
             {
-                response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData();
+                response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData(isDurableData: true);
             }
         }
 

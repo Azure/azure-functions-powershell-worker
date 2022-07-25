@@ -139,15 +139,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             return retObj;
         }
 
-        private static string ConvertToJson(object fromObj)
+        private static string ConvertToJson(object fromObj, bool isDurableData)
         {
-            /* we set the max-depth to 50 because the Durable Functions Extension
-             * may produce deeply nested JSON-Objects when callig its
-             * WhenAll/WhenAny APIs. The value 50 is arbitrarily chosen to be
-             * "deep enough" for the vast majority of cases.
+            /* For Durable Functions, we set the max-depth to 100 because
+             * the Durable Functions Extension may produce deeply nested JSON-Objects
+             * when calling its WhenAll/WhenAny APIs. The value 100 is arbitrarily
+             * chosen to be "deep enough" for the vast majority of cases.
              */
             var context = new JsonObject.ConvertToJsonContext(
-                maxDepth: 50,
+                maxDepth: isDurableData ? 100 : 10,
                 enumsAsStrings: false,
                 compressOutput: true);
 
@@ -203,7 +203,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                                     : TextPlainMediaType);
         }
 
-        internal static TypedData ToTypedData(this object value)
+        internal static TypedData ToTypedData(this object value, bool isDurableData = false)
         {
             if (value is TypedData self)
             {
@@ -249,7 +249,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                     if (IsValidJson(str)) { typedData.Json = str; } else { typedData.String = str; }
                     break;
                 default:
-                    typedData.Json = ConvertToJson(originalValue);
+                    typedData.Json = ConvertToJson(originalValue, isDurableData);
                     break;
             }
             return typedData;

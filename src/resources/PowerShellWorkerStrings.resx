@@ -373,4 +373,7 @@
   <data name="isOrchestrationFailureKey" xml:space="preserve">
     <value>IsOrchestrationFailure</value>
   </data>
+  <data name="UnableToInitializeOrchestrator" xml:space="preserve">
+    <value>Unable to initialize orchestrator function due to presence of other bindings. Orchestrator Functions should never use any input or output bindings other than the orchestration trigger itself. See: https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings</value>
+  </data>
 </root>
