@@ -80,6 +80,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         {
             var durableController = CreateDurableController(DurableFunctionType.OrchestrationFunction);
             var inputData = new ParameterBinding[0];
+            _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(false);
 
             Assert.ThrowsAny<ArgumentException>(() => durableController.InitializeBindings(inputData, out bool hasExternalSDK));
         }
