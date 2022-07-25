@@ -41,6 +41,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             };
 
             _mockPowerShellServices.Setup(_ => _.SetDurableClient(It.IsAny<object>()));
+            _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK());
 
             durableController.InitializeBindings(inputData, out bool hasExternalSDK);
 
@@ -63,6 +64,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 out It.Ref<IExternalOrchestrationInvoker>.IsAny))
             .Returns(_orchestrationBindingInfo);
             _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
+            _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK());
 
             durableController.InitializeBindings(inputData, out bool hasExternalSDK);
 
@@ -123,6 +125,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 It.IsAny<ParameterBinding>(),
                 out It.Ref<IExternalOrchestrationInvoker>.IsAny))
             .Returns(_orchestrationBindingInfo);
+            _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK());
+
             _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
             durableController.InitializeBindings(inputData, out bool hasExternalSDK);
 
@@ -145,6 +149,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 It.IsAny<ParameterBinding>(),
                 out It.Ref<IExternalOrchestrationInvoker>.IsAny))
             .Returns(_orchestrationBindingInfo);
+            _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK());
+
             _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
             durableController.InitializeBindings(inputData, out bool hasExternalSDK);
 
@@ -162,7 +168,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 It.IsAny<ParameterBinding>(),
                 out It.Ref<IExternalOrchestrationInvoker>.IsAny))
             .Returns(_orchestrationBindingInfo);
+            _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK());
+
             _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
+
             durableController.InitializeBindings(inputData, out bool hasExternalSDK);
 
             var expectedResult = new Hashtable();
