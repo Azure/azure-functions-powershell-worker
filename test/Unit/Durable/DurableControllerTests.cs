@@ -95,6 +95,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 // Even if a parameter similar to orchestration context is passed:
                 CreateParameterBinding("ParameterName", _orchestrationContext)
             };
+            _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(false);
 
             durableController.InitializeBindings(inputData, out bool hasExternalSDK);
         }
