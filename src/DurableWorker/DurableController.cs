@@ -78,7 +78,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                      * Therefore, it's by design that input data contains only one item, which is the metadata of the orchestration context.
                      */
                     var exceptionMessage = string.Format(PowerShellWorkerStrings.UnableToInitializeOrchestrator, numBindings);
-                    throw new InvalidOperationException(exceptionMessage);
+                    throw new ArgumentException(exceptionMessage);
                 }
 
                 _orchestrationBindingInfo = _powerShellServices.SetOrchestrationContext(
