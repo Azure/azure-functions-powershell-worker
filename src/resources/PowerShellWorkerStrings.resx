@@ -374,6 +374,6 @@
     <value>IsOrchestrationFailure</value>
   </data>
   <data name="UnableToInitializeOrchestrator" xml:space="preserve">
-    <value>Unable to initialize orchestrator function due to presence of other bindings. Orchestrator Functions should never use any input or output bindings other than the orchestration trigger itself. See: https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings</value>
+    <value>Unable to initialize orchestrator function due to presence of other bindings. Total number of bindings found is '{0}'. Orchestrator Functions should never use any input or output bindings other than the orchestration trigger itself. See: https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings</value>
   </data>
 </root>
