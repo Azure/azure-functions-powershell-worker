@@ -16,7 +16,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     internal class OrchestrationInvoker : IOrchestrationInvoker
     {
         private IExternalOrchestrationInvoker externalInvoker;
-        internal static string isOrchestrationFailureKey = "IsOrchestrationFailure";
 
         public Hashtable Invoke(
             OrchestrationBindingInfo orchestrationBindingInfo,
@@ -32,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             catch (Exception ex)
             {
-                ex.Data.Add(isOrchestrationFailureKey, true);
+                ex.Data.Add(PowerShellWorkerStrings.isOrchestrationFailureKey, true);
                 throw;
             }
             finally
