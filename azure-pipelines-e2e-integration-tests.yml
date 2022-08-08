@@ -9,12 +9,14 @@ trigger: none
 strategy:
   matrix:
     linux:
-      imageName: 'ubuntu-latest'
+      imageName: 'MMSUbuntu20.04TLS'
     windows:
-      imageName: 'vs2017-win2016'
+      imageName: 'MMS2019TLS'
 
 pool:
-    vmImage: $(imageName)
+    name: '1ES-Hosted-AzFunc'
+    demands:
+      - ImageOverride -equals $(imageName)
 
 steps:
 - pwsh: ./test/E2E/Start-E2ETest.ps1 -UseCoreToolsBuildFromIntegrationTests
