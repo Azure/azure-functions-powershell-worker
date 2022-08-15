@@ -205,7 +205,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         {
             var outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
 
-            _pwsh.AddScript("using module AzureFunctionsSDK");
+            _pwsh.AddScript("using module AzureFunctions.PowerShell.SDK");
             _pwsh.InvokeAndClearCommands();
 
             var durableController = new DurableController(functionInfo.DurableFunctionInfo, _pwsh);

@@ -10,12 +10,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
     {
         public enum Directions
         {
+            Unknown = -1,
             In = 0,
             Out = 1, 
             Inout = 2
         }
 
-        public int Direction { get; set; } = -1;
+        public Directions Direction { get; set; } = Directions.Unknown;
         public string Type { get; set; } = "";
         public string Name { get; set; } = "";
         public Dictionary<string, Object> otherInformation { get; set; } = new Dictionary<string, Object>();
@@ -28,12 +29,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             BindingInfo outInfo = new BindingInfo();
 
 
-            if (!Enum.IsDefined(typeof(BindingInfo.Types.Direction), Direction))
+            if (Direction == Directions.Unknown)
             {
                 throw new Exception("The bindingInfo's Direction is not valid");
             }
             outInfo.Direction = (BindingInfo.Types.Direction)Direction;
-            rawBindingObject.Add("direction", Enum.GetName(typeof(BindingInfo.Types.Direction), Direction).ToLower());
+            rawBindingObject.Add("direction", Enum.GetName(typeof(BindingInfo.Types.Direction), outInfo.Direction).ToLower());
             outInfo.Type = Type;
             rawBindingObject.Add("type", Type);
 

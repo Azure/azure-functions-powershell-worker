@@ -27,7 +27,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             System.Management.Automation.PowerShell ps = System.Management.Automation.PowerShell.Create();
             ps.Runspace = runspace;
             //ps.AddCommand("Import-Module").AddArgument("C:\\Program Files\\WindowsPowerShell\\Modules\\AzureFunctionsHelpers\\AzureFunctionsHelpers.dll").Invoke();
-            ps.AddCommand("Get-FunctionsMetadata").AddArgument("C:\\Users\\t-anstaples\\source\\powershell\\apat2");
+            ps.AddCommand("Get-FunctionsMetadata").AddArgument(baseDir);
             string outputString = string.Empty;
             foreach (PSObject rawMetadata in ps.Invoke())
             {
