@@ -3,14 +3,12 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
-using Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-using System.Text.Json;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 {
