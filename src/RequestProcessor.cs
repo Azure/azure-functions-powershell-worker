@@ -13,7 +13,7 @@ using Microsoft.Azure.Functions.PowerShellWorker.Messaging;
 using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
-using Microsoft.Azure.Functions.PowerShellWorker.Durable;
+using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
