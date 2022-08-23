@@ -376,8 +376,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             response.FunctionMetadataResponse.FunctionMetadataResults.AddRange(WorkerIndexingHelper.IndexFunctions(request.FunctionsMetadataRequest.FunctionAppDirectory));
 
-            string rawresp = JsonSerializer.Serialize<FunctionMetadataResponse>(response.FunctionMetadataResponse);
-
             return response;
         }
 

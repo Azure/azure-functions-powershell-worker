@@ -19,12 +19,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             List<RpcFunctionMetadata> indexedFunctions = new List<RpcFunctionMetadata>();
 
             InitialSessionState initial = InitialSessionState.CreateDefault();
-            initial.ImportPSModule(new string[] { "AzureFunctionsHelpers" });
             Runspace runspace = RunspaceFactory.CreateRunspace(initial);
             runspace.Open();
             System.Management.Automation.PowerShell ps = System.Management.Automation.PowerShell.Create();
             ps.Runspace = runspace;
-            //ps.AddCommand("Import-Module").AddArgument("C:\\Program Files\\WindowsPowerShell\\Modules\\AzureFunctionsHelpers\\AzureFunctionsHelpers.dll").Invoke();
+
             ps.AddCommand("Get-FunctionsMetadata").AddArgument(baseDir);
             string outputString = string.Empty;
             foreach (PSObject rawMetadata in ps.Invoke())
