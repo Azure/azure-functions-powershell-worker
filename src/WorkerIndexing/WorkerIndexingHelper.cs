@@ -14,6 +14,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 {
     internal class WorkerIndexingHelper
     {
+        const string GetFunctionsMetadataCmdletName = "Get-FunctionsMetadata";
         internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string baseDir)
         {
             List<RpcFunctionMetadata> indexedFunctions = new List<RpcFunctionMetadata>();
@@ -24,13 +25,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             System.Management.Automation.PowerShell ps = System.Management.Automation.PowerShell.Create();
             ps.Runspace = runspace;
 
-            ps.AddCommand("Get-FunctionsMetadata").AddArgument(baseDir);
+            ps.AddCommand(GetFunctionsMetadataCmdletName).AddArgument(baseDir);
             string outputString = string.Empty;
             foreach (PSObject rawMetadata in ps.Invoke())
             {
                 if (outputString != string.Empty)
                 {
-                    throw new Exception("Multiple results from metadata cmdlet");
+                    throw new Exception(PowerShellWorkerStrings.GetFunctionsMetadataMultipleResultsError);
                 }
                 outputString = rawMetadata.ToString();
                 //Console.WriteLine(rawMetadata.ToString());

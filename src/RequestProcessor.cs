@@ -32,9 +32,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         // Holds the exception if an issue is encountered while processing the function app dependencies.
         private Exception _initTerminatingError;
-        
-        // Indicate whether the dependencies have been installed
-        private bool _areDependenciesInstalled;
+
+        // Indicate whether the FunctionApp has been initialized.
+        private bool _isFunctionAppInitialized;
 
         private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
             new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
@@ -182,7 +182,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             stopwatch.Start();
 
             FunctionLoadRequest functionLoadRequest = request.FunctionLoadRequest;
-            string lrs = System.Text.Json.JsonSerializer.Serialize<FunctionLoadRequest>(functionLoadRequest);
 
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
@@ -215,14 +214,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // 'FunctionLoadRequest' comes in. Therefore, we run initialization here.
             // Also, we receive a FunctionLoadRequest when a proxy is configured. Proxies don't have the Metadata.Directory set
             // which would cause initialization issues with the PSModulePath. Since they don't have that set, we skip over them.
-            if (!_areDependenciesInstalled && !functionLoadRequest.Metadata.IsProxy)
+            if (!_isFunctionAppInitialized && !functionLoadRequest.Metadata.IsProxy)
             {
                 try
                 {
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, null);
 
-                    _areDependenciesInstalled = true;
+                    _isFunctionAppInitialized = true;
 
                     var managedDependenciesPath = _dependencyManager.Initialize(request, rpcLogger);
 
@@ -264,7 +263,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             try
             {
-                string ins = System.Text.Json.JsonSerializer.Serialize<InvocationRequest>(request.InvocationRequest);
                 var stopwatch = new FunctionInvocationPerformanceStopwatch();
                 stopwatch.OnStart();
 

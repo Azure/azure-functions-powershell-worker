@@ -5,6 +5,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 {
     internal class FunctionInformation
     {
+        private const string FunctionLanguagePowerShell = "powershell";
+
         public string Directory { get; set; } = "";
         public string ScriptFile { get; set; } = "";
         public string Name { get; set; } = "";
@@ -20,7 +22,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             returnMetadata.EntryPoint = EntryPoint;
             returnMetadata.Name = Name;
             returnMetadata.ScriptFile = ScriptFile;
-            returnMetadata.Language = "powershell";
+            returnMetadata.Language = FunctionLanguagePowerShell;
             foreach(BindingInformation binding in Bindings)
             {
                 string rawBinding = binding.ConvertToRpcRawBinding(out BindingInfo bindingInfo);

@@ -8,6 +8,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 {
     internal class BindingInformation
     {
+        private const string BindingNameKey = "name";
+        private const string BindingDirectionKey = "direction";
+        private const string BindingTypeKey = "type";
         public enum Directions
         {
             Unknown = -1,
@@ -25,18 +28,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
         {
             string rawBinding = string.Empty;
             JObject rawBindingObject = new JObject();
-            rawBindingObject.Add("name", Name);
+            rawBindingObject.Add(BindingNameKey, Name);
             BindingInfo outInfo = new BindingInfo();
 
 
             if (Direction == Directions.Unknown)
             {
-                throw new Exception("The bindingInfo's Direction is not valid");
+                throw new Exception(PowerShellWorkerStrings.InvalidBindingInfoDirection);
             }
             outInfo.Direction = (BindingInfo.Types.Direction)Direction;
-            rawBindingObject.Add("direction", Enum.GetName(typeof(BindingInfo.Types.Direction), outInfo.Direction).ToLower());
+            rawBindingObject.Add(BindingDirectionKey, Enum.GetName(typeof(BindingInfo.Types.Direction), outInfo.Direction).ToLower());
             outInfo.Type = Type;
-            rawBindingObject.Add("type", Type);
+            rawBindingObject.Add(BindingTypeKey, Type);
 
             foreach (KeyValuePair<string, Object> pair in otherInformation)
             {

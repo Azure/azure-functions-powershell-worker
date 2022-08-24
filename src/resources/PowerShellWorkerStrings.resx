@@ -352,4 +352,10 @@
   <data name="DependencySnapshotDoesNotContainAcceptableModuleVersions" xml:space="preserve">
     <value>Dependency snapshot '{0}' does not contain acceptable module versions.</value>
   </data>
+  <data name="GetFunctionsMetadataMultipleResultsError" xml:space="preserve">
+    <value>Multiple results from metadata cmdlet</value>
+  </data>
+  <data name="InvalidBindingInfoDirection" xml:space="preserve">
+    <value>The bindingInfo's Direction is not valid</value>
+  </data>
 </root>
