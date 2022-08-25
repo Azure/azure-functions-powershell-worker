@@ -43,9 +43,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 
             foreach (KeyValuePair<string, Object> pair in otherInformation)
             {
-                // Wow this sucks, lots of overserialization
                 rawBindingObject.Add(pair.Key, JToken.FromObject(pair.Value));
-                //Console.WriteLine(pair.Key);
             }
 
             rawBinding = JsonConvert.SerializeObject(rawBindingObject);
