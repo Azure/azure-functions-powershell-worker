@@ -19,6 +19,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     using Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing;
+    using Microsoft.PowerShell;
     using System.Diagnostics;
     using System.Text.Json;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
@@ -124,6 +125,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 RemoteSessionNamedPipeServer.CreateCustomNamedPipeServer(pipeName);
             }
 
+            // Previously, this half of the dependency management would happen just prior to the dependency download in the 
+            // first function load request. Now that we have the FunctionAppDirectory in the WorkerInitRequest, 
+            // we can do the setup of these variables in the function load request. We need these variables initialized 
+            // for the FunctionMetadataRequest, should it be sent. 
             try
             {
                 var rpcLogger = new RpcLogger(_msgStream);
@@ -136,8 +141,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.FirstFunctionLoadCompleted, stopwatch.ElapsedMilliseconds));
             }
             catch (Exception e)
-            {
-                // Failure that happens during this step is terminating and we will need to return a failure response to
+            {                
+                // This is a terminating failure: we will need to return a failure response to
                 // all subsequent 'FunctionLoadRequest'. Cache the exception so we can reuse it in future calls.
                 _initTerminatingError = e;
 
@@ -231,7 +236,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 }
                 catch (Exception e)
                 {
-                    // Failure that happens during this step is terminating and we will need to return a failure response to
+                    // This is a terminating failure: we will need to return a failure response to
                     // all subsequent 'FunctionLoadRequest'. Cache the exception so we can reuse it in future calls.
                     _initTerminatingError = e;
 
@@ -366,7 +371,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         
         private StreamingMessage ProcessFunctionMetadataRequest(StreamingMessage request)
         {
-            // WorkerStatusResponse type says that it is not used but this will create an empty one anyway to return to the host
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.FunctionMetadataResponse,
