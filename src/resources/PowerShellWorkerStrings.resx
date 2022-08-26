@@ -356,6 +356,6 @@
     <value>Multiple results from metadata cmdlet</value>
   </data>
   <data name="InvalidBindingInfoDirection" xml:space="preserve">
-    <value>The bindingInfo's Direction is not valid</value>
+    <value>Invalid binding direction! Binding name: {0}</value>
   </data>
 </root>

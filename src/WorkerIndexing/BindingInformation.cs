@@ -34,7 +34,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 
             if (Direction == Directions.Unknown)
             {
-                throw new Exception(PowerShellWorkerStrings.InvalidBindingInfoDirection);
+                throw new Exception(string.Format(PowerShellWorkerStrings.InvalidBindingInfoDirection, Name));
             }
             outInfo.Direction = (BindingInfo.Types.Direction)Direction;
             rawBindingObject.Add(BindingDirectionKey, Enum.GetName(typeof(BindingInfo.Types.Direction), outInfo.Direction).ToLower());
