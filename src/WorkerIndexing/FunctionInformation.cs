@@ -1,4 +1,9 @@
-﻿using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+﻿//
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+//
+
+using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using System.Collections.Generic;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
