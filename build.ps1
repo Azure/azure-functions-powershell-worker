@@ -34,7 +34,10 @@ param(
     $AddSBOM,
 
     [string]
-    $SBOMUtilSASUrl
+    $SBOMUtilSASUrl,
+
+    [switch]
+    $Ready2Run
 )
 
 #Requires -Version 6.0
@@ -168,32 +171,51 @@ if (!$NoBuild.IsPresent) {
     Get-Item "$PSScriptRoot/src/Modules/PackageManagement/1.1.7.0/fullclr" -ErrorAction SilentlyContinue |
         Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
-    dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot
-
-    if ($AddSBOM)
+    if ($Ready2Run.IsPresent)
     {
-        # Install manifest tool
-        $manifestTool = Install-SBOMUtil
-        Write-Log "manifestTool: $manifestTool "
+        #$targetRuntimes = @("linux-x64", "osx-x64", "osx-arm64", "win-x86", "win-x64")
+        $targetRuntimes = @("win-x64")
 
-        # Generate manifest
-        $buildPath = "$PSScriptRoot/src/bin/$Configuration/$TargetFramework/publish"
-        $telemetryFilePath = Join-Path $PSScriptRoot ((New-Guid).Guid + ".json")
-        $packageName = "Microsoft.Azure.Functions.PowerShellWorker.nuspec"
-
-        # Delete the manifest folder if it exists
-        $manifestFolderPath = Join-Path $buildPath "_manifest"
-        if (Test-Path $manifestFolderPath)
+        foreach ($runtime in $targetRuntimes)
         {
-            Remove-Item $manifestFolderPath -Recurse -Force -ErrorAction Ignore
+            Write-Log "Building R2R assemblies for $runtime"
+            dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot -v d -r $runtime --self-contained false # 3>&1 2>&1 > log.txt
         }
-
-        Write-Log "Running: dotnet $manifestTool generate -BuildDropPath $buildPath -BuildComponentPath $buildPath -Verbosity Information -t $telemetryFilePath"
-        & { dotnet $manifestTool generate -BuildDropPath $buildPath -BuildComponentPath $buildPath -Verbosity Information -t $telemetryFilePath -PackageName $packageName }
+        
+    }
+    else
+    {
+        dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot 
     }
 
-    dotnet pack -c $Configuration "/p:BuildNumber=$BuildNumber" "$PSScriptRoot/package"
-}
+    if (-not $Ready2Run.IsPresent)
+    {
+        if ($AddSBOM)
+        {
+            # Install manifest tool
+            $manifestTool = Install-SBOMUtil
+            Write-Log "manifestTool: $manifestTool "
+
+            # Generate manifest
+            $buildPath = "$PSScriptRoot/src/bin/$Configuration/$TargetFramework/publish"
+            $telemetryFilePath = Join-Path $PSScriptRoot ((New-Guid).Guid + ".json")
+            $packageName = "Microsoft.Azure.Functions.PowerShellWorker.nuspec"
+
+            # Delete the manifest folder if it exists
+            $manifestFolderPath = Join-Path $buildPath "_manifest"
+            if (Test-Path $manifestFolderPath)
+            {
+                Remove-Item $manifestFolderPath -Recurse -Force -ErrorAction Ignore
+            }
+
+            Write-Log "Running: dotnet $manifestTool generate -BuildDropPath $buildPath -BuildComponentPath $buildPath -Verbosity Information -t $telemetryFilePath"
+            & { dotnet $manifestTool generate -BuildDropPath $buildPath -BuildComponentPath $buildPath -Verbosity Information -t $telemetryFilePath -PackageName $packageName }
+        }
+
+        dotnet pack -c $Configuration "/p:BuildNumber=$BuildNumber" "$PSScriptRoot/package"
+
+        }
+    }
 
 # Test step
 if ($Test.IsPresent) {
