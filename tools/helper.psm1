@@ -17,8 +17,8 @@ $DotnetSDKVersionRequirements = @{
     }
 
     '6.0' = @{
-        MinimalPatch = '300'
-        DefaultPatch = '300'
+        MinimalPatch = '400'
+        DefaultPatch = '400'
     }
 }
 
