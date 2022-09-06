@@ -206,7 +206,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         [Fact]
         public async Task ComplexExternalEventReturnsData()
         {
-            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClient", queryString: "?FunctionName=DurableOrchestratorComplextRaiseEvent");
+            var initialResponse = await Utilities.GetHttpTriggerResponse("DurableClient", queryString: "?FunctionName=DurableOrchestratorComplexRaiseEvent");
             Assert.Equal(HttpStatusCode.Accepted, initialResponse.StatusCode);
 
             var initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
