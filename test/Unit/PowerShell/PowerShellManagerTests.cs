@@ -18,6 +18,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
     using System.Collections.ObjectModel;
     using System.Management.Automation;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
+    using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
     using Newtonsoft.Json;
 
     internal class TestUtils

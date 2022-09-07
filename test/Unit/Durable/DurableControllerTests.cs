@@ -11,6 +11,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
     using System.Collections.ObjectModel;
 
     using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
+    using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Microsoft.Azure.Functions.PowerShellWorker.Utility;
     using Newtonsoft.Json;

@@ -10,7 +10,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
     using Xunit;
 
-    using Microsoft.Azure.Functions.PowerShellWorker.Durable;
+    using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
 
     public class DurableFunctionInfoFactoryTests
     {
