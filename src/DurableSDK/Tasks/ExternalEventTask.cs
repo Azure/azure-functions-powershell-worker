@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
             return context.History.FirstOrDefault(
                     e => e.EventType == HistoryEventType.EventRaised &&
                          e.Name == ExternalEventName &&
-                         e.IsPlayed == processed);
+                         e.IsProcessed == processed);
         }
 
         internal override OrchestrationAction CreateOrchestrationAction()
