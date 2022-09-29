@@ -160,7 +160,7 @@ function Stop-DurableOrchestration {
 
     $requestUrl = "$($DurableClient.BaseUrl)/instances/$InstanceId/terminate?reason=$([System.Web.HttpUtility]::UrlEncode($Reason))"
 
-    Invoke-RestMethod -Uri $requestUrl
+    Invoke-RestMethod -Uri $requestUrl -Method 'POST'
 }
 
 function IsValidUrl([uri]$Url) {
