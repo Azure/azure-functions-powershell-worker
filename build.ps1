@@ -179,7 +179,7 @@ if (!$NoBuild.IsPresent) {
         foreach ($runtime in $targetRuntimes)
         {
             Write-Log "Building R2R assemblies for $runtime"
-            dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot -v d -r $runtime --self-contained false # 3>&1 2>&1 > log.txt
+            dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot -v d --runtime $runtime --self-contained true 3>&1 2>&1 > log.txt
         }
         
     }

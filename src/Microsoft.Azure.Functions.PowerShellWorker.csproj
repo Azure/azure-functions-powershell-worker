@@ -17,7 +17,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <!--RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers-->
+    <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
   <ItemGroup>
@@ -39,16 +39,13 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
 
   <PropertyGroup>
     <PublishReadyToRun>true</PublishReadyToRun>
-    <PublishReadyToRunUseCrossgen2>true</PublishReadyToRunUseCrossgen2>
-    <PublishReadyToRunComposite>true</PublishReadyToRunComposite>
-    <PublishReadyToRunEmitSymbols>true</PublishReadyToRunEmitSymbols>
-    <PublishReadyToRunShowWarnings>true</PublishReadyToRunShowWarnings>
+    <!--PublishReadyToRunEmitSymbols>true</PublishReadyToRunEmitSymbols-->
   </PropertyGroup>
 
-  <ItemGroup>
-    <PublishReadyToRunExclude Include="Microsoft.Management.Infrastructure.CimCmdlets.dll;Microsoft.Management.Infrastructure.dll;Microsoft.Management.Infrastructure.Native.dll"/>
-    <!--PublishReadyToRunExclude Include="Microsoft.Management.CimCmdlets.dll" />
+  <!--ItemGroup>
     <PublishReadyToRunExclude Include="Microsoft.Management.Infrastructure.dll" />
-    <PublishReadyToRunExclude Include="Microsoft.Management.Infrastructure.Native.dll"-->
-  </ItemGroup>
+    <PublishReadyToRunExclude Include="Microsoft.Management.Infrastructure.CimCmdlets.dll;Microsoft.Management.Infrastructure.dll;Microsoft.Management.Infrastructure.Native.dll"/>
+    <PublishReadyToRunExclude Include="Microsoft.Management.CimCmdlets.dll" />
+    <PublishReadyToRunExclude Include="Microsoft.Management.Infrastructure.Native.dll">
+  </ItemGroup-->
 </Project>
