@@ -376,4 +376,10 @@
   <data name="UtilizingExternalDurableSDK" xml:space="preserve">
     <value>Utilizing external Durable Functions SDK: '{0}'.</value>
   </data>
+  <data name="GetFunctionsMetadataMultipleResultsError" xml:space="preserve">
+    <value>Multiple results from metadata cmdlet.</value>
+  </data>
+  <data name="InvalidBindingInfoDirection" xml:space="preserve">
+    <value>Invalid binding direction. Binding name: {0}</value>
+  </data>
 </root>
