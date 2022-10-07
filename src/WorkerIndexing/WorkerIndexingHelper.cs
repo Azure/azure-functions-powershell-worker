@@ -14,7 +14,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 {
     internal class WorkerIndexingHelper
     {
-        const string GetFunctionsMetadataCmdletName = "AzureFunctions.PowerShell.SDK\\Get-FunctionsMetadata";
+        // TODO: Follow up with the PowerShell on why we get a CommandNotFoundException when using the module qualified cmdlet name.
+        //const string GetFunctionsMetadataCmdletName = "AzureFunctions.PowerShell.SDK\\Get-FunctionsMetadata";
+        const string GetFunctionsMetadataCmdletName = "Get-FunctionsMetadata";
         internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string baseDir)
         {
             List<RpcFunctionMetadata> indexedFunctions = new List<RpcFunctionMetadata>();
