@@ -173,19 +173,22 @@ if (!$NoBuild.IsPresent) {
 
     if ($Ready2Run.IsPresent)
     {
-        #$targetRuntimes = @("linux-x64", "osx-x64", "osx-arm64", "win-x86", "win-x64")
-        $targetRuntimes = @("win-x64")
+        # $targetRuntimes = @("linux-x64", "osx-x64", "osx-arm64", "win-x86", "win-x64")
+        # $targetRuntimes = @("win7-x64")
+        $targetRuntimes = @("win10-x64")
 
         foreach ($runtime in $targetRuntimes)
         {
             Write-Log "Building R2R assemblies for $runtime"
-            dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot -v d --runtime $runtime --self-contained true 3>&1 2>&1 > log.txt
+            dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot -v d --runtime $runtime --self-contained 3>&1 2>&1 > log.txt
         }
         
     }
     else
     {
-        dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot 
+        # This works
+        # dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot --self-contained  --runtime win7-x64
+        dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot --self-contained  --runtime win7-x64
     }
 
     if (-not $Ready2Run.IsPresent)
