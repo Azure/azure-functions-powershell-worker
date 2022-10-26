@@ -20,6 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     using System.Diagnostics;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+    using System.Runtime.InteropServices;
 
     internal class RequestProcessor
     {
@@ -130,6 +131,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 _dependencyManager = new DependencyManager(request.WorkerInitRequest.FunctionAppDirectory, logger: rpcLogger);
 
                 _powershellPool.Initialize(_firstPwshInstance);
+
+                response.WorkerInitResponse.WorkerMetadata = GetWorkerMetadata(_firstPwshInstance);
 
                 rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.WorkerInitCompleted, stopwatch.ElapsedMilliseconds));
             }
@@ -536,6 +539,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .AddParameter("Path", "env:PSModulePath")
                 .AddParameter("Value", FunctionLoader.FunctionModulePath)
                 .InvokeAndClearCommands();
+        }
+
+        private WorkerMetadata GetWorkerMetadata(System.Management.Automation.PowerShell pwsh)
+        {
+            var data = new WorkerMetadata();
+            data.WorkerBitness = RuntimeInformation.OSArchitecture.ToString();
+            data.WorkerVersion = typeof(Worker).Assembly.GetName().Version.ToString();
+            data.RuntimeVersion = Utils.GetPowerShellVersion(pwsh);
+            data.RuntimeName = "powershell";
+
+            return data;
         }
 
         #endregion
