@@ -19,6 +19,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
     using System.Diagnostics;
+    using System.Runtime.InteropServices;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
     internal class RequestProcessor
@@ -117,7 +118,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 RemoteSessionNamedPipeServer.CreateCustomNamedPipeServer(pipeName);
             }
 
+            response.WorkerInitResponse.WorkerMetadata = GetWorkerMetadata();
+
             return response;
+        }
+
+        private WorkerMetadata GetWorkerMetadata()
+        {
+            var data = new WorkerMetadata();
+            data.WorkerBitness = RuntimeInformation.OSArchitecture.ToString();
+            data.WorkerVersion = typeof(Worker).Assembly.GetName().Version.ToString();
+            data.RuntimeVersion = "7.2"; // This is going to required some refactoring to initialize the w
+            // Utils.GetPowerShellVersion(System.Management.Automation.PowerShell));
+            data.RuntimeName = "powershell";
+
+            return data;
         }
 
         internal StreamingMessage ProcessWorkerTerminateRequest(StreamingMessage request)
