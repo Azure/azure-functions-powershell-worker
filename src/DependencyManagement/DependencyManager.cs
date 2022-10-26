@@ -44,7 +44,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         #endregion
 
         public DependencyManager(
-            string requestMetadataDirectory = null,
+            string functionAppRootPath = null,
             IModuleProvider moduleProvider = null,
             IDependencyManagerStorage storage = null,
             IInstalledDependenciesLocator installedDependenciesLocator = null,
@@ -54,7 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             IBackgroundDependencySnapshotContentLogger currentSnapshotContentLogger = null,
             ILogger logger = null)
         {
-            _storage = storage ?? new DependencyManagerStorage(GetFunctionAppRootPath(requestMetadataDirectory));
+            _storage = storage ?? new DependencyManagerStorage(GetFunctionAppRootPath(functionAppRootPath));
             _installedDependenciesLocator = installedDependenciesLocator ?? new InstalledDependenciesLocator(_storage, logger);
             var snapshotContentLogger = new PowerShellModuleSnapshotLogger();
             _installer = installer ?? new DependencySnapshotInstaller(
@@ -252,14 +252,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             return _storage.SnapshotExists(_currentSnapshotPath);
         }
 
-        private static string GetFunctionAppRootPath(string requestMetadataDirectory)
+        private static string GetFunctionAppRootPath(string functionAppRootPath)
         {
-            if (string.IsNullOrWhiteSpace(requestMetadataDirectory))
+            if (string.IsNullOrWhiteSpace(functionAppRootPath))
             {
-                throw new ArgumentException("Empty request metadata directory path", nameof(requestMetadataDirectory));
+                throw new ArgumentException("Empty function app root path", nameof(functionAppRootPath));
             }
 
-            return Path.GetFullPath(Path.Join(requestMetadataDirectory, ".."));
+            return functionAppRootPath;
         }
 
         #endregion
