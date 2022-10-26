@@ -95,6 +95,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         internal StreamingMessage ProcessWorkerInitRequest(StreamingMessage request)
         {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             var workerInitRequest = request.WorkerInitRequest;
             Environment.SetEnvironmentVariable("AZUREPS_HOST_ENVIRONMENT", $"AzureFunctions/{workerInitRequest.HostVersion}");
             Environment.SetEnvironmentVariable("POWERSHELL_DISTRIBUTION_CHANNEL", $"Azure-Functions:{workerInitRequest.HostVersion}");
@@ -115,6 +118,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             {
                 RpcLogger.WriteSystemLog(LogLevel.Trace, string.Format(PowerShellWorkerStrings.SpecifiedCustomPipeName, pipeName));
                 RemoteSessionNamedPipeServer.CreateCustomNamedPipeServer(pipeName);
+            }
+
+            try
+            {
+                // Initialize the first PowerShell instance, so that we can populate the worker metadata.
+                // Previously, this initialization was taking place in the first FunctionLoadRequest.
+                var rpcLogger = new RpcLogger(_msgStream);
+                rpcLogger.SetContext(request.RequestId, null);
+
+                _dependencyManager = new DependencyManager(request.WorkerInitRequest.FunctionAppDirectory, logger: rpcLogger);
+
+                _powershellPool.Initialize(_firstPwshInstance);
+
+                rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.WorkerInitCompleted, stopwatch.ElapsedMilliseconds));
+            }
+            catch (Exception e)
+            {
+                status.Status = StatusResult.Types.Status.Failure;
+                status.Exception = e.ToRpcException();
+                return response;
             }
 
             return response;
@@ -180,11 +203,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 return response;
             }
 
-            // Ideally, the initialization should happen when processing 'WorkerInitRequest', however, the 'WorkerInitRequest'
-            // message doesn't provide information about the FunctionApp. That information is not available until the first
-            // 'FunctionLoadRequest' comes in. Therefore, we run initialization here.
-            // Also, we receive a FunctionLoadRequest when a proxy is configured. Proxies don't have the Metadata.Directory set
-            // which would cause initialization issues with the PSModulePath. Since they don't have that set, we skip over them.
+            // This is the second part of the worker initialization where the PSModulePath is set for the first PowerShell instance.
+            // The first FunctionLoadRequest contains the information about whether Managed Dependencies is enabled for the function app,
+            // and if it is, we add the Managed Dependencies path to the PSModulePath.
+            // Also, we receive a FunctionLoadRequest when a proxy is configured. This is just a no-op on the worker size, so we skip over them.
             if (!_isFunctionAppInitialized && !functionLoadRequest.Metadata.IsProxy)
             {
                 try
@@ -194,12 +216,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, null);
 
-                    _dependencyManager = new DependencyManager(request.FunctionLoadRequest.Metadata.Directory, logger: rpcLogger);
                     var managedDependenciesPath = _dependencyManager.Initialize(request, rpcLogger);
 
                     SetupAppRootPathAndModulePath(functionLoadRequest, managedDependenciesPath);
-
-                    _powershellPool.Initialize(_firstPwshInstance);
 
                     // Start the download asynchronously if needed.
                     _dependencyManager.StartDependencyInstallationIfNeeded(request, _firstPwshInstance, rpcLogger);
