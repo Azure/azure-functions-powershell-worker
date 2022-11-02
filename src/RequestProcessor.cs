@@ -123,14 +123,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             try
             {
-                // Initialize the first PowerShell instance, so that we can populate the worker metadata.
-                // Previously, this initialization was taking place in the first FunctionLoadRequest.
                 var rpcLogger = new RpcLogger(_msgStream);
                 rpcLogger.SetContext(request.RequestId, null);
-
-                _dependencyManager = new DependencyManager(request.WorkerInitRequest.FunctionAppDirectory, logger: rpcLogger);
-
-                _powershellPool.Initialize(_firstPwshInstance);
 
                 response.WorkerInitResponse.WorkerMetadata = GetWorkerMetadata(_firstPwshInstance);
 
@@ -206,8 +200,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 return response;
             }
 
-            // This is the second part of the worker initialization where the PSModulePath is set for the first PowerShell instance.
-            // The first FunctionLoadRequest contains the information about whether Managed Dependencies is enabled for the function app,
+            // Ideally, the initialization should happen when processing 'WorkerInitRequest'. However, we defer the initialization
+            // until the first 'FunctionLoadRequest' which contains the information about whether Managed Dependencies is enabled for the function app,
             // and if it is, we add the Managed Dependencies path to the PSModulePath.
             // Also, we receive a FunctionLoadRequest when a proxy is configured. This is just a no-op on the worker size, so we skip over them.
             if (!_isFunctionAppInitialized && !functionLoadRequest.Metadata.IsProxy)
@@ -219,9 +213,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, null);
 
+                    _dependencyManager = new DependencyManager(request.FunctionLoadRequest.Metadata.Directory, logger: rpcLogger);
                     var managedDependenciesPath = _dependencyManager.Initialize(request, rpcLogger);
 
                     SetupAppRootPathAndModulePath(functionLoadRequest, managedDependenciesPath);
+
+                    _powershellPool.Initialize(_firstPwshInstance);
 
                     // Start the download asynchronously if needed.
                     _dependencyManager.StartDependencyInstallationIfNeeded(request, _firstPwshInstance, rpcLogger);
