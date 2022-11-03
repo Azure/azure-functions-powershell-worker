@@ -28,6 +28,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private readonly System.Management.Automation.PowerShell _firstPwshInstance;
         private readonly PowerShellManagerPool _powershellPool;
         private DependencyManager _dependencyManager;
+        private string _pwshVersion;
 
         // Holds the exception if an issue is encountered while processing the function app dependencies.
         private Exception _initTerminatingError;
@@ -38,11 +39,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>> _requestHandlers =
             new Dictionary<StreamingMessage.ContentOneofCase, Func<StreamingMessage, StreamingMessage>>();
 
-        internal RequestProcessor(MessagingStream msgStream, System.Management.Automation.PowerShell firstPwshInstance)
+        internal RequestProcessor(MessagingStream msgStream, System.Management.Automation.PowerShell firstPwshInstance, string pwshVersion)
         {
             _msgStream = msgStream;
             _firstPwshInstance = firstPwshInstance;
             _powershellPool = new PowerShellManagerPool(() => new RpcLogger(msgStream));
+            _pwshVersion = pwshVersion;
 
             // Host sends capabilities/init data to worker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.WorkerInitRequest, ProcessWorkerInitRequest);
@@ -126,7 +128,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 var rpcLogger = new RpcLogger(_msgStream);
                 rpcLogger.SetContext(request.RequestId, null);
 
-                response.WorkerInitResponse.WorkerMetadata = GetWorkerMetadata(_firstPwshInstance);
+                response.WorkerInitResponse.WorkerMetadata = GetWorkerMetadata(_pwshVersion);
 
                 rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.WorkerInitCompleted, stopwatch.ElapsedMilliseconds));
             }
@@ -538,12 +540,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .InvokeAndClearCommands();
         }
 
-        private WorkerMetadata GetWorkerMetadata(System.Management.Automation.PowerShell pwsh)
+        private WorkerMetadata GetWorkerMetadata(string pwshVersion)
         {
             var data = new WorkerMetadata();
             data.WorkerBitness = RuntimeInformation.OSArchitecture.ToString();
             data.WorkerVersion = typeof(Worker).Assembly.GetName().Version.ToString();
-            data.RuntimeVersion = Utils.GetPowerShellVersion(pwsh);
+            data.RuntimeVersion = pwshVersion;
             data.RuntimeName = "powershell";
 
             return data;

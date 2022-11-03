@@ -40,11 +40,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // This PowerShell instance is shared by the first PowerShellManager instance created in the pool,
             // and the dependency manager (used to download dependent modules if needed).
             var firstPowerShellInstance = Utils.NewPwshInstance();
-            LogPowerShellVersion(firstPowerShellInstance);
+            var pwshVersion = GetPowerShellVersion(firstPowerShellInstance);
+            LogPowerShellVersion(pwshVersion);
             WarmUpPowerShell(firstPowerShellInstance);
 
             var msgStream = new MessagingStream(arguments.Host, arguments.Port);
-            var requestProcessor = new RequestProcessor(msgStream, firstPowerShellInstance);
+            var requestProcessor = new RequestProcessor(msgStream, firstPowerShellInstance, pwshVersion);
 
             // Send StartStream message
             var startedMessage = new StreamingMessage()
@@ -75,10 +76,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 .InvokeAndClearCommands();
         }
 
-        private static void LogPowerShellVersion(System.Management.Automation.PowerShell pwsh)
+        private static void LogPowerShellVersion(string pwshVersion)
         {
-            var message = string.Format(PowerShellWorkerStrings.PowerShellVersion, Utils.GetPowerShellVersion(pwsh));
+            var message = string.Format(PowerShellWorkerStrings.PowerShellVersion, pwshVersion);
             RpcLogger.WriteSystemLog(LogLevel.Information, message);
+        }
+
+        private static string GetPowerShellVersion(System.Management.Automation.PowerShell pwsh)
+        {
+            return Utils.GetPowerShellVersion(pwsh);
         }
     }
 
