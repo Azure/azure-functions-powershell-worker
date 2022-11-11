@@ -84,7 +84,7 @@ On macOS if you installed via `brew`
 
 Under the `workers/powershell` folder, create a folder with the name `7` if it does not exist yet. Copy the result of the `publish` directory into the `workers/powershell/7` folder, and copy the `publish/worker.config.json` file into the `workers/powershell` folder:
 ```powershell
-Copy-Item -Recurse -Force ./src/bin/Debug/net6.0/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell/7"
+Copy-Item -Recurse -Force ./src/bin/Debug/net6.0/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell/7.2"
 Copy-Item -Recurse -Force ./src/bin/Debug/net6.0/publish/worker.config.json "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell"
 ```
 
