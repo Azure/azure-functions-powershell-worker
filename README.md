@@ -1,5 +1,5 @@
 ![azure-functions-logo][]
-
+ 
 |Branch|Status|
 |---|---|
 |dev|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=dev)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=dev)|
