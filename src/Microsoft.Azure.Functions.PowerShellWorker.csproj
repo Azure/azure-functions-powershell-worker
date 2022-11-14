@@ -24,7 +24,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.7" />
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Google.Protobuf" Version="3.21.9" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.3" />
   </ItemGroup>
 
   <ItemGroup>
