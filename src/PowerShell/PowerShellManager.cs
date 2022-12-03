@@ -205,7 +205,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             FunctionInvocationPerformanceStopwatch stopwatch)
         {
             var outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
-            var durableFunctionsUtils = new DurableController(functionInfo.DurableFunctionInfo, _pwsh);
+            var durableFunctionsUtils = new DurableController(functionInfo.DurableFunctionInfo, _pwsh, Logger);
 
             try
             {

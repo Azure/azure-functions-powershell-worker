@@ -26,6 +26,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private const string _contextParameterName = "ParameterName";
         private static readonly OrchestrationContext _orchestrationContext = new OrchestrationContext { InstanceId = Guid.NewGuid().ToString() };
         private static readonly OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo(_contextParameterName, _orchestrationContext);
+        private static readonly ILogger testLogger = new ConsoleLogger();
+
 
         [Fact]
         public void InitializeBindings_SetsDurableClient_ForDurableClientFunction()
@@ -247,7 +249,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             return new DurableController(
                             durableFunctionInfo,
                             _mockPowerShellServices.Object,
-                            _mockOrchestrationInvoker.Object);
+                            _mockOrchestrationInvoker.Object,
+                            testLogger);
         }
 
         private static ParameterBinding CreateParameterBinding(string parameterName, object value)

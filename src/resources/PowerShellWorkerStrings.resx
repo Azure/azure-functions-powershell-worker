@@ -353,7 +353,7 @@
     <value>Dependency snapshot '{0}' does not contain acceptable module versions.</value>
   </data>
   <data name="ExternalDurableSDKName" xml:space="preserve">
-    <value>DurableSDK</value>
+    <value>AzureFunctions.PowerShell.Durable.SDK</value>
   </data>
   <data name="FailedToImportModule" xml:space="preserve">
     <value>Failed to import the '{0}' module. Please make sure this module is available in the PowerShell worker path. For instructions on how to install this module, please see '{1}'.</value>
@@ -375,5 +375,23 @@
   </data>
   <data name="UnableToInitializeOrchestrator" xml:space="preserve">
     <value>Unable to initialize orchestrator function due to presence of other bindings. Total number of bindings found is '{0}'. Orchestrator Functions should never use any input or output bindings other than the orchestration trigger itself. See: https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings</value>
+  </data>
+  <data name="ExternalDFSDK" xml:space="preserve">
+    <value>AzureFunctions.PowerShell.Durable.SDK</value>
+  </data>
+  <data name="FailedToFindDurableSDK" xml:space="preserve">
+    <value>Attempted to find 1 instance of '{0}' on the worker path but found '{0}', defaulting to internal Durable Functions SDK.</value>
+  </data>
+  <data name="FailedToImportExternalDurableSDK" xml:space="preserve">
+    <value>Failed to import the '{0}' module. Please make sure this module is available in the PowerShell worker path. Defaulting to built-in SDK.</value>
+  </data>
+  <data name="LoadingDurableSDK" xml:space="preserve">
+    <value>Attempting to load '{0}', version '{1}', as the Durable Functions SDK</value>
+  </data>
+  <data name="String1" xml:space="preserve">
+    <value />
+  </data>
+  <data name="ErrorImportingDurableSDK" xml:space="preserve">
+    <value>An unexpected error ocurred while importing '{0}': '{1}'</value>
   </data>
 </root>

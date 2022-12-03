@@ -27,25 +27,30 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private readonly IPowerShellServices _powerShellServices;
         private readonly IOrchestrationInvoker _orchestrationInvoker;
         private OrchestrationBindingInfo _orchestrationBindingInfo;
+        private ILogger _logger;
 
         public DurableController(
             DurableFunctionInfo durableDurableFunctionInfo,
-            PowerShell pwsh)
+            PowerShell pwsh,
+            ILogger logger)
             : this(
                 durableDurableFunctionInfo,
-                new PowerShellServices(pwsh),
-                new OrchestrationInvoker())
+                new PowerShellServices(pwsh, logger),
+                new OrchestrationInvoker(),
+                logger)
         {
         }
 
         internal DurableController(
             DurableFunctionInfo durableDurableFunctionInfo,
             IPowerShellServices powerShellServices,
-            IOrchestrationInvoker orchestrationInvoker)
+            IOrchestrationInvoker orchestrationInvoker,
+            ILogger logger)
         {
             _durableFunctionInfo = durableDurableFunctionInfo;
             _powerShellServices = powerShellServices;
             _orchestrationInvoker = orchestrationInvoker;
+            _logger = logger;
         }
 
         public string GetOrchestrationParameterName()
