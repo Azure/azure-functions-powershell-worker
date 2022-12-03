@@ -12,18 +12,18 @@ $DotnetSDKVersionRequirements = @{
 
     # .NET SDK 3.1 is required by the Microsoft.ManifestTool.dll tool
     '3.1' = @{
-        MinimalPatch = '419'
-        DefaultPatch = '419'
+        MinimalPatch = '424'
+        DefaultPatch = '424'
     }
 
     '6.0' = @{
-        MinimalPatch = '300'
-        DefaultPatch = '300'
+        MinimalPatch = '402'
+        DefaultPatch = '402'
     }
 }
 
-$GrpcToolsVersion = '2.43.0' # grpc.tools
-$GoogleProtobufToolsVersion = '3.19.4' # google.protobuf.tools
+$GrpcToolsVersion = '2.50.0' # grpc.tools
+$GoogleProtobufToolsVersion = '3.21.9' # google.protobuf.tools
 
 function Find-Dotnet
 {

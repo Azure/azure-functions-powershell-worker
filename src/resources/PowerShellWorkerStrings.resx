@@ -388,10 +388,10 @@
   <data name="LoadingDurableSDK" xml:space="preserve">
     <value>Attempting to load '{0}', version '{1}', as the Durable Functions SDK</value>
   </data>
-  <data name="String1" xml:space="preserve">
-    <value />
-  </data>
   <data name="ErrorImportingDurableSDK" xml:space="preserve">
     <value>An unexpected error ocurred while importing '{0}': '{1}'</value>
+  </data>
+  <data name="WorkerInitCompleted" xml:space="preserve">
+    <value>Worker init request completed in {0} ms.</value>
   </data>
 </root>
