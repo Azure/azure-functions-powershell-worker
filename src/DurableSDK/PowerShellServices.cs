@@ -75,7 +75,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             if (numCandidates != 1)
             {
                 // If we do not find exactly one matching module, we default to the built-in SDK.
-                // IAlthough it is unlikely (or impossible), if there were more than 1 result, we do not want to determine the "right" module.
+                // Although it is unlikely (or impossible), if there were more than 1 result, we do not want to determine the "right" module.
                 _usesExternalDurableSDK = false;
                 logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(
                     PowerShellWorkerStrings.FailedToImportExternalDurableSDK,
