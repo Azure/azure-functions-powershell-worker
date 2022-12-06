@@ -355,9 +355,6 @@
   <data name="ExternalDurableSDKName" xml:space="preserve">
     <value>AzureFunctions.PowerShell.Durable.SDK</value>
   </data>
-  <data name="FailedToImportModule" xml:space="preserve">
-    <value>Failed to import the '{0}' module. Please make sure this module is available in the PowerShell worker path. For instructions on how to install this module, please see '{1}'.</value>
-  </data>
   <data name="InternalDurableSDKName" xml:space="preserve">
     <value>Microsoft.Azure.Functions.PowerShellWorker</value>
   </data>
@@ -378,12 +375,6 @@
   </data>
   <data name="ExternalDFSDK" xml:space="preserve">
     <value>AzureFunctions.PowerShell.Durable.SDK</value>
-  </data>
-  <data name="FailedToFindDurableSDK" xml:space="preserve">
-    <value>Attempted to find 1 instance of '{0}' on the worker path but found '{0}', defaulting to internal Durable Functions SDK.</value>
-  </data>
-  <data name="FailedToImportExternalDurableSDK" xml:space="preserve">
-    <value>Failed to import the '{0}' module. Please make sure this module is available in the PowerShell worker path. Defaulting to built-in SDK.</value>
   </data>
   <data name="LoadingDurableSDK" xml:space="preserve">
     <value>Attempting to load '{0}', as the Durable Functions SDK</value>
