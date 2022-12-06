@@ -361,9 +361,6 @@
   <data name="TracePipelineObjectCommand" xml:space="preserve">
     <value>Microsoft.Azure.Functions.PowerShellWorker\Trace-PipelineObject</value>
   </data>
-  <data name="UnexpectedOutputInExternalDurableCommand" xml:space="preserve">
-    <value>Only a single output was expected for an invocation of '{0}'.</value>
-  </data>
   <data name="UtilizingExternalDurableSDK" xml:space="preserve">
     <value>Utilizing external Durable Functions SDK: '{0}'.</value>
   </data>
@@ -373,11 +370,8 @@
   <data name="UnableToInitializeOrchestrator" xml:space="preserve">
     <value>Unable to initialize orchestrator function due to presence of other bindings. Total number of bindings found is '{0}'. Orchestrator Functions should never use any input or output bindings other than the orchestration trigger itself. See: https://docs.microsoft.com/en-us/azure/azure-functions/durable-functions-bindings</value>
   </data>
-  <data name="ExternalDFSDK" xml:space="preserve">
-    <value>AzureFunctions.PowerShell.Durable.SDK</value>
-  </data>
   <data name="LoadingDurableSDK" xml:space="preserve">
-    <value>Attempting to load '{0}', as the Durable Functions SDK</value>
+    <value>Attempting to load '{0}' as the Durable Functions SDK</value>
   </data>
   <data name="ErrorImportingDurableSDK" xml:space="preserve">
     <value>An unexpected error ocurred while importing '{0}': '{1}'</value>

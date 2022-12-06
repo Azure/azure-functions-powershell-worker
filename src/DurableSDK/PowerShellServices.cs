@@ -150,14 +150,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
                 // If more than 1 element is present in the output pipeline, we cannot trust that we have
                 // obtained the external orchestrator invoker; i.e the output contract is not met.
-                var outputContractIsMet = output.Count() == 1;
+                var numResults = output.Count();
+                var numExpectedResults = 1;
+                var outputContractIsMet = output.Count() == numExpectedResults;
                 if (outputContractIsMet)
                 {
                     externalInvoker = new ExternalInvoker(output[0]);
                 }
                 else
                 {
-                    var exceptionMessage = string.Format(PowerShellWorkerStrings.UnexpectedOutputInExternalDurableCommand, SetFunctionInvocationContextCommand);
+                    var exceptionMessage = string.Format(PowerShellWorkerStrings.UnexpectedResultCount,
+                        SetFunctionInvocationContextCommand, numExpectedResults, numResults);
                     throw new InvalidOperationException(exceptionMessage);
                 }
             }
