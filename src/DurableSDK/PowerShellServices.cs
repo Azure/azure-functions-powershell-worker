@@ -31,11 +31,29 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var importSucceeded = false;
             try
             {
-                // attempt to load
-                pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
-                    .AddParameter("Name", PowerShellWorkerStrings.ExternalDurableSDKName)
+                // attempt to import SDK
+                logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(
+                    PowerShellWorkerStrings.LoadingDurableSDK,PowerShellWorkerStrings.ExternalDurableSDKName));
+
+                var results = pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
+                    .AddParameter("FullyQualifiedName", PowerShellWorkerStrings.ExternalDurableSDKName)
                     .AddParameter("ErrorAction", ActionPreference.Stop)
-                    .InvokeAndClearCommands();
+                    .AddParameter("PassThru")
+                    .InvokeAndClearCommands<PSModuleInfo>();
+
+                var numResults = results.Count();
+                var numExpectedResults = 1;
+                if (numResults != numExpectedResults)
+                {
+                    logger.Log(isUserOnlyLog: false, LogLevel.Warning, string.Format(
+                               PowerShellWorkerStrings.UnexpectedResultCount, "Import Durable SDK", numExpectedResults, numResults));
+                }
+
+                // log that import succeeded
+                var moduleInfo = results[0];
+                logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(
+                    PowerShellWorkerStrings.ImportSucceeded, moduleInfo.Name, moduleInfo.Version));
+
                 importSucceeded = true;
             }
             catch (Exception e)
@@ -51,52 +69,48 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 }
                 logger.Log(isUserOnlyLog: true, LogLevel.Error, string.Format(
                     PowerShellWorkerStrings.ErrorImportingDurableSDK,
-                    PowerShellWorkerStrings.ExternalDurableSDKName,errorMessage));
+                    PowerShellWorkerStrings.ExternalDurableSDKName, errorMessage));
 
             }
             return importSucceeded;
 
         }
 
-        public PowerShellServices(PowerShell pwsh, ILogger logger)
+        private bool configureDurableSDK(PowerShell pwsh, ILogger logger)
         {
-            // We attempt to import the external DF SDK upon construction of the PowerShellServices object.
-            // We also maintain the boolean member hasExternalDurableSDK in this object rather than
-            // DurableController because the expected input and functionality of SetFunctionInvocationContextCommand
-            // may differ between the internal and external implementations.
+            var useExternalSDK = false;
 
-            // First, we search for the external DF SDK in the available modules
+            // Search for the external DF SDK in the available modules
             var matchingModules = pwsh.AddCommand(Utils.GetModuleCmdletInfo)
-                .AddParameter("Name", PowerShellWorkerStrings.ExternalDurableSDKName)
+                .AddParameter("FullyQualifiedName", PowerShellWorkerStrings.ExternalDurableSDKName)
                 .InvokeAndClearCommands<PSModuleInfo>();
 
-            // To load the external SDK, we expect there to be a single matching module.
+            // If we get at least one result, we attempt to load it
             var numCandidates = matchingModules.Count();
-            if (numCandidates != 1)
+            if (numCandidates > 0)
             {
-                // If we do not find exactly one matching module, we default to the built-in SDK.
-                // Although it is unlikely (or impossible), if there were more than 1 result, we do not want to determine the "right" module.
-                _usesExternalDurableSDK = false;
-                logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(
-                    PowerShellWorkerStrings.FailedToImportExternalDurableSDK,
-                    PowerShellWorkerStrings.ExternalDurableSDKName, numCandidates));
+                // try to import the external DF SDK
+                useExternalSDK = tryImportingDurableSDK(pwsh, logger);
             }
-
             else
             {
-                // We found a singular instance of the external DF SDK. We log its name and version, and try to load it.
-                var externalSDKInfo = matchingModules[0];
-                logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(PowerShellWorkerStrings.LoadingDurableSDK, externalSDKInfo.Name, externalSDKInfo.Version));
-
-                _usesExternalDurableSDK = tryImportingDurableSDK(pwsh, logger);
-                logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(PowerShellWorkerStrings.UtilizingExternalDurableSDK, _usesExternalDurableSDK));
+                // Log that the module was not found in worker path
+                logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(
+                        PowerShellWorkerStrings.DurableNotInWorkerPath, PowerShellWorkerStrings.ExternalDurableSDKName));
             }
 
-            var templatedSetFunctionInvocationContextCommand = "{0}\\Set-FunctionInvocationContext";
+            logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(PowerShellWorkerStrings.UtilizingExternalDurableSDK, useExternalSDK));
+            return useExternalSDK;
+        }
+
+        public PowerShellServices(PowerShell pwsh, ILogger logger)
+        {
+            _pwsh = pwsh;
+            _usesExternalDurableSDK = configureDurableSDK(_pwsh, logger);
+
+            // Configure FunctionInvocationContext command, based on the select DF SDK
             var prefix = _usesExternalDurableSDK ? PowerShellWorkerStrings.ExternalDurableSDKName : PowerShellWorkerStrings.InternalDurableSDKName;
-            SetFunctionInvocationContextCommand = string.Format(templatedSetFunctionInvocationContextCommand, prefix);
-            
-                _pwsh = pwsh;
+            SetFunctionInvocationContextCommand = string.Format(PowerShellWorkerStrings.SetFunctionInvocationContextCmdLetTemplate, prefix);
         }
 
         public bool HasExternalDurableSDK()

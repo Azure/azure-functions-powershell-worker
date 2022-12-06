@@ -386,12 +386,24 @@
     <value>Failed to import the '{0}' module. Please make sure this module is available in the PowerShell worker path. Defaulting to built-in SDK.</value>
   </data>
   <data name="LoadingDurableSDK" xml:space="preserve">
-    <value>Attempting to load '{0}', version '{1}', as the Durable Functions SDK</value>
+    <value>Attempting to load '{0}', as the Durable Functions SDK</value>
   </data>
   <data name="ErrorImportingDurableSDK" xml:space="preserve">
     <value>An unexpected error ocurred while importing '{0}': '{1}'</value>
   </data>
   <data name="WorkerInitCompleted" xml:space="preserve">
     <value>Worker init request completed in {0} ms.</value>
+  </data>
+  <data name="SetFunctionInvocationContextCmdLetTemplate" xml:space="preserve">
+    <value>{0}\Set-FunctionInvocationContext</value>
+  </data>
+  <data name="DurableNotInWorkerPath" xml:space="preserve">
+    <value>The Durable Functions SDK, '{0}', could not be found. Please make sure this module is available in the PowerShell worker path.</value>
+  </data>
+  <data name="ImportSucceeded" xml:space="preserve">
+    <value>Import of module '{0}' at version '{1}' succeeded.</value>
+  </data>
+  <data name="UnexpectedResultCount" xml:space="preserve">
+    <value>Operation '{0}' expected '{1}' result(s) but received '{2}'.</value>
   </data>
 </root>
