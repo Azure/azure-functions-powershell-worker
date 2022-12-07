@@ -24,6 +24,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private readonly bool _usesExternalDurableSDK = false;
         private readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
 
+        private bool EnableExternalDurableSDK { get; } =
+        PowerShellWorkerConfiguration.GetBoolean("ExternalDurablePowerShellSDK") ?? false;
+
 
         private bool tryImportingDurableSDK(PowerShell pwsh, ILogger logger)
         {
@@ -79,6 +82,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private bool configureDurableSDK(PowerShell pwsh, ILogger logger)
         {
             var useExternalSDK = false;
+
+            // If the user has not opted in to the external Durable SDK, we immediately default to the built-in SDK
+            if (!EnableExternalDurableSDK)
+            {
+                return useExternalSDK;
+            }
 
             // Search for the external DF SDK in the available modules
             var matchingModules = pwsh.AddCommand(Utils.GetModuleCmdletInfo)
