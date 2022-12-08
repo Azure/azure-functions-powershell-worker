@@ -27,7 +27,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private readonly IPowerShellServices _powerShellServices;
         private readonly IOrchestrationInvoker _orchestrationInvoker;
         private OrchestrationBindingInfo _orchestrationBindingInfo;
-        private ILogger _logger;
 
         public DurableController(
             DurableFunctionInfo durableDurableFunctionInfo,
@@ -50,7 +49,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _durableFunctionInfo = durableDurableFunctionInfo;
             _powerShellServices = powerShellServices;
             _orchestrationInvoker = orchestrationInvoker;
-            _logger = logger;
         }
 
         public string GetOrchestrationParameterName()
@@ -60,6 +58,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void InitializeBindings(IList<ParameterBinding> inputData, out bool hasExternalSDK)
         {
+            _powerShellServices.tryEnablingExternalDurableSDK();
+
             // If the function is an durable client, then we set the DurableClient
             // in the module context for the 'Start-DurableOrchestration' function to use.
             if (_durableFunctionInfo.IsDurableClient)

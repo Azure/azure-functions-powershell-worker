@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private const string _contextParameterName = "ParameterName";
         private static readonly OrchestrationContext _orchestrationContext = new OrchestrationContext { InstanceId = Guid.NewGuid().ToString() };
         private static readonly OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo(_contextParameterName, _orchestrationContext);
-        private static readonly ILogger testLogger = new ConsoleLogger();
+        private static readonly ILogger _testLogger = new ConsoleLogger();
 
 
         [Fact]
@@ -195,6 +195,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 Times.Once);
         }
 
+
         [Fact]
         public void AddPipelineOutputIfNecessary_AddsDollarReturn_ForActivityFunction()
         {
@@ -250,7 +251,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                             durableFunctionInfo,
                             _mockPowerShellServices.Object,
                             _mockOrchestrationInvoker.Object,
-                            testLogger);
+                            _testLogger);
         }
 
         private static ParameterBinding CreateParameterBinding(string parameterName, object value)

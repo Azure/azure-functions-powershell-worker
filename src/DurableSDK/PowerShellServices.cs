@@ -21,24 +21,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         private readonly PowerShell _pwsh;
         private bool _hasInitializedDurableFunctions = false;
-        private readonly bool _usesExternalDurableSDK = false;
+        private bool _usesExternalDurableSDK = false;
         private readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
+        private readonly ILogger _logger;
+
 
         private bool EnableExternalDurableSDK { get; } =
         PowerShellWorkerConfiguration.GetBoolean("ExternalDurablePowerShellSDK") ?? false;
 
 
-        private bool tryImportingDurableSDK(PowerShell pwsh, ILogger logger)
+        private bool tryImportingDurableSDK()
         {
             // Try to load/import the external Durable Functions SDK. If an error occurs, it is logged.
             var importSucceeded = false;
             try
             {
                 // attempt to import SDK
-                logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(
-                    PowerShellWorkerStrings.LoadingDurableSDK,PowerShellWorkerStrings.ExternalDurableSDKName));
+                _logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(
+                    PowerShellWorkerStrings.LoadingDurableSDK, PowerShellWorkerStrings.ExternalDurableSDKName));
 
-                var results = pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
+                var results = _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
                     .AddParameter("FullyQualifiedName", PowerShellWorkerStrings.ExternalDurableSDKName)
                     .AddParameter("ErrorAction", ActionPreference.Stop)
                     .AddParameter("PassThru")
@@ -48,13 +50,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 var numExpectedResults = 1;
                 if (numResults != numExpectedResults)
                 {
-                    logger.Log(isUserOnlyLog: false, LogLevel.Warning, string.Format(
+                    _logger.Log(isUserOnlyLog: false, LogLevel.Warning, string.Format(
                                PowerShellWorkerStrings.UnexpectedResultCount, "Import Durable SDK", numExpectedResults, numResults));
                 }
 
                 // log that import succeeded
                 var moduleInfo = results[0];
-                logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(
+                _logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(
                     PowerShellWorkerStrings.ImportSucceeded, moduleInfo.Name, moduleInfo.Version));
 
                 importSucceeded = true;
@@ -70,7 +72,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     errorMessage = _errorRecordFormatter.Format(inner.ErrorRecord);
 
                 }
-                logger.Log(isUserOnlyLog: true, LogLevel.Error, string.Format(
+                _logger.Log(isUserOnlyLog: true, LogLevel.Error, string.Format(
                     PowerShellWorkerStrings.ErrorImportingDurableSDK,
                     PowerShellWorkerStrings.ExternalDurableSDKName, errorMessage));
 
@@ -79,18 +81,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         }
 
-        private bool configureDurableSDK(PowerShell pwsh, ILogger logger)
+        public void tryEnablingExternalDurableSDK()
         {
-            var useExternalSDK = false;
-
-            // If the user has not opted in to the external Durable SDK, we immediately default to the built-in SDK
-            if (!EnableExternalDurableSDK)
+            // If the user has not opted-in to the external SDK experience, exit
+            if (EnableExternalDurableSDK)
             {
-                return useExternalSDK;
+                return;
             }
 
             // Search for the external DF SDK in the available modules
-            var matchingModules = pwsh.AddCommand(Utils.GetModuleCmdletInfo)
+            var matchingModules = _pwsh.AddCommand(Utils.GetModuleCmdletInfo)
                 .AddParameter("FullyQualifiedName", PowerShellWorkerStrings.ExternalDurableSDKName)
                 .InvokeAndClearCommands<PSModuleInfo>();
 
@@ -99,23 +99,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             if (numCandidates > 0)
             {
                 // try to import the external DF SDK
-                useExternalSDK = tryImportingDurableSDK(pwsh, logger);
+                _usesExternalDurableSDK = tryImportingDurableSDK();
             }
             else
             {
                 // Log that the module was not found in worker path
-                logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(
+                _logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(
                         PowerShellWorkerStrings.DurableNotInWorkerPath, PowerShellWorkerStrings.ExternalDurableSDKName));
             }
 
-            logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(PowerShellWorkerStrings.UtilizingExternalDurableSDK, useExternalSDK));
-            return useExternalSDK;
+            _logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(PowerShellWorkerStrings.UtilizingExternalDurableSDK, _usesExternalDurableSDK));
         }
 
         public PowerShellServices(PowerShell pwsh, ILogger logger)
         {
             _pwsh = pwsh;
-            _usesExternalDurableSDK = configureDurableSDK(_pwsh, logger);
+            _logger = logger;
 
             // Configure FunctionInvocationContext command, based on the select DF SDK
             var prefix = _usesExternalDurableSDK ? PowerShellWorkerStrings.ExternalDurableSDKName : PowerShellWorkerStrings.InternalDurableSDKName;
@@ -182,7 +181,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _hasInitializedDurableFunctions = true;
             return orchestrationBindingInfo;
         }
-        
+
 
         public void AddParameter(string name, object value)
         {
