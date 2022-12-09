@@ -28,6 +28,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private readonly IOrchestrationInvoker _orchestrationInvoker;
         private OrchestrationBindingInfo _orchestrationBindingInfo;
 
+        private bool EnableExternalDurableSDK { get; } =
+            PowerShellWorkerConfiguration.GetBoolean("ExternalDurablePowerShellSDK") ?? false;
+
         public DurableController(
             DurableFunctionInfo durableDurableFunctionInfo,
             PowerShell pwsh,
@@ -58,7 +61,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void InitializeBindings(IList<ParameterBinding> inputData, out bool hasExternalSDK)
         {
-            _powerShellServices.tryEnablingExternalDurableSDK();
+            // Enable external SDK only when customer has opted-in
+            if (EnableExternalDurableSDK)
+            {
+                _powerShellServices.tryEnablingExternalDurableSDK();
+            }
 
             // If the function is an durable client, then we set the DurableClient
             // in the module context for the 'Start-DurableOrchestration' function to use.

@@ -18,6 +18,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
     using Moq;
     using Xunit;
+    using Grpc.Core;
 
     public class DurableControllerTests
     {
@@ -249,6 +250,76 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             Assert.Equal(shouldSuppressPipelineTraces, durableController.ShouldSuppressPipelineTraces());
         }
 
+        [Theory]
+        [InlineData(DurableFunctionType.None)]
+        [InlineData(DurableFunctionType.OrchestrationFunction)]
+        internal void ExternalDurableSdkIsNotConfiguredByDefault(DurableFunctionType durableFunctionType)
+        {
+            var durableController = CreateDurableController(durableFunctionType);
+            var inputData = GetDurableBindings(durableFunctionType);
+
+            if (durableFunctionType == DurableFunctionType.None)
+            {
+                _mockPowerShellServices.Setup(_ => _.SetDurableClient(It.IsAny<object>()));
+            }
+            else
+            {
+                _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
+                    It.IsAny<ParameterBinding>(),
+                    out It.Ref<IExternalOrchestrationInvoker>.IsAny)).Returns(_orchestrationBindingInfo);
+                _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
+            }
+
+            _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(false);
+            _mockPowerShellServices.Setup(_ => _.tryEnablingExternalDurableSDK()).Throws(new Exception("should not be called"));
+            durableController.InitializeBindings(inputData, out var hasExternalSDK);
+           
+            Assert.False(hasExternalSDK);
+            _mockPowerShellServices.Verify(_ => _.tryEnablingExternalDurableSDK(), Times.Never);
+        }
+
+        [Theory]
+        [InlineData(DurableFunctionType.None)]
+        [InlineData(DurableFunctionType.OrchestrationFunction)]
+        internal void ExternalDurableSdkCanBeEnabled(DurableFunctionType durableFunctionType)
+        {
+            try
+            {
+                // opt-in to external DF SDK
+                Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "true");
+
+                var durableController = CreateDurableController(durableFunctionType);
+                var inputData = GetDurableBindings(durableFunctionType);
+
+                if (durableFunctionType == DurableFunctionType.None)
+                {
+                    _mockPowerShellServices.Setup(_ => _.SetDurableClient(It.IsAny<object>()));
+                }
+                else
+                {
+                    _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
+                        It.IsAny<ParameterBinding>(),
+                        out It.Ref<IExternalOrchestrationInvoker>.IsAny)).Returns(_orchestrationBindingInfo);
+                    _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
+                }
+
+                _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(true);
+                _mockPowerShellServices.Setup(_ => _.tryEnablingExternalDurableSDK());
+                durableController.InitializeBindings(inputData, out var hasExternalSDK);
+
+                Assert.True(hasExternalSDK);
+                _mockPowerShellServices.Verify(_ => _.tryEnablingExternalDurableSDK(), Times.Once);
+
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "false");
+
+            }
+
+
+        }
+
         private DurableController CreateDurableController(
             DurableFunctionType durableFunctionType,
             string durableClientBindingName = null)
@@ -272,6 +343,29 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                     String = JsonConvert.SerializeObject(value)
                 }
             };
+        }
+
+        private static IList<ParameterBinding> GetDurableBindings(DurableFunctionType durableFunctionType)
+        {
+            ParameterBinding[] bindings;
+            if (durableFunctionType == DurableFunctionType.None) // DF Client case
+            {
+                var durableClient = new { FakeClientProperty = "FakeClientPropertyValue" };
+                bindings = new[]
+                {
+                    CreateParameterBinding("AnotherParameter", "IgnoredValue"),
+                    CreateParameterBinding("DurableClientBindingName", durableClient),
+                    CreateParameterBinding("YetAnotherParameter", "IgnoredValue")
+                };
+            }
+            else //valid for orchestrators and acitvities
+            {
+                bindings = new[]
+{
+                    CreateParameterBinding("ParameterName", _orchestrationContext)
+                };
+            }
+            return bindings;
         }
     }
 }

@@ -25,11 +25,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
         private readonly ILogger _logger;
 
-
-        private bool EnableExternalDurableSDK { get; } =
-        PowerShellWorkerConfiguration.GetBoolean("ExternalDurablePowerShellSDK") ?? false;
-
-
         private bool tryImportingDurableSDK()
         {
             // Try to load/import the external Durable Functions SDK. If an error occurs, it is logged.
@@ -83,12 +78,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void tryEnablingExternalDurableSDK()
         {
-            // If the user has not opted-in to the external SDK experience, exit
-            if (EnableExternalDurableSDK)
-            {
-                return;
-            }
-
             // Search for the external DF SDK in the available modules
             var matchingModules = _pwsh.AddCommand(Utils.GetModuleCmdletInfo)
                 .AddParameter("FullyQualifiedName", PowerShellWorkerStrings.ExternalDurableSDKName)
