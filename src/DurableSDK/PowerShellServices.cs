@@ -115,8 +115,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             SetFunctionInvocationContextCommand = string.Format(
                 PowerShellWorkerStrings.SetFunctionInvocationContextCmdLetTemplate,
                 PowerShellWorkerStrings.ExternalDurableSDKName);
-            _logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(
-                PowerShellWorkerStrings.UtilizingExternalDurableSDK, _usesExternalDurableSDK));
         }
 
         public bool HasExternalDurableSDK()
