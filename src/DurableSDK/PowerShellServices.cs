@@ -17,13 +17,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
     internal class PowerShellServices : IPowerShellServices
     {
-        private readonly string SetFunctionInvocationContextCommand;
-
         private readonly PowerShell _pwsh;
         private bool _hasInitializedDurableFunctions = false;
         private bool _usesExternalDurableSDK = false;
         private readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
         private readonly ILogger _logger;
+
+        // uses built-in SDK by default
+        private string SetFunctionInvocationContextCommand = string.Format(
+            PowerShellWorkerStrings.SetFunctionInvocationContextCmdLetTemplate,
+            PowerShellWorkerStrings.InternalDurableSDKName);
+
+        public PowerShellServices(PowerShell pwsh, ILogger logger)
+        {
+            _pwsh = pwsh;
+            _logger = logger;
+
+            // Configure FunctionInvocationContext command, based on the select DF SDK
+            var prefix = PowerShellWorkerStrings.InternalDurableSDKName;
+            SetFunctionInvocationContextCommand = string.Format(PowerShellWorkerStrings.SetFunctionInvocationContextCmdLetTemplate, prefix);
+        }
 
         private bool tryImportingDurableSDK()
         {
@@ -80,6 +93,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             // Search for the external DF SDK in the available modules
             var matchingModules = _pwsh.AddCommand(Utils.GetModuleCmdletInfo)
+                .AddParameter("ListAvailable")
                 .AddParameter("FullyQualifiedName", PowerShellWorkerStrings.ExternalDurableSDKName)
                 .InvokeAndClearCommands<PSModuleInfo>();
 
@@ -97,17 +111,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                         PowerShellWorkerStrings.DurableNotInWorkerPath, PowerShellWorkerStrings.ExternalDurableSDKName));
             }
 
-            _logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(PowerShellWorkerStrings.UtilizingExternalDurableSDK, _usesExternalDurableSDK));
-        }
-
-        public PowerShellServices(PowerShell pwsh, ILogger logger)
-        {
-            _pwsh = pwsh;
-            _logger = logger;
-
-            // Configure FunctionInvocationContext command, based on the select DF SDK
-            var prefix = _usesExternalDurableSDK ? PowerShellWorkerStrings.ExternalDurableSDKName : PowerShellWorkerStrings.InternalDurableSDKName;
-            SetFunctionInvocationContextCommand = string.Format(PowerShellWorkerStrings.SetFunctionInvocationContextCmdLetTemplate, prefix);
+            // assign SetFunctionInvocationContextCommand to the corresponding external SDK's CmdLet
+            SetFunctionInvocationContextCommand = string.Format(
+                PowerShellWorkerStrings.SetFunctionInvocationContextCmdLetTemplate,
+                PowerShellWorkerStrings.ExternalDurableSDKName);
+            _logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(
+                PowerShellWorkerStrings.UtilizingExternalDurableSDK, _usesExternalDurableSDK));
         }
 
         public bool HasExternalDurableSDK()

@@ -314,10 +314,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             finally
             {
                 Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "false");
-
             }
-
-
         }
 
         private DurableController CreateDurableController(
