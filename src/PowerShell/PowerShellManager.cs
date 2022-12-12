@@ -246,7 +246,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
                 catch (Exception e)
                 {
-                    if (e.Data.Contains(PowerShellWorkerStrings.isOrchestrationFailureKey) && e.InnerException is IContainsErrorRecord inner)
+                    if (e.Data.Contains(PowerShellWorkerStrings.IsOrchestrationFailureKey) && e.InnerException is IContainsErrorRecord inner)
                     {
                         Logger.Log(isUserOnlyLog: true, LogLevel.Error, GetFunctionExceptionMessage(inner));
                     }

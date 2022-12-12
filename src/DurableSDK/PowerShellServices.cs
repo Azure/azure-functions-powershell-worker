@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Collections.ObjectModel;
     using System.Linq;
     using System.Management.Automation;
+    using System.Reflection.Metadata;
     using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
     using Microsoft.Azure.Functions.PowerShellWorker.Utility;
     using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
@@ -22,10 +23,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private bool _usesExternalDurableSDK = false;
         private readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
         private readonly ILogger _logger;
+        private const string _setFunctionInvocationContextCommandTemplate = "{0}\\Set-FunctionInvocationContext";
 
         // uses built-in SDK by default
         private string SetFunctionInvocationContextCommand = string.Format(
-            PowerShellWorkerStrings.SetFunctionInvocationContextCmdLetTemplate,
+            _setFunctionInvocationContextCommandTemplate,
             PowerShellWorkerStrings.InternalDurableSDKName);
 
         public PowerShellServices(PowerShell pwsh, ILogger logger)
@@ -35,7 +37,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
             // Configure FunctionInvocationContext command, based on the select DF SDK
             var prefix = PowerShellWorkerStrings.InternalDurableSDKName;
-            SetFunctionInvocationContextCommand = string.Format(PowerShellWorkerStrings.SetFunctionInvocationContextCmdLetTemplate, prefix);
+            SetFunctionInvocationContextCommand = string.Format(_setFunctionInvocationContextCommandTemplate, prefix);
         }
 
         private bool tryImportingDurableSDK()
@@ -54,15 +56,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     .AddParameter("PassThru")
                     .InvokeAndClearCommands<PSModuleInfo>();
 
-                var numResults = results.Count();
-                var numExpectedResults = 1;
-                if (numResults != numExpectedResults)
-                {
-                    _logger.Log(isUserOnlyLog: false, LogLevel.Warning, string.Format(
-                               PowerShellWorkerStrings.UnexpectedResultCount, "Import Durable SDK", numExpectedResults, numResults));
-                }
-
-                // log that import succeeded
+                // Given how the command above is constructed, only 1 result should be possible
                 var moduleInfo = results[0];
                 _logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(
                     PowerShellWorkerStrings.ImportSucceeded, moduleInfo.Name, moduleInfo.Version));
@@ -78,15 +72,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 if (e.InnerException is IContainsErrorRecord inner)
                 {
                     errorMessage = _errorRecordFormatter.Format(inner.ErrorRecord);
-
                 }
-                _logger.Log(isUserOnlyLog: true, LogLevel.Error, string.Format(
+                _logger.Log(isUserOnlyLog: false, LogLevel.Error, string.Format(
                     PowerShellWorkerStrings.ErrorImportingDurableSDK,
                     PowerShellWorkerStrings.ExternalDurableSDKName, errorMessage));
 
             }
             return importSucceeded;
-
         }
 
         public void tryEnablingExternalDurableSDK()
@@ -107,13 +99,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             else
             {
                 // Log that the module was not found in worker path
+                var workerPathContents = PowerShellWorkerConfiguration.GetString("PSModulePath");
                 _logger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(
-                        PowerShellWorkerStrings.DurableNotInWorkerPath, PowerShellWorkerStrings.ExternalDurableSDKName));
+                        PowerShellWorkerStrings.DurableNotInWorkerPath, PowerShellWorkerStrings.ExternalDurableSDKName,
+                        workerPathContents));
             }
 
             // assign SetFunctionInvocationContextCommand to the corresponding external SDK's CmdLet
             SetFunctionInvocationContextCommand = string.Format(
-                PowerShellWorkerStrings.SetFunctionInvocationContextCmdLetTemplate,
+               _setFunctionInvocationContextCommandTemplate,
                 PowerShellWorkerStrings.ExternalDurableSDKName);
         }
 
@@ -196,7 +190,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void TracePipelineObject()
         {
-            _pwsh.AddCommand(PowerShellWorkerStrings.TracePipelineObjectCommand);
+            _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
         }
 
         public IAsyncResult BeginInvoke(PSDataCollection<object> output)

@@ -358,13 +358,10 @@
   <data name="InternalDurableSDKName" xml:space="preserve">
     <value>Microsoft.Azure.Functions.PowerShellWorker</value>
   </data>
-  <data name="TracePipelineObjectCommand" xml:space="preserve">
-    <value>Microsoft.Azure.Functions.PowerShellWorker\Trace-PipelineObject</value>
-  </data>
   <data name="UtilizingExternalDurableSDK" xml:space="preserve">
     <value>Utilizing external Durable Functions SDK: '{0}'.</value>
   </data>
-  <data name="isOrchestrationFailureKey" xml:space="preserve">
+  <data name="IsOrchestrationFailureKey" xml:space="preserve">
     <value>IsOrchestrationFailure</value>
   </data>
   <data name="UnableToInitializeOrchestrator" xml:space="preserve">
@@ -379,11 +376,8 @@
   <data name="WorkerInitCompleted" xml:space="preserve">
     <value>Worker init request completed in {0} ms.</value>
   </data>
-  <data name="SetFunctionInvocationContextCmdLetTemplate" xml:space="preserve">
-    <value>{0}\Set-FunctionInvocationContext</value>
-  </data>
   <data name="DurableNotInWorkerPath" xml:space="preserve">
-    <value>The Durable Functions SDK, '{0}', could not be found. Please make sure this module is available in the PowerShell worker path.</value>
+    <value>The Durable Functions SDK, '{0}', could not be found. Please make sure this module is available in the PowerShell worker path. PowerShell worker path contents: '{1}'</value>
   </data>
   <data name="ImportSucceeded" xml:space="preserve">
     <value>Import of module '{0}' at version '{1}' succeeded.</value>

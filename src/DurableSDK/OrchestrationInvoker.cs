@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             catch (Exception ex)
             {
-                ex.Data.Add(PowerShellWorkerStrings.isOrchestrationFailureKey, true);
+                ex.Data.Add(PowerShellWorkerStrings.IsOrchestrationFailureKey, true);
                 throw;
             }
             finally
