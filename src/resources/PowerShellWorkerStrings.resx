@@ -371,7 +371,7 @@
     <value>Worker init request completed in {0} ms.</value>
   </data>
   <data name="DurableNotInWorkerPath" xml:space="preserve">
-    <value>The Durable Functions SDK, '{0}', could not be found. Please make sure this module is available in the PowerShell worker path. PowerShell worker path contents: '{1}'</value>
+    <value>The Durable Functions SDK, '{0}', could not be found. Please make sure this module is available in the PowerShell worker path. PowerShell worker PSModulePath: '{1}'</value>
   </data>
   <data name="ImportSucceeded" xml:space="preserve">
     <value>Import of module '{0}' at version '{1}' succeeded.</value>
