@@ -74,13 +74,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 }
                 else
                 {
-                    // Customer attempted to enable external SDK but the module not in session. Default to built-in SDK.
+                    // Customer attempted to enable external SDK but the module is not in the session. Default to built-in SDK.
                     _logger.Log(isUserOnlyLog: false, LogLevel.Error, string.Format(PowerShellWorkerStrings.ExternalSDKWasNotLoaded, Utils.ExternalDurableSdkName));
                 }
             }
             else if (isExternalSdkLoaded)
             {
-                // External SDK is in session, but customer does not mean to enable it. Report potential clashes
+                // External SDK is in the session, but customer did not explicitly enable it. Report the potential of runtime errors.
                 _logger.Log(isUserOnlyLog: false, LogLevel.Error, String.Format(PowerShellWorkerStrings.PotentialDurableSDKClash, Utils.ExternalDurableSdkName));
             }
         }
