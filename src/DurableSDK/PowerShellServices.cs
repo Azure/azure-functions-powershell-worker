@@ -52,8 +52,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             var numCandidates = matchingModules.Count();
             var isModuleInCurrentSession = numCandidates > 0;
 
-             if (isModuleInCurrentSession)
-             {
+            if (isModuleInCurrentSession)
+            {
                 var candidatesInfo = matchingModules.Select(module => string.Format(
                     PowerShellWorkerStrings.FoundExternalDurableSdkInSession, module.Name, module.Version, module.Path));
                 var externalSDKModuleInfo = string.Join('\n', candidatesInfo);
@@ -71,9 +71,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     // a single external SDK is in session. Report its metadata
                     _logger.Log(isUserOnlyLog: false, LogLevel.Trace, externalSDKModuleInfo);
                 }
-
             }
-
             return isModuleInCurrentSession;
         }
 

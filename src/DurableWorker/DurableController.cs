@@ -62,10 +62,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             return _orchestrationBindingInfo?.ParameterName;
         }
 
-        public void InitializeBindings(IList<ParameterBinding> inputData, out bool hasExternalSDK)
+        private void tryEnablingExternalSDK()
         {
             var isExternalSdkLoaded = _powerShellServices.isExternalDurableSdkLoaded();
-
             if (isExternalDFSdkEnabled)
             {
                 if (isExternalSdkLoaded)
@@ -84,7 +83,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 // External SDK is in session, but customer does not mean to enable it. Report potential clashes
                 _logger.Log(isUserOnlyLog: false, LogLevel.Error, String.Format(PowerShellWorkerStrings.PotentialDurableSDKClash, Utils.ExternalDurableSdkName));
             }
+        }
 
+        public void InitializeBindings(IList<ParameterBinding> inputData, out bool hasExternalSDK)
+        {
+            this.tryEnablingExternalSDK();
 
             // If the function is an durable client, then we set the DurableClient
             // in the module context for the 'Start-DurableOrchestration' function to use.
