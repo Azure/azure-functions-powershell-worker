@@ -11,12 +11,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Linq;
     using System.Management.Automation;
 
-    using Newtonsoft.Json;
     using WebJobs.Script.Grpc.Messages;
 
     using PowerShellWorker.Utility;
     using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
     using System;
+    using LogLevel = WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+
 
     /// <summary>
     /// The main entry point for durable functions support.
@@ -27,8 +28,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private readonly IPowerShellServices _powerShellServices;
         private readonly IOrchestrationInvoker _orchestrationInvoker;
         private OrchestrationBindingInfo _orchestrationBindingInfo;
+        private readonly ILogger _logger;
 
-        private bool EnableExternalDurableSDK { get; } =
+        private bool isExternalDFSdkEnabled { get; } =
             PowerShellWorkerConfiguration.GetBoolean("ExternalDurablePowerShellSDK") ?? false;
 
         public DurableController(
@@ -52,6 +54,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _durableFunctionInfo = durableDurableFunctionInfo;
             _powerShellServices = powerShellServices;
             _orchestrationInvoker = orchestrationInvoker;
+            _logger = logger;
         }
 
         public string GetOrchestrationParameterName()
@@ -61,11 +64,27 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void InitializeBindings(IList<ParameterBinding> inputData, out bool hasExternalSDK)
         {
-            // Enable external SDK only when customer has opted-in
-            if (EnableExternalDurableSDK)
+            var isExternalSdkLoaded = _powerShellServices.isExternalDurableSdkLoaded();
+
+            if (isExternalDFSdkEnabled)
             {
-                _powerShellServices.tryEnablingExternalDurableSDK();
+                if (isExternalSdkLoaded)
+                {
+                    // Enable external SDK only when customer has opted-in
+                    _powerShellServices.EnableExternalDurableSDK();
+                }
+                else
+                {
+                    // Customer attempted to enable external SDK but the module not in session. Default to built-in SDK.
+                    _logger.Log(isUserOnlyLog: false, LogLevel.Error, string.Format(PowerShellWorkerStrings.ExternalSDKWasNotLoaded, Utils.ExternalDurableSdkName));
+                }
             }
+            else if (isExternalSdkLoaded)
+            {
+                // External SDK is in session, but customer does not mean to enable it. Report potential clashes
+                _logger.Log(isUserOnlyLog: false, LogLevel.Error, String.Format(PowerShellWorkerStrings.PotentialDurableSDKClash, Utils.ExternalDurableSdkName));
+            }
+
 
             // If the function is an durable client, then we set the DurableClient
             // in the module context for the 'Start-DurableOrchestration' function to use.

@@ -15,7 +15,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         bool HasExternalDurableSDK();
 
-        void tryEnablingExternalDurableSDK();
+        bool isExternalDurableSdkLoaded();
+
+        void EnableExternalDurableSDK();
 
         void SetDurableClient(object durableClient);
 
