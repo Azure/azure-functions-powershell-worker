@@ -168,7 +168,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 // Import-Module on a .ps1 file will evaluate the script in the global scope.
                 _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
                         .AddParameter("Name", profilePath)
-                     .AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject")
+                     .AddCommand(Utils.TracePipelineObjectCmdlet)
                      .InvokeAndClearCommands();
 
                 profileExecutionHadErrors = _pwsh.HadErrors;
@@ -233,7 +233,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                         var isActivityFunction = functionInfo.DurableFunctionInfo.IsActivityFunction;
                         if (!isActivityFunction)
                         {
-                            _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
+                            _pwsh.AddCommand(Utils.TracePipelineObjectCmdlet);
                         }
                         return ExecuteUserCode(isActivityFunction, outputBindings);
                     }
@@ -246,7 +246,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
                 catch (Exception e)
                 {
-                    if (e.Data.Contains(PowerShellWorkerStrings.IsOrchestrationFailureKey) && e.InnerException is IContainsErrorRecord inner)
+                    if (e.Data.Contains(Utils.IsOrchestrationFailureKey) && e.InnerException is IContainsErrorRecord inner)
                     {
                         Logger.Log(isUserOnlyLog: true, LogLevel.Error, GetFunctionExceptionMessage(inner));
                     }

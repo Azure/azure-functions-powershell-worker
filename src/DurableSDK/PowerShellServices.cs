@@ -164,7 +164,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void TracePipelineObject()
         {
-            _pwsh.AddCommand("Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject");
+            _pwsh.AddCommand(Utils.TracePipelineObjectCmdlet);
         }
 
         public IAsyncResult BeginInvoke(PSDataCollection<object> output)

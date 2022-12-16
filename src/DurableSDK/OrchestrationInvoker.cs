@@ -12,6 +12,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Management.Automation;
 
     using Microsoft.Azure.Functions.PowerShellWorker.Durable.Actions;
+    using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 
     internal class OrchestrationInvoker : IOrchestrationInvoker
     {
@@ -31,7 +32,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
             catch (Exception ex)
             {
-                ex.Data.Add(PowerShellWorkerStrings.IsOrchestrationFailureKey, true);
+                ex.Data.Add(Utils.IsOrchestrationFailureKey, true);
                 throw;
             }
             finally
