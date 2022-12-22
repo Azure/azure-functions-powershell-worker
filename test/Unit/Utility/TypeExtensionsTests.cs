@@ -318,8 +318,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var actual = input.ToObject();
             Assert.IsType<Hashtable>(actual);
             var actualHash = (Hashtable)actual;
-            Assert.IsType<Hashtable>(actualHash["Foo"]);
-            var nestedHash = (Hashtable)actualHash["Foo"];
+            Assert.IsType<OrderedHashtable>(actualHash["Foo"]);
+            var nestedHash = (OrderedHashtable)actualHash["Foo"];
             Assert.Single(nestedHash);
             Assert.Equal("Zoo", nestedHash["Bar"]);
         }
@@ -372,8 +372,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(2, actualArray.Length);
             Assert.Equal("Foo", actualArray[0]);
 
-            Assert.IsType<Hashtable>(actualArray[1]);
-            var nestedHash = (Hashtable)actualArray[1];
+            Assert.IsType<OrderedHashtable>(actualArray[1]);
+            var nestedHash = (OrderedHashtable)actualArray[1];
             Assert.Single(nestedHash);
             Assert.Equal("Zoo", nestedHash["Bar"]);
         }
