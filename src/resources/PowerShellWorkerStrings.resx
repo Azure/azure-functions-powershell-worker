@@ -368,7 +368,7 @@
     <value>The external Durable Functions SDK is enabled but it cannot be used because it was not loaded onto the current PowerShell session. Please add `Import-Module -Name {0} -ErrorAction Stop` to your profile.ps1 so it may be used. Defaulting to built-in SDK.</value>
   </data>
   <data name="MultipleExternalSDKsInSession" xml:space="preserve">
-    <value>Get-Module returned '{0}' instances of '{1}' in the PowerShell session, but only 1 or 0 are expected. This may create runtime errors. Please ensure your script only imports a single version of '{0}'. The modules currently in session are:\n '{2}'.</value>
+    <value>Get-Module returned '{0}' instances of '{1}' in the PowerShell session, but only 1 or 0 are expected. This may create runtime errors. Please ensure your script only imports a single version of '{0}' in your profile.ps1; do not import '{0}' anywhere else in your code. The modules currently in session are:\n '{2}'.</value>
   </data>
   <data name="PotentialDurableSDKClash" xml:space="preserve">
     <value>The external Durable Functions SDK is not enabled but '{0}' has been imported to the PowerShell session. This may create runtime conflicts between the built-in and external Durable Functions CommandLets. If you mean to use the external Durable Functions SDK, please set the enviroment variable '{1}' to "true"</value>
