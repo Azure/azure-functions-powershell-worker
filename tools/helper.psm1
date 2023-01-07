@@ -17,8 +17,8 @@ $DotnetSDKVersionRequirements = @{
     }
 
     '6.0' = @{
-        MinimalPatch = '402'
-        DefaultPatch = '402'
+        MinimalPatch = '404'
+        DefaultPatch = '404'
     }
 }
 
