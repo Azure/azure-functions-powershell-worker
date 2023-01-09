@@ -17,11 +17,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 
     internal class Utils
     {
+        internal readonly static CmdletInfo GetModuleCmdletInfo = new CmdletInfo("Get-Module", typeof(GetModuleCommand));
         internal readonly static CmdletInfo ImportModuleCmdletInfo = new CmdletInfo("Import-Module", typeof(ImportModuleCommand));
         internal readonly static CmdletInfo RemoveModuleCmdletInfo = new CmdletInfo("Remove-Module", typeof(RemoveModuleCommand));
         internal readonly static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
         internal readonly static CmdletInfo OutStringCmdletInfo = new CmdletInfo("Out-String", typeof(OutStringCommand));
         internal readonly static CmdletInfo WriteInformationCmdletInfo = new CmdletInfo("Write-Information", typeof(WriteInformationCommand));
+        
+        internal const string InternalDurableSdkName = "Microsoft.Azure.Functions.PowerShellWorker";
+        internal const string ExternalDurableSdkName = "AzureFunctions.PowerShell.Durable.SDK";
+        internal const string IsOrchestrationFailureKey = "IsOrchestrationFailure";
+        internal const string TracePipelineObjectCmdlet = "Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject";
 
         internal readonly static object BoxedTrue = (object)true;
         internal readonly static object BoxedFalse = (object)false;

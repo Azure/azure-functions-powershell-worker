@@ -34,12 +34,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         {
             var invocationAsyncResult = DurableTestUtilities.CreateInvocationResult(completed: true);
             DurableTestUtilities.ExpectBeginInvoke(_mockPowerShellServices, invocationAsyncResult);
+            _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(false);
 
             _orchestrationInvoker.Invoke(_orchestrationBindingInfo, _mockPowerShellServices.Object);
 
             _mockPowerShellServices.Verify(_ => _.BeginInvoke(It.IsAny<PSDataCollection<object>>()), Times.Once);
             _mockPowerShellServices.Verify(_ => _.EndInvoke(invocationAsyncResult), Times.Once);
             _mockPowerShellServices.Verify(_ => _.ClearStreamsAndCommands(), Times.Once);
+            _mockPowerShellServices.Verify(_ => _.TracePipelineObject(), Times.Once);
+            _mockPowerShellServices.Verify(_ => _.AddParameter(It.IsAny<string>(), It.IsAny<object>()), Times.Once);
+            _mockPowerShellServices.Verify(_ => _.HasExternalDurableSDK(), Times.Once);
             _mockPowerShellServices.VerifyNoOtherCalls();
         }
 
@@ -47,10 +51,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         public void InvocationStopsOnStopEvent()
         {
             InvokeOrchestration(completed: false);
+            _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(false);
 
             _mockPowerShellServices.Verify(_ => _.BeginInvoke(It.IsAny<PSDataCollection<object>>()), Times.Once);
             _mockPowerShellServices.Verify(_ => _.StopInvoke(), Times.Once);
             _mockPowerShellServices.Verify(_ => _.ClearStreamsAndCommands(), Times.Once);
+            _mockPowerShellServices.Verify(_ => _.TracePipelineObject(), Times.Once);
+            _mockPowerShellServices.Verify(_ => _.AddParameter(It.IsAny<string>(), It.IsAny<object>()), Times.Once);
+            _mockPowerShellServices.Verify(_ => _.HasExternalDurableSDK(), Times.Once);
             _mockPowerShellServices.VerifyNoOtherCalls();
         }
 

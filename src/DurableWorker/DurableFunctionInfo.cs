@@ -17,6 +17,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DurableWorker
 
         public bool IsOrchestrationFunction => Type == DurableFunctionType.OrchestrationFunction;
 
+        public bool IsActivityFunction => Type == DurableFunctionType.ActivityFunction;
+
         public string DurableClientBindingName { get; }
 
         public DurableFunctionType Type
