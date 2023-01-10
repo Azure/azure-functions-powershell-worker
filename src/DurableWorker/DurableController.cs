@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private readonly ILogger _logger;
 
         private bool isExternalDFSdkEnabled { get; } =
-            PowerShellWorkerConfiguration.GetBoolean("ExternalDurablePowerShellSDK") ?? false;
+            PowerShellWorkerConfiguration.GetBoolean(Utils.ExternalDurableSdkEnvVariable) ?? false;
 
         public DurableController(
             DurableFunctionInfo durableDurableFunctionInfo,
@@ -81,7 +81,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             else if (isExternalSdkLoaded)
             {
                 // External SDK is in the session, but customer did not explicitly enable it. Report the potential of runtime errors.
-                _logger.Log(isUserOnlyLog: false, LogLevel.Error, String.Format(PowerShellWorkerStrings.PotentialDurableSDKClash, Utils.ExternalDurableSdkName));
+                _logger.Log(isUserOnlyLog: false, LogLevel.Error, String.Format(PowerShellWorkerStrings.PotentialDurableSDKClash, Utils.ExternalDurableSdkName, Utils.ExternalDurableSdkEnvVariable));
             }
         }
 
