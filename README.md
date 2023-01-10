@@ -21,7 +21,7 @@ Please feel free to leave comments about any of the features and design patterns
 
 PowerShell support for Functions is based on [PowerShell Core 7](https://github.com/powershell/powershell),
 [Functions on Linux](https://blogs.msdn.microsoft.com/appserviceteam/2017/11/15/functions-on-linux-preview/),
-and the [Azure Functions runtime V3](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions).
+and the [Azure Functions runtime V4](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions).
 
 ## What's available?
 
@@ -82,9 +82,9 @@ On macOS if you installed via `brew`
 /usr/local/Cellar/azure-functions-core-tools/<version>/workers/
 ```
 
-Under the `workers/powershell` folder, create a folder with the name `7` if it does not exist yet. Copy the result of the `publish` directory into the `workers/powershell/7` folder, and copy the `publish/worker.config.json` file into the `workers/powershell` folder:
+Under the `workers/powershell` folder, create a folder with the name `7.2` if it does not exist yet. Copy the result of the `publish` directory into the `workers/powershell/7.2` folder, and copy the `publish/worker.config.json` file into the `workers/powershell` folder:
 ```powershell
-Copy-Item -Recurse -Force ./src/bin/Debug/net6.0/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell/7"
+Copy-Item -Recurse -Force ./src/bin/Debug/net6.0/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell/7.2"
 Copy-Item -Recurse -Force ./src/bin/Debug/net6.0/publish/worker.config.json "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell"
 ```
 
@@ -93,7 +93,7 @@ Copy-Item -Recurse -Force ./src/bin/Debug/net6.0/publish/worker.config.json "/us
 Then `cd` into a Function App with PowerShell as the worker runtime 
 (NOTE: There's an example PowerShell Function App in the `examples` folder).
 
-Set the environment variable `FUNCTIONS_WORKER_RUNTIME_VERSION` to `7`, or add this as an app setting to the `local.settings.json` file.
+Set the environment variable `FUNCTIONS_WORKER_RUNTIME_VERSION` to `7.2`, or add this as an app setting to the `local.settings.json` file.
 
 Lastly, run:
 
@@ -119,9 +119,9 @@ set the environment variable `"AzureWebJobsScriptRoot"`
 to the root folder path (the folder which contains the `host.json`)
 of your test functions app.
 
-Under the `workers/powershell` folder, create a folder with the name `7` if it does not exist yet. Then copy the `publish` directory to `workers/powershell/7`, and the `publish/worker.config.json` to `workers/powershell`:
+Under the `workers/powershell` folder, create a folder with the name `7.2` if it does not exist yet. Then copy the `publish` directory to `workers/powershell/7.2`, and the `publish/worker.config.json` to `workers/powershell`:
 ```powershell
-Copy-Item -Recurse -Force ./src/bin/Debug/net6.0/publish/ "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/net6.0/workers/powershell/7"
+Copy-Item -Recurse -Force ./src/bin/Debug/net6.0/publish/ "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/net6.0/workers/powershell/7.2"
 Copy-Item -Force ./src/bin/Debug/net6.0/publish/worker.config.json "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/net6.0/workers/powershell"
 ```
 
