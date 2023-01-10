@@ -122,19 +122,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 retObj = psObj.BaseObject;
             }
 
-            if (retObj is Hashtable hashtable)
-            {
-                try
-                {
-                    // ConvertFromJson returns case-sensitive Hashtable by design -- JSON may contain keys that only differ in case.
-                    // We try casting the Hashtable to a case-insensitive one, but if that fails, we keep using the original one.
-                    retObj = new Hashtable(hashtable, StringComparer.OrdinalIgnoreCase);
-                }
-                catch
-                {
-                    retObj = hashtable;
-                }
-            }
+            // By default, the PowerShell 7.4 language worker no longer wraps the output of ConvertFromJson to try to create a
+            // case-insensitive hashtable to support deserializing JSON which may contain keys that only differ in case.
+            // For more information, please see https://github.com/Azure/azure-functions-powershell-worker/issues/909
 
             return retObj;
         }
