@@ -299,8 +299,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             var input = new TypedData { Json = data };
             var actual = input.ToObject();
-            Assert.IsType<Hashtable>(actual);
-            var actualHash = (Hashtable)actual;
+            Assert.IsType<OrderedHashtable>(actual);
+            var actualHash = (OrderedHashtable)actual;
             Assert.IsType<object[]>(actualHash["Foo"]);
             var actualArray = (object[])actualHash["Foo"];
             Assert.Equal(2, actualArray.Length);
@@ -316,8 +316,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             var input = new TypedData { Json = data };
             var actual = input.ToObject();
-            Assert.IsType<Hashtable>(actual);
-            var actualHash = (Hashtable)actual;
+            Assert.IsType<OrderedHashtable>(actual);
+            var actualHash = (OrderedHashtable)actual;
             Assert.IsType<OrderedHashtable>(actualHash["Foo"]);
             var nestedHash = (OrderedHashtable)actualHash["Foo"];
             Assert.Single(nestedHash);
