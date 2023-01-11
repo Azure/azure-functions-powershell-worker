@@ -286,6 +286,37 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             _mockPowerShellServices.Verify(_ => _.EnableExternalDurableSDK(), Times.Never);
         }
 
+        [Fact]
+        internal void WarnsUserToSetExternalSdkEnvVariable()
+        {
+            // "forget" to enable DF external SDK through enviroment variable
+            Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "false");
+
+            var mockLogger = new Mock<ILogger>();
+            var durableFunctionType = DurableFunctionType.OrchestrationFunction;
+            var durableController = CreateDurableController(durableFunctionType, logger: mockLogger.Object);
+            var inputData = GetDurableBindings(durableFunctionType);
+
+            _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
+                It.IsAny<ParameterBinding>(),
+                out It.Ref<IExternalOrchestrationInvoker>.IsAny)).Returns(_orchestrationBindingInfo);
+            _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
+
+            _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(false);
+            _mockPowerShellServices.Setup(_ => _.EnableExternalDurableSDK()).Throws(new Exception("should not be called"));
+            
+            // detect SDK is loaded
+            _mockPowerShellServices.Setup(_ => _.isExternalDurableSdkLoaded()).Returns(true);
+            durableController.InitializeBindings(inputData, out var hasExternalSDK);
+
+            Assert.False(hasExternalSDK);
+            _mockPowerShellServices.Verify(_ => _.EnableExternalDurableSDK(), Times.Never);
+
+            // validate that warning is communicated through the logger
+            var expectedMessage = string.Format(PowerShellWorkerStrings.PotentialDurableSDKClash, Utils.ExternalDurableSdkName, Utils.ExternalDurableSdkEnvVariable);
+            mockLogger.Verify(_ => _.Log(false, RpcLog.Types.Level.Error, It.Is<string>(s => s.Equals(expectedMessage)), null), Times.Once);
+        }
+
         [Theory]
         [InlineData(DurableFunctionType.None)]
         [InlineData(DurableFunctionType.OrchestrationFunction)]
@@ -328,15 +359,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
 
         private DurableController CreateDurableController(
             DurableFunctionType durableFunctionType,
-            string durableClientBindingName = null)
+            string durableClientBindingName = null,
+            ILogger logger = null)
         {
             var durableFunctionInfo = new DurableFunctionInfo(durableFunctionType, durableClientBindingName);
+
+            if (logger == null)
+            {
+                logger = _testLogger;
+            }
 
             return new DurableController(
                             durableFunctionInfo,
                             _mockPowerShellServices.Object,
                             _mockOrchestrationInvoker.Object,
-                            _testLogger);
+                            logger);
         }
 
         private static ParameterBinding CreateParameterBinding(string parameterName, object value)
