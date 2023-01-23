@@ -65,7 +65,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             return httpRequestContext;
         }
 
-        internal static object ToObject(this TypedData data, bool convertFromJsonIfValidJson = true)
+        internal static object ToObject(this TypedData data, bool convertFromJsonIfValidJson = true, bool isDurableClient = false)
         {
             if (data == null)
             {
@@ -75,7 +75,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             switch (data.DataCase)
             {
                 case TypedData.DataOneofCase.Json:
-                    return ConvertFromJson(data.Json);
+                    return ConvertFromJson(data.Json, isDurableClient: isDurableClient);
                 case TypedData.DataOneofCase.Bytes:
                     return data.Bytes.ToByteArray();
                 case TypedData.DataOneofCase.Double:
@@ -89,7 +89,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 case TypedData.DataOneofCase.String:
                     string str = data.String;
                     return convertFromJsonIfValidJson && IsValidJson(str)
-                                ? ConvertFromJson(str)
+                                ? ConvertFromJson(str, isDurableClient: isDurableClient)
                                 : str;
                 case TypedData.DataOneofCase.None:
                     return null;
@@ -113,7 +113,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
             }
         }
 
-        public static object ConvertFromJson(string json)
+        public static object ConvertFromJson(string json, bool isDurableClient = false)
         {
             object retObj = JsonObject.ConvertFromJson(json, returnHashtable: true, error: out _);
 
@@ -122,9 +122,25 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 retObj = psObj.BaseObject;
             }
 
+            // TODO: Review this comment to see if it is still relevant.
             // By default, the PowerShell 7.4 language worker no longer wraps the output of ConvertFromJson to try to create a
             // case-insensitive hashtable to support deserializing JSON which may contain keys that only differ in case.
             // For more information, please see https://github.com/Azure/azure-functions-powershell-worker/issues/909
+
+            if (isDurableClient && (retObj is Hashtable hashtable))
+            {
+                // Durable data is case sensitive when it arrives from the Host. However, customers expect Durable client data to be case insensitive, therefore, we tried to convert the Ordered
+                try
+                {
+                    // ConvertFromJson returns case-sensitive Hashtable by design -- JSON may contain keys that only differ in case.
+                    // We try casting the Hashtable to a case-insensitive one, but if that fails, we keep using the original one.
+                    retObj = new Hashtable(hashtable, StringComparer.OrdinalIgnoreCase);
+                }
+                catch
+                {
+                    retObj = hashtable;
+                }
+            }
 
             return retObj;
         }
