@@ -132,7 +132,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 try
                 {
                     // ConvertFromJson returns case-sensitive Ordered Hashtable by design -- JSON may contain keys that only differ in case.
-                    // We try casting the Ordered Hashtable to a case-insensitive Hashtable, but if that fails, we keep using the original one.
+                    // We try to convert the Ordered Hashtable to a case-insensitive Hashtable, but if that fails, we keep using the original one.
                     retObj = new Hashtable(hashtable, StringComparer.OrdinalIgnoreCase);
                 }
                 catch
