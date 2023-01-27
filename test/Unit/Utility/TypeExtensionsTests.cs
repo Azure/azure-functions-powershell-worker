@@ -379,6 +379,27 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         }
 
         [Fact]
+        public void TestTypedDataToCaseInsensitiveHashtable_Deserialize()
+        {
+            string[] keysToValidate = new string[] { "TASKHUBNAME", "taskhubname", "RPCBASEURL", "rpcbaseurl" };
+
+            var jsonString =
+                $$"""
+                {
+                    "taskHubName": "abcd1235",
+                    "rpcBaseUrl": "http://127.0.0.1:17071/durabletask/"
+                }
+                """;
+            var input = new TypedData { String = jsonString };
+            var result = (Hashtable)input.ToObject(isDurableClient: true);
+
+            foreach (var keyName in keysToValidate)
+            {
+                Assert.True(result.ContainsKey(keyName));
+            }
+        }
+
+        [Fact]
         public void TestTypedDataToObjectBytes()
         {
             var data = ByteString.CopyFromUtf8("Hello World");
