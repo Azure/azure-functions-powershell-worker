@@ -49,15 +49,16 @@ $DefaultPSWorkerVersion = '7.4'
 
 if (-not $workerVersion)
 {
-    Write-Host "Worker version not specified. Setting workerVersion to '$DefaultPSWorkerVersion'"
+    Write-Log "Worker version not specified. Setting workerVersion to '$DefaultPSWorkerVersion'"
     $workerVersion = $DefaultPSWorkerVersion
 }
 
 $PowerShellVersion = $WorkerVersion
+Write-Log "Build worker version: $PowerShellVersion"
 
 # Set target framework for 7.2 to net6.0 and for 7.4 to net7.0
 $TargetFramework = ($PowerShellVersion -eq "7.2") ? 'net6.0' : 'net7.0'
-
+Write-Log "Target framework: $TargetFramework"
 
 function Get-FunctionsCoreToolsDir {
     if ($CoreToolsDir) {
@@ -93,7 +94,7 @@ function Install-SBOMUtil
     }
 
     $MANIFESTOOLNAME = "ManifestTool"
-    Write-Host "Installing $MANIFESTOOLNAME..."
+    Write-Log "Installing $MANIFESTOOLNAME..."
 
     $MANIFESTOOL_DIRECTORY = Join-Path $PSScriptRoot $MANIFESTOOLNAME
     Remove-Item -Recurse -Force $MANIFESTOOL_DIRECTORY -ErrorAction Ignore
@@ -109,7 +110,7 @@ function Install-SBOMUtil
         throw "$MANIFESTOOL_DIRECTORY does not contain '$dllName'"
     }
 
-    Write-Host 'Done.'
+    Write-Log 'Done.'
 
     return $manifestToolPath
 }
