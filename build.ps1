@@ -43,6 +43,8 @@ param(
 
 #Requires -Version 7.0
 
+Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
+
 $PowerShellVersion = $null
 $TargetFramework = $null
 $DefaultPSWorkerVersion = '7.4'
@@ -138,8 +140,6 @@ function Deploy-PowerShellWorker {
 
     Write-Log "Deployed worker to $powerShellWorkerDir"
 }
-
-Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
 
 # Bootstrap step
 if ($Bootstrap.IsPresent) {
