@@ -6,7 +6,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
   <Import Project="..\PowerShellWorker.Common.props" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <TieredCompilation>true</TieredCompilation>
     <Product>Azure Function PowerShell Language Worker</Product>
     <AssemblyName>Microsoft.Azure.Functions.PowerShellWorker</AssemblyName>
@@ -21,7 +21,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
 
   <ItemGroup>
     <PackageReference Include="Grpc.Net.Client" Version="2.49.0" />
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.2.8" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.0-preview.1" />
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Google.Protobuf" Version="3.21.9" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.3" />

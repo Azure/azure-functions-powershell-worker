@@ -299,8 +299,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             var input = new TypedData { Json = data };
             var actual = input.ToObject();
-            Assert.IsType<Hashtable>(actual);
-            var actualHash = (Hashtable)actual;
+            Assert.IsType<OrderedHashtable>(actual);
+            var actualHash = (OrderedHashtable)actual;
             Assert.IsType<object[]>(actualHash["Foo"]);
             var actualArray = (object[])actualHash["Foo"];
             Assert.Equal(2, actualArray.Length);
@@ -316,10 +316,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             var input = new TypedData { Json = data };
             var actual = input.ToObject();
-            Assert.IsType<Hashtable>(actual);
-            var actualHash = (Hashtable)actual;
-            Assert.IsType<Hashtable>(actualHash["Foo"]);
-            var nestedHash = (Hashtable)actualHash["Foo"];
+            Assert.IsType<OrderedHashtable>(actual);
+            var actualHash = (OrderedHashtable)actual;
+            Assert.IsType<OrderedHashtable>(actualHash["Foo"]);
+            var nestedHash = (OrderedHashtable)actualHash["Foo"];
             Assert.Single(nestedHash);
             Assert.Equal("Zoo", nestedHash["Bar"]);
         }
@@ -372,10 +372,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Equal(2, actualArray.Length);
             Assert.Equal("Foo", actualArray[0]);
 
-            Assert.IsType<Hashtable>(actualArray[1]);
-            var nestedHash = (Hashtable)actualArray[1];
+            Assert.IsType<OrderedHashtable>(actualArray[1]);
+            var nestedHash = (OrderedHashtable)actualArray[1];
             Assert.Single(nestedHash);
             Assert.Equal("Zoo", nestedHash["Bar"]);
+        }
+
+        [Fact]
+        public void TestTypedDataToCaseInsensitiveHashtable_Deserialize()
+        {
+            string[] keysToValidate = new string[] { "TASKHUBNAME", "taskhubname", "RPCBASEURL", "rpcbaseurl" };
+
+            var jsonString =
+                $$"""
+                {
+                    "taskHubName": "abcd1235",
+                    "rpcBaseUrl": "http://127.0.0.1:17071/durabletask/"
+                }
+                """;
+            var input = new TypedData { String = jsonString };
+            var result = (Hashtable)input.ToObject(isDurableClient: true);
+
+            foreach (var keyName in keysToValidate)
+            {
+                Assert.True(result.ContainsKey(keyName));
+            }
         }
 
         [Fact]

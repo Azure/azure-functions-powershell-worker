@@ -34,13 +34,33 @@ param(
     $AddSBOM,
 
     [string]
-    $SBOMUtilSASUrl
+    $SBOMUtilSASUrl,
+
+    [string]
+    [ValidateSet("7.2", "7.4")]
+    $WorkerVersion
 )
 
-#Requires -Version 6.0
+#Requires -Version 7.0
 
-$PowerShellVersion = '7.2'
-$TargetFramework = 'net6.0'
+Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
+
+$PowerShellVersion = $null
+$TargetFramework = $null
+$DefaultPSWorkerVersion = '7.4'
+
+if (-not $workerVersion)
+{
+    Write-Log "Worker version not specified. Setting workerVersion to '$DefaultPSWorkerVersion'"
+    $workerVersion = $DefaultPSWorkerVersion
+}
+
+$PowerShellVersion = $WorkerVersion
+Write-Log "Build worker version: $PowerShellVersion"
+
+# Set target framework for 7.2 to net6.0 and for 7.4 to net7.0
+$TargetFramework = ($PowerShellVersion -eq "7.2") ? 'net6.0' : 'net7.0'
+Write-Log "Target framework: $TargetFramework"
 
 function Get-FunctionsCoreToolsDir {
     if ($CoreToolsDir) {
@@ -76,7 +96,7 @@ function Install-SBOMUtil
     }
 
     $MANIFESTOOLNAME = "ManifestTool"
-    Write-Host "Installing $MANIFESTOOLNAME..."
+    Write-Log "Installing $MANIFESTOOLNAME..."
 
     $MANIFESTOOL_DIRECTORY = Join-Path $PSScriptRoot $MANIFESTOOLNAME
     Remove-Item -Recurse -Force $MANIFESTOOL_DIRECTORY -ErrorAction Ignore
@@ -92,7 +112,7 @@ function Install-SBOMUtil
         throw "$MANIFESTOOL_DIRECTORY does not contain '$dllName'"
     }
 
-    Write-Host 'Done.'
+    Write-Log 'Done.'
 
     return $manifestToolPath
 }
@@ -101,6 +121,12 @@ function Deploy-PowerShellWorker {
     $ErrorActionPreference = 'Stop'
 
     $powerShellWorkerDir = "$(Get-FunctionsCoreToolsDir)/workers/powershell/$PowerShellVersion"
+
+    if (-not (Test-Path $powerShellWorkerDir))
+    {
+        Write-Log "Creating directory: '$powerShellWorkerDir'"
+        New-Item -Path $powerShellWorkerDir -ItemType Directory -Force | Out-Null
+    }
 
     Write-Log "Deploying worker to $powerShellWorkerDir..."
 
@@ -114,8 +140,6 @@ function Deploy-PowerShellWorker {
 
     Write-Log "Deployed worker to $powerShellWorkerDir"
 }
-
-Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
 
 # Bootstrap step
 if ($Bootstrap.IsPresent) {

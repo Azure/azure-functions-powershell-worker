@@ -95,7 +95,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 var durableClient =
                     inputData.First(item => item.Name == _durableFunctionInfo.DurableClientBindingName)
-                        .Data.ToObject();
+                        .Data.ToObject(isDurableClient: true);
 
                 _powerShellServices.SetDurableClient(durableClient);
             }

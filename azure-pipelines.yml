@@ -21,7 +21,7 @@ pool:
 
 variables:
   Configuration: Release
-  buildNumber: $[ counter('build', 400) ] # Start higher than our AppVeyor versions. Every build (pr or branch) will increment.
+  buildNumber: $[ counter('build', 001) ] # Start higher than our AppVeyor versions. Every build (pr or branch) will increment.
 
 steps:
 - pwsh: |

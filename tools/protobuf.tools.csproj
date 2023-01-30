@@ -6,7 +6,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <NoBuild>true</NoBuild>
   </PropertyGroup>
 
