@@ -102,11 +102,49 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
         }
 
+        public static bool IsFinalTaskFailedEvent(
+            DurableTask task,
+            OrchestrationContext context,
+            HistoryEvent scheduledHistoryEvent,
+            HistoryEvent completedHistoryEvent
+            )
+        {
+
+            if (task is ActivityInvocationTask activity && completedHistoryEvent.EventType == HistoryEventType.TaskFailed)
+            {
+                if (activity.RetryOptions == null)
+                {
+                    return true;
+                }
+                else
+                {
+                    Action<string> NoOp = _ => { };
+                    // RetryProcessor assumes events have not been processed,
+                    // it will re-assign the `IsProcessed` flag for these events
+                    // it its execution
+                    scheduledHistoryEvent.IsProcessed = false;
+                    completedHistoryEvent.IsProcessed = false;
+
+                    var isFinalFailureEvent =
+                        RetryProcessor.Process(
+                            context.History,
+                            scheduledHistoryEvent,
+                            activity.RetryOptions.MaxNumberOfAttempts,
+                            onSuccess: NoOp,
+                            onFinalFailure: NoOp);
+                    return isFinalFailureEvent;
+                }
+            }
+            return false;
+        }
+
         // Waits for all of the given DurableTasks to complete
         public void WaitAll(
             IReadOnlyCollection<DurableTask> tasksToWaitFor,
             OrchestrationContext context,
-            Action<object> output)
+            Action<object> output,
+            Action<string> onFailure
+            )
         {
             context.OrchestrationActionCollector.NextBatch();
                 
@@ -127,6 +165,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 }
 
                 completedHistoryEvent.IsProcessed = true;
+
+                if (!IsFinalTaskFailedEvent(task, context, scheduledHistoryEvent, completedHistoryEvent))
+                {
+                    // do not count this as a terminal event for this task
+                    continue;
+                }
+
                 completedEvents.Add(completedHistoryEvent);
             }
 
@@ -142,6 +187,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     {
                         output(GetEventResult(completedHistoryEvent));
                     }
+                    if (completedHistoryEvent.EventType is HistoryEventType.TaskFailed)
+                    {
+                        onFailure(completedHistoryEvent.Reason);
+                    }
                 }
             }
             else
@@ -154,7 +203,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         public void WaitAny(
             IReadOnlyCollection<DurableTask> tasksToWaitFor,
             OrchestrationContext context,
-            Action<object> output)
+            Action<object> output,
+            Action<string> onFailure)
         {
             context.OrchestrationActionCollector.NextBatch();
                 
@@ -173,6 +223,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 {
                     scheduledHistoryEvent.IsProcessed = true;
                     scheduledHistoryEvent.IsPlayed = true;
+                }
+
+                if (!IsFinalTaskFailedEvent(task, context, scheduledHistoryEvent, completedHistoryEvent))
+                {
+                    // do not count this as a terminal event for this task
+                    completedHistoryEvent = null;
                 }
 
                 if (completedHistoryEvent != null)

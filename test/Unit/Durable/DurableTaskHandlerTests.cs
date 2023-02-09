@@ -55,7 +55,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var allOutput = new List<object>();
 
             var durableTaskHandler = new DurableTaskHandler();
-            durableTaskHandler.WaitAll(tasksToWaitFor, orchestrationContext, output => { allOutput.Add(output); });
+            durableTaskHandler.WaitAll(tasksToWaitFor, orchestrationContext, output => { allOutput.Add(output); }, _ => { });
 
             Assert.Equal(new[] { "Result1", "Result2", "Result3" }, allOutput);
             VerifyNoOrchestrationActionAdded(orchestrationContext);
@@ -88,7 +88,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             DurableTestUtilities.EmulateStop(durableTaskHandler);
 
             durableTaskHandler.WaitAll(tasksToWaitFor, orchestrationContext,
-                                                           _ => { Assert.True(false, "Unexpected output"); });
+                                                           _ => { Assert.True(false, "Unexpected output"); }, _ => { });
 
             VerifyNoOrchestrationActionAdded(orchestrationContext);
         }
@@ -122,7 +122,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 expectedWaitForStop,
                 () =>
                 {
-                    durableTaskHandler.WaitAll(tasksToWaitFor, orchestrationContext, _ => { });
+                    durableTaskHandler.WaitAll(tasksToWaitFor, orchestrationContext, _ => { }, _ => { });
                 });
         }
 
@@ -151,7 +151,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             var allOutput = new List<object>();
 
             var durableTaskHandler = new DurableTaskHandler();
-            durableTaskHandler.WaitAny(tasksToWaitFor, orchestrationContext, output => { allOutput.Add(output); });
+            durableTaskHandler.WaitAny(tasksToWaitFor, orchestrationContext, output => { allOutput.Add(output); }, _ => { });
 
             if (completed)
             {
@@ -190,7 +190,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 expectedWaitForStop,
                 () =>
                 {
-                    durableTaskHandler.WaitAny(tasksToWaitFor, orchestrationContext, _ => { });
+                    durableTaskHandler.WaitAny(tasksToWaitFor, orchestrationContext, _ => { }, _ => { });
                 });
         }
 
@@ -242,13 +242,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
             if (invokeWaitAll)
             {
                 durableTaskHandler.Stop(); // just to avoid the next call getting stuck waiting for a stop event
-                durableTaskHandler.WaitAll(new DurableTask[0], orchestrationContext, output: _ => {});
+                durableTaskHandler.WaitAll(new DurableTask[0], orchestrationContext, output: _ => {}, _ => { });
             }
 
             if (invokeWaitAny)
             {
                 durableTaskHandler.Stop(); // just to avoid the next call getting stuck waiting for a stop event
-                durableTaskHandler.WaitAny(new DurableTask[0], orchestrationContext, output: _ => {});
+                durableTaskHandler.WaitAny(new DurableTask[0], orchestrationContext, output: _ => {}, _ => { });
             }
 
             durableTaskHandler.StopAndInitiateDurableTaskOrReplay(

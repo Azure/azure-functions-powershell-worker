@@ -30,11 +30,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
 
             if (Any.IsPresent)
             {
-                _durableTaskHandler.WaitAny(Task, context, WriteObject);
+                _durableTaskHandler.WaitAny(Task, context, WriteObject, onFailure: failureReason => DurableActivityErrorHandler.Handle(this, failureReason));
             }
             else
             {
-                _durableTaskHandler.WaitAll(Task, context, WriteObject);
+                _durableTaskHandler.WaitAll(Task, context, WriteObject, onFailure: failureReason => DurableActivityErrorHandler.Handle(this, failureReason));
             }
         }
 
