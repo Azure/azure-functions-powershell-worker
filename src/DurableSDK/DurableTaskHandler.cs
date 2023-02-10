@@ -102,7 +102,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
         }
 
-        public static bool IsFinalTaskFailedEvent(
+        public static bool IsNonTerminalTaskFailedEvent(
             DurableTask task,
             OrchestrationContext context,
             HistoryEvent scheduledHistoryEvent,
@@ -114,7 +114,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 if (activity.RetryOptions == null)
                 {
-                    return true;
+                    return false;
                 }
                 else
                 {
@@ -132,10 +132,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                             activity.RetryOptions.MaxNumberOfAttempts,
                             onSuccess: NoOp,
                             onFinalFailure: NoOp);
-                    return isFinalFailureEvent;
+                    return !isFinalFailureEvent;
                 }
             }
-            return false;
+            return true;
         }
 
         // Waits for all of the given DurableTasks to complete
@@ -166,7 +166,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
                 completedHistoryEvent.IsProcessed = true;
 
-                if (!IsFinalTaskFailedEvent(task, context, scheduledHistoryEvent, completedHistoryEvent))
+                if (IsNonTerminalTaskFailedEvent(task, context, scheduledHistoryEvent, completedHistoryEvent))
                 {
                     // do not count this as a terminal event for this task
                     continue;
@@ -225,7 +225,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     scheduledHistoryEvent.IsPlayed = true;
                 }
 
-                if (!IsFinalTaskFailedEvent(task, context, scheduledHistoryEvent, completedHistoryEvent))
+                if (completedHistoryEvent == null)
+                {
+                    continue;
+                }
+
+                if (IsNonTerminalTaskFailedEvent(task, context, scheduledHistoryEvent, completedHistoryEvent))
                 {
                     // do not count this as a terminal event for this task
                     completedHistoryEvent = null;
