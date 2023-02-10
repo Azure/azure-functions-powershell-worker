@@ -135,7 +135,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     return !isFinalFailureEvent;
                 }
             }
-            return true;
+            return false;
         }
 
         // Waits for all of the given DurableTasks to complete
