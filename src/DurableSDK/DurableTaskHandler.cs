@@ -14,6 +14,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     internal class DurableTaskHandler
     {
         private readonly ManualResetEvent _waitForStop = new ManualResetEvent(initialState: false);
+        private bool enabledCompoundErrorPropagation { get; } =
+            PowerShellWorkerConfiguration.GetBoolean(Utils.PropagateCompoundErrorsEnvVariable) ?? false;
 
         public void StopAndInitiateDurableTaskOrReplay(
             DurableTask task,
@@ -187,7 +189,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                     {
                         output(GetEventResult(completedHistoryEvent));
                     }
-                    if (completedHistoryEvent.EventType is HistoryEventType.TaskFailed)
+                    if (completedHistoryEvent.EventType is HistoryEventType.TaskFailed && enabledCompoundErrorPropagation)
                     {
                         onFailure(completedHistoryEvent.Reason);
                     }
@@ -203,8 +205,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         public void WaitAny(
             IReadOnlyCollection<DurableTask> tasksToWaitFor,
             OrchestrationContext context,
-            Action<object> output,
-            Action<string> onFailure)
+            Action<object> output)
         {
             context.OrchestrationActionCollector.NextBatch();
                 

@@ -29,6 +29,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         internal const string IsOrchestrationFailureKey = "IsOrchestrationFailure";
         internal const string TracePipelineObjectCmdlet = "Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject";
         internal const string ExternalDurableSdkEnvVariable = "ExternalDurablePowerShellSDK";
+        internal const string PropagateCompoundErrorsEnvVariable = "PropagateCompoundErrors";
 
         internal readonly static object BoxedTrue = (object)true;
         internal readonly static object BoxedFalse = (object)false;

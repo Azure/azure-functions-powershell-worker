@@ -226,7 +226,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 DurableTestUtilities.EmulateStop(durableTaskHandler);
             }
 
-            durableTaskHandler.WaitAny(tasksToWaitFor, context, output => allOutput.Add(output), _ => { });
+            durableTaskHandler.WaitAny(tasksToWaitFor, context, output => allOutput.Add(output));
             
             if (anyCompleted)
             {
