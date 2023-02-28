@@ -37,6 +37,7 @@ steps:
   displayName: 'Set IsReleaseBuild variable'
   env:
     BuildSourceBranch: $(Build.SourceBranch)
+  condition: eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], 'false')
 
 - pwsh: ./build.ps1 -NoBuild -Bootstrap
   displayName: 'Running ./build.ps1 -NoBuild -Bootstrap'
