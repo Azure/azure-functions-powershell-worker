@@ -24,6 +24,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.13" />
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Google.Protobuf" Version="3.21.9" />
+    <PackageReference Include="System.DirectoryServices.Protocols" Version="5.0.1" />
   </ItemGroup>
 
   <ItemGroup>
