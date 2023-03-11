@@ -15,9 +15,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         public FunctionAppFixture()
         {
             // initialize logging
-#pragma warning disable CS0618 // Type or member is obsolete
-            ILoggerFactory loggerFactory = new LoggerFactory().AddConsole();
-#pragma warning restore CS0618 // Type or member is obsolete
+            ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
             _logger = loggerFactory.CreateLogger<FunctionAppFixture>();
 
             // start host via CLI if testing locally
