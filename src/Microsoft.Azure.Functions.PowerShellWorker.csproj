@@ -20,10 +20,11 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc.Core" Version="2.27.0" />
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.12" />
-    <PackageReference Include="CommandLineParser" Version="2.3.0" />
-    <PackageReference Include="Google.Protobuf" Version="3.19.4" />
+    <PackageReference Include="Grpc.Core" Version="2.46.6" />
+    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.0.13" />
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.21.9" />
+    <PackageReference Include="System.DirectoryServices.Protocols" Version="5.0.1" />
   </ItemGroup>
 
   <ItemGroup>
