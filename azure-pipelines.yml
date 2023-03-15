@@ -44,7 +44,20 @@ steps:
 
 - pwsh: |
       $ErrorActionPreference = "Stop"
-      $shouldAddSBOM = [bool]"$(IsReleaseBuild)"
+
+      $shouldAddSBOM = $null
+      if ([string]::IsNullOrEmpty($IsReleaseBuild))
+      {
+        Write-Host "IsReleaseBuild is null or empty. Setting shouldAddSBOM to false"
+        $shouldAddSBOM = $false
+      }
+      else
+      {
+        Write-Host "IsReleaseBuild: $IsReleaseBuild"
+        $shouldAddSBOM = ($IsReleaseBuild -eq "true")
+      }
+
+      Write-Host "shouldAddSBOM: $shouldAddSBOM"
 
       ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)" -AddSBOM:$shouldAddSBOM -SBOMUtilSASUrl "$(SBOMUtilSASUrl)"
   displayName: 'Build worker code'
