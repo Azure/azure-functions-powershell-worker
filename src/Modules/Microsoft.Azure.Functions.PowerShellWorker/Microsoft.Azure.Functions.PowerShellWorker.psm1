@@ -129,7 +129,7 @@ function Start-DurableOrchestration {
 
     $Body = $InputObject | ConvertTo-Json -Compress
               
-    $null = Invoke-RestMethod -Uri $Uri -Method 'POST' -ContentType 'application/json' -Body $Body
+    $null = Invoke-RestMethod -Uri $Uri -Method 'POST' -ContentType 'application/json;charset=utf-8' -Body $Body
     
     return $instanceId
 }
