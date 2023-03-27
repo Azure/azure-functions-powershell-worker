@@ -7,6 +7,7 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 
@@ -17,6 +18,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
         // TODO: Follow up with the PowerShell on why we get a CommandNotFoundException when using the module qualified cmdlet name.
         //const string GetFunctionsMetadataCmdletName = "AzureFunctions.PowerShell.SDK\\Get-FunctionsMetadata";
         const string GetFunctionsMetadataCmdletName = "Get-FunctionsMetadata";
+        const string AzureFunctionsPowerShellSDKModuleName = "AzureFunctions.PowerShell.SDK";
+
         internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string baseDir)
         {
             List<RpcFunctionMetadata> indexedFunctions = new List<RpcFunctionMetadata>();
@@ -39,8 +42,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             //    assuming that managed dependencies are enabled, and then revert the PSModulePath in the first function
             //    init request should the managed dependencies not be enabled. 
             // 3. Continue using a new runspace for invoking Get-FunctionsMetadata, but initialize it in worker init and
-            //    point the PsModulePath to the module path bundled with the worker. 
-
+            //    point the PsModulePath to the module path bundled with the worker.
 
             InitialSessionState initial = InitialSessionState.CreateDefault();
             Runspace runspace = RunspaceFactory.CreateRunspace(initial);
@@ -48,6 +50,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             System.Management.Automation.PowerShell _powershell = System.Management.Automation.PowerShell.Create();
             _powershell.Runspace = runspace;
 
+            var modulePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules", AzureFunctionsPowerShellSDKModuleName);
+            Console.WriteLine("modulePath; {0}", modulePath);
+            Console.WriteLine("Importing module...");
+            _powershell.AddCommand("Import-Module").AddParameter("Name", modulePath)
+                                                   .AddParameter("Force", true);
+
+            Console.WriteLine("Call Get-FunctionsMetadata");
             _powershell.AddCommand(GetFunctionsMetadataCmdletName).AddArgument(baseDir);
             string outputString = string.Empty;
             foreach (PSObject rawMetadata in _powershell.Invoke())
