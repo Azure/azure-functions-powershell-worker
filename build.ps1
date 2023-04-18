@@ -34,32 +34,17 @@ param(
     $AddSBOM,
 
     [string]
-    $SBOMUtilSASUrl,
-
-    [string]
-    [ValidateSet("7.2", "7.4")]
-    $WorkerVersion
+    $SBOMUtilSASUrl
 )
 
 #Requires -Version 7.0
 
 Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
 
-$PowerShellVersion = $null
-$TargetFramework = $null
-$DefaultPSWorkerVersion = '7.4'
+$TargetFramework = 'net8.0'
+$PowerShellVersion = '7.4'
 
-if (-not $workerVersion)
-{
-    Write-Log "Worker version not specified. Setting workerVersion to '$DefaultPSWorkerVersion'"
-    $workerVersion = $DefaultPSWorkerVersion
-}
-
-$PowerShellVersion = $WorkerVersion
 Write-Log "Build worker version: $PowerShellVersion"
-
-# Set target framework for 7.2 to net6.0 and for 7.4 to net7.0
-$TargetFramework = ($PowerShellVersion -eq "7.2") ? 'net6.0' : 'net7.0'
 Write-Log "Target framework: $TargetFramework"
 
 function Get-FunctionsCoreToolsDir {
