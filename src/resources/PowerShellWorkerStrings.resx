@@ -376,4 +376,7 @@
   <data name="UtilizingExternalDurableSDK" xml:space="preserve">
     <value>Utilizing external Durable Functions SDK: '{0}'.</value>
   </data>
+  <data name="ManagedDependenciesIsNotSupportedOnLegion" xml:space="preserve">
+    <value>Managed Dependencies is not supported in Linux Consumption on Legion. Please remove all module references from requirements.psd1 and include the function app dependencies with the function app content. For more information, please see https://aka.ms/functions-powershell-include-modules-with-app-content.</value>
+  </data>
 </root>
