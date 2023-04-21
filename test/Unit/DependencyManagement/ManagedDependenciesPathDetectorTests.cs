@@ -62,5 +62,36 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 }
             }
         }
+
+        [Fact]
+        public void ManagedDependenciesIsNotSupportedOnLegion()
+        {
+            const string ContainerName = "CONTAINER_NAME";
+            const string LegionServiceHost = "LEGION_SERVICE_HOST";
+            const string AzureWebsiteInstanceId = "WEBSITE_INSTANCE_ID";
+
+            var functionAppRoot = Path.Join(Path.GetTempPath(), "MyFunction");
+
+            try
+            {
+                Environment.SetEnvironmentVariable(AzureWebsiteInstanceId, null);
+                Environment.SetEnvironmentVariable(ContainerName, "MY_CONTAINER_NAME");
+                Environment.SetEnvironmentVariable(LegionServiceHost, "MY_LEGION_SERVICE_HOST");
+
+                var exception = Assert.Throws<NotSupportedException>(() => ManagedDependenciesPathDetector.GetManagedDependenciesPath(functionAppRoot));
+                Assert.Contains("Managed Dependencies is not supported in Linux Consumption on Legion.", exception.Message);
+                Assert.Contains("https://aka.ms/functions-powershell-include-modules-with-app-content", exception.Message);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(ContainerName, null);
+                Environment.SetEnvironmentVariable(LegionServiceHost, null);
+
+                if (Directory.Exists(functionAppRoot))
+                {
+                    Directory.Delete(functionAppRoot);
+                }
+            }
+        }
     }
 }
