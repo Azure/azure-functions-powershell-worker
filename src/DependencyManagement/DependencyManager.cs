@@ -99,6 +99,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 // Parse and process the function app dependencies defined in the manifest.
                 _dependenciesFromManifest = _storage.GetDependencies().ToArray();
 
+                if (_dependenciesFromManifest.Length >= 1 && WorkerEnvironment.IsLinuxConsumptionOnLegion())
+                {
+                    throw new NotSupportedException(PowerShellWorkerStrings.ManagedDependenciesIsNotSupportedOnLegion);
+                }
+
                 if (!_dependenciesFromManifest.Any())
                 {
                     logger.Log(isUserOnlyLog: true, LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveRequiredModulesToInstall);
