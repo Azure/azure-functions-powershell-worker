@@ -51,6 +51,38 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
+        public void Initialize_Throws_WhenDependenciesAreDefinedInRequirementsPsd1_OnLegion()
+        {
+            const string ContainerName = "CONTAINER_NAME";
+            const string LegionServiceHost = "LEGION_SERVICE_HOST";
+            const string AzureWebsiteInstanceId = "WEBSITE_INSTANCE_ID";
+
+            try
+            {
+                Environment.SetEnvironmentVariable(AzureWebsiteInstanceId, null);
+                Environment.SetEnvironmentVariable(ContainerName, "MY_CONTAINER_NAME");
+                Environment.SetEnvironmentVariable(LegionServiceHost, "MY_LEGION_SERVICE_HOST");
+
+                _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
+
+                using (var dependencyManager = CreateDependencyManagerWithMocks())
+                {
+                    var caughtException = Assert.Throws<DependencyInstallationException>(
+                            () => dependencyManager.Initialize(_mockLogger.Object));
+
+                    Assert.Contains("Managed Dependencies is not supported in Linux Consumption on Legion.", caughtException.Message);
+                    Assert.Contains("https://aka.ms/functions-powershell-include-modules", caughtException.Message);
+                }
+            }
+
+            finally
+            {
+                Environment.SetEnvironmentVariable(ContainerName, null);
+                Environment.SetEnvironmentVariable(LegionServiceHost, null);
+            }
+        }
+
+        [Fact]
         public void Initialize_ReturnsExistingSnapshotPath_WhenAcceptableDependencyVersionsAlreadyInstalled()
         {
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
