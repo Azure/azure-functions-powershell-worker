@@ -83,6 +83,40 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
+        public void Initialize_NoDependenciesOnRequirementsPsd1_OnLegion_DoesNotThrow()
+        {
+            const string ContainerName = "CONTAINER_NAME";
+            const string LegionServiceHost = "LEGION_SERVICE_HOST";
+            const string AzureWebsiteInstanceId = "WEBSITE_INSTANCE_ID";
+
+            try
+            {
+                Environment.SetEnvironmentVariable(AzureWebsiteInstanceId, null);
+                Environment.SetEnvironmentVariable(ContainerName, "MY_CONTAINER_NAME");
+                Environment.SetEnvironmentVariable(LegionServiceHost, "MY_LEGION_SERVICE_HOST");
+
+                _mockStorage.Setup(_ => _.GetDependencies()).Returns(new DependencyManifestEntry[0]);
+
+                using (var dependencyManager = CreateDependencyManagerWithMocks())
+                {
+                    var dependenciesPath = dependencyManager.Initialize(_mockLogger.Object);
+
+                    Assert.Null(dependenciesPath);
+                    VerifyMessageLogged(LogLevel.Warning, PowerShellWorkerStrings.FunctionAppDoesNotHaveRequiredModulesToInstall, expectedIsUserLog: true);
+
+                    _mockBackgroundDependencySnapshotMaintainer.VerifyNoOtherCalls();
+                    _mockNewerDependencySnapshotDetector.VerifyNoOtherCalls();
+                }
+            }
+
+            finally
+            {
+                Environment.SetEnvironmentVariable(ContainerName, null);
+                Environment.SetEnvironmentVariable(LegionServiceHost, null);
+            }
+        }
+
+        [Fact]
         public void Initialize_ReturnsExistingSnapshotPath_WhenAcceptableDependencyVersionsAlreadyInstalled()
         {
             _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
