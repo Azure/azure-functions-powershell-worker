@@ -105,6 +105,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     return null;
                 }
 
+                if (WorkerEnvironment.IsLinuxConsumptionOnLegion())
+                {
+                    throw new NotSupportedException(PowerShellWorkerStrings.ManagedDependenciesIsNotSupportedOnLegion);
+                }
+
                 _currentSnapshotPath = _installedDependenciesLocator.GetPathWithAcceptableDependencyVersionsInstalled()
                                         ?? _storage.CreateNewSnapshotPath();
 
