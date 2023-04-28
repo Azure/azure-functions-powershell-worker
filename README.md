@@ -3,9 +3,9 @@
 |Branch|Status|
 |---|---|
 |dev|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=dev)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=dev)|
-|v4.x/ps7.4|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v3.x%2Fps7)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v4.x%2Fps7.4)|
-|v4.x/ps7.2|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v3.x%2Fps7)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v4.x%2Fps7.2)|
-|v4.x/ps7.0|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v3.x%2Fps7)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v4.x%2Fps7.0)|
+|v4.x/ps7.4|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v4.x%2Fps7.4)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v4.x%2Fps7.4)|
+|v4.x/ps7.2|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v4.x%2Fps7.2)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v4.x%2Fps7.2)|
+|v4.x/ps7.0|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v4.x%2Fps7.0)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v4.x%2Fps7.0)|
 
 [azure-functions-logo]: https://raw.githubusercontent.com/Azure/azure-functions-cli/master/src/Azure.Functions.Cli/npm/assets/azure-functions-logo-color-raster.png
 
