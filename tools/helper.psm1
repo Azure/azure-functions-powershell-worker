@@ -74,9 +74,9 @@ function Install-Dotnet {
             $version = "$majorMinorVersion.$($DotnetSDKVersionRequirements[$majorMinorVersion].DefaultPatch)"
             Write-Log "Installing dotnet SDK version $version" -Warning
             if ($IsWindowsEnv) {
-                & .\$installScript -Channel $Channel -Version $Version
+                & .\$installScript -Channel $Channel -Version $Version -InstallDir "$env:ProgramFiles/dotnet"
             } else {
-                bash ./$installScript -c $Channel -v $Version
+                bash ./$installScript -c $Channel -v $Version --install-dir /usr/share/dotnet
             }
         }
 

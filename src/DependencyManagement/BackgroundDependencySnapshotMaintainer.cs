@@ -20,6 +20,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private TimeSpan MaxBackgroundUpgradePeriod { get; } =
             PowerShellWorkerConfiguration.GetTimeSpan("MDMaxBackgroundUpgradePeriod") ?? TimeSpan.FromDays(7);
 
+        private bool EnableAutomaticUpgrades { get; } =
+            PowerShellWorkerConfiguration.GetBoolean("MDEnableAutomaticUpgrades") ?? false;
+
         private readonly IDependencyManagerStorage _storage;
         private readonly IDependencySnapshotInstaller _installer;
         private readonly IDependencySnapshotPurger _purger;
@@ -41,6 +44,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             _dependencyManifest = dependencyManifest ?? throw new ArgumentNullException(nameof(dependencyManifest));
 
             _purger.SetCurrentlyUsedSnapshot(currentSnapshotPath, logger);
+
+            if (!EnableAutomaticUpgrades)
+            {
+                logger.Log(
+                    isUserOnlyLog: false,
+                    RpcLog.Types.Level.Warning,
+                    PowerShellWorkerStrings.AutomaticUpgradesAreDisabled);
+
+                return;
+            }
 
             _installAndPurgeTimer = new Timer(
                                             _ => InstallAndPurgeSnapshots(PowerShell.Create, logger),
