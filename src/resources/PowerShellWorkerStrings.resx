@@ -379,4 +379,10 @@
   <data name="ManagedDependenciesIsNotSupportedOnLegion" xml:space="preserve">
     <value>Managed Dependencies is not supported in Linux Consumption on Legion. Please remove all module references from requirements.psd1 and include the function app dependencies with the function app content. For more information, please see https://aka.ms/functions-powershell-include-modules.</value>
   </data>
+  <data name="GetFunctionsMetadataMultipleResultsError" xml:space="preserve">
+    <value>Multiple results from metadata cmdlet.</value>
+  </data>
+  <data name="InvalidBindingInfoDirection" xml:space="preserve">
+    <value>Invalid binding direction. Binding name: {0}</value>
+  </data>
 </root>
