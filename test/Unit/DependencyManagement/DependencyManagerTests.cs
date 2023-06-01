@@ -372,7 +372,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         private DependencyManager CreateDependencyManagerWithMocks()
         {
             return new DependencyManager(
-                requestMetadataDirectory: null,
+                functionAppRootPath: null,
                 moduleProvider: null,
                 storage: _mockStorage.Object,
                 installedDependenciesLocator: _mockInstalledDependenciesLocator.Object,
