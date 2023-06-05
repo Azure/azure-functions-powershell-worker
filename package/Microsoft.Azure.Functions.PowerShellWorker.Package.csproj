@@ -9,7 +9,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     <NoBuild>true</NoBuild>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <NoWarn>NU5100;NU5123</NoWarn>
+    <NoWarn>NU5100;NU5110;NU5111;NU5123</NoWarn>
 
     <NuspecFile>Microsoft.Azure.Functions.PowerShellWorker.nuspec</NuspecFile>
     <NuspecProperties>configuration=$(Configuration);targetFramework=$(TargetFramework);version=$(Version)</NuspecProperties>
