@@ -384,7 +384,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 StreamingMessage.ContentOneofCase.FunctionMetadataResponse,
                 out StatusResult status);
 
-            response.FunctionMetadataResponse.FunctionMetadataResults.AddRange(WorkerIndexingHelper.IndexFunctions(request.FunctionsMetadataRequest.FunctionAppDirectory));
+            var rpcLogger = new RpcLogger(_msgStream);
+            rpcLogger.SetContext(request.RequestId, null);
+
+            //response.FunctionMetadataResponse.FunctionMetadataResults.AddRange(WorkerIndexingHelper.IndexFunctions(request.FunctionsMetadataRequest.FunctionAppDirectory));
+            response.FunctionMetadataResponse.FunctionMetadataResults.AddRange(WorkerIndexingHelper.IndexFunctions(request.FunctionsMetadataRequest.FunctionAppDirectory, rpcLogger));
 
             return response;
         }
