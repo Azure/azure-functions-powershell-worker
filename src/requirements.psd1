@@ -16,4 +16,8 @@
         Version = '1.4.8.1'
         Target = 'src/Modules'
     }
+    'AzureFunctions.PowerShell.SDK' = @{
+        Version = '0.0.3'
+        Target = 'src/Modules'
+    }
 }
