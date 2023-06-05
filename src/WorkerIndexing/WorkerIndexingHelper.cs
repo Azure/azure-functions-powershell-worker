@@ -3,13 +3,18 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
+using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+using System.Text;
+using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 {
@@ -19,8 +24,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
         //const string GetFunctionsMetadataCmdletName = "AzureFunctions.PowerShell.SDK\\Get-FunctionsMetadata";
         const string GetFunctionsMetadataCmdletName = "Get-FunctionsMetadata";
         const string AzureFunctionsPowerShellSDKModuleName = "AzureFunctions.PowerShell.SDK";
+        private static readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
 
-        internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string baseDir)
+        //internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string baseDir)
+        internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string baseDir, ILogger logger)
         {
             List<RpcFunctionMetadata> indexedFunctions = new List<RpcFunctionMetadata>();
 
@@ -50,16 +57,56 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             System.Management.Automation.PowerShell _powershell = System.Management.Automation.PowerShell.Create();
             _powershell.Runspace = runspace;
 
-            var modulePath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules", AzureFunctionsPowerShellSDKModuleName);
-            // Console.WriteLine("modulePath; {0}", modulePath);
-            // Console.WriteLine("Importing module...");
-            _powershell.AddCommand("Import-Module").AddParameter("Name", modulePath)
-                                                   .AddParameter("Force", true);
-
-            // Console.WriteLine("Call Get-FunctionsMetadata");
-            _powershell.AddCommand(GetFunctionsMetadataCmdletName).AddArgument(baseDir);
             string outputString = string.Empty;
-            foreach (PSObject rawMetadata in _powershell.Invoke())
+            Exception exception = null;
+            Collection<PSObject> results = null;
+            var cmdletExecutionHadErrors = false;
+            var exceptionThrown = false;
+            string errorMsg = null;
+
+            try
+            {
+                _powershell.AddCommand(GetFunctionsMetadataCmdletName).AddArgument(baseDir);
+                results = _powershell.Invoke();
+                cmdletExecutionHadErrors = _powershell.HadErrors;
+            }
+            catch (Exception ex)
+            {
+                exceptionThrown = true;
+                exception = ex;
+                throw;
+            }
+            finally
+            {
+                if (exceptionThrown)
+                {
+                    errorMsg = string.Format(PowerShellWorkerStrings.ErrorsWhileExecutingGetFunctionsMetadata, exception.ToString());
+                }
+                else if (cmdletExecutionHadErrors)
+                {
+                    var errorCollection = _powershell.Streams.Error;
+
+                    var stringBuilder = new StringBuilder();
+                    foreach (var errorRecord in errorCollection)
+                    {
+                        var message = _errorRecordFormatter.Format(errorRecord);
+                        stringBuilder.AppendLine(message);
+                    }
+
+                    errorMsg = string.Format(PowerShellWorkerStrings.ErrorsWhileExecutingGetFunctionsMetadata, stringBuilder.ToString());
+                }
+
+                if (errorMsg != null)
+                {
+                    logger.Log(isUserOnlyLog: true, LogLevel.Error, errorMsg, exception);
+                    throw new Exception(errorMsg);
+                }
+
+                _powershell.Commands.Clear();
+            }
+
+            // TODO: The GetFunctionsMetadataCmdlet should never return more than one result. Make sure that this is the case and remove this code.
+            foreach (PSObject rawMetadata in results)
             {
                 if (outputString != string.Empty)
                 {
@@ -67,7 +114,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
                 }
                 outputString = rawMetadata.ToString();
             }
-            _powershell.Commands.Clear();
 
             List<FunctionInformation> functionInformations = JsonConvert.DeserializeObject<List<FunctionInformation>>(outputString);
 
