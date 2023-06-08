@@ -386,6 +386,6 @@
     <value>Invalid binding direction. Binding name: {0}</value>
   </data>
   <data name="ErrorsWhileExecutingGetFunctionsMetadata" xml:space="preserve">
-    <value>Errors reported while executing Get-FunctionsMetadata cmldet. {0}.</value>
+    <value>Errors reported while executing Get-FunctionsMetadata cmdlet. {0}.</value>
   </data>
 </root>
