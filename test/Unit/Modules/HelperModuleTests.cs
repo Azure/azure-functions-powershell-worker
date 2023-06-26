@@ -49,7 +49,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             };
 
             var funcLoadReq = new FunctionLoadRequest { FunctionId = "FunctionId", Metadata = rpcFuncMetadata };
-            FunctionLoader.SetupWellKnownPaths(funcLoadReq, managedDependenciesPath: null);
+            FunctionLoader.SetupWellKnownPaths(funcLoadReq.Metadata.Directory, managedDependenciesPath: null);
             s_pwsh = Utils.NewPwshInstance();
             s_funcInfo = new AzFunctionInfo(rpcFuncMetadata);
         }
