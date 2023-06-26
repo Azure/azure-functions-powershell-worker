@@ -26,9 +26,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
         const string AzureFunctionsPowerShellSDKModuleName = "AzureFunctions.PowerShell.SDK";
         private static readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
 
-        //internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string baseDir)
-        internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string baseDir, ILogger logger)
+        internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string functionAppRootPath, ILogger logger)
         {
+            if (string.IsNullOrWhiteSpace(functionAppRootPath))
+            {
+                throw new ArgumentException("Empty function app root path", nameof(functionAppRootPath));
+            }
+
             List<RpcFunctionMetadata> indexedFunctions = new List<RpcFunctionMetadata>();
 
             // This is not the correct way to deal with getting a runspace for the cmdlet. 
@@ -66,7 +70,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 
             try
             {
-                _powershell.AddCommand(GetFunctionsMetadataCmdletName).AddArgument(baseDir);
+                _powershell.AddCommand(GetFunctionsMetadataCmdletName).AddArgument(functionAppRootPath);
                 results = _powershell.Invoke();
                 cmdletExecutionHadErrors = _powershell.HadErrors;
             }
