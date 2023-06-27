@@ -229,7 +229,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     if (_functionAppRootPath == null)
                     {
                         // If _functionAppRootPath is null, this means that this is an app for the v1 programming model.
-                        _functionAppRootPath = request.FunctionLoadRequest.Metadata.Directory;
+                        _functionAppRootPath = Path.GetFullPath(Path.Join(request.FunctionLoadRequest.Metadata.Directory, ".."));
                     }
 
                     if (string.IsNullOrWhiteSpace(_functionAppRootPath))
