@@ -100,7 +100,7 @@ configuration:
                 - isLabeled
     then:
         - addLabel:
-            label: "Needs: Triage :mag:"
+            label: "Needs: Triage (Functions)"
     - if:
       - payloadType: Issue_Comment
       - isAction:
