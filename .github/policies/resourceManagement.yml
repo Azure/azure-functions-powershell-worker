@@ -95,12 +95,12 @@ configuration:
       - and:
         - isOpen
         - not:
-          and:
-          - isAssignedToSomeone
-          - isLabeled
+            and:
+              - isAssignedToSomeone
+              - isLabeled
       then:
         - addLabel:
-          label: "Needs: Triage (Functions)"
+          label: 'Needs: Triage (Functions)'
     - if:
       - payloadType: Issue_Comment
       - isAction:
