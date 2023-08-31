@@ -96,7 +96,6 @@ configuration:
                         - isOpen
                         - not:
                               and:
-                                  - isAssignedToSomeone
                                   - isLabeled
               then:
                   - addLabel:
