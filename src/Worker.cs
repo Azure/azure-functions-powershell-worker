@@ -37,6 +37,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             parser.ParseArguments<WorkerArguments>(args)
                 .WithParsed(workerArgs =>
                 {
+                    // TODO: Remove parsing old command-line arguments that are not prefixed with functions-<argumentname>
+                    // for more information, see https://github.com/Azure/azure-functions-powershell-worker/issues/995
                     workerOptions.WorkerId = workerArgs.FunctionsWorkerId ?? workerArgs.WorkerId;
                     workerOptions.RequestId = workerArgs.FunctionsRequestId ?? workerArgs.RequestId;
 
@@ -44,19 +46,31 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     {
                         try
                         {
+                            // TODO: Update WorkerOptions to have a URI property instead of host name and port number
+                            // for more information, see https://github.com/Azure/azure-functions-powershell-worker/issues/994
                             var uri = new Uri(workerArgs.FunctionsUri);
                             workerOptions.Host = uri.Host;
                             workerOptions.Port = uri.Port;
                         }
                         catch (UriFormatException)
                         {
-                            throw new ArgumentException("Invalid URI format", nameof(workerArgs.FunctionsUri));
+                            throw new ArgumentException($"Invalid URI format: {workerArgs.FunctionsUri}", nameof(workerArgs.FunctionsUri));
                         }
                     }
                     else
                     {
                         workerOptions.Host = workerArgs.Host;
                         workerOptions.Port = workerArgs.Port;
+                    }
+
+                    // Validate workerOptions
+                    ValidateProperty(workerOptions.WorkerId, "WorkerId");
+                    ValidateProperty(workerOptions.RequestId, "RequestId");
+                    ValidateProperty(workerOptions.Host, "Host");
+
+                    if (workerOptions.Port <= 0)
+                    {
+                        throw new ArgumentException("Port has not been initialized", nameof(workerOptions.Port));
                     }
                 });
 
@@ -104,6 +118,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         {
             var message = string.Format(PowerShellWorkerStrings.PowerShellVersion, pwshVersion);
             RpcLogger.WriteSystemLog(LogLevel.Information, message);
+        }
+
+        private static void ValidateProperty(string value, string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException($"{propertyName} is null or empty", propertyName);
+            }
         }
     }
 
