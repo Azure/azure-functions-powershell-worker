@@ -31,10 +31,34 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 LogLevel.Information,
                 string.Format(PowerShellWorkerStrings.PowerShellWorkerVersion, typeof(Worker).Assembly.GetName().Version));
 
-            WorkerArguments arguments = null;
-            Parser.Default.ParseArguments<WorkerArguments>(args)
-                .WithParsed(ops => arguments = ops)
-                .WithNotParsed(err => Environment.Exit(1));
+            var workerOptions = new WorkerOptions();
+
+            var parser = new Parser(settings => settings.EnableDashDash = true);
+            parser.ParseArguments<WorkerArguments>(args)
+                .WithParsed(workerArgs =>
+                {
+                    workerOptions.WorkerId = workerArgs.FunctionsWorkerId ?? workerArgs.WorkerId;
+                    workerOptions.RequestId = workerArgs.FunctionsRequestId ?? workerArgs.RequestId;
+
+                    if (!string.IsNullOrWhiteSpace(workerArgs.FunctionsUri))
+                    {
+                        try
+                        {
+                            var uri = new Uri(workerArgs.FunctionsUri);
+                            workerOptions.Host = uri.Host;
+                            workerOptions.Port = uri.Port;
+                        }
+                        catch (UriFormatException)
+                        {
+                            throw new ArgumentException("Invalid URI format", nameof(workerArgs.FunctionsUri));
+                        }
+                    }
+                    else
+                    {
+                        workerOptions.Host = workerArgs.Host;
+                        workerOptions.Port = workerArgs.Port;
+                    }
+                });
 
             // Create the very first Runspace so the debugger has the target to attach to.
             // This PowerShell instance is shared by the first PowerShellManager instance created in the pool,
@@ -44,14 +68,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             LogPowerShellVersion(pwshVersion);
             WarmUpPowerShell(firstPowerShellInstance);
 
-            var msgStream = new MessagingStream(arguments.Host, arguments.Port);
+            var msgStream = new MessagingStream(workerOptions.Host, workerOptions.Port);
             var requestProcessor = new RequestProcessor(msgStream, firstPowerShellInstance, pwshVersion);
 
             // Send StartStream message
             var startedMessage = new StreamingMessage()
             {
-                RequestId = arguments.RequestId,
-                StartStream = new StartStream() { WorkerId = arguments.WorkerId }
+                RequestId = workerOptions.RequestId,
+                StartStream = new StartStream() { WorkerId = workerOptions.WorkerId }
             };
 
             msgStream.Write(startedMessage);
@@ -85,19 +109,36 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
     internal class WorkerArguments
     {
-        [Option("host", Required = true, HelpText = "IP Address used to connect to the Host via gRPC.")]
+        [Option("host", Required = false, HelpText = "IP Address used to connect to the Host via gRPC.")]
         public string Host { get; set; }
 
-        [Option("port", Required = true, HelpText = "Port used to connect to the Host via gRPC.")]
+        [Option("port", Required = false, HelpText = "Port used to connect to the Host via gRPC.")]
         public int Port { get; set; }
 
-        [Option("workerId", Required = true, HelpText = "Worker ID assigned to this language worker.")]
+        [Option("workerId", Required = false, HelpText = "Worker ID assigned to this language worker.")]
         public string WorkerId { get; set; }
 
-        [Option("requestId", Required = true, HelpText = "Request ID used for gRPC communication with the Host.")]
+        [Option("requestId", Required = false, HelpText = "Request ID used for gRPC communication with the Host.")]
         public string RequestId { get; set; }
 
-        [Option("grpcMaxMessageLength", Required = false, HelpText = "[Deprecated and ignored] gRPC Maximum message size.")]
-        public int MaxMessageLength { get; set; }
+        [Option("functions-uri", Required = false, HelpText = "URI with IP Address and Port used to connect to the Host via gRPC.")]
+        public string FunctionsUri { get; set; }
+
+        [Option("functions-workerid", Required = false, HelpText = "Worker ID assigned to this language worker.")]
+        public string FunctionsWorkerId { get; set; }
+
+        [Option("functions-requestid", Required = false, HelpText = "Request ID used for gRPC communication with the Host.")]
+        public string FunctionsRequestId { get; set; }
+    }
+
+    internal class WorkerOptions
+    {
+        public string Host { get; set; }
+
+        public int Port { get; set; }
+
+        public string WorkerId { get; set; }
+
+        public string RequestId { get; set; }
     }
 }
