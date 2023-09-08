@@ -147,9 +147,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         [Option("requestId", Required = false, HelpText = "Request ID used for gRPC communication with the Host.")]
         public string RequestId { get; set; }
 
-        [Option("grpcMaxMessageLength", Required = false, HelpText = "[Deprecated and ignored] gRPC Maximum message size.")]
-        public int MaxMessageLength { get; set; }
-
         [Option("functions-uri", Required = false, HelpText = "URI with IP Address and Port used to connect to the Host via gRPC.")]
         public string FunctionsUri { get; set; }
 
@@ -158,9 +155,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         [Option("functions-requestid", Required = false, HelpText = "Request ID used for gRPC communication with the Host.")]
         public string FunctionsRequestId { get; set; }
-
-        [Option("functions-grpcmaxmessagelength", Required = false, HelpText = "[Deprecated and ignored] gRPC Maximum message size.")]
-        public int FunctionsMaxMessageLength { get; set; }
     }
 
     internal class WorkerOptions
