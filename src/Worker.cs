@@ -33,7 +33,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             var workerOptions = new WorkerOptions();
 
-            var parser = new Parser(settings => settings.EnableDashDash = true);
+            var parser = new Parser(settings =>
+            {
+                settings.EnableDashDash = true;
+                settings.IgnoreUnknownArguments = true;
+            });
             parser.ParseArguments<WorkerArguments>(args)
                 .WithParsed(workerArgs =>
                 {
