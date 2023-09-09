@@ -56,9 +56,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                             workerOptions.Host = uri.Host;
                             workerOptions.Port = uri.Port;
                         }
-                        catch (UriFormatException ex)
+                        catch (UriFormatException formatEx)
                         {
-                            var message = $"Invalid URI format: {workerArgs.FunctionsUri}. Error message: {ex.Message}";
+                            var message = $"Invalid URI format: {workerArgs.FunctionsUri}. Error message: {formatEx.Message}";
                             throw new ArgumentException(message, nameof(workerArgs.FunctionsUri));
                         }
                     }
@@ -69,13 +69,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     }
 
                     // Validate workerOptions
-                    ValidateProperty(workerOptions.WorkerId, "WorkerId");
-                    ValidateProperty(workerOptions.RequestId, "RequestId");
-                    ValidateProperty(workerOptions.Host, "Host");
+                    ValidateProperty("WorkerId", workerOptions.WorkerId);
+                    ValidateProperty("RequestId", workerOptions.RequestId);
+                    ValidateProperty("Host", workerOptions.Host);
 
                     if (workerOptions.Port <= 0)
                     {
-                        throw new ArgumentException("Port has not been initialized", nameof(workerOptions.Port));
+                        throw new ArgumentException("Port number has not been initialized", nameof(workerOptions.Port));
                     }
                 });
 
@@ -125,11 +125,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             RpcLogger.WriteSystemLog(LogLevel.Information, message);
         }
 
-        private static void ValidateProperty(string value, string propertyName)
+        private static void ValidateProperty(string name, string value)
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new ArgumentException($"{propertyName} is null or empty", propertyName);
+                throw new ArgumentException($"{name} is null or empty", name);
             }
         }
     }
