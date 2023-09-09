@@ -56,9 +56,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                             workerOptions.Host = uri.Host;
                             workerOptions.Port = uri.Port;
                         }
-                        catch (UriFormatException)
+                        catch (UriFormatException ex)
                         {
-                            throw new ArgumentException($"Invalid URI format: {workerArgs.FunctionsUri}", nameof(workerArgs.FunctionsUri));
+                            var message = $"Invalid URI format: {workerArgs.FunctionsUri}. Error message: {ex.Message}";
+                            throw new ArgumentException(message, nameof(workerArgs.FunctionsUri));
                         }
                     }
                     else
