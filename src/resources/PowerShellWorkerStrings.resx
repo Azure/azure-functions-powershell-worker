@@ -355,4 +355,7 @@
   <data name="AutomaticUpgradesAreDisabled" xml:space="preserve">
     <value>Automatic upgrades are disabled in PowerShell 7.0 function apps. To enable this functionality back, please migrate your function app to PowerShell 7.2. For more details, see https://aka.ms/functions-powershell-7.0-to-7.2.</value>
   </data>
+  <data name="WorkerInitCompleted" xml:space="preserve">
+    <value>Worker init request completed in {0} ms.</value>
+  </data>
 </root>
