@@ -92,12 +92,9 @@ configuration:
         eventResponderTasks:
             - if:
                   - payloadType: Issues
-                  - and:
-                        - isOpen
-                        - not:
-                              and:
-                                  - isLabeled
-              then:
+                  - isAction:
+                        action: Opened
+              then: 
                   - addLabel:
                         label: "Needs: Triage (Functions)"
             - if:
