@@ -79,9 +79,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     }
                 });
 
+            // This must be done before the first Runspace is created, to avoid the creation of a thread by the upgrade checker
+            SetVersionUpgradeOptOut();
+
             // Create the very first Runspace so the debugger has the target to attach to.
             // This PowerShell instance is shared by the first PowerShellManager instance created in the pool,
             // and the dependency manager (used to download dependent modules if needed).
+            string checkForUpgrade = Environment.GetEnvironmentVariable("AZUREPS_CHECK_FOR_UPGRADE");
+            if (string.IsNullOrEmpty(checkForUpgrade))
+            {
+                Environment.SetEnvironmentVariable("AZUREPS_CHECK_FOR_UPGRADE", "False");
+            }
+
             var firstPowerShellInstance = Utils.NewPwshInstance();
             var pwshVersion = Utils.GetPowerShellVersion(firstPowerShellInstance);
             LogPowerShellVersion(pwshVersion);
@@ -99,6 +108,15 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             msgStream.Write(startedMessage);
             await requestProcessor.ProcessRequestLoop();
+        }
+
+        private static void SetVersionUpgradeOptOut()
+        {
+            string checkForUpgrade = Environment.GetEnvironmentVariable("AZUREPS_CHECK_FOR_UPGRADE");
+            if (string.IsNullOrEmpty(checkForUpgrade))
+            {
+                Environment.SetEnvironmentVariable("AZUREPS_CHECK_FOR_UPGRADE", "False");
+            }
         }
 
         // Warm up the PowerShell instance so that the subsequent function load and invocation requests are faster
