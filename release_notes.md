@@ -1,0 +1,1 @@
+* New feature: Unless specified otherwise in app settings, the PowerShell worker will set the AZUREPS_CHECK_FOR_UPGRADE environment variable to "False" in all runspaces to opt-out of the version upgrade notification in Azure PowerShell added by that team. 
