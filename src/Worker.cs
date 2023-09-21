@@ -108,7 +108,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private static void SetVersionUpgradeOptOut()
         {
             string checkForUpgrade = Environment.GetEnvironmentVariable("AZUREPS_CHECK_FOR_UPGRADE");
-            if (string.IsNullOrEmpty(checkForUpgrade))
+            if (string.IsNullOrWhiteSpace(checkForUpgrade))
             {
                 Environment.SetEnvironmentVariable("AZUREPS_CHECK_FOR_UPGRADE", "False");
             }
