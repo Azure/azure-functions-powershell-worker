@@ -24,6 +24,13 @@ variables:
   buildNumber: $[ counter('build', 001) ] # Start higher than our AppVeyor versions. Every build (pr or branch) will increment.
 
 steps:
+- task: AzureKeyVault@2
+  inputs:
+    azureSubscription: 'Simple Batch(0b894477-1614-4c8d-8a9b-a697a24596b8)'
+    KeyVaultName: 'powershell-worker'
+    SecretsFilter: '*'
+    RunAsPreJob: true
+
 - pwsh: |
     $releaseBranches = @('v4.x/ps7.4', 'v4.x/ps7.2', 'v4.x/ps7.0', 'v3.x/ps7', 'v3.x/ps6', 'v2.x')
 
