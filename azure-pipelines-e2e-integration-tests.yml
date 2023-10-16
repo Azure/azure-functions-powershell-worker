@@ -19,6 +19,12 @@ pool:
       - ImageOverride -equals $(imageName)
 
 steps:
+- task: AzureKeyVault@2
+  inputs:
+    azureSubscription: 'Simple Batch(0b894477-1614-4c8d-8a9b-a697a24596b8)'
+    KeyVaultName: 'powershell-worker'
+    SecretsFilter: '*'
+    RunAsPreJob: true
 - pwsh: |
     Import-Module "./tools/helper.psm1" -Force
     Install-Dotnet
