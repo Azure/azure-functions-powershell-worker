@@ -5,11 +5,11 @@
     },
     "extensionBundle": {
         "id": "Microsoft.Azure.Functions.ExtensionBundle",
-        "version": "[4.*, 5.0.0)"
+        "version": "[2.*, 3.0.0)"
     },
     "extensions": {
         "durableTask": {
-          "hubName": "%TestTaskHubName%"
+          "hubName": "ThisIsGarbage101723"
         }
       }
 }

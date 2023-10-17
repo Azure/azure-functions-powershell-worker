@@ -19,7 +19,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
         private class Document
         {
-            public string Id { get; set; }
+            public string id { get; set; }
         }
 
         static CosmosDBHelpers()
@@ -35,12 +35,12 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         {
             Document documentToTest = new Document()
             {
-                Id = docId
+                id = docId
             };
 
             Container _inputContainer = _cosmosDbClient.GetContainer(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName);
 
-            Document insertedDoc = await _inputContainer.CreateItemAsync<Document>(documentToTest, new PartitionKey(documentToTest.Id));
+            Document insertedDoc = await _inputContainer.CreateItemAsync<Document>(documentToTest, new PartitionKey(documentToTest.id));
         }
 
         //public async static Task CreateDocument(TestDocument testDocument)
@@ -67,7 +67,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     return false;
                 }
             }, 120000, 4000);
-            return retrievedDocument.Id;
+            return retrievedDocument.id;
         }
 
         // keep
@@ -95,9 +95,9 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         {
             Database db = await _cosmosDbClient.CreateDatabaseIfNotExistsAsync(Constants.CosmosDB.DbName);
 
-            await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName);
-            await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName);
-            await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.LeaseCollectionName);
+            await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName, "/id");
+            await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName, "/id");
+            await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.LeaseCollectionName, "/_partitionKey");
 
         }
         public async static Task DeleteDocumentCollections()
@@ -120,7 +120,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             }
         }
 
-        private async static Task CreateCollection(string dbName, string collectionName)
+        private async static Task CreateCollection(string dbName, string collectionName, string partitionKey)
         {
             Database database = _cosmosDbClient.GetDatabase(dbName);
             IndexingPolicy indexingPolicy = new IndexingPolicy
@@ -135,7 +135,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                     }
                 }
             };
-            var containerProperties = new ContainerProperties(collectionName, "/Id")
+            var containerProperties = new ContainerProperties(collectionName, partitionKey)
             {
                 IndexingPolicy = indexingPolicy
             };
