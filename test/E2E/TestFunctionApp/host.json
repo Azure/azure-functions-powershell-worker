@@ -9,7 +9,7 @@
     },
     "extensions": {
         "durableTask": {
-          "hubName": "ThisIsGarbage101723"
+          "hubName": "%TestTaskHubName%"
         }
       }
 }
