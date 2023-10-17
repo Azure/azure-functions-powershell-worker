@@ -1,7 +1,8 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
-using Microsoft.Azure.EventHubs;
+using Azure.Messaging.EventHubs;
+using Azure.Messaging.EventHubs.Producer;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
@@ -29,13 +30,11 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                 events.Add(evt);
             }
 
-            EventHubsConnectionStringBuilder builder = new EventHubsConnectionStringBuilder(Constants.EventHubs.EventHubsConnectionStringSetting);
-            builder.EntityPath = eventHubName;
-            EventHubClient eventHubClient = EventHubClient.CreateFromConnectionString(builder.ToString());
+            EventHubProducerClient eventHubClient = new EventHubProducerClient(Constants.EventHubs.EventHubsConnectionStringSetting, eventHubName);
             await eventHubClient.SendAsync(events);
         }
 
-        public static async Task SendMessagesAsync(string eventId, string evenHubName)
+        public static async Task SendMessagesAsync(string eventId, string eventHubName)
         {
             // write 3 events
             List<EventData> events = new List<EventData>();
@@ -48,9 +47,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                 events.Add(evt);
             }
 
-            EventHubsConnectionStringBuilder builder = new EventHubsConnectionStringBuilder(Constants.EventHubs.EventHubsConnectionStringSetting);
-            builder.EntityPath = evenHubName;
-            EventHubClient eventHubClient = EventHubClient.CreateFromConnectionString(builder.ToString());
+            EventHubProducerClient eventHubClient = new EventHubProducerClient(Constants.EventHubs.EventHubsConnectionStringSetting, eventHubName);
             await eventHubClient.SendAsync(events);
         }
     }
