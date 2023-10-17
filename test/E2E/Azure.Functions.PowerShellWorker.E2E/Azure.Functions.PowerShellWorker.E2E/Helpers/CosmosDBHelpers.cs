@@ -97,7 +97,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
             await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName, "/id");
             await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName, "/id");
-            await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.LeaseCollectionName, "/_partitionKey");
+            await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.LeaseCollectionName, "/id");
 
         }
         public async static Task DeleteDocumentCollections()
