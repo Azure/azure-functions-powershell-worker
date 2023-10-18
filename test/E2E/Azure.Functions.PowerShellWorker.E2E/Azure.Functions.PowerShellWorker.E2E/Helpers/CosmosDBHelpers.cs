@@ -71,7 +71,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             try
             {
                 Container container = _cosmosDbClient.GetContainer(dbName, collectionName);
-                await container.DeleteItemAsync<Document>(dbName, new PartitionKey(dbName));
+                await container.DeleteItemAsync<Document>(docId, new PartitionKey(docId));
             }
             catch (Exception)
             {
