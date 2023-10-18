@@ -7,7 +7,7 @@
       "leaseCollectionName": "leases",
       "connectionStringSetting": "AzureWebJobsCosmosDBConnectionString",
       "databaseName": "ItemDb",
-      "collectionName": "ItemCollectionIn",
+      "collectionName": "PartitionedItemCollectionIn",
       "createLeaseCollectionIfNotExists": true
     },
     {
@@ -17,7 +17,7 @@
       "leaseCollectionName": "leases",
       "connectionStringSetting": "AzureWebJobsCosmosDBConnectionString",
       "databaseName": "ItemDb",
-      "collectionName": "ItemCollectionOut"
+      "collectionName": "PartitionedItemCollectionOut"
     }
   ]
 }
