@@ -7,11 +7,6 @@ using Microsoft.Azure.Cosmos;
 
 namespace Azure.Functions.PowerShell.Tests.E2E
 {
-    public class TestDocument
-    {
-        public string id { get; set; }
-        public string name { get; set; }
-    }
 
     public static class CosmosDBHelpers
     {
@@ -43,15 +38,9 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             Document insertedDoc = await _inputContainer.CreateItemAsync<Document>(documentToTest, new PartitionKey(documentToTest.id));
         }
 
-        //public async static Task CreateDocument(TestDocument testDocument)
-        //{
-        //    Document insertedDoc = await _docDbClient.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName), testDocument);
-        //}
-
         // keep
         public async static Task<string> ReadDocument(string docId)
         {
-            //var docUri = UriFactory.CreateDocumentUri(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName, docId);
             Document retrievedDocument = null;
             await Utilities.RetryAsync(async () =>
             {
@@ -97,6 +86,9 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
             await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName, "/id");
             await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName, "/id");
+            // While using extensions v2-3, the leases may not have a partition key, but the new SDK requires
+            // one to manually create a collection. This comment may be removed and this line uncommented when
+            // extension bundles for tests are updated. 
             //await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.LeaseCollectionName, "/id");
         }
         public async static Task DeleteDocumentCollections()
@@ -138,7 +130,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             {
                 IndexingPolicy = indexingPolicy
             };
-            await database.CreateContainerIfNotExistsAsync(containerProperties);
+            await database.CreateContainerIfNotExistsAsync(containerProperties, 400);
         }
     }
 }
