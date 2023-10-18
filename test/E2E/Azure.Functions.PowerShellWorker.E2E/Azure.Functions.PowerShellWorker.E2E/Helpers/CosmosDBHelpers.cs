@@ -3,30 +3,27 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 
 namespace Azure.Functions.PowerShell.Tests.E2E
 {
-    public class TestDocument
-    {
-        public string id { get; set; }
-        public string name { get; set; }
-    }
 
     public static class CosmosDBHelpers
     {
-        private static DocumentClient _docDbClient;
-        private static Uri inputCollectionsUri = UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName);
-        private static Uri outputCollectionsUri = UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName);
-        private static Uri leasesCollectionsUri = UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.LeaseCollectionName);
+        private static CosmosClient _cosmosDbClient;
+
+        private class Document
+        {
+            // lower-case because Cosmos expects a field with this name
+            public string id { get; set; }
+        }
 
         static CosmosDBHelpers()
         {
             var builder = new System.Data.Common.DbConnectionStringBuilder();
             builder.ConnectionString = Constants.CosmosDB.CosmosDBConnectionStringSetting;
-            var serviceUri = new Uri(builder["AccountEndpoint"].ToString());
-            _docDbClient = new DocumentClient(serviceUri, builder["AccountKey"].ToString());
+            var serviceUri = builder["AccountEndpoint"].ToString();
+            _cosmosDbClient = new CosmosClient(serviceUri, builder["AccountKey"].ToString());
         }
 
         // keep
@@ -34,51 +31,48 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         {
             Document documentToTest = new Document()
             {
-                Id = docId
+                id = docId
             };
 
-            Document insertedDoc = await _docDbClient.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName), documentToTest);
-        }
+            Container _inputContainer = _cosmosDbClient.GetContainer(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName);
 
-        public async static Task CreateDocument(TestDocument testDocument)
-        {
-            Document insertedDoc = await _docDbClient.CreateDocumentAsync(UriFactory.CreateDocumentCollectionUri(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName), testDocument);
+            Document insertedDoc = await _inputContainer.CreateItemAsync<Document>(documentToTest, new PartitionKey(documentToTest.id));
         }
 
         // keep
         public async static Task<string> ReadDocument(string docId)
         {
-            var docUri = UriFactory.CreateDocumentUri(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName, docId);
             Document retrievedDocument = null;
             await Utilities.RetryAsync(async () =>
             {
                 try
                 {
-                    retrievedDocument = await _docDbClient.ReadDocumentAsync(docUri);
+                    Container container = _cosmosDbClient.GetContainer(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName);
+
+                    retrievedDocument = await container.ReadItemAsync<Document>(docId, new PartitionKey(docId));
                     return true;
                 }
-                catch (DocumentClientException ex) when (ex.Error.Code == "NotFound" || ex.Error.Code == "Not Found")
+                catch (CosmosException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     return false;
                 }
             }, 120000, 4000);
-            return retrievedDocument.Id;
+            return retrievedDocument.id;
         }
 
         // keep
         public async static Task DeleteTestDocuments(string docId)
         {
-            var inputDocUri = UriFactory.CreateDocumentUri(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName, docId);
-            await DeleteDocument(inputDocUri);
-            var outputDocUri = UriFactory.CreateDocumentUri(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName, docId);
-            await DeleteDocument(outputDocUri);
+            await DeleteDocument(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName, docId);
+            await DeleteDocument(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName, docId);
         }
 
-        private async static Task DeleteDocument(Uri docUri)
+        private async static Task DeleteDocument(string dbName, string collectionName, string docId)
         {
             try
             {
-                await _docDbClient.DeleteDocumentAsync(docUri);
+                Container container = _cosmosDbClient.GetContainer(dbName, collectionName);
+                await container.DeleteItemAsync<Document>(docId, new PartitionKey(docId));
             }
             catch (Exception)
             {
@@ -89,26 +83,28 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         // keep
         public async static Task CreateDocumentCollections()
         {
-            Database db = await _docDbClient.CreateDatabaseIfNotExistsAsync(new Database { Id = Constants.CosmosDB.DbName });
-            Uri dbUri = UriFactory.CreateDatabaseUri(db.Id);
+            Database db = await _cosmosDbClient.CreateDatabaseIfNotExistsAsync(Constants.CosmosDB.DbName);
 
-            await CreateCollection(dbUri, Constants.CosmosDB.InputCollectionName);
-            await CreateCollection(dbUri, Constants.CosmosDB.OutputCollectionName);
-            await CreateCollection(dbUri, Constants.CosmosDB.LeaseCollectionName);
-
+            await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName, "/id");
+            await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName, "/id");
+            // While using extensions v2-3, the leases may not have a partition key, but the new SDK requires
+            // one to manually create a collection. This comment may be removed and this line uncommented when
+            // extension bundles for tests are updated. 
+            //await CreateCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.LeaseCollectionName, "/id");
         }
         public async static Task DeleteDocumentCollections()
         {
-            await DeleteCollection(inputCollectionsUri);
-            await DeleteCollection(outputCollectionsUri);
-            await DeleteCollection(leasesCollectionsUri);
+            await DeleteCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName);
+            await DeleteCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName);
+            await DeleteCollection(Constants.CosmosDB.DbName, Constants.CosmosDB.LeaseCollectionName);
         }
 
-        private async static Task DeleteCollection(Uri collectionUri)
+        private async static Task DeleteCollection(string dbName, string collectionName)
         {
             try
             {
-                await _docDbClient.DeleteDocumentCollectionAsync(collectionUri);
+                Database database = _cosmosDbClient.GetDatabase(dbName);
+                await database.GetContainer(collectionName).DeleteContainerAsync();
             }
             catch (Exception)
             {
@@ -116,14 +112,26 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             }
         }
 
-        private async static Task CreateCollection(Uri dbUri, string collectioName)
+        private async static Task CreateCollection(string dbName, string collectionName, string partitionKey)
         {
-            DocumentCollection collection = new DocumentCollection() { Id = collectioName };
-            await _docDbClient.CreateDocumentCollectionIfNotExistsAsync(dbUri, collection,
-                new RequestOptions()
+            Database database = _cosmosDbClient.GetDatabase(dbName);
+            IndexingPolicy indexingPolicy = new IndexingPolicy
+            {
+                IndexingMode = IndexingMode.Consistent,
+                Automatic = true,
+                IncludedPaths =
                 {
-                    OfferThroughput = 400
-                });
+                    new IncludedPath
+                    {
+                        Path = "/*"
+                    }
+                }
+            };
+            var containerProperties = new ContainerProperties(collectionName, partitionKey)
+            {
+                IndexingPolicy = indexingPolicy
+            };
+            await database.CreateContainerIfNotExistsAsync(containerProperties, 400);
         }
     }
 }
