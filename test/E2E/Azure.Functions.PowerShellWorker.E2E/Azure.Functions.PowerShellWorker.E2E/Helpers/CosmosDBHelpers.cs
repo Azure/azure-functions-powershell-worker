@@ -63,7 +63,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         public async static Task DeleteTestDocuments(string docId)
         {
             await DeleteDocument(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName, docId);
-            await DeleteDocument(Constants.CosmosDB.DbName, Constants.CosmosDB.InputCollectionName, docId);
+            await DeleteDocument(Constants.CosmosDB.DbName, Constants.CosmosDB.OutputCollectionName, docId);
         }
 
         private async static Task DeleteDocument(string dbName, string collectionName, string docId)
