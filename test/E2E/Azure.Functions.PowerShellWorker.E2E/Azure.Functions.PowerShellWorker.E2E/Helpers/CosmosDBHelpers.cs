@@ -14,6 +14,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
         private class Document
         {
+            // lower-case because Cosmos expects a field with this name
             public string id { get; set; }
         }
 
