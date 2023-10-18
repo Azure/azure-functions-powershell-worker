@@ -23,8 +23,8 @@ namespace Azure.Functions.PowerShell.Tests.E2E
         public static class CosmosDB {
             public static string CosmosDBConnectionStringSetting = Environment.GetEnvironmentVariable("AzureWebJobsCosmosDBConnectionString");
             public static string DbName = "ItemDb";
-            public static string InputCollectionName = "ItemCollectionIn";
-            public static string OutputCollectionName = "ItemCollectionOut";
+            public static string InputCollectionName = "PartitionedItemCollectionIn";
+            public static string OutputCollectionName = "PartitionedItemCollectionOut";
             public static string LeaseCollectionName = "leases";
         }
 
