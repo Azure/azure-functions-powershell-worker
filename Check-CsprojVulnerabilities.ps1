@@ -24,7 +24,7 @@ try
         $projectFolder = Split-Path $projectFilePath
         
         Push-Location $projectFolder
-        & { dotnet restore $projectFileName }
+        & { dotnet restore $projectFilePath }
         & { dotnet list $projectFilePath package --include-transitive --vulnerable } 3>&1 2>&1 > $logFilePath
         Pop-Location
 

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Microsoft.Azure.Functions.PowerShellWorker": {
+      "commandName": "Project",
+      "commandLineArgs": "--host 127.0.0.1 --port 50821 --workerId e9efd817-47a1-45dc-9e20-e6f975d7a025 --requestId cbef5957-cdb3-4462-9ee7-ac9f91be0a51 --grpcMaxMessageLength 2147483647  --functions-uri http://127.0.0.1:50821 --functions-worker-id e9efd817-47a1-45dc-9e20-e6f975d7a025 --functions-request-id cbef5957-cdb3-4462-9ee7-ac9f91be0a51 --functions-grpc-max-message-length 2147483647"
+    }
+  }
+}
