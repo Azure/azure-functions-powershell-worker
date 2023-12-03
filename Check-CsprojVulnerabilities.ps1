@@ -1,7 +1,10 @@
 param
 (
     [String[]]
-    $CsprojFilePath
+    $CsprojFilePath,
+
+    [switch]
+    $PrintReport
 )
 
 if (-not $CsprojFilePath)
@@ -38,7 +41,12 @@ try
         }
         else
         {
-            $output = [System.Environment]::NewLine + "Vulnerabilities found!" + $report
+            $output = [System.Environment]::NewLine + "Vulnerabilities found!"            
+            if ($PrintReport.IsPresent)
+            {
+                $output += $report
+            }
+            
             Write-Host $output -ForegroundColor Red
             Exit 1
         }
