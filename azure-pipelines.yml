@@ -49,6 +49,9 @@ steps:
 - pwsh: ./build.ps1 -NoBuild -Bootstrap
   displayName: 'Running ./build.ps1 -NoBuild -Bootstrap'
 
+- pwsh: ./Check-CsprojVulnerabilities.ps1
+  displayName: 'Check for security vulnerabilities'
+
 - pwsh: |
       $ErrorActionPreference = "Stop"
 
