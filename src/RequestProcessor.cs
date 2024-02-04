@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using System.Management.Automation.Remoting;
@@ -18,7 +19,10 @@ using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
 {
+    using Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing;
+    using Microsoft.PowerShell;
     using System.Diagnostics;
+    using System.Text.Json;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
     using System.Runtime.InteropServices;
 
@@ -29,6 +33,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private readonly PowerShellManagerPool _powershellPool;
         private DependencyManager _dependencyManager;
         private string _pwshVersion;
+        private string _functionAppRootPath;
 
         // Holds the exception if an issue is encountered while processing the function app dependencies.
         private Exception _initTerminatingError;
@@ -68,6 +73,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             // Host sends cancel message to attempt to cancel an invocation. 
             // If an invocation is cancelled, host will receive an invocation response with status cancelled.
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.InvocationCancel, ProcessInvocationCancelRequest);
+
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionsMetadataRequest, ProcessFunctionMetadataRequest);
 
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadRequest, ProcessFunctionEnvironmentReloadRequest);
         }
@@ -134,6 +141,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
             catch (Exception e)
             {
+                // This is a terminating failure: we will need to return a failure response to
+                // all subsequent 'FunctionLoadRequest'. Cache the exception so we can reuse it in future calls.
+                _initTerminatingError = e;
+
                 status.Status = StatusResult.Types.Status.Failure;
                 status.Exception = e.ToRpcException();
                 return response;
@@ -215,21 +226,38 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, null);
 
-                    _dependencyManager = new DependencyManager(request.FunctionLoadRequest.Metadata.Directory, logger: rpcLogger);
+                    // _functionAppRootPath is set in ProcessFunctionMetadataRequest for the v2 progamming model.
+                    if (_functionAppRootPath == null)
+                    {
+                        // If _functionAppRootPath is null, this means that this is an app for the v1 programming model.
+                        _functionAppRootPath = Path.GetFullPath(Path.Join(request.FunctionLoadRequest.Metadata.Directory, ".."));
+                    }
+
+                    if (string.IsNullOrWhiteSpace(_functionAppRootPath))
+                    {
+                        throw new ArgumentException("Failed to resolve the function app root", nameof(_functionAppRootPath));
+                    }
+
+                    _dependencyManager = new DependencyManager(_functionAppRootPath, logger: rpcLogger);
                     var managedDependenciesPath = _dependencyManager.Initialize(request, rpcLogger);
 
-                    SetupAppRootPathAndModulePath(functionLoadRequest, managedDependenciesPath);
+                    SetupAppRootPathAndModulePath(_functionAppRootPath, managedDependenciesPath);
 
+                    // The profile is invoke when the instance is initialized.
+                    // TODO: Initialize the first PowerShell instance but delay the invocation of the profile until the first function load.
+                    //       The first PowerShell instance will be used to import the AzureFunctions.PowerShell.SDK to generate the function metadata
+                    // Issue: We do not know if Managed Dependencies is enabled until the first function load.
                     _powershellPool.Initialize(_firstPwshInstance);
 
                     // Start the download asynchronously if needed.
                     _dependencyManager.StartDependencyInstallationIfNeeded(request, _firstPwshInstance, rpcLogger);
 
                     rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.FirstFunctionLoadCompleted, stopwatch.ElapsedMilliseconds));
+
                 }
                 catch (Exception e)
                 {
-                    // Failure that happens during this step is terminating and we will need to return a failure response to
+                    // This is a terminating failure: we will need to return a failure response to
                     // all subsequent 'FunctionLoadRequest'. Cache the exception so we can reuse it in future calls.
                     _initTerminatingError = e;
 
@@ -362,6 +390,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             return null;
         }
 
+        private StreamingMessage ProcessFunctionMetadataRequest(StreamingMessage request)
+        {
+            StreamingMessage response = NewStreamingMessageTemplate(
+                request.RequestId,
+                StreamingMessage.ContentOneofCase.FunctionMetadataResponse,
+                out StatusResult status);
+
+            var rpcLogger = new RpcLogger(_msgStream);
+            rpcLogger.SetContext(request.RequestId, null);
+
+            _functionAppRootPath = request.FunctionsMetadataRequest.FunctionAppDirectory;
+            response.FunctionMetadataResponse.FunctionMetadataResults.AddRange(WorkerIndexingHelper.IndexFunctions(_functionAppRootPath, rpcLogger));
+
+            return response;
+        }
+
         internal StreamingMessage ProcessFunctionEnvironmentReloadRequest(StreamingMessage request)
         {
             var stopwatch = new Stopwatch();
@@ -414,6 +458,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     break;
                 case StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse:
                     response.FunctionEnvironmentReloadResponse = new FunctionEnvironmentReloadResponse() { Result = status };
+                    break;
+                case StreamingMessage.ContentOneofCase.FunctionMetadataResponse:
+                    response.FunctionMetadataResponse = new FunctionMetadataResponse() { Result = status };
                     break;
                 default:
                     throw new InvalidOperationException("Unreachable code.");
@@ -525,9 +572,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
         }
 
-        private void SetupAppRootPathAndModulePath(FunctionLoadRequest functionLoadRequest, string managedDependenciesPath)
+        private void SetupAppRootPathAndModulePath(string functionAppRootPath, string managedDependenciesPath)
         {
-            FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath);
+            FunctionLoader.SetupWellKnownPaths(functionAppRootPath, managedDependenciesPath);
 
             if (FunctionLoader.FunctionAppRootPath == null)
             {

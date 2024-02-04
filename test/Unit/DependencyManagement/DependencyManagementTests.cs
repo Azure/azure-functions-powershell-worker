@@ -72,12 +72,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         private void TestCaseCleanup()
         {
             // We run a test case clean up to reset DependencyManager.Dependencies and DependencyManager.DependenciesPath
-            var functionFolderPath = Path.Combine(_dependencyManagementDirectory, "DirectoryThatDoesNotExist");
-            var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
             try
             {
-                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory))
+                using (var dependencyManager = new DependencyManager(_dependencyManagementDirectory))
                 {
                     dependencyManager.Initialize(_testLogger);
                 }
@@ -95,14 +93,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 // Test case setup.
                 var requirementsDirectoryName = "BasicRequirements";
-                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
                 var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
                 var managedDependenciesFolderPath = InitializeManagedDependenciesDirectory(functionAppRoot);
 
-                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
-
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, logger: _testLogger))
+                using (var dependencyManager = new DependencyManager(functionAppRoot, logger: _testLogger))
                 {
                     var currentDependenciesPath = dependencyManager.Initialize(_testLogger);
 
@@ -126,13 +121,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 // Test case setup.
                 var requirementsDirectoryName = "EmptyHashtableRequirement";
-                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
                 var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
                 var managedDependenciesFolderPath = InitializeManagedDependenciesDirectory(functionAppRoot);
-                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, logger: _testLogger))
+                using (var dependencyManager = new DependencyManager(functionAppRoot, logger: _testLogger))
                 {
                     var currentDependenciesPath = dependencyManager.Initialize(_testLogger);
 
@@ -150,10 +143,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             // Test case setup.
             var requirementsDirectoryName = "NoHashtableRequirements";
-            var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
-            var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
+            var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
 
-            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, logger: _testLogger))
+            using (var dependencyManager = new DependencyManager(functionAppRoot, logger: _testLogger))
             {
                 // Trying to set the functionApp dependencies should throw since requirements.psd1 is not a hash table.
                 var exception = Assert.Throws<DependencyInstallationException>(
@@ -169,10 +161,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             // Test case setup.
             var requirementsDirectoryName = "InvalidRequirementsFormat";
-            var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
-            var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
+            var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
 
-            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, logger: _testLogger))
+            using (var dependencyManager = new DependencyManager(functionAppRoot, logger: _testLogger))
             {
                 // Trying to set the functionApp dependencies should throw since the module version
                 // in requirements.psd1 is not in a valid format.
@@ -190,10 +181,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         {
             // Test case setup.
             var requirementsDirectoryName = "ModuleThatDoesNotExist";
-            var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
-            var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
+            var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
 
-            using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, logger: _testLogger))
+            using (var dependencyManager = new DependencyManager(functionAppRoot, logger: _testLogger))
             {
                 // Trying to set the functionApp dependencies should throw since no
                 // requirements.psd1 is found at the function app root.
@@ -212,16 +202,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 // Test case setup.
                 var requirementsDirectoryName = "BasicRequirements";
-                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
                 var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
                 var managedDependenciesFolderPath = InitializeManagedDependenciesDirectory(functionAppRoot);
-                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Configure MockModuleProvider to mimic a successful download.
                 var mockModuleProvider = new MockModuleProvider { SuccessfulDownload = true };
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, mockModuleProvider, logger: _testLogger))
+                using (var dependencyManager = new DependencyManager(functionAppRoot, mockModuleProvider, logger: _testLogger))
                 {
                     dependencyManager.Initialize(_testLogger);
 
@@ -258,17 +246,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 // Test case setup
                 var requirementsDirectoryName = "BasicRequirements";
-                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
                 var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
                 var managedDependenciesFolderPath = InitializeManagedDependenciesDirectory(functionAppRoot);
-
-                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Configure MockModuleProvider to not throw in the RunSaveModuleCommand call after 2 tries.
                 var mockModuleProvider = new MockModuleProvider { ShouldNotThrowAfterCount = 2 };
 
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, mockModuleProvider, logger: _testLogger))
+                using (var dependencyManager = new DependencyManager(functionAppRoot, mockModuleProvider, logger: _testLogger))
                 {
                     dependencyManager.Initialize(_testLogger);
 
@@ -318,14 +303,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 // Test case setup
                 var requirementsDirectoryName = "BasicRequirements";
-                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
                 var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
                 var managedDependenciesFolderPath = InitializeManagedDependenciesDirectory(functionAppRoot);
 
-                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
-
                 // Create DependencyManager and process the requirements.psd1 file at the function app root.
-                using (var dependencyManager = new DependencyManager(functionLoadRequest.Metadata.Directory, new MockModuleProvider(), logger: _testLogger))
+                using (var dependencyManager = new DependencyManager(functionAppRoot, new MockModuleProvider(), logger: _testLogger))
                 {
                     dependencyManager.Initialize(_testLogger);
 
@@ -372,16 +354,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 // Test case setup
                 var requirementsDirectoryName = "BasicRequirements";
-                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
                 var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
                 var managedDependenciesFolderPath = InitializeManagedDependenciesDirectory(functionAppRoot);
-
-                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Create DependencyManager and configure it to mimic being unable to reach
                 // the PSGallery to retrieve the latest module version
                 using (var dependencyManager = new DependencyManager(
-                    functionLoadRequest.Metadata.Directory,
+                    functionAppRoot,
                     new MockModuleProvider { GetLatestModuleVersionThrows = true },
                     logger: _testLogger))
                 {
@@ -409,15 +388,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 // Test case setup
                 var requirementsDirectoryName = "BasicRequirements";
-                var functionFolderPath = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName, "FunctionDirectory");
                 var functionAppRoot = Path.Combine(_dependencyManagementDirectory, requirementsDirectoryName);
                 var managedDependenciesFolderPath = InitializeManagedDependenciesDirectory(functionAppRoot);
-                var functionLoadRequest = GetFuncLoadRequest(functionFolderPath, true);
 
                 // Create DependencyManager and configure it to mimic being unable to reach
                 // the PSGallery to retrive the latest module version
                 using (var dependencyManager = new DependencyManager(
-                    functionLoadRequest.Metadata.Directory,
+                    functionAppRoot,
                     new MockModuleProvider { GetLatestModuleVersionThrows = true },
                     logger: _testLogger))
                 {
