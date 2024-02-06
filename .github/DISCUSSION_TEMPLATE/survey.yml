@@ -66,4 +66,4 @@ body:
   - type: markdown
     attributes:
       value: |
-        "Thank you for your feedback! For any specific questions or to report a bug, please create an issue [here](https://github.com/Azure/azure-functions-python-worker/issues)."
+        "Thank you for your feedback! For any specific questions or to report a bug, please create an issue [here](https://github.com/Azure/azure-functions-powershell-worker/issues)."
