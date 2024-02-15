@@ -74,11 +74,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         internal static void SetupWellKnownPaths(string functionAppRootPath, string managedDependenciesPath)
         {
+            var workerLevelModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
+
+            if (functionAppRootPath == null)
+            {
+                FunctionModulePath = workerLevelModulesPath;
+            }
+
             FunctionAppRootPath = functionAppRootPath;
 
             // Resolve module paths
             var appLevelModulesPath = Path.Join(FunctionAppRootPath, "Modules");
-            var workerLevelModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
             FunctionModulePath = $"{appLevelModulesPath}{Path.PathSeparator}{workerLevelModulesPath}";
 
             // Add the managed dependencies folder path

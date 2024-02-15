@@ -401,7 +401,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             rpcLogger.SetContext(request.RequestId, null);
 
             _functionAppRootPath = request.FunctionsMetadataRequest.FunctionAppDirectory;
-            response.FunctionMetadataResponse.FunctionMetadataResults.AddRange(WorkerIndexingHelper.IndexFunctions(_functionAppRootPath, rpcLogger));
+            response.FunctionMetadataResponse.FunctionMetadataResults.AddRange(WorkerIndexingHelper.IndexFunctions(_functionAppRootPath, rpcLogger, _firstPwshInstance));
 
             return response;
         }
