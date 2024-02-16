@@ -23,7 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Tasks
 
         private object Input { get; }
 
-        private RetryOptions RetryOptions { get; }
+        internal RetryOptions RetryOptions { get; }
 
         internal ActivityInvocationTask(string functionName, object functionInput, RetryOptions retryOptions)
         {
