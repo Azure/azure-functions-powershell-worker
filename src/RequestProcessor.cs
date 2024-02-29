@@ -574,7 +574,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
         private void SetupAppRootPathAndModulePath(string functionAppRootPath, string managedDependenciesPath)
         {
-            FunctionLoader.SetupWellKnownPaths(functionAppRootPath, managedDependenciesPath);
+            FunctionLoader.SetupWellKnownPaths(functionAppRootPath, managedDependenciesPath, false);
 
             if (FunctionLoader.FunctionAppRootPath == null)
             {

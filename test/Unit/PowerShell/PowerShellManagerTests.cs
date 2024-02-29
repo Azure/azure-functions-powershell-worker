@@ -80,7 +80,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             };
 
             s_functionLoadRequest = new FunctionLoadRequest { FunctionId = "FunctionId", Metadata = rpcFunctionMetadata };
-            FunctionLoader.SetupWellKnownPaths(s_functionLoadRequest.Metadata.Directory, managedDependenciesPath: null);
+            FunctionLoader.SetupWellKnownPaths(s_functionLoadRequest.Metadata.Directory, managedDependenciesPath: null, false);
         }
 
         // Have a single place to get a PowerShellManager for testing.

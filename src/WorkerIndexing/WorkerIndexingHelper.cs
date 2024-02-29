@@ -36,7 +36,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             List<RpcFunctionMetadata> indexedFunctions = new List<RpcFunctionMetadata>();
 
             // A hacky way to add the worker modules into the env only
-            FunctionLoader.SetupWellKnownPaths(null, null);
+            FunctionLoader.SetupWellKnownPaths(null, null, true);
 
             _firstPwshInstance.AddCommand("Microsoft.PowerShell.Management\\Set-Content")
                 .AddParameter("Path", "env:PSModulePath")
