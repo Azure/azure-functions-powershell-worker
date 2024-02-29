@@ -224,7 +224,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 try
                 {
-                    if(functionInfo.DurableFunctionInfo.IsOrchestrationFunction)
+                    if (functionInfo.DurableFunctionInfo.IsOrchestrationFunction)
                     {
                         return durableFunctionsUtils.InvokeOrchestrationFunction();
                     }

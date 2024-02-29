@@ -1,0 +1,121 @@
+<Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
+  <Obj RefId="0">
+    <TN RefId="0">
+      <T>Microsoft.PowerShell.Commands.PSRepositoryItemInfo</T>
+      <T>System.Management.Automation.PSCustomObject</T>
+      <T>System.Object</T>
+    </TN>
+    <MS>
+      <S N="Name">AzureFunctions.PowerShell.SDK</S>
+      <S N="Version">0.0.3</S>
+      <S N="Type">Module</S>
+      <S N="Description">This module contains utilities for writing and parsing Azure Functions written in PowerShell and it is to be used within the PowerShell language worker</S>
+      <S N="Author">Microsoft Corporation</S>
+      <S N="CompanyName">Francisco-Gamino</S>
+      <S N="Copyright">(c) 2022 Microsoft. All rights reserved.</S>
+      <DT N="PublishedDate">2023-06-05T03:55:02-06:00</DT>
+      <Nil N="InstalledDate" />
+      <Nil N="UpdatedDate" />
+      <Nil N="LicenseUri" />
+      <Nil N="ProjectUri" />
+      <Nil N="IconUri" />
+      <Obj N="Tags" RefId="1">
+        <TN RefId="1">
+          <T>System.Object[]</T>
+          <T>System.Array</T>
+          <T>System.Object</T>
+        </TN>
+        <LST>
+          <S>PSModule</S>
+          <S>PSEdition_Core</S>
+        </LST>
+      </Obj>
+      <Obj N="Includes" RefId="2">
+        <TN RefId="2">
+          <T>System.Collections.Hashtable</T>
+          <T>System.Object</T>
+        </TN>
+        <DCT>
+          <En>
+            <S N="Key">Cmdlet</S>
+            <Obj N="Value" RefId="3">
+              <TNRef RefId="1" />
+              <LST>
+                <S>Get-FunctionsMetadata</S>
+              </LST>
+            </Obj>
+          </En>
+          <En>
+            <S N="Key">Workflow</S>
+            <Obj N="Value" RefId="4">
+              <TNRef RefId="1" />
+              <LST />
+            </Obj>
+          </En>
+          <En>
+            <S N="Key">Function</S>
+            <Ref N="Value" RefId="4" />
+          </En>
+          <En>
+            <S N="Key">Command</S>
+            <Obj N="Value" RefId="5">
+              <TNRef RefId="1" />
+              <LST>
+                <S>Get-FunctionsMetadata</S>
+              </LST>
+            </Obj>
+          </En>
+          <En>
+            <S N="Key">DscResource</S>
+            <Ref N="Value" RefId="4" />
+          </En>
+          <En>
+            <S N="Key">RoleCapability</S>
+            <Ref N="Value" RefId="4" />
+          </En>
+        </DCT>
+      </Obj>
+      <Nil N="PowerShellGetFormatVersion" />
+      <S N="ReleaseNotes"># 0.0.3_x000D__x000A_            Initial Release.</S>
+      <Obj N="Dependencies" RefId="6">
+        <TNRef RefId="1" />
+        <LST />
+      </Obj>
+      <S N="RepositorySourceLocation">https://www.powershellgallery.com/api/v2</S>
+      <S N="Repository">PSGallery</S>
+      <S N="PackageManagementProvider">NuGet</S>
+      <Obj N="AdditionalMetadata" RefId="7">
+        <TN RefId="3">
+          <T>System.Management.Automation.PSCustomObject</T>
+          <T>System.Object</T>
+        </TN>
+        <MS>
+          <S N="copyright">(c) 2022 Microsoft. All rights reserved.</S>
+          <S N="description">This module contains utilities for writing and parsing Azure Functions written in PowerShell and it is to be used within the PowerShell language worker</S>
+          <S N="requireLicenseAcceptance">False</S>
+          <S N="releaseNotes"># 0.0.3_x000D__x000A_            Initial Release.</S>
+          <S N="isLatestVersion">True</S>
+          <S N="isAbsoluteLatestVersion">True</S>
+          <S N="versionDownloadCount">215</S>
+          <S N="downloadCount">261</S>
+          <S N="packageSize">19534</S>
+          <S N="published">6/5/2023 3:55:02 AM -06:00</S>
+          <S N="created">6/5/2023 3:55:02 AM -06:00</S>
+          <S N="lastUpdated">2/15/2024 7:12:43 AM -07:00</S>
+          <S N="tags">PSModule PSEdition_Core PSCmdlet_Get-FunctionsMetadata PSCommand_Get-FunctionsMetadata PSIncludes_Cmdlet</S>
+          <S N="developmentDependency">False</S>
+          <S N="updated">2024-02-15T07:12:43Z</S>
+          <S N="NormalizedVersion">0.0.3</S>
+          <S N="Authors">Microsoft Corporation</S>
+          <S N="IsPrerelease">false</S>
+          <S N="ItemType">Module</S>
+          <S N="FileList">AzureFunctions.PowerShell.SDK.nuspec|AzureFunctions.AttributeDefinitions.ps1|AzureFunctions.PowerShell.SDK.dll|AzureFunctions.PowerShell.SDK.psd1</S>
+          <S N="GUID">1d075857-4919-4ede-bb43-bb193483a280</S>
+          <S N="PowerShellVersion">7.2</S>
+          <S N="CompanyName">Microsoft Corporation</S>
+        </MS>
+      </Obj>
+      <S N="InstalledLocation">D:\repos\azure-functions-powershell-worker\src\Modules\AzureFunctions.PowerShell.SDK\0.0.3</S>
+    </MS>
+  </Obj>
+</Objs>

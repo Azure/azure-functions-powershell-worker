@@ -26,7 +26,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
         const string AzureFunctionsPowerShellSDKModuleName = "AzureFunctions.PowerShell.SDK";
         private static readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
 
-        internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string functionAppRootPath, ILogger logger)
+        internal static IEnumerable<RpcFunctionMetadata> IndexFunctions(string functionAppRootPath, ILogger logger, System.Management.Automation.PowerShell _firstPwshInstance)
         {
             if (string.IsNullOrWhiteSpace(functionAppRootPath))
             {
@@ -34,6 +34,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             }
 
             List<RpcFunctionMetadata> indexedFunctions = new List<RpcFunctionMetadata>();
+
+            // A hacky way to add the worker modules into the env only
+            FunctionLoader.SetupWellKnownPaths(null, null, true);
+
+            _firstPwshInstance.AddCommand("Microsoft.PowerShell.Management\\Set-Content")
+                .AddParameter("Path", "env:PSModulePath")
+                .AddParameter("Value", FunctionLoader.FunctionModulePath)
+                .InvokeAndClearCommands();
 
             // This is not the correct way to deal with getting a runspace for the cmdlet. 
 
@@ -55,11 +63,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
             // 3. Continue using a new runspace for invoking Get-FunctionsMetadata, but initialize it in worker init and
             //    point the PsModulePath to the module path bundled with the worker.
 
-            InitialSessionState initial = InitialSessionState.CreateDefault();
-            Runspace runspace = RunspaceFactory.CreateRunspace(initial);
-            runspace.Open();
-            System.Management.Automation.PowerShell _powershell = System.Management.Automation.PowerShell.Create();
-            _powershell.Runspace = runspace;
+            //InitialSessionState initial = InitialSessionState.CreateDefault();
+            //Runspace runspace = RunspaceFactory.CreateRunspace(initial);
+            //runspace.Open();
+            //System.Management.Automation.PowerShell _powershell = System.Management.Automation.PowerShell.Create();
+            //_powershell.Runspace = runspace;
 
             string outputString = string.Empty;
             Exception exception = null;
@@ -70,9 +78,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
 
             try
             {
-                _powershell.AddCommand(GetFunctionsMetadataCmdletName).AddArgument(functionAppRootPath);
-                results = _powershell.Invoke();
-                cmdletExecutionHadErrors = _powershell.HadErrors;
+                _firstPwshInstance.AddCommand(GetFunctionsMetadataCmdletName).AddArgument(functionAppRootPath);
+                results = _firstPwshInstance.Invoke();
+                cmdletExecutionHadErrors = _firstPwshInstance.HadErrors;
             }
             catch (Exception ex)
             {
@@ -88,7 +96,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
                 }
                 else if (cmdletExecutionHadErrors)
                 {
-                    var errorCollection = _powershell.Streams.Error;
+                    var errorCollection = _firstPwshInstance.Streams.Error;
 
                     var stringBuilder = new StringBuilder();
                     foreach (var errorRecord in errorCollection)
@@ -106,7 +114,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing
                     throw new Exception(errorMsg);
                 }
 
-                _powershell.Commands.Clear();
+                _firstPwshInstance.Commands.Clear();
             }
 
             // TODO: The GetFunctionsMetadataCmdlet should never return more than one result. Make sure that this is the case and remove this code.
