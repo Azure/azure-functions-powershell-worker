@@ -1,0 +1,35 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+pr: none
+trigger: none
+
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-latest'
+    windows:
+      imageName: 'vs2017-win2016'
+
+pool:
+    vmImage: $(imageName)
+
+steps:
+- pwsh: ./test/E2E/Start-E2ETestPriveStamp.ps1
+  env:
+    AzureWebJobsStorage: $(AzureWebJobsStorage)
+    AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
+    AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
+    AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
+    FUNCTIONS_WORKER_RUNTIME : "powershell"
+    FunctionAppUrl: $(FunctionAppUrl)
+  displayName: 'Running PowerShell language worker E2E Tests'
+
+- task: PublishTestResults@2
+  inputs:
+    testResultsFormat: 'VSTest'
+    testResultsFiles: '**/*.trx'
+    failTaskOnFailedTests: true
+  condition: succeededOrFailed()
