@@ -386,15 +386,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 environmentReloadRequest.EnvironmentVariables,
                 environmentReloadRequest.FunctionAppDirectory);
 
-            // This will force the OpenTelemetryController to check the environment variables and module presence again
-            OpenTelemetryController.ResetOpenTelemetryModuleStatus();
-
             rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.EnvironmentReloadCompleted, stopwatch.ElapsedMilliseconds));
 
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse,
                 out StatusResult status);
+
+            // This will force the OpenTelemetryController to check the environment variables and module presence again
+            OpenTelemetryController.ResetOpenTelemetryModuleStatus();
+            if (OpenTelemetryController.isOpenTelemetryEnvironmentEnabled())
+            {
+                // Note: The ability to edit worker capabilities is new within the last few months. I am unsure if we need to 
+                // report all prior capabilities that were sent at worker init. Going with minimal change for now. 
+                response.FunctionEnvironmentReloadResponse.Capabilities.Add("WorkerOpenTelemetryEnabled", "true");
+            }
 
             return response;
         }
