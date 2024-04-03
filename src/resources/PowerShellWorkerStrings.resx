@@ -355,6 +355,9 @@
   <data name="FoundExternalDurableSdkInSession" xml:space="preserve">
     <value>Found external Durable Functions SDK in session: Name='{0}', Version='{1}', Path='{2}'.</value>
   </data>
+  <data name="FoundOpenTelemetrySdkInSession" xml:space="preserve">
+    <value>Found Open Telemetry SDK in session: Name='{0}', Version='{1}', Path='{2}'.</value>
+  </data>
   <data name="UnableToInitializeOrchestrator" xml:space="preserve">
     <value>Unable to initialize orchestrator function due to presence of other bindings. Total number of bindings found is '{0}'. Orchestrator Functions should never use any input or output bindings other than the orchestration trigger itself. See: aka.ms/df-bindings</value>
   </data>

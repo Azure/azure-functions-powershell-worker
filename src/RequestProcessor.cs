@@ -21,6 +21,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     using System.Diagnostics;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
     using System.Runtime.InteropServices;
+    using Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetrySDK;
 
     internal class RequestProcessor
     {
@@ -112,6 +113,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             response.WorkerInitResponse.Capabilities.Add("RpcHttpBodyOnly", "true");
             response.WorkerInitResponse.Capabilities.Add("WorkerStatus", "true");
+
+            if (OpenTelemetryController.isOpenTelemetryEnvironmentEnabled())
+            {
+                response.WorkerInitResponse.Capabilities.Add("WorkerOpenTelemetryEnabled", "true");
+            }
 
             // If the environment variable is set, spin up the custom named pipe server.
             // This is typically used for debugging. It will throw a friendly exception if the
@@ -354,7 +360,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             var retryContext = GetRetryContext(functionInfo, invocationRequest);
             stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.MetadataAndTraceContextReady);
 
-            return psManager.InvokeFunction(functionInfo, triggerMetadata, traceContext, retryContext, invocationRequest.InputData, stopwatch);
+            OpenTelemetryInvocationContext otelContext = new OpenTelemetryInvocationContext(invocationRequest.InvocationId, 
+                invocationRequest.TraceContext?.TraceParent, invocationRequest.TraceContext?.TraceState);
+
+            return psManager.InvokeFunction(functionInfo, triggerMetadata, traceContext, retryContext, invocationRequest.InputData, stopwatch, otelContext);
         }
 
         internal StreamingMessage ProcessInvocationCancelRequest(StreamingMessage request)
@@ -376,6 +385,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             functionsEnvironmentReloader.ReloadEnvironment(
                 environmentReloadRequest.EnvironmentVariables,
                 environmentReloadRequest.FunctionAppDirectory);
+
+            // This will force the OpenTelemetryController to check the environment variables and module presence again
+            OpenTelemetryController.ResetOpenTelemetryModuleStatus();
 
             rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, string.Format(PowerShellWorkerStrings.EnvironmentReloadCompleted, stopwatch.ElapsedMilliseconds));
 
