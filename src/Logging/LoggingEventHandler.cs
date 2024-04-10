@@ -5,24 +5,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
 {
     internal class LoggingEventHandler
     {
-        private HashSet<Action<string, string, Exception>> _eventHandlers = new HashSet<Action<string, string, Exception>>();
+        private Action<string, string, Exception> _eventHandler = (a, b, c) => { }; 
 
         public void Subscribe(Action<string, string, Exception> handler)
         {
-            _eventHandlers.Add(handler);
-        }
-
-        public void Unsubscribe(Action<string, string, Exception> handler)
-        {
-            _eventHandlers.Remove(handler);
+            _eventHandler = handler;
         }
 
         public void LogToHandlers(string level, string message, Exception exception = null)
         {
-            foreach (var handler in _eventHandlers)
-            {
-                handler(level, message, exception);
-            }
+            _eventHandler(level, message, exception);
         }
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetrySDK
+namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
 {
     internal class OpenTelemetryInvocationContext
     {

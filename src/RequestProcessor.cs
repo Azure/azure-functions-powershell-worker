@@ -21,7 +21,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     using System.Diagnostics;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
     using System.Runtime.InteropServices;
-    using Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetrySDK;
+    using Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry;
 
     internal class RequestProcessor
     {
@@ -114,7 +114,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             response.WorkerInitResponse.Capabilities.Add("RpcHttpBodyOnly", "true");
             response.WorkerInitResponse.Capabilities.Add("WorkerStatus", "true");
 
-            if (OpenTelemetryController.isOpenTelemetryEnvironmentEnabled())
+            if (OpenTelemetryController.IsOpenTelemetryEnvironmentEnabled())
             {
                 response.WorkerInitResponse.Capabilities.Add("WorkerOpenTelemetryEnabled", "true");
             }
@@ -395,7 +395,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             // This will force the OpenTelemetryController to check the environment variables and module presence again
             OpenTelemetryController.ResetOpenTelemetryModuleStatus();
-            if (OpenTelemetryController.isOpenTelemetryEnvironmentEnabled())
+            if (OpenTelemetryController.IsOpenTelemetryEnvironmentEnabled())
             {
                 // Note: The ability to edit worker capabilities is new within the last few months. I am unsure if we need to 
                 // report all prior capabilities that were sent at worker init. Going with minimal change for now. 
