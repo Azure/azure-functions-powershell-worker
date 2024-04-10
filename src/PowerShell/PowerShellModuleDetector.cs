@@ -11,12 +11,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
     {
         public static bool IsPowerShellModuleLoaded(System.Management.Automation.PowerShell _pwsh, ILogger _logger, string moduleName)
         {
-            // Search for the external DF SDK in the current session
+            // Search for the module in the current session
             var matchingModules = _pwsh.AddCommand(Utils.GetModuleCmdletInfo)
                 .AddParameter("FullyQualifiedName", moduleName)
                 .InvokeAndClearCommands<PSModuleInfo>();
 
-            // If we get at least one result, we know the external SDK was imported
+            // If we get at least one result, we know the module was imported
             var numCandidates = matchingModules.Count();
             var isModuleInCurrentSession = numCandidates > 0;
 
@@ -46,7 +46,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 }
                 else
                 {
-                    // a single external SDK is in session. Report its metadata
+                    // a single module is in session. Report its metadata
                     _logger.Log(isUserOnlyLog: false, LogLevel.Trace, externalSDKModuleInfo);
                 }
             }

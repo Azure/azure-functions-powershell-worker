@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
             TraceState = traceState;
         }
 
-        public bool isValid()
+        public bool IsValid()
         {
             return InvocationId != null && TraceParent != null;
         }

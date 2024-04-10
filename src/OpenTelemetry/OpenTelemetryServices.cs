@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
 
         public void AddStartOpenTelemetryInvocationCommand(OpenTelemetryInvocationContext otelContext)
         {
-            if (!otelContext.isValid())
+            if (!otelContext.IsValid())
             {
                 _logger.Log(false, LogLevel.Warning, PowerShellWorkerStrings.InvalidOpenTelemetryContext);
             }

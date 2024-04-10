@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Linq;
-using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
-using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
 {
