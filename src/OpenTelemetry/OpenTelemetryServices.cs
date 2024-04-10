@@ -15,7 +15,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
         private const string GetFunctionsLogHandlerCmdlet = "Get-FunctionsLogHandlerInternal";
 
         private readonly ILogger _logger;
-        private readonly PowerShell _pwsh;
+        public readonly PowerShell _pwsh;
 
         public OpenTelemetryServices(ILogger logger, PowerShell pwsh)
         {
@@ -41,17 +41,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
                 .AddParameter("TraceState", otelContext.TraceState);
         }
 
-        public void StopOpenTelemetryInvocation(OpenTelemetryInvocationContext otelContext)
+        public void StopOpenTelemetryInvocation(OpenTelemetryInvocationContext otelContext, bool _testing)
         {
             _pwsh.AddCommand(StopOpenTelemetryInvocationCmdlet)
-                .AddParameter("InvocationId", otelContext.InvocationId)
-                .InvokeAndClearCommands();
+                .AddParameter("InvocationId", otelContext.InvocationId);
+
+            if (!_testing)
+            {
+                _pwsh.InvokeAndClearCommands();
+            }
         }
 
-        public void StartFunctionsLoggingListener()
+        public void StartFunctionsLoggingListener(bool testing)
         {
-            var eventHandlers = _pwsh.AddCommand(GetFunctionsLogHandlerCmdlet)
-                .InvokeAndClearCommands<Action<string, string, Exception>>();
+            _pwsh.AddCommand(GetFunctionsLogHandlerCmdlet);
+
+            if (testing)
+            {
+                return;
+            }    
+
+            var eventHandlers =
+                _pwsh.InvokeAndClearCommands<Action<string, string, Exception>>();
 
             if (eventHandlers.Any())
             {

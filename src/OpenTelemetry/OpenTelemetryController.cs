@@ -84,24 +84,24 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
             _services.AddStartOpenTelemetryInvocationCommand(otelContext);
         }
 
-        public void StopOpenTelemetryInvocation(OpenTelemetryInvocationContext otelContext)
+        public void StopOpenTelemetryInvocation(OpenTelemetryInvocationContext otelContext, bool testing = false)
         {
             if (!IsOpenTelemetryCapable())
             {
                 return;
             }
 
-            _services.StopOpenTelemetryInvocation(otelContext);
+            _services.StopOpenTelemetryInvocation(otelContext, testing);
         }
 
-        internal void StartFunctionsLoggingListener()
+        internal void StartFunctionsLoggingListener(bool testing = false)
         {
             if (!IsOpenTelemetryCapable())
             {
                 return;
             }
 
-            _services.StartFunctionsLoggingListener();
+            _services.StartFunctionsLoggingListener(testing);
         }
     }
 }

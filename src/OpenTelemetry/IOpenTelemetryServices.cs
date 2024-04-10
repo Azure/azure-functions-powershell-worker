@@ -10,7 +10,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
     {
         bool? IsModuleLoaded();
         void AddStartOpenTelemetryInvocationCommand(OpenTelemetryInvocationContext otelContext);
-        void StopOpenTelemetryInvocation(OpenTelemetryInvocationContext otelContext);
-        void StartFunctionsLoggingListener();
+        void StopOpenTelemetryInvocation(OpenTelemetryInvocationContext otelContext, bool testing);
+        void StartFunctionsLoggingListener(bool testing);
     }
 }
