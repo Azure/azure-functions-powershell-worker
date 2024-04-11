@@ -18,11 +18,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
         private const string FakeTraceParent = "Fake TraceParent";
 
         private readonly Mock<ILogger> _mockLogger = new Mock<ILogger>(MockBehavior.Strict);
-        private readonly Mock<IOpenTelemetryServices> _mockOtelServices;
+        private readonly Mock<IPowerShellServicesForOpenTelemetry> _mockOtelServices;
 
         public OpenTelemetryControllerTests()
         {
-            _mockOtelServices = new Mock<IOpenTelemetryServices>(MockBehavior.Strict);
+            _mockOtelServices = new Mock<IPowerShellServicesForOpenTelemetry>(MockBehavior.Strict);
         }
 
         [Theory]
@@ -52,7 +52,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
             try
             {
                 PowerShell _pwsh = PowerShell.Create();
-                var _realOTelServices = new OpenTelemetryServices(_mockLogger.Object, _pwsh);
+                var _realOTelServices = new PowerShellServicesForOpenTelemetry(_mockLogger.Object, _pwsh);
 
                 OpenTelemetryController controller = CreateMockOpenTelemetryController();
 
@@ -96,7 +96,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
             try
             {
                 PowerShell _pwsh = PowerShell.Create();
-                var _realOTelServices = new OpenTelemetryServices(_mockLogger.Object, _pwsh);
+                var _realOTelServices = new PowerShellServicesForOpenTelemetry(_mockLogger.Object, _pwsh);
 
                 OpenTelemetryController controller = CreateMockOpenTelemetryController();
 
@@ -136,7 +136,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
             try
             {
                 PowerShell _pwsh = PowerShell.Create();
-                var _realOTelServices = new OpenTelemetryServices(_mockLogger.Object, _pwsh);
+                var _realOTelServices = new PowerShellServicesForOpenTelemetry(_mockLogger.Object, _pwsh);
 
                 OpenTelemetryController controller = CreateMockOpenTelemetryController();
 

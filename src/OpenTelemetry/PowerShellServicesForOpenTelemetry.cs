@@ -8,7 +8,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
     using PowerShell = System.Management.Automation.PowerShell;
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
-    internal class OpenTelemetryServices : IOpenTelemetryServices
+    internal class PowerShellServicesForOpenTelemetry : IPowerShellServicesForOpenTelemetry
     {
         private const string StartOpenTelemetryInvocationCmdlet = "Start-OpenTelemetryInvocationInternal";
         private const string StopOpenTelemetryInvocationCmdlet = "Stop-OpenTelemetryInvocationInternal";
@@ -17,7 +17,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
         private readonly ILogger _logger;
         public readonly PowerShell _pwsh;
 
-        public OpenTelemetryServices(ILogger logger, PowerShell pwsh)
+        public PowerShellServicesForOpenTelemetry(ILogger logger, PowerShell pwsh)
         {
             _logger = logger;
             _pwsh = pwsh;

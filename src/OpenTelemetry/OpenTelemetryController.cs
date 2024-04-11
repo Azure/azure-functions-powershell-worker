@@ -7,7 +7,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
 
     internal class OpenTelemetryController
     {
-        private IOpenTelemetryServices _services;
+        private IPowerShellServicesForOpenTelemetry _services;
 
         private const string OTelEnabledEnvironmentVariableName = "OTEL_FUNCTIONS_WORKER_ENABLED";
 
@@ -16,10 +16,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
         private static bool? _isOpenTelmetryEnvironmentEnabled;
 
         public OpenTelemetryController(ILogger logger, PowerShell pwsh) 
-            : this(new OpenTelemetryServices(logger, pwsh)) 
+            : this(new PowerShellServicesForOpenTelemetry(logger, pwsh)) 
         { }
 
-        public OpenTelemetryController(IOpenTelemetryServices services)
+        public OpenTelemetryController(IPowerShellServicesForOpenTelemetry services)
         {
             _services = services;
         }

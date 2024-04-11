@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
 {
-    internal interface IOpenTelemetryServices
+    internal interface IPowerShellServicesForOpenTelemetry
     {
         bool? IsModuleLoaded();
         void AddStartOpenTelemetryInvocationCommand(OpenTelemetryInvocationContext otelContext);
