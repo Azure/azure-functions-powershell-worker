@@ -30,7 +30,6 @@ steps:
     KeyVaultName: 'powershell-worker'
     SecretsFilter: '*'
     RunAsPreJob: true
-
 - pwsh: |
     $releaseBranches = @('v4.x/ps7.4', 'v4.x/ps7.2', 'v4.x/ps7.0', 'v3.x/ps7', 'v3.x/ps6', 'v2.x')
 
