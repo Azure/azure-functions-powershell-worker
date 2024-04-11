@@ -12,6 +12,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
 
     public class OpenTelemetryControllerTests
     {
+        // These constant values will work because they are not actually passed to the module
+        // The module would fail with these inputs, it needs real invocation id and trace information
+        private const string FakeInvocationID = "Fake InvocationID";
+        private const string FakeTraceParent = "Fake TraceParent";
+
         private readonly Mock<ILogger> _mockLogger = new Mock<ILogger>(MockBehavior.Strict);
         private readonly Mock<IOpenTelemetryServices> _mockOtelServices;
 
@@ -23,6 +28,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
         [Theory]
         [InlineData("true", true)]
         [InlineData("false", false)]
+        [InlineData("True", true)]
+        [InlineData("False", false)]
         [InlineData(null, false)]
         internal void OpenTelemetryEnvironmentVariableCheckWorks(string? environmentVariableValue, bool desiredResult)
         {
@@ -50,9 +57,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
                 OpenTelemetryController controller = CreateMockOpenTelemetryController();
 
                 OpenTelemetryInvocationContext context = new OpenTelemetryInvocationContext(
-                    "93d73ba2-bac9-41f9-ad31-e7ab56a6d7e1",
-                    "00-59081e54d24b74f20957499295f4e835-b492942fa64debb3-00",
-                    ""
+                    FakeInvocationID,
+                    FakeTraceParent,
+                    string.Empty
                 );
 
                 Environment.SetEnvironmentVariable("OTEL_FUNCTIONS_WORKER_ENABLED", "true");
@@ -94,17 +101,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
                 OpenTelemetryController controller = CreateMockOpenTelemetryController();
 
                 OpenTelemetryInvocationContext context = new OpenTelemetryInvocationContext(
-                    "93d73ba2-bac9-41f9-ad31-e7ab56a6d7e1",
-                    "00-59081e54d24b74f20957499295f4e835-b492942fa64debb3-00",
-                    ""
+                    FakeInvocationID,
+                    FakeTraceParent,
+                    string.Empty
                 );
 
                 Environment.SetEnvironmentVariable("OTEL_FUNCTIONS_WORKER_ENABLED", "true");
                 _mockOtelServices.Setup(_ => _.IsModuleLoaded()).Returns(true);
-                _mockOtelServices.Setup(_ => _.StopOpenTelemetryInvocation(context, true))
-                    .Callback(() => _realOTelServices.StopOpenTelemetryInvocation(context, true));
+                _mockOtelServices.Setup(_ => _.StopOpenTelemetryInvocation(context, false))
+                    .Callback(() => _realOTelServices.StopOpenTelemetryInvocation(context, false));
 
-                controller.StopOpenTelemetryInvocation(context, true);
+                controller.StopOpenTelemetryInvocation(context, false);
 
                 Assert.Single(_pwsh.Commands.Commands);
                 Assert.Equal("Stop-OpenTelemetryInvocationInternal", _pwsh.Commands.Commands.First().CommandText);
@@ -114,7 +121,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
                 Assert.Equal("InvocationId", parameters.ElementAt(0).Name);
                 Assert.Equal(context.InvocationId, parameters.ElementAt(0).Value);
 
-                _mockOtelServices.Verify(_ => _.StopOpenTelemetryInvocation(context, true), Times.Once);
+                _mockOtelServices.Verify(_ => _.StopOpenTelemetryInvocation(context, false), Times.Once);
             }
             finally
             {
@@ -135,10 +142,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
 
                 Environment.SetEnvironmentVariable("OTEL_FUNCTIONS_WORKER_ENABLED", "true");
                 _mockOtelServices.Setup(_ => _.IsModuleLoaded()).Returns(true);
-                _mockOtelServices.Setup(_ => _.StartFunctionsLoggingListener(true))
-                    .Callback(() => _realOTelServices.StartFunctionsLoggingListener(true));
+                _mockOtelServices.Setup(_ => _.StartFunctionsLoggingListener(false))
+                    .Callback(() => _realOTelServices.StartFunctionsLoggingListener(false));
 
-                controller.StartFunctionsLoggingListener(true);
+                controller.StartFunctionsLoggingListener(false);
 
                 Assert.Single(_pwsh.Commands.Commands);
                 Assert.Equal("Get-FunctionsLogHandlerInternal", _pwsh.Commands.Commands.First().CommandText);
@@ -146,7 +153,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
                 var parameters = _pwsh.Commands.Commands.First().Parameters;
                 Assert.Empty(parameters);
 
-                _mockOtelServices.Verify(_ => _.StartFunctionsLoggingListener(true), Times.Once);
+                _mockOtelServices.Verify(_ => _.StartFunctionsLoggingListener(false), Times.Once);
             }
             finally
             {

@@ -41,22 +41,22 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry
                 .AddParameter("TraceState", otelContext.TraceState);
         }
 
-        public void StopOpenTelemetryInvocation(OpenTelemetryInvocationContext otelContext, bool _testing)
+        public void StopOpenTelemetryInvocation(OpenTelemetryInvocationContext otelContext, bool invokeCommands)
         {
             _pwsh.AddCommand(StopOpenTelemetryInvocationCmdlet)
                 .AddParameter("InvocationId", otelContext.InvocationId);
 
-            if (!_testing)
+            if (invokeCommands)
             {
                 _pwsh.InvokeAndClearCommands();
             }
         }
 
-        public void StartFunctionsLoggingListener(bool testing)
+        public void StartFunctionsLoggingListener(bool invokeCommands)
         {
             _pwsh.AddCommand(GetFunctionsLogHandlerCmdlet);
 
-            if (testing)
+            if (!invokeCommands)
             {
                 return;
             }    
