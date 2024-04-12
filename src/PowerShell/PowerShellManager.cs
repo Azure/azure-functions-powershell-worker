@@ -15,7 +15,7 @@ using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
-    using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
+    using Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry;
     using System.Management.Automation;
     using System.Text;
 
@@ -36,6 +36,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         private bool _runspaceInited;
 
         private readonly ErrorRecordFormatter _errorRecordFormatter = new ErrorRecordFormatter();
+
+        private OpenTelemetryController _openTelemetryController;
 
         /// <summary>
         /// Gets the Runspace InstanceId.
@@ -105,6 +107,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 DeployAzFunctionToRunspace();
                 // Run the profile.ps1
                 InvokeProfile(FunctionLoader.FunctionAppProfilePath);
+
+                _openTelemetryController = new OpenTelemetryController(Logger, _pwsh);
+                _openTelemetryController.StartFunctionsLoggingListener();
 
                 _runspaceInited = true;
             }
@@ -202,7 +207,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             TraceContext traceContext,
             RetryContext retryContext,
             IList<ParameterBinding> inputData,
-            FunctionInvocationPerformanceStopwatch stopwatch)
+            FunctionInvocationPerformanceStopwatch stopwatch,
+            OpenTelemetryInvocationContext otelContext)
         {
             var outputBindings = FunctionMetadata.GetOutputBindingHashtable(_pwsh.Runspace.InstanceId);
             var durableFunctionsUtils = new DurableController(functionInfo.DurableFunctionInfo, _pwsh, Logger);
@@ -211,6 +217,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             {
                 durableFunctionsUtils.InitializeBindings(inputData, out bool hasExternalDFsdk);
                 Logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(PowerShellWorkerStrings.UtilizingExternalDurableSDK, hasExternalDFsdk));
+
+                ImportEntryPointModule(functionInfo);
+
+                // This cmdlet must be run in the same .InvokeAndClearCommands() run as the function code itself
+                // If it is not, the Activity.Current context that we are trying to preserve is dropped
+                _openTelemetryController.AddStartOpenTelemetryInvocationCommand(otelContext);
 
                 AddEntryPointInvocationCommand(functionInfo);
                 stopwatch.OnCheckpoint(FunctionInvocationPerformanceStopwatch.Checkpoint.FunctionCodeReady);
@@ -224,7 +236,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
                 try
                 {
-                    if(functionInfo.DurableFunctionInfo.IsOrchestrationFunction)
+                    if (functionInfo.DurableFunctionInfo.IsOrchestrationFunction)
                     {
                         return durableFunctionsUtils.InvokeOrchestrationFunction();
                     }
@@ -255,6 +267,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
             finally
             {
+                _openTelemetryController.StopOpenTelemetryInvocation(otelContext);
                 durableFunctionsUtils.AfterFunctionInvocation();
                 outputBindings.Clear();
                 ResetRunspace();
@@ -314,6 +327,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             return result;
         }
 
+        private void ImportEntryPointModule(AzFunctionInfo functionInfo)
+        {
+            if (!string.IsNullOrEmpty(functionInfo.EntryPoint))
+            {
+                // If an entry point is defined, we import the script module.
+                _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
+                    .AddParameter("Name", functionInfo.ScriptPath)
+                    .InvokeAndClearCommands();
+            }
+        }
+
         private void AddEntryPointInvocationCommand(AzFunctionInfo functionInfo)
         {
             if (string.IsNullOrEmpty(functionInfo.EntryPoint))
@@ -322,11 +346,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             }
             else
             {
-                // If an entry point is defined, we import the script module.
-                _pwsh.AddCommand(Utils.ImportModuleCmdletInfo)
-                    .AddParameter("Name", functionInfo.ScriptPath)
-                    .InvokeAndClearCommands();
-
                 _pwsh.AddCommand(functionInfo.EntryPoint);
             }
         }
