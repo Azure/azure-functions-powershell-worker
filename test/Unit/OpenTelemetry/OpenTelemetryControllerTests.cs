@@ -23,6 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
         public OpenTelemetryControllerTests()
         {
             _mockOtelServices = new Mock<IPowerShellServicesForOpenTelemetry>(MockBehavior.Strict);
+            OpenTelemetryController.ResetOpenTelemetryModuleStatus();
         }
 
         [Theory]
