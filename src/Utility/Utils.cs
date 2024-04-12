@@ -23,12 +23,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         internal readonly static CmdletInfo RemoveJobCmdletInfo = new CmdletInfo("Remove-Job", typeof(RemoveJobCommand));
         internal readonly static CmdletInfo OutStringCmdletInfo = new CmdletInfo("Out-String", typeof(OutStringCommand));
         internal readonly static CmdletInfo WriteInformationCmdletInfo = new CmdletInfo("Write-Information", typeof(WriteInformationCommand));
-        
+
         internal const string InternalDurableSdkName = "Microsoft.Azure.Functions.PowerShellWorker";
         internal const string ExternalDurableSdkName = "AzureFunctions.PowerShell.Durable.SDK";
         internal const string IsOrchestrationFailureKey = "IsOrchestrationFailure";
         internal const string TracePipelineObjectCmdlet = "Microsoft.Azure.Functions.PowerShellWorker\\Trace-PipelineObject";
         internal const string ExternalDurableSdkEnvVariable = "ExternalDurablePowerShellSDK";
+        internal const string OpenTelemetrySdkName = "AzureFunctions.PowerShell.OpenTelemetry.SDK";
 
         internal readonly static object BoxedTrue = (object)true;
         internal readonly static object BoxedFalse = (object)false;

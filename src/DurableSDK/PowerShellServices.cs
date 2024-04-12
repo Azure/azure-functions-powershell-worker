@@ -9,12 +9,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
     using System.Collections.ObjectModel;
     using System.Linq;
     using System.Management.Automation;
-    using System.Reflection.Metadata;
     using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
     using Microsoft.Azure.Functions.PowerShellWorker.Utility;
     using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
     using Newtonsoft.Json;
-    using LogLevel = WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
     internal class PowerShellServices : IPowerShellServices
     {
@@ -43,36 +41,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public bool isExternalDurableSdkLoaded()
         {
-            // Search for the external DF SDK in the current session
-            var matchingModules = _pwsh.AddCommand(Utils.GetModuleCmdletInfo)
-                .AddParameter("FullyQualifiedName", Utils.ExternalDurableSdkName)
-                .InvokeAndClearCommands<PSModuleInfo>();
-
-            // If we get at least one result, we know the external SDK was imported
-            var numCandidates = matchingModules.Count();
-            var isModuleInCurrentSession = numCandidates > 0;
-
-            if (isModuleInCurrentSession)
-            {
-                var candidatesInfo = matchingModules.Select(module => string.Format(
-                    PowerShellWorkerStrings.FoundExternalDurableSdkInSession, module.Name, module.Version, module.Path));
-                var externalSDKModuleInfo = string.Join('\n', candidatesInfo);
-
-                if (numCandidates > 1)
-                {
-                    // If there's more than 1 result, there may be runtime conflicts
-                    // warn user of potential conflicts
-                    _logger.Log(isUserOnlyLog: false, LogLevel.Warning, String.Format(
-                        PowerShellWorkerStrings.MultipleExternalSDKsInSession,
-                        numCandidates, Utils.ExternalDurableSdkName, externalSDKModuleInfo));
-                }
-                else
-                {
-                    // a single external SDK is in session. Report its metadata
-                    _logger.Log(isUserOnlyLog: false, LogLevel.Trace, externalSDKModuleInfo);
-                }
-            }
-            return isModuleInCurrentSession;
+            return PowerShellModuleDetector.IsPowerShellModuleLoaded(_pwsh, _logger, Utils.ExternalDurableSdkName);
         }
 
         public void EnableExternalDurableSDK()

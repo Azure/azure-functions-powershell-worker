@@ -18,6 +18,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
         private readonly MessagingStream _msgStream;
         private string _invocationId;
         private string _requestId;
+        public LoggingEventHandler outputLogHandler = new LoggingEventHandler();
 
         internal RpcLogger(MessagingStream msgStream)
         {
@@ -55,6 +56,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                 };
 
                 _msgStream.Write(logMessage);
+
+                outputLogHandler.LogToHandlers(logLevel.ToString(), message, exception);
             }
             else
             {

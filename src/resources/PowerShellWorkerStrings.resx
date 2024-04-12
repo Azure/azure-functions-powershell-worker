@@ -355,6 +355,9 @@
   <data name="FoundExternalDurableSdkInSession" xml:space="preserve">
     <value>Found external Durable Functions SDK in session: Name='{0}', Version='{1}', Path='{2}'.</value>
   </data>
+  <data name="FoundOpenTelemetrySdkInSession" xml:space="preserve">
+    <value>Found Open Telemetry SDK in session: Name='{0}', Version='{1}', Path='{2}'.</value>
+  </data>
   <data name="UnableToInitializeOrchestrator" xml:space="preserve">
     <value>Unable to initialize orchestrator function due to presence of other bindings. Total number of bindings found is '{0}'. Orchestrator Functions should never use any input or output bindings other than the orchestration trigger itself. See: aka.ms/df-bindings</value>
   </data>
@@ -378,5 +381,11 @@
   </data>
   <data name="ManagedDependenciesIsNotSupportedOnLegion" xml:space="preserve">
     <value>Managed Dependencies is not supported in Linux Consumption on Legion. Please remove all module references from requirements.psd1 and include the function app dependencies with the function app content. For more information, please see https://aka.ms/functions-powershell-include-modules.</value>
+  </data>
+  <data name="FoundExternalModuleInSession" xml:space="preserve">
+    <value>Found external module in session: Name='{0}', Version='{1}', Path='{2}'.</value>
+  </data>
+  <data name="InvalidOpenTelemetryContext" xml:space="preserve">
+    <value>The app is configured to use OpenTelemetry but the TraceContext passed from host was null. </value>
   </data>
 </root>
