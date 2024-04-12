@@ -9,10 +9,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
     internal class PowerShellModuleDetector
     {
-        public static bool IsPowerShellModuleLoaded(System.Management.Automation.PowerShell _pwsh, ILogger _logger, string moduleName)
+        public static bool IsPowerShellModuleLoaded(System.Management.Automation.PowerShell pwsh, ILogger logger, string moduleName)
         {
             // Search for the module in the current session
-            var matchingModules = _pwsh.AddCommand(Utils.GetModuleCmdletInfo)
+            var matchingModules = pwsh.AddCommand(Utils.GetModuleCmdletInfo)
                 .AddParameter("FullyQualifiedName", moduleName)
                 .InvokeAndClearCommands<PSModuleInfo>();
 
@@ -40,14 +40,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                 {
                     // If there's more than 1 result, there may be runtime conflicts
                     // warn user of potential conflicts
-                    _logger.Log(isUserOnlyLog: false, LogLevel.Warning, String.Format(
+                    logger.Log(isUserOnlyLog: false, LogLevel.Warning, String.Format(
                         PowerShellWorkerStrings.MultipleExternalSDKsInSession,
                         numCandidates, moduleName, externalSDKModuleInfo));
                 }
                 else
                 {
                     // a single module is in session. Report its metadata
-                    _logger.Log(isUserOnlyLog: false, LogLevel.Trace, externalSDKModuleInfo);
+                    logger.Log(isUserOnlyLog: false, LogLevel.Trace, externalSDKModuleInfo);
                 }
             }
             return isModuleInCurrentSession;
