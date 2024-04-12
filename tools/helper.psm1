@@ -17,8 +17,8 @@ $DotnetSDKVersionRequirements = @{
     }
 
     '8.0' = @{
-        MinimalPatch = '104'
-        DefaultPatch = '104'
+        MinimalPatch = '204'
+        DefaultPatch = '204'
     }
 }
 
