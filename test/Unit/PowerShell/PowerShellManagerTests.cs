@@ -19,6 +19,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
     using System.Management.Automation;
     using Microsoft.Azure.Functions.PowerShellWorker.Durable;
     using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
+    using Microsoft.Extensions.Logging.Abstractions;
     using Newtonsoft.Json;
 
     internal class TestUtils
@@ -403,7 +404,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             {
                 FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
 
-                var result = testManager.InvokeFunction(functionInfo, null, null, null, CreateOrchestratorInputData(), new FunctionInvocationPerformanceStopwatch());
+                var result = testManager.InvokeFunction(functionInfo, null, null, null, CreateOrchestratorInputData(), new FunctionInvocationPerformanceStopwatch(), null);
 
                 var relevantLogs = s_testLogger.FullLog.Where(message => message.StartsWith("Information: OUTPUT:")).ToList();
                 var expected = shouldSuppressPipelineTraces ? new string[0] : new[] { "Information: OUTPUT: Hello" };
@@ -439,7 +440,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Hashtable triggerMetadata = null,
             RetryContext retryContext = null)
         {
-            return powerShellManager.InvokeFunction(functionInfo, triggerMetadata, null, retryContext, s_testInputData, new FunctionInvocationPerformanceStopwatch());
+            return powerShellManager.InvokeFunction(functionInfo, triggerMetadata, null, retryContext, s_testInputData, new FunctionInvocationPerformanceStopwatch(), null);
         }
 
         private class ContextValidatingLogger : ILogger
