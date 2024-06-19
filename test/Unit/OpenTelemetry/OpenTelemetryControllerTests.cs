@@ -10,6 +10,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
 {
     using PowerShell = System.Management.Automation.PowerShell;
 
+    [Collection("Sequence")]
     public class OpenTelemetryControllerTests
     {
         // These constant values will work because they are not actually passed to the module
@@ -17,6 +18,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
         private const string FakeInvocationID = "Fake InvocationID";
         private const string FakeTraceParent = "Fake TraceParent";
 
+        private const string OTelEnabledEnvironmentVariableName = "OTEL_FUNCTIONS_WORKER_ENABLED";
         private readonly Mock<ILogger> _mockLogger = new Mock<ILogger>(MockBehavior.Strict);
         private readonly Mock<IPowerShellServicesForOpenTelemetry> _mockOtelServices;
 
@@ -26,22 +28,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.OpenTelemetry
         }
 
         [Theory]
-        [InlineData("true", true)]
-        [InlineData("false", false)]
         [InlineData("True", true)]
         [InlineData("False", false)]
+        [InlineData("true", true)]
+        [InlineData("false", false)]
         [InlineData(null, false)]
         internal void OpenTelemetryEnvironmentVariableCheckWorks(string? environmentVariableValue, bool desiredResult)
         {
             try
             {
-                Environment.SetEnvironmentVariable("OTEL_FUNCTIONS_WORKER_ENABLED", environmentVariableValue);
+                Environment.SetEnvironmentVariable(OTelEnabledEnvironmentVariableName, environmentVariableValue);
+                OpenTelemetryController.ResetOpenTelemetryModuleStatus();
                 
                 Assert.Equal(desiredResult, OpenTelemetryController.IsOpenTelemetryEnvironmentEnabled());
             }
             finally
             {
-                Environment.SetEnvironmentVariable("OTEL_FUNCTIONS_WORKER_ENABLED", null);
+                Environment.SetEnvironmentVariable(OTelEnabledEnvironmentVariableName, null);
                 OpenTelemetryController.ResetOpenTelemetryModuleStatus();
             }
         }
