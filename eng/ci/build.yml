@@ -2,13 +2,6 @@ jobs:
     - job:
       templateContext:
           outputs:
-              # - output: pipelineArtifact
-              #   path: $(Build.ArtifactStagingDirectory)
-              #   artifact: drop
-              #   sbomBuildDropPath: '$(System.DefaultWorkingDirectory)/package'
-              #   sbomPackageName: 'Azure Functions PowerShell Worker'
-              #   # The list of components can't be determined from the webpacked file in the staging dir, so reference the original sources folder
-              #   sbomBuildComponentPath: '$(Build.SourcesDirectory)'
               - output: nuget
                 packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
                 packageParentPath: '$(Build.ArtifactStagingDirectory)'
