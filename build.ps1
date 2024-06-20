@@ -28,13 +28,7 @@ param(
     $Configuration = "Debug",
 
     [string]
-    $BuildNumber = '0',
-
-    [switch]
-    $AddSBOM,
-
-    [string]
-    $SBOMUtilSASUrl
+    $BuildNumber = '0'
 )
 
 #Requires -Version 6.0
@@ -68,6 +62,7 @@ function Get-FunctionsCoreToolsDir {
     }
 }
 
+<<<<<<< HEAD
 function Install-SBOMUtil
 {
     if ([string]::IsNullOrEmpty($SBOMUtilSASUrl))
@@ -97,6 +92,8 @@ function Install-SBOMUtil
     return $manifestToolPath
 }
 
+=======
+>>>>>>> f0a96f5 (Convert build pipeline to 1ES (#1061))
 function Deploy-PowerShellWorker {
     $ErrorActionPreference = 'Stop'
 
@@ -169,28 +166,6 @@ if (!$NoBuild.IsPresent) {
         Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
 
     dotnet publish -c $Configuration "/p:BuildNumber=$BuildNumber" $PSScriptRoot
-
-    if ($AddSBOM)
-    {
-        # Install manifest tool
-        $manifestTool = Install-SBOMUtil
-        Write-Log "manifestTool: $manifestTool "
-
-        # Generate manifest
-        $buildPath = "$PSScriptRoot/src/bin/$Configuration/$TargetFramework/publish"
-        $telemetryFilePath = Join-Path $PSScriptRoot ((New-Guid).Guid + ".json")
-        $packageName = "Microsoft.Azure.Functions.PowerShellWorker.nuspec"
-
-        # Delete the manifest folder if it exists
-        $manifestFolderPath = Join-Path $buildPath "_manifest"
-        if (Test-Path $manifestFolderPath)
-        {
-            Remove-Item $manifestFolderPath -Recurse -Force -ErrorAction Ignore
-        }
-
-        Write-Log "Running: dotnet $manifestTool generate -BuildDropPath $buildPath -BuildComponentPath $buildPath -Verbosity Information -t $telemetryFilePath"
-        & { dotnet $manifestTool generate -BuildDropPath $buildPath -BuildComponentPath $buildPath -Verbosity Information -t $telemetryFilePath -PackageName $packageName }
-    }
 
     dotnet pack -c $Configuration "/p:BuildNumber=$BuildNumber" "$PSScriptRoot/package"
 }
