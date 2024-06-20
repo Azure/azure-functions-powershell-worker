@@ -10,7 +10,7 @@ jobs:
       - pwsh: |
           $ErrorActionPreference = "Stop"
 
-          ./build.ps1 -Clean -Configuration Release -BuildNumber "$(buildNumber)"
+          ./build.ps1 -Clean -Configuration Release
         displayName: "Build worker code"
 
       - pwsh: ./build.ps1 -NoBuild -Test
