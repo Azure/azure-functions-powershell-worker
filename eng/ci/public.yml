@@ -10,9 +10,7 @@ trigger:
 pr:
   branches:
     include:
-    - dev
-    - v4.x/*
-    - v3.x/*
+    - '*'
 
 resources:
   repositories:

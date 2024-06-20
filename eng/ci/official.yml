@@ -17,7 +17,7 @@ resources:
 
 variables:
   Configuration: Release
-  buildNumber: $[ counter('build', 4000) ] # Start higher than our AppVeyor versions. Every build (pr or branch) will increment.
+  buildNumber: $[ counter('build', 4000) ] # Start higher than the versions from the previous pipeline. Every build (pr or branch) will increment.
 
 extends:
   template: v1/1ES.Official.PipelineTemplate.yml@1es

@@ -7,7 +7,6 @@ jobs:
           packageParentPath: "$(Build.ArtifactStagingDirectory)"
           nuGetFeedType: internal
           publishVstsFeed: "e6a70c92-4128-439f-8012-382fe78d6396/c0493cce-bc63-4e11-9fc9-e7c45291f151"
-          # sbomBuildDropPath: '$(System.DefaultWorkingDirectory)/package'
           sbomPackageName: "Azure Functions PowerShell Worker"
           sbomBuildComponentPath: "$(Build.SourcesDirectory)"
           allowPackageConflicts: true
