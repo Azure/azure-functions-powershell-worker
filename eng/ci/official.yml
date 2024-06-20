@@ -1,8 +1,3 @@
-parameters:
-  - name: IsPrerelease
-    type: boolean
-    default: true
-
 trigger:
   batch: true
   branches:
@@ -51,5 +46,3 @@ extends:
         dependsOn: [WindowsUnitTests, LinuxUnitTests]
         jobs:
           - template: /eng/ci/templates/build.yml@self
-            parameters:
-              IsPrerelease: ${{ parameters.IsPrerelease }}
