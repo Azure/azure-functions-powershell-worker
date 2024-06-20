@@ -6,7 +6,7 @@ trigger:
     - v4.x/*
     - v3.x/*
 
-# Only run the tests on PR to official branches - do we want to run them on all PRs?
+# Run this pipeline on all PRs
 pr:
   branches:
     include:
@@ -16,7 +16,7 @@ resources:
   repositories:
     - repository: 1es
       type: git
-      name: 1ESPipelineTemplates/1ESPipelineTemplates
+      name: 1ESPipelineTemplates/1ESPipelineTemplates@1es
       ref: refs/tags/release
 
 extends:
