@@ -6,7 +6,7 @@ trigger:
     - v4.x/*
     - v3.x/*
 
-# Only run the tests on PR to official branches - do we want to run them on all PRs?
+# Run on all PRs
 pr:
   branches:
     include:
@@ -20,7 +20,7 @@ resources:
       ref: refs/tags/release
 
 extends:
-  template: v1/1ES.Unofficial.PipelineTemplate.yml
+  template: v1/1ES.Unofficial.PipelineTemplate.yml@1es
   parameters:
     pool:
       name: 1es-pool-azfunc-public
