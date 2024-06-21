@@ -5,13 +5,7 @@ trigger:
     - dev
     - v4.x/*
     - v3.x/*
-
-# Run this pipeline on all PRs
-pr:
-  branches:
-    include:
-    - '*'
-
+		
 resources:
   repositories:
     - repository: 1es
