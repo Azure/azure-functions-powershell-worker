@@ -62,38 +62,6 @@ function Get-FunctionsCoreToolsDir {
     }
 }
 
-<<<<<<< HEAD
-function Install-SBOMUtil
-{
-    if ([string]::IsNullOrEmpty($SBOMUtilSASUrl))
-    {
-        throw "The `$SBOMUtilSASUrl parameter cannot be null or empty when specifying the `$AddSBOM switch"
-    }
-
-    $MANIFESTOOLNAME = "ManifestTool"
-    Write-Host "Installing $MANIFESTOOLNAME..."
-
-    $MANIFESTOOL_DIRECTORY = Join-Path $PSScriptRoot $MANIFESTOOLNAME
-    Remove-Item -Recurse -Force $MANIFESTOOL_DIRECTORY -ErrorAction Ignore
-
-    Invoke-RestMethod -Uri $SBOMUtilSASUrl -OutFile "$MANIFESTOOL_DIRECTORY.zip"
-    Expand-Archive "$MANIFESTOOL_DIRECTORY.zip" -DestinationPath $MANIFESTOOL_DIRECTORY
-
-    $dllName = "Microsoft.ManifestTool.dll"
-    $manifestToolPath = "$MANIFESTOOL_DIRECTORY/$dllName"
-
-    if (-not (Test-Path $manifestToolPath))
-    {
-        throw "$MANIFESTOOL_DIRECTORY does not contain '$dllName'"
-    }
-
-    Write-Host 'Done.'
-
-    return $manifestToolPath
-}
-
-=======
->>>>>>> f0a96f5 (Convert build pipeline to 1ES (#1061))
 function Deploy-PowerShellWorker {
     $ErrorActionPreference = 'Stop'
 
