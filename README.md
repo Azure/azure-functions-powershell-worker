@@ -2,10 +2,7 @@
 
 |Branch|Status|
 |---|---|
-|dev|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=dev)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=dev)|
-|v4.x/ps7.4|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v4.x%2Fps7.4)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v4.x%2Fps7.4)|
-|v4.x/ps7.2|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v4.x%2Fps7.2)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v4.x%2Fps7.2)|
-|v4.x/ps7.0|[![Build Status](https://dev.azure.com/azfunc/Azure%20Functions/_apis/build/status/Azure.azure-functions-powershell-worker?branchName=v4.x%2Fps7.0)](https://dev.azure.com/azfunc/Azure%20Functions/_build/latest?definitionId=21&branchName=v4.x%2Fps7.0)|
+|dev|[![Build Status](https://dev.azure.com/azfunc/public/_apis/build/status%2Fazure%2Fazure-functions-powershell-worker%2Fpowershell-worker.public?repoName=Azure%2Fazure-functions-powershell-worker&branchName=dev)](https://dev.azure.com/azfunc/public/_build/latest?definitionId=718&repoName=Azure%2Fazure-functions-powershell-worker&branchName=dev)|
 
 [azure-functions-logo]: https://raw.githubusercontent.com/Azure/azure-functions-cli/master/src/Azure.Functions.Cli/npm/assets/azure-functions-logo-color-raster.png
 
