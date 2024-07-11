@@ -1,4 +1,4 @@
-<!--
+﻿<!--
 Copyright (c) Microsoft. All rights reserved.
 Licensed under the MIT license. See LICENSE file in the project root for full license information.
 -->
@@ -26,6 +26,7 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
     <PackageReference Include="Google.Protobuf" Version="3.21.9" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.3" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+    <PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>
