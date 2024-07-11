@@ -23,6 +23,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private bool EnableAutomaticUpgrades { get; } =
             PowerShellWorkerConfiguration.GetBoolean("MDEnableAutomaticUpgrades") ?? false;
 
+
         private readonly IDependencyManagerStorage _storage;
         private readonly IDependencySnapshotInstaller _installer;
         private readonly IDependencySnapshotPurger _purger;
@@ -45,7 +46,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
             _purger.SetCurrentlyUsedSnapshot(currentSnapshotPath, logger);
 
-            if (!EnableAutomaticUpgrades)
+            if (WorkerEnvironment.IsPowerShellSDKDeprecated() && !EnableAutomaticUpgrades)
             {
                 logger.Log(
                     isUserOnlyLog: false,
