@@ -41,6 +41,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
 
         private Task _dependencyInstallationTask;
 
+        private bool EnableAutomaticUpgrades { get; } =
+            PowerShellWorkerConfiguration.GetBoolean("MDEnableAutomaticUpgrades") ?? false;
+
         #endregion
 
         public DependencyManager(
@@ -203,6 +206,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     isUserOnlyLog: false,
                     RpcLog.Types.Level.Trace,
                     PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled);
+
+                if (WorkerEnvironment.IsPowerShellSDKDeprecated() && !EnableAutomaticUpgrades)
+                {
+                    logger.Log(
+                        isUserOnlyLog: false,
+                        RpcLog.Types.Level.Warning,
+                        PowerShellWorkerStrings.AutomaticUpgradesAreDisabled);
+
+                    return null;
+                }
 
                 // Background installation: can't use the firstPwsh runspace because it belongs
                 // to the pool used to run functions code, so create a new runspace.
