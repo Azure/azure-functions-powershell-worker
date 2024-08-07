@@ -220,16 +220,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     RpcLog.Types.Level.Trace,
                     PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled);
 
-                if (!ShouldEnableManagedDpendencyUpgrades())
-                {
-                    logger.Log(
-                        isUserOnlyLog: false,
-                        RpcLog.Types.Level.Warning,
-                        PowerShellWorkerStrings.AutomaticUpgradesAreDisabled);
-
-                    return null;
-                }
-
                 // Background installation: can't use the firstPwsh runspace because it belongs
                 // to the pool used to run functions code, so create a new runspace.
                 _nextSnapshotPath = _backgroundSnapshotMaintainer.InstallAndPurgeSnapshots(pwshFactory, logger);
