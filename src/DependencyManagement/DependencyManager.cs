@@ -70,7 +70,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 maintainer ?? new BackgroundDependencySnapshotMaintainer(
                                     _storage,
                                     _installer,
-                                    new DependencySnapshotPurger(_storage));
+                                    new DependencySnapshotPurger(_storage),
+                                    ShouldEnableManagedDpendencyUpgrades);
             _currentSnapshotContentLogger =
                 currentSnapshotContentLogger ?? new BackgroundDependencySnapshotContentLogger(snapshotContentLogger);
         }
@@ -127,6 +128,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 var errorMsg = string.Format(PowerShellWorkerStrings.FailToInstallFuncAppDependencies, e.Message);
                 throw new DependencyInstallationException(errorMsg, e);
             }
+        }
+
+        /// <summary>
+        /// Determines whether the function app should enable automatic upgrades for managed dependencies
+        /// </summary>
+        /// <returns>
+        /// True if Managed Dependencies should be upgraded (SDK is not past it's deprecation date OR user has configured this behavior via MDEnableAutomaticUpgrades env var
+        /// False if Managed Dependencies should not be upgraded
+        /// </returns>
+        private bool ShouldEnableManagedDpendencyUpgrades()
+        {
+            return !WorkerEnvironment.IsPowerShellSDKDeprecated() || EnableAutomaticUpgrades;
         }
 
         /// <summary>
@@ -207,7 +220,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                     RpcLog.Types.Level.Trace,
                     PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled);
 
-                if (WorkerEnvironment.IsPowerShellSDKDeprecated() && !EnableAutomaticUpgrades)
+                if (!ShouldEnableManagedDpendencyUpgrades())
                 {
                     logger.Log(
                         isUserOnlyLog: false,

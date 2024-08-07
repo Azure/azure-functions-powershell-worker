@@ -20,9 +20,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private TimeSpan MaxBackgroundUpgradePeriod { get; } =
             PowerShellWorkerConfiguration.GetTimeSpan("MDMaxBackgroundUpgradePeriod") ?? TimeSpan.FromDays(7);
 
-        private bool EnableAutomaticUpgrades { get; } =
-            PowerShellWorkerConfiguration.GetBoolean("MDEnableAutomaticUpgrades") ?? false;
-
+        private Func<bool> _getShouldPerformManagedDependencyUpgrades;
 
         private readonly IDependencyManagerStorage _storage;
         private readonly IDependencySnapshotInstaller _installer;
@@ -33,11 +31,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         public BackgroundDependencySnapshotMaintainer(
             IDependencyManagerStorage storage,
             IDependencySnapshotInstaller installer,
-            IDependencySnapshotPurger purger)
+            IDependencySnapshotPurger purger,
+            Func<bool> getShouldPerformManagedDependencyUpgrades)
         {
             _storage = storage ?? throw new ArgumentNullException(nameof(storage));
             _installer = installer ?? throw new ArgumentNullException(nameof(installer));
             _purger = purger ?? throw new ArgumentNullException(nameof(purger));
+            _getShouldPerformManagedDependencyUpgrades = getShouldPerformManagedDependencyUpgrades;
+
         }
 
         public void Start(string currentSnapshotPath, DependencyManifestEntry[] dependencyManifest, ILogger logger)
@@ -45,16 +46,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             _dependencyManifest = dependencyManifest ?? throw new ArgumentNullException(nameof(dependencyManifest));
 
             _purger.SetCurrentlyUsedSnapshot(currentSnapshotPath, logger);
-
-            if (WorkerEnvironment.IsPowerShellSDKDeprecated() && !EnableAutomaticUpgrades)
-            {
-                logger.Log(
-                    isUserOnlyLog: false,
-                    RpcLog.Types.Level.Warning,
-                    PowerShellWorkerStrings.AutomaticUpgradesAreDisabled);
-
-                return;
-            }
 
             _installAndPurgeTimer = new Timer(
                                             _ => InstallAndPurgeSnapshots(PowerShell.Create, logger),
@@ -70,6 +61,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         {
             try
             {
+                if (!_getShouldPerformManagedDependencyUpgrades())
+                {
+                    logger.Log(
+                        isUserOnlyLog: false,
+                        RpcLog.Types.Level.Warning,
+                        PowerShellWorkerStrings.AutomaticUpgradesAreDisabled);
+
+                    // Shutdown the timer that calls this method after the EOL date
+                    if (_installAndPurgeTimer is not null)
+                    {
+                        _installAndPurgeTimer.Dispose();
+                        _installAndPurgeTimer = null;
+                    }
+
+                    return null;
+                }
+
                 // Purge before installing a new snapshot, as we may be able to free some space.
                 _purger.Purge(logger);
 

@@ -13,8 +13,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
     using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
     using Microsoft.Azure.Functions.PowerShellWorker.Utility;
-
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
+    using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
     public class BackgroundDependencySnapshotMaintainerTests
     {
@@ -30,7 +30,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void SetsCurrentlyUsedSnapshotOnPurger()
         {
-            using (var maintainer = CreateMaintainerWithMocks())
+            using (var maintainer = CreateMaintainerWithMocks(true))
             {
                 maintainer.Start("current snapshot", _dependencyManifest, _mockLogger.Object);
             }
@@ -56,7 +56,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                         It.IsAny<ILogger>()));
 
             using (var dummyPowerShell = PowerShell.Create())
-            using (var maintainer = CreateMaintainerWithMocks(_minBackgroundUpgradePeriod))
+            using (var maintainer = CreateMaintainerWithMocks(true, _minBackgroundUpgradePeriod))
             {
                 maintainer.Start("current snapshot", _dependencyManifest, _mockLogger.Object);
 
@@ -74,13 +74,48 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         }
 
         [Fact]
+        public void DoesNothingIfManagedDependenciesUpgradesAreDisabled()
+        {
+            _mockStorage.Setup(_ => _.GetInstalledAndInstallingSnapshots()).Returns(new[] { "older snapshot" });
+            _mockStorage.Setup(_ => _.GetSnapshotCreationTimeUtc("older snapshot"))
+                .Returns(DateTime.UtcNow - _minBackgroundUpgradePeriod - TimeSpan.FromSeconds(1));
+
+            _mockStorage.Setup(_ => _.CreateNewSnapshotPath()).Returns("new snapshot path");
+
+            _mockInstaller.Setup(
+                _ => _.InstallSnapshot(
+                        It.IsAny<DependencyManifestEntry[]>(),
+                        It.IsAny<string>(),
+                        It.IsAny<PowerShell>(),
+                        It.IsAny<DependencySnapshotInstallationMode>(),
+                        It.IsAny<ILogger>()));
+
+            using (var dummyPowerShell = PowerShell.Create())
+            using (var maintainer = CreateMaintainerWithMocks(false, _minBackgroundUpgradePeriod))
+            {
+                maintainer.Start("current snapshot", _dependencyManifest, _mockLogger.Object);
+
+                // ReSharper disable once AccessToDisposedClosure
+                var installedSnapshotPath = maintainer.InstallAndPurgeSnapshots(() => dummyPowerShell, _mockLogger.Object);
+                Assert.Equal("new snapshot path", installedSnapshotPath);
+
+                // ReSharper disable once AccessToDisposedClosure
+                _mockInstaller.Verify(
+                    _ => _.InstallSnapshot(_dependencyManifest, "new snapshot path", dummyPowerShell, DependencySnapshotInstallationMode.Optional, _mockLogger.Object),
+                    Times.Never);
+
+                _mockLogger.Verify(_ => _.Log(false, LogLevel.Warning, PowerShellWorkerStrings.AutomaticUpgradesAreDisabled, null), Times.Once);
+            }
+        }
+
+        [Fact]
         public void DoesNotInstallSnapshotIfRecentlyInstalledSnapshotFound()
         {
             _mockStorage.Setup(_ => _.GetInstalledAndInstallingSnapshots()).Returns(new[] { "older snapshot" });
             _mockStorage.Setup(_ => _.GetSnapshotCreationTimeUtc("older snapshot"))
                 .Returns(DateTime.UtcNow - _minBackgroundUpgradePeriod + TimeSpan.FromSeconds(1));
 
-            using (var maintainer = CreateMaintainerWithMocks(_minBackgroundUpgradePeriod))
+            using (var maintainer = CreateMaintainerWithMocks(true, _minBackgroundUpgradePeriod))
             {
                 maintainer.Start("current snapshot", _dependencyManifest, _mockLogger.Object);
 
@@ -112,7 +147,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 .Throws(injectedException);
 
             using (var dummyPowerShell = PowerShell.Create())
-            using (var maintainer = CreateMaintainerWithMocks(_minBackgroundUpgradePeriod))
+            using (var maintainer = CreateMaintainerWithMocks(true, _minBackgroundUpgradePeriod))
             {
                 maintainer.Start("current snapshot", _dependencyManifest, _mockLogger.Object);
 
@@ -129,12 +164,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
                 Times.Once);
         }
 
-        private BackgroundDependencySnapshotMaintainer CreateMaintainerWithMocks(TimeSpan? minBackgroundUpgradePeriod = null)
+        private BackgroundDependencySnapshotMaintainer CreateMaintainerWithMocks(bool shouldPerformManagedDependenciesUpgrades, TimeSpan? minBackgroundUpgradePeriod = null)
         {
             var maintainer = new BackgroundDependencySnapshotMaintainer(
                                     _mockStorage.Object,
                                     _mockInstaller.Object,
-                                    _mockPurger.Object);
+                                    _mockPurger.Object, 
+                                    () => { return shouldPerformManagedDependenciesUpgrades; });
 
             if (minBackgroundUpgradePeriod != null)
             {
