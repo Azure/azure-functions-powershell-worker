@@ -229,49 +229,40 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [Fact]
         public void StartDependencyInstallationIfNeeded_InvokesBackgroundMaintainer_WhenAcceptableDependenciesAlreadyInstalled()
         {
-            try
+            _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
+                .Returns("AlreadyInstalled");
+            _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
+
+            var firstPowerShellRunspace = PowerShell.Create();
+            Func<PowerShell> powerShellFactory = PowerShell.Create;
+
+            _mockStorage.Setup(_ => _.SnapshotExists("AlreadyInstalled")).Returns(true);
+
+            _mockBackgroundDependencySnapshotMaintainer.Setup(
+                _ => _.InstallAndPurgeSnapshots(It.IsAny<Func<PowerShell>>(), It.IsAny<ILogger>()))
+                .Returns("NewSnapshot");
+
+            using (var dependencyManager = CreateDependencyManagerWithMocks())
             {
-                Environment.SetEnvironmentVariable("MDEnableAutomaticUpgrades", "true");
+                dependencyManager.Initialize(_mockLogger.Object);
+                dependencyManager.StartDependencyInstallationIfNeeded(firstPowerShellRunspace, powerShellFactory, _mockLogger.Object);
+                var hadToWait = dependencyManager.WaitForDependenciesAvailability(() => _mockLogger.Object);
 
-                _mockInstalledDependenciesLocator.Setup(_ => _.GetPathWithAcceptableDependencyVersionsInstalled())
-                    .Returns("AlreadyInstalled");
-                _mockStorage.Setup(_ => _.GetDependencies()).Returns(GetAnyNonEmptyDependencyManifestEntries());
+                Assert.False(hadToWait);
+                Assert.Equal("NewSnapshot", dependencyManager.WaitForBackgroundDependencyInstallationTaskCompletion());
 
-                var firstPowerShellRunspace = PowerShell.Create();
-                Func<PowerShell> powerShellFactory = PowerShell.Create;
-
-                _mockStorage.Setup(_ => _.SnapshotExists("AlreadyInstalled")).Returns(true);
-
-                _mockBackgroundDependencySnapshotMaintainer.Setup(
-                    _ => _.InstallAndPurgeSnapshots(It.IsAny<Func<PowerShell>>(), It.IsAny<ILogger>()))
-                    .Returns("NewSnapshot");
-
-                using (var dependencyManager = CreateDependencyManagerWithMocks())
-                {
-                    dependencyManager.Initialize(_mockLogger.Object);
-                    dependencyManager.StartDependencyInstallationIfNeeded(firstPowerShellRunspace, powerShellFactory, _mockLogger.Object);
-                    var hadToWait = dependencyManager.WaitForDependenciesAvailability(() => _mockLogger.Object);
-
-                    Assert.False(hadToWait);
-                    Assert.Equal("NewSnapshot", dependencyManager.WaitForBackgroundDependencyInstallationTaskCompletion());
-
-                    _mockBackgroundDependencySnapshotMaintainer.Verify(
-                        _ => _.InstallAndPurgeSnapshots(powerShellFactory, _mockLogger.Object),
-                        Times.Once);
-                }
-
-                _mockLogger.Verify(
-                    _ => _.Log(
-                        false,
-                        LogLevel.Trace,
-                        It.Is<string>(message => message.Contains(PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled)),
-                        It.IsAny<Exception>()),
+                _mockBackgroundDependencySnapshotMaintainer.Verify(
+                    _ => _.InstallAndPurgeSnapshots(powerShellFactory, _mockLogger.Object),
                     Times.Once);
             }
-            finally
-            {
-                Environment.SetEnvironmentVariable("MDEnableAutomaticUpgrades", null);
-            }
+
+            _mockLogger.Verify(
+                _ => _.Log(
+                    false,
+                    LogLevel.Trace,
+                    It.Is<string>(message => message.Contains(PowerShellWorkerStrings.AcceptableFunctionAppDependenciesAlreadyInstalled)),
+                    It.IsAny<Exception>()),
+                Times.Once);
         }
 
         [Fact]
