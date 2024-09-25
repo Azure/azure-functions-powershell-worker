@@ -389,6 +389,6 @@
     <value>The app is configured to use OpenTelemetry but the TraceContext passed from host was null. </value>
   </data>
   <data name="AutomaticUpgradesAreDisabled" xml:space="preserve">
-    <value>Automatic upgrades are disabled in PowerShell 7.4 function apps. This warning should not be emitted until PowerShell 7.4's End of Life date, at which time, more guidance will be available regarding how to upgrade your function app to the latest version. </value>
+    <value>Automatic upgrades are disabled in PowerShell 7.2 function apps. This warning should not be emitted until PowerShell 7.2's End of Life date. For more information, please see https://azure.microsoft.com/en-us/updates/v2/powershell72-azure-functions-retirement</value>
   </data>
 </root>
