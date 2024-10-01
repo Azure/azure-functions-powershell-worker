@@ -352,6 +352,9 @@
   <data name="DependencySnapshotDoesNotContainAcceptableModuleVersions" xml:space="preserve">
     <value>Dependency snapshot '{0}' does not contain acceptable module versions.</value>
   </data>
+  <data name="WorkerInitCompleted" xml:space="preserve">
+    <value>Worker init request completed in {0} ms.</value>
+  </data>
   <data name="FoundExternalDurableSdkInSession" xml:space="preserve">
     <value>Found external Durable Functions SDK in session: Name='{0}', Version='{1}', Path='{2}'.</value>
   </data>
@@ -360,9 +363,6 @@
   </data>
   <data name="UnableToInitializeOrchestrator" xml:space="preserve">
     <value>Unable to initialize orchestrator function due to presence of other bindings. Total number of bindings found is '{0}'. Orchestrator Functions should never use any input or output bindings other than the orchestration trigger itself. See: aka.ms/df-bindings</value>
-  </data>
-  <data name="WorkerInitCompleted" xml:space="preserve">
-    <value>Worker init request completed in {0} ms.</value>
   </data>
   <data name="UnexpectedResultCount" xml:space="preserve">
     <value>Operation '{0}' expected '{1}' result(s) but received '{2}'.</value>
@@ -387,5 +387,8 @@
   </data>
   <data name="InvalidOpenTelemetryContext" xml:space="preserve">
     <value>The app is configured to use OpenTelemetry but the TraceContext passed from host was null. </value>
+  </data>
+  <data name="AutomaticUpgradesAreDisabled" xml:space="preserve">
+    <value>Automatic upgrades are disabled in PowerShell 7.2 function apps. This warning should not be emitted until PowerShell 7.2's End of Life date. For more information, please see https://azure.microsoft.com/en-us/updates/v2/powershell72-azure-functions-retirement</value>
   </data>
 </root>

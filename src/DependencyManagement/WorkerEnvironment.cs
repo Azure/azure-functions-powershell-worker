@@ -16,6 +16,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private const string ContainerName = "CONTAINER_NAME";
         private const string LegionServiceHost = "LEGION_SERVICE_HOST";
 
+        private static readonly DateTime PowerShellSDKDeprecationDate = new DateTime(2024, 11, 8);
+
         public static bool IsAppService()
         {
             return !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(AzureWebsiteInstanceId));
@@ -31,6 +33,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
             return !IsAppService() &&
                    !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(ContainerName)) &&
                    !string.IsNullOrEmpty(Environment.GetEnvironmentVariable(LegionServiceHost));
+        }
+
+        public static bool IsPowerShellSDKDeprecated()
+        {
+            return DateTime.Now > PowerShellSDKDeprecationDate;
         }
     }
 }
