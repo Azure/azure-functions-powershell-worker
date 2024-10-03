@@ -13,7 +13,7 @@
         Target = 'src/Modules'
     }
     'PackageManagement' = @{
-        Version = '1.4.7'
+        Version = '1.4.8.1'
         Target = 'src/Modules'
     }
 }
