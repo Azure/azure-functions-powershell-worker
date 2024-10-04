@@ -53,19 +53,20 @@ jobs:
       with:
         submodules: true
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+    # - name: Setup .NET
+    #   uses: actions/setup-dotnet@v3
 
-    - name: Set up .NET Core 3.1
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '3.1.x'
+    # - name: Set up .NET Core 3.1
+    #   uses: actions/setup-dotnet@v3
+    #   with:
+    #     dotnet-version: '3.1.x'
 
-    - name: Restore dependencies
-      run: dotnet restore $solution
+    # - name: Restore dependencies
+    #   run: dotnet restore $solution
 
     - name: Build
-      run: dotnet build $solution #--configuration $config #--no-restore -p:FileVersionRevision=$GITHUB_RUN_NUMBER -p:ContinuousIntegrationBuild=true
+      shell: pwsh
+      run: ./build.ps1 -Clean -Bootstrap 
 
     # Run CodeQL analysis
     - name: Perform CodeQL Analysis
