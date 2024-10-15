@@ -12,6 +12,8 @@ This repository will host the PowerShell language worker implementation for Azur
 We'll also be using it to track work items related to PowerShell support.
 Please feel free to leave comments about any of the features and design patterns.
 
+**Did you know the new programming model for PowerShell is currently in Insider Preview?** [Check it out](https://github.com/Azure/azure-functions-powershell-worker/wiki/(Insider-Preview)-New-Programming-Model) and [let us know](https://github.com/Azure/azure-functions-powershell-worker/discussions/1031) your thoughts!
+
 ## Overview
 
 PowerShell support for Functions is based on [PowerShell Core 7](https://github.com/powershell/powershell),
