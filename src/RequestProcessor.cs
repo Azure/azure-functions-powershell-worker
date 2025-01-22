@@ -22,6 +22,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
     using System.Runtime.InteropServices;
     using Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry;
+    using System.Linq;
 
     internal class RequestProcessor
     {
@@ -537,7 +538,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 }
             }
 
-            if (functionInfo.DurableFunctionInfo.ProvidesForcedDollarReturnValue)
+            if (functionInfo.DurableFunctionInfo.ProvidesForcedDollarReturnValue || functionInfo.InputBindings.Where(x => x.Value.Type == "assistantSkillTrigger").Any())
             {
                 response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData(isDurableData: true);
             }

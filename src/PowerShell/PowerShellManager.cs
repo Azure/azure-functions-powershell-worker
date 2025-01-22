@@ -248,8 +248,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                         {
                             _pwsh.AddCommand(Utils.TracePipelineObjectCmdlet);
                         }
-                        var isOpenAiSkillTrigger = functionInfo.InputBindings.Where(x => x.Value.Type == "assistantSkillTrigger").Any();
-                        return ExecuteUserCode(isActivityFunction || isOpenAiSkillTrigger, outputBindings);
+                        return ExecuteUserCode(isActivityFunction || FunctionInfoUtilities.hasAssistantSkillTrigger(functionInfo), outputBindings);
                     }
                 }
                 catch (RuntimeException e)
