@@ -16,6 +16,7 @@ using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level
 namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 {
     using Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry;
+    using System.Linq;
     using System.Management.Automation;
     using System.Text;
 
@@ -247,7 +248,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                         {
                             _pwsh.AddCommand(Utils.TracePipelineObjectCmdlet);
                         }
-                        return ExecuteUserCode(isActivityFunction, outputBindings);
+                        var isOpenAiSkillTrigger = functionInfo.InputBindings.Where(x => x.Value.Type == "assistantSkillTrigger").Any();
+                        return ExecuteUserCode(isActivityFunction || isOpenAiSkillTrigger, outputBindings);
                     }
                 }
                 catch (RuntimeException e)
