@@ -144,7 +144,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         public void AddPipelineOutputIfNecessary(Collection<object> pipelineItems, Hashtable result)
         {
- 
             if (ShouldSuppressPipelineTraces())
             {
                 var returnValue = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(pipelineItems);

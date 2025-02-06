@@ -392,13 +392,48 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [InlineData(DurableFunctionType.None, false)]
         [InlineData(DurableFunctionType.OrchestrationFunction, false)]
         [InlineData(DurableFunctionType.ActivityFunction, true)]
-        internal void SuppressPipelineTracesForDurableActivityFunctionOnly(DurableFunctionType durableFunctionType, bool shouldSuppressPipelineTraces)
+        internal void SuppressPipelineTracesForDurableActivityFunction(DurableFunctionType durableFunctionType, bool shouldSuppressPipelineTraces)
         {
             s_testLogger.FullLog.Clear();
 
             var path = Path.Join(s_funcDirectory, "testFunctionWithOutput.ps1");
             var (functionInfo, testManager) = PrepareFunction(path, string.Empty);
             functionInfo.DurableFunctionInfo.Type = durableFunctionType;
+
+            try
+            {
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
+
+                var result = testManager.InvokeFunction(functionInfo, null, null, null, CreateOrchestratorInputData(), new FunctionInvocationPerformanceStopwatch(), null);
+
+                var relevantLogs = s_testLogger.FullLog.Where(message => message.StartsWith("Information: OUTPUT:")).ToList();
+                var expected = shouldSuppressPipelineTraces ? new string[0] : new[] { "Information: OUTPUT: Hello" };
+                Assert.Equal(expected, relevantLogs);
+            }
+            finally
+            {
+                FunctionMetadata.UnregisterFunctionMetadata(testManager.InstanceId);
+            }
+        }
+
+        [Theory]
+        [InlineData("httpTrigger", false)]
+        [InlineData("assistantSkillTrigger", true)]
+        internal void SuppressPipelineTracesForOpenAIAssistantSkillTrigger(string inputBindingType, bool shouldSuppressPipelineTraces)
+        {
+            s_testLogger.FullLog.Clear();
+
+            var path = Path.Join(s_funcDirectory, "testFunctionWithOutput.ps1");
+
+            foreach(var binding in s_functionLoadRequest.Metadata.Bindings)
+            {
+                if (binding.Value.Direction == BindingInfo.Types.Direction.In)
+                {
+                    binding.Value.Type = inputBindingType;
+                }
+            }
+
+            var (functionInfo, testManager) = PrepareFunction(path, string.Empty);
 
             try
             {
