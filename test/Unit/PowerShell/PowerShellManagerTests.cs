@@ -425,11 +425,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
             var path = Path.Join(s_funcDirectory, "testFunctionWithOutput.ps1");
 
+            BindingInfo bindingInfo = null;
+            string oldBindingType = "";
             foreach(var binding in s_functionLoadRequest.Metadata.Bindings)
             {
                 if (binding.Value.Direction == BindingInfo.Types.Direction.In)
                 {
+                    bindingInfo = binding.Value;
+                    oldBindingType = binding.Value.Type;
                     binding.Value.Type = inputBindingType;
+                    break;
                 }
             }
 
@@ -448,6 +453,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             finally
             {
                 FunctionMetadata.UnregisterFunctionMetadata(testManager.InstanceId);
+                if (bindingInfo != null)
+                {
+                    bindingInfo.Type = oldBindingType;
+                }
             }
         }
 
