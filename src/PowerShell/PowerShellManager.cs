@@ -243,11 +243,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                     else
                     {
                         var isActivityFunction = functionInfo.DurableFunctionInfo.IsActivityFunction;
-                        if (!isActivityFunction)
+                        if (!isActivityFunction && !FunctionInfoUtilities.hasAssistantSkillTrigger(functionInfo))
                         {
                             _pwsh.AddCommand(Utils.TracePipelineObjectCmdlet);
                         }
-                        return ExecuteUserCode(isActivityFunction, outputBindings);
+                        return ExecuteUserCode(isActivityFunction || FunctionInfoUtilities.hasAssistantSkillTrigger(functionInfo), outputBindings);
                     }
                 }
                 catch (RuntimeException e)

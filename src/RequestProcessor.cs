@@ -537,7 +537,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 }
             }
 
-            if (functionInfo.DurableFunctionInfo.ProvidesForcedDollarReturnValue)
+            if (functionInfo.DurableFunctionInfo.ProvidesForcedDollarReturnValue || FunctionInfoUtilities.hasAssistantSkillTrigger(functionInfo))
             {
                 response.ReturnValue = results[AzFunctionInfo.DollarReturn].ToTypedData(isDurableData: true);
             }
