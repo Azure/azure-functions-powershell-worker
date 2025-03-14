@@ -1,1 +1,1 @@
-* Use rpcBaseUrl in Durable operations when possible
+* Set environment variable to avoid Get-AzAccessToken breaking change
