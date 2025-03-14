@@ -106,6 +106,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             Environment.SetEnvironmentVariable("AZUREPS_HOST_ENVIRONMENT", $"AzureFunctions/{workerInitRequest.HostVersion}");
             Environment.SetEnvironmentVariable("POWERSHELL_DISTRIBUTION_CHANNEL", $"Azure-Functions:{workerInitRequest.HostVersion}");
 
+            // Set the environment variable to force the Get-AzAccessToken to return a
+            // plaintext token and avoid the planned breaking change.
+            // TODO: Remove this for the next PowerShell version (7.6).
+            Environment.SetEnvironmentVariable("AZUREPS_OUTPUT_PLAINTEXT_AZACCESSTOKEN", "true");
+
             StreamingMessage response = NewStreamingMessageTemplate(
                 request.RequestId,
                 StreamingMessage.ContentOneofCase.WorkerInitResponse,
