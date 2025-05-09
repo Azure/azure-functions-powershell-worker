@@ -5,7 +5,7 @@
         Target = 'src/Modules'
     }
     'ThreadJob' = @{
-        Version = '2.0.3'
+        Version = '2.1.0'
         Target = 'src/Modules'
     }
     'PowerShellGet' = @{
@@ -16,4 +16,5 @@
         Version = '1.4.8.1'
         Target = 'src/Modules'
     }
+    # TODO: Investigate Microsoft.PowerShell.ThreadJob
 }

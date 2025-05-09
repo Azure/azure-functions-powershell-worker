@@ -77,9 +77,9 @@ On macOS if you installed via `brew`
 /usr/local/Cellar/azure-functions-core-tools/<version>/workers/
 ```
 
-Under the `workers/powershell` folder, create a folder with the name `7.4` if it does not exist yet. Copy the result of the `publish` directory into the `workers/powershell/7.4` folder, and copy the `publish/worker.config.json` file into the `workers/powershell` folder:
+Under the `workers/powershell` folder, create a folder with the name `7.6` if it does not exist yet. Copy the result of the `publish` directory into the `workers/powershell/7.6` folder, and copy the `publish/worker.config.json` file into the `workers/powershell` folder:
 ```powershell
-Copy-Item -Recurse -Force ./src/bin/Debug/net8.0/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell/7.4"
+Copy-Item -Recurse -Force ./src/bin/Debug/net8.0/publish/ "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell/7.6"
 Copy-Item -Recurse -Force ./src/bin/Debug/net8.0/publish/worker.config.json "/usr/local/Cellar/azure-functions-core-tools/$(func --version)/workers/powershell"
 ```
 
@@ -88,7 +88,7 @@ Copy-Item -Recurse -Force ./src/bin/Debug/net8.0/publish/worker.config.json "/us
 Then `cd` into a Function App with PowerShell as the worker runtime 
 (NOTE: There's an example PowerShell Function App in the `examples` folder).
 
-Set the environment variable `FUNCTIONS_WORKER_RUNTIME_VERSION` to `7.4`, or add this as an app setting to the `local.settings.json` file.
+Set the environment variable `FUNCTIONS_WORKER_RUNTIME_VERSION` to `7.6`, or add this as an app setting to the `local.settings.json` file.
 
 Lastly, run:
 
@@ -114,9 +114,9 @@ set the environment variable `"AzureWebJobsScriptRoot"`
 to the root folder path (the folder which contains the `host.json`)
 of your test functions app.
 
-Under the `workers/powershell` folder, create a folder with the name `7.4` if it does not exist yet. Then copy the `publish` directory to `workers/powershell/7.4`, and the `publish/worker.config.json` to `workers/powershell`:
+Under the `workers/powershell` folder, create a folder with the name `7.6` if it does not exist yet. Then copy the `publish` directory to `workers/powershell/7.6`, and the `publish/worker.config.json` to `workers/powershell`:
 ```powershell
-Copy-Item -Recurse -Force ./src/bin/Debug/net8.0/publish/ "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/net8.0/workers/powershell/7.4"
+Copy-Item -Recurse -Force ./src/bin/Debug/net8.0/publish/ "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/net8.0/workers/powershell/7.6"
 Copy-Item -Force ./src/bin/Debug/net8.0/publish/worker.config.json "<Azure Functions Host Root>/src/WebJobs.Script.WebHost/bin/Debug/net8.0/workers/powershell"
 ```
 

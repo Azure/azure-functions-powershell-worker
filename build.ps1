@@ -36,7 +36,7 @@ param(
 Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
 
 $TargetFramework = 'net8.0'
-$PowerShellVersion = '7.4'
+$PowerShellVersion = '7.6'
 
 Write-Log "Build worker version: $PowerShellVersion"
 Write-Log "Target framework: $TargetFramework"
