@@ -50,6 +50,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         [DataMember]
         public string Name { get; set; }
+
+        [DataMember]
+        public string Version { get; set; }
         
         [DataMember]
         public string Result { get; set; }
