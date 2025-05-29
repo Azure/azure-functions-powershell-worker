@@ -14,80 +14,51 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [Fact]
         public void GetVersionFromHistory_ReturnsNull_WhenHistoryIsNull()
         {
-            // Act
             string result = OrchestrationVersionExtractor.GetVersionFromHistory(null);
 
-            // Assert
             Assert.Null(result);
         }
 
         [Fact]
         public void GetVersionFromHistory_ReturnsNull_WhenHistoryHasNoExecutionStartedEvent()
         {
-            // Arrange
             var historyEvents = new[]
             {
-                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 1 },
-                new HistoryEvent { EventType = HistoryEventType.TaskCompleted, EventId = 2, TaskScheduledId = 1 }
+                new HistoryEvent { EventType = HistoryEventType.OrchestratorStarted },
+                new HistoryEvent { EventType = HistoryEventType.TaskScheduled }
             };
 
-            // Act
             string result = OrchestrationVersionExtractor.GetVersionFromHistory(historyEvents);
 
-            // Assert
             Assert.Null(result);
         }
 
         [Fact]
         public void GetVersionFromHistory_ReturnsVersion_WhenExecutionStartedEventExists()
         {
-            // Arrange
-            const string expectedVersion = "1.0.0";
             var historyEvents = new[]
             {
-                new HistoryEvent { 
-                    EventType = HistoryEventType.ExecutionStarted, 
-                    EventId = 1, 
-                    Version = expectedVersion 
-                },
-                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 2 }
+                new HistoryEvent { EventType = HistoryEventType.OrchestratorStarted },
+                new HistoryEvent { EventType = HistoryEventType.ExecutionStarted, Version = "1.0" },
             };
 
-            // Act
             string result = OrchestrationVersionExtractor.GetVersionFromHistory(historyEvents);
 
-            // Assert
-            Assert.Equal(expectedVersion, result);
+            Assert.Equal("1.0", result);
         }
 
         [Fact]
         public void GetVersionFromHistory_ReturnsFirstExecutionStartedVersion_WhenMultipleExecutionStartedEventsExist()
         {
-            // Arrange
-            const string expectedVersion = "1.0.0";
-            const string secondVersion = "2.0.0";
-            
             var historyEvents = new[]
             {
-                new HistoryEvent { 
-                    EventType = HistoryEventType.ExecutionStarted, 
-                    EventId = 1, 
-                    Version = expectedVersion 
-                },
-                new HistoryEvent { EventType = HistoryEventType.TaskScheduled, EventId = 2 },
-                new HistoryEvent { 
-                    EventType = HistoryEventType.ExecutionStarted,
-                    EventId = 3,
-                    Version = secondVersion
-                }
+                new HistoryEvent { EventType = HistoryEventType.ExecutionStarted, Version = "1.0" },
+                new HistoryEvent { EventType = HistoryEventType.ExecutionStarted, Version = "2.0" }
             };
 
-            // Act
             string result = OrchestrationVersionExtractor.GetVersionFromHistory(historyEvents);
 
-            // Assert
-            Assert.Equal(expectedVersion, result);
-            Assert.NotEqual(secondVersion, result);
+            Assert.Equal("1.0", result);
         }
     }
 }
