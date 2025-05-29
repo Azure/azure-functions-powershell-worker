@@ -41,13 +41,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         {
             get 
             {
-                if (History == null)
-                {
-                    return null;
-                }
-                
-                var executionStartedEvent = Array.Find(History, e => e.EventType == HistoryEventType.ExecutionStarted);
-                return executionStartedEvent?.Version;
+                return OrchestrationVersionExtractor.GetVersionFromHistory(History);
             }
         }
     }
