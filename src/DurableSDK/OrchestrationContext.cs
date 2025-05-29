@@ -37,11 +37,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         internal object CustomStatus { get; set; }
 
+        private readonly Lazy<string> _version;
+
+        public OrchestrationContext()
+        {
+            _version = new Lazy<string>(() => OrchestrationVersionExtractor.GetVersionFromHistory(History));
+        }
+
         public string Version 
         {
             get 
             {
-                return OrchestrationVersionExtractor.GetVersionFromHistory(History);
+                return _version.Value;
             }
         }
     }
