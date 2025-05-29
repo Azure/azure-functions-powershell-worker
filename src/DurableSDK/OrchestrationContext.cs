@@ -39,17 +39,17 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         private readonly Lazy<string> _version;
 
-        public OrchestrationContext()
-        {
-            _version = new Lazy<string>(() => OrchestrationVersionExtractor.GetVersionFromHistory(History));
-        }
-
         public string Version 
         {
             get 
             {
                 return _version.Value;
             }
+        }
+
+        public OrchestrationContext()
+        {
+            _version = new Lazy<string>(() => OrchestrationVersionExtractor.GetVersionFromHistory(History));
         }
     }
 }
