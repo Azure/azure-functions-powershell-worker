@@ -1,1 +1,1 @@
-* Set environment variable to avoid Get-AzAccessToken breaking change
+* [Durable] Add Version property to $Context
