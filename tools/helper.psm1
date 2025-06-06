@@ -17,8 +17,8 @@ $DotnetSDKVersionRequirements = @{
     }
 
     '10.0' = @{
-        MinimalPatch = '100-preview.3'
-        DefaultPatch = '100-preview.3'
+        MinimalPatch = '100-preview.4'
+        DefaultPatch = '100-preview.4'
     }
 }
 
