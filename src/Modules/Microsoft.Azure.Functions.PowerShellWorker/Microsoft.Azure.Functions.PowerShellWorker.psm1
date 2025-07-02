@@ -132,9 +132,25 @@ function Start-DurableOrchestration {
         }
 
     $Body = $InputObject | ConvertTo-Json -Compress
+
+    try {
+        $activity = Start-FunctionsOpenTelemetrySpan
+        $traceID = $activity.activity.TraceId
+        # Do whatever you need to do with the trace information using the activity here
+    } catch {
+        # Do something better - correctly handle errors when the OTel SDK is not available
+        # Output errors from this command in a reasonable way
+        # Detect if calling Stop-FunctionsOpenTelemetrySpan is necessary and change that logic too
+    }
               
     $null = Invoke-RestMethod -Uri $Uri -Method 'POST' -ContentType 'application/json' -Body $Body
-    
+
+    try {
+        Stop-FunctionsOpenTelemetrySpan -Activity $activity
+    } catch {
+        # Do something better here
+    }
+
     return $instanceId
 }
 
