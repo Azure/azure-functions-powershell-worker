@@ -133,9 +133,28 @@ function Start-DurableOrchestration {
 
     $Body = $InputObject | ConvertTo-Json -Compress
 
+    $invokeParams = @{
+        Uri         = $Uri
+        Method      = 'POST'
+        ContentType = 'application/json'
+        Body        = $Body
+    }
+
     try {
-        $activity = Start-FunctionsOpenTelemetrySpan
-        $traceID = $activity.activity.TraceId
+        $activity = Start-FunctionsOpenTelemetrySpan -ActivityName "Starting orchestration"
+
+        $traceId = $activity.activity.TraceId
+        $spanId = $activity.activity.SpanId
+
+        # Construct the traceparent header
+        $traceParent = "00-$traceId-$spanId-01"
+
+        $traceState = $activity.activity.TraceState
+
+        $invokeParams.Headers = @{
+            'traceparent' = $traceParent
+            'tracestate'  = $traceState
+        }
         # Do whatever you need to do with the trace information using the activity here
     } catch {
         # Do something better - correctly handle errors when the OTel SDK is not available
@@ -143,7 +162,7 @@ function Start-DurableOrchestration {
         # Detect if calling Stop-FunctionsOpenTelemetrySpan is necessary and change that logic too
     }
               
-    $null = Invoke-RestMethod -Uri $Uri -Method 'POST' -ContentType 'application/json' -Body $Body
+    $null = Invoke-RestMethod @invokeParams
 
     try {
         Stop-FunctionsOpenTelemetrySpan -Activity $activity
