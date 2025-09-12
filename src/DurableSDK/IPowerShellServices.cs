@@ -21,6 +21,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         void SetDurableClient(object durableClient);
 
+        void SetInvocationId(string invocationId);
+
         OrchestrationBindingInfo SetOrchestrationContext(ParameterBinding context, out IExternalOrchestrationInvoker externalInvoker);
 
         void ClearOrchestrationContext();

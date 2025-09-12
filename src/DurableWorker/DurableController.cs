@@ -85,7 +85,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             }
         }
 
-        public void InitializeBindings(IList<ParameterBinding> inputData, out bool hasExternalSDK)
+        public void InitializeBindings(IList<ParameterBinding> inputData, out bool hasExternalSDK, string invocationId = "")
         {
             this.tryEnablingExternalSDK();
 
@@ -121,6 +121,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
                 _orchestrationInvoker.SetExternalInvoker(externalInvoker);
             }
             hasExternalSDK = _powerShellServices.HasExternalDurableSDK();
+            _powerShellServices.SetInvocationId(invocationId);
         }
 
         public void AfterFunctionInvocation()

@@ -72,6 +72,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             _hasInitializedDurableFunctions = true;
         }
 
+        public void SetInvocationId(string invocationId)
+        {
+            _pwsh.AddCommand(SetFunctionInvocationContextCommand)
+                .AddParameter("InvocationId", invocationId)
+                .InvokeAndClearCommands();
+        }
+
         public OrchestrationBindingInfo SetOrchestrationContext(
             ParameterBinding context,
             out IExternalOrchestrationInvoker externalInvoker)
