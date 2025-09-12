@@ -215,7 +215,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
             try
             {
-                durableFunctionsUtils.InitializeBindings(inputData: inputData, invocationId: otelContext.InvocationId, hasExternalSDK: out bool hasExternalDFsdk);
+                durableFunctionsUtils.InitializeBindings(inputData, out bool hasExternalDFsdk);
                 Logger.Log(isUserOnlyLog: false, LogLevel.Trace, String.Format(PowerShellWorkerStrings.UtilizingExternalDurableSDK, hasExternalDFsdk));
 
                 ImportEntryPointModule(functionInfo);
