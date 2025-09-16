@@ -7,6 +7,15 @@ trigger:
     - v4.x/*
     - v3.x/*
 
+schedules:
+# Build weekly to ensure the pipeline isn't deactivated.
+- cron: "0 0 1/7 * *"
+  displayName: Weekly sync
+  branches:
+    include:
+    - dev
+  always: true
+
 resources:
   repositories:
   - repository: eng
