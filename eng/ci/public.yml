@@ -5,8 +5,8 @@ trigger:
     - dev
 
 schedules:
-- cron: "0 0 * * *"
-  displayName: Daily midnight build
+- cron: "0 2 * * *"
+  displayName: Daily 2 AM build
   branches:
     include:
     - dev
@@ -26,7 +26,10 @@ extends:
       name: 1es-pool-azfunc-public
       image: 1es-windows-2022
       os: windows
-
+      ${{ if eq( variables['Build.Reason'], 'Schedule' ) }}:
+        demands:
+        - Priority -equals Low
+        
     stages:
       - stage: WindowsUnitTests
         dependsOn: []
