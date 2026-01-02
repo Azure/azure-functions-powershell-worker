@@ -41,6 +41,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 this._setEnvironmentVariable(name, value);
             }
 
+            // Clear cached timezone data to ensure timezone-related commands
+            // (e.g., Get-TimeZone) respect the updated TZ environment variable
+            TimeZoneInfo.ClearCachedData();
+
             if (functionAppDirectory != null)
             {
                 var setCurrentDirMessage = string.Format(PowerShellWorkerStrings.SettingCurrentDirectory, functionAppDirectory);
