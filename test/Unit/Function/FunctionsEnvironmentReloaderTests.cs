@@ -71,7 +71,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             // We set the TZ environment variable and verify the timezone changes.
             
             var environmentVariables = new List<KeyValuePair<string, string>>();
-            string actualDirectory = null;
 
             var reloader = new FunctionsEnvironmentReloader(
                 logger: _mockLogger.Object,
@@ -79,10 +78,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
                     Environment.SetEnvironmentVariable(name, value);
                     environmentVariables.Add(new KeyValuePair<string, string>(name, value));
                 },
-                setCurrentDirectory: directory => { actualDirectory = directory; });
-
-            // Store the original timezone
-            var originalTimeZone = TimeZoneInfo.Local;
+                setCurrentDirectory: directory => { });
 
             // Set TZ environment variable to a different timezone
             var testVariables = new[] {
