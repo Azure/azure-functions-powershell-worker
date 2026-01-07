@@ -16,20 +16,23 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         private readonly ILogger _logger;
         private readonly Action<string, string> _setEnvironmentVariable;
         private readonly Action<string> _setCurrentDirectory;
+        private readonly Action _clearTimeZoneCache;
 
         public FunctionsEnvironmentReloader(ILogger logger)
-            : this(logger, Environment.SetEnvironmentVariable, Directory.SetCurrentDirectory)
+            : this(logger, Environment.SetEnvironmentVariable, Directory.SetCurrentDirectory, TimeZoneInfo.ClearCachedData)
         {
         }
 
         internal FunctionsEnvironmentReloader(
             ILogger logger,
             Action<string, string> setEnvironmentVariable,
-            Action<string> setCurrentDirectory)
+            Action<string> setCurrentDirectory,
+            Action clearTimeZoneCache)
         {
             this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this._setEnvironmentVariable = setEnvironmentVariable;
             this._setCurrentDirectory = setCurrentDirectory;
+            this._clearTimeZoneCache = clearTimeZoneCache;
         }
 
         public void ReloadEnvironment(
@@ -43,7 +46,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             // Clear cached timezone data to ensure timezone-related commands
             // (e.g., Get-TimeZone) respect the updated TZ environment variable
-            TimeZoneInfo.ClearCachedData();
+            this._clearTimeZoneCache();
 
             if (functionAppDirectory != null)
             {

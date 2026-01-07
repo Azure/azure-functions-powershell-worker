@@ -23,7 +23,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var reloader = new FunctionsEnvironmentReloader(
                 logger: _mockLogger.Object,
                 setEnvironmentVariable: (name, value) => { actualEnvironmentVariables.Add(new KeyValuePair<string, string>(name, value)); },
-                setCurrentDirectory: directory => { });
+                setCurrentDirectory: directory => { },
+                clearTimeZoneCache: () => { });
 
             var requestedEnvironmentVariables = new[] {
                 new KeyValuePair<string, string>( "name1", "valueA" ),
@@ -45,7 +46,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var reloader = new FunctionsEnvironmentReloader(
                 logger: _mockLogger.Object,
                 setEnvironmentVariable: (name, value) => { },
-                setCurrentDirectory: directory => { actualNewDirectory = directory; });
+                setCurrentDirectory: directory => { actualNewDirectory = directory; },
+                clearTimeZoneCache: () => { });
 
             reloader.ReloadEnvironment(new List<KeyValuePair<string, string>>(), RequestedNewDirectory);
 
@@ -58,7 +60,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var reloader = new FunctionsEnvironmentReloader(
                 logger: _mockLogger.Object,
                 setEnvironmentVariable: (name, value) => { },
-                setCurrentDirectory: directory => { Assert.True(false, "Unexpected invocation"); });
+                setCurrentDirectory: directory => { Assert.True(false, "Unexpected invocation"); },
+                clearTimeZoneCache: () => { });
 
             reloader.ReloadEnvironment(new List<KeyValuePair<string, string>>(), functionAppDirectory: null);
         }
@@ -66,36 +69,24 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         [Fact]
         public void ClearsTimeZoneCacheAfterReloadingEnvironment()
         {
-            // This test verifies that TimeZoneInfo.ClearCachedData() is called
-            // by ensuring the timezone cache is fresh after ReloadEnvironment.
-            // We set the TZ environment variable and verify the timezone changes.
-            
-            var environmentVariables = new List<KeyValuePair<string, string>>();
+            // This test verifies that the clearTimeZoneCache action is invoked
+            // during ReloadEnvironment
+            bool clearTimeZoneCacheInvoked = false;
 
             var reloader = new FunctionsEnvironmentReloader(
                 logger: _mockLogger.Object,
-                setEnvironmentVariable: (name, value) => { 
-                    Environment.SetEnvironmentVariable(name, value);
-                    environmentVariables.Add(new KeyValuePair<string, string>(name, value));
-                },
-                setCurrentDirectory: directory => { });
+                setEnvironmentVariable: (name, value) => { },
+                setCurrentDirectory: directory => { },
+                clearTimeZoneCache: () => { clearTimeZoneCacheInvoked = true; });
 
-            // Set TZ environment variable to a different timezone
             var testVariables = new[] {
                 new KeyValuePair<string, string>("TZ", "America/New_York")
             };
 
             reloader.ReloadEnvironment(testVariables, functionAppDirectory: null);
 
-            // After reload, the timezone cache should be cleared
-            // Verify that our environment variable was set
-            Assert.Single(environmentVariables);
-            Assert.Equal("TZ", environmentVariables[0].Key);
-            Assert.Equal("America/New_York", environmentVariables[0].Value);
-
-            // Clean up - restore original TZ environment variable
-            Environment.SetEnvironmentVariable("TZ", null);
-            TimeZoneInfo.ClearCachedData();
+            // Verify that the clearTimeZoneCache action was invoked
+            Assert.True(clearTimeZoneCacheInvoked, "TimeZone cache should be cleared after reloading environment");
         }
     }
 }
