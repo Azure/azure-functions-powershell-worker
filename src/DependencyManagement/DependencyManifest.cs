@@ -72,19 +72,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                         majorVersion);
                 }
 
-                // At this point, we know this is not the 'MajorVersion.*' pattern.
-                // We want to perform a very basic sanity check of the format to detect some
-                // obviously wrong cases: make sure afterMajorVersion starts with a dot,
-                // does not contain * anywhere, and ends with a word character.
-                // Not even trying to match the actual version format rules,
-                // as they are quite complex and controlled by the server side anyway.
-                if (Regex.IsMatch(afterMajorVersion, @"^(\.[^\*]*?\w)?$"))
-                {
-                    return new DependencyManifestEntry(
-                        name,
-                        VersionSpecificationType.ExactVersion,
-                        version);
-                }
+                return new DependencyManifestEntry(
+                    name,
+                    VersionSpecificationType.ExactVersion,
+                    version);
             }
 
             var errorMessage = string.Format(PowerShellWorkerStrings.InvalidVersionFormat, version, "MajorVersion.*");
