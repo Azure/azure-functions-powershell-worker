@@ -3,42 +3,40 @@ Copyright (c) Microsoft. All rights reserved.
 Licensed under the MIT license. See LICENSE file in the project root for full license information.
 -->
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\PowerShellWorker.Common.props" />
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
-    <TieredCompilation>true</TieredCompilation>
-    <Product>Azure Function PowerShell Language Worker</Product>
-    <AssemblyName>Microsoft.Azure.Functions.PowerShellWorker</AssemblyName>
-    
-    <LangVersion>Latest</LangVersion>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
-    <NeutralLanguage>en-US</NeutralLanguage>
-  </PropertyGroup>
+    <Import Project="..\PowerShellWorker.Common.props" />
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <TieredCompilation>true</TieredCompilation>
+        <Product>Azure Function PowerShell Language Worker</Product>
+        <AssemblyName>Microsoft.Azure.Functions.PowerShellWorker</AssemblyName>
 
-  <ItemGroup>
-    <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.6.0-preview.4" />
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
-    <PackageReference Include="Google.Protobuf" Version="3.30.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.4" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.13.0" />
-    <PackageReference Include="System.Formats.Asn1" Version="9.0.4" />
-    <PackageReference Include="System.IO.Packaging" Version="9.0.4" />
-    <PackageReference Include="System.Runtime.Caching" Version="9.0.4" />
-    <PackageReference Include="System.Text.Json" Version="9.0.4" />
-  </ItemGroup>
+        <LangVersion>Latest</LangVersion>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+        <NeutralLanguage>en-US</NeutralLanguage>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Content Include="worker.config.json" PackageCopyToOutput="true">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Modules\**" PackageCopyToOutput="true">
-      <Link>Modules\%(RecursiveDir)\%(FileName)%(Extension)</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
+        <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.6.0-preview.5" />
+        <PackageReference Include="CommandLineParser" Version="2.9.1" />
+        <PackageReference Include="Google.Protobuf" Version="3.30.2" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.4" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+        <PackageReference Include="System.ServiceModel.NetTcp" Version="8.1.2" />
+        <PackageReference Include="System.ServiceModel.Http" Version="8.1.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="worker.config.json" PackageCopyToOutput="true">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Modules\**" PackageCopyToOutput="true">
+            <Link>Modules\%(RecursiveDir)\%(FileName)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
 </Project>
