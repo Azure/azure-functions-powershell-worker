@@ -6,8 +6,8 @@ trigger:
       - v3.x/*
 
 schedules:
-- cron: "0 0 * * *"
-  displayName: Daily midnight build
+- cron: "0 2 * * *"
+  displayName: Daily 2 AM build
   branches:
     include:
     - dev
@@ -24,7 +24,10 @@ resources:
       type: git
       name: 1ESPipelineTemplates/1ESPipelineTemplates
       ref: refs/tags/release
-
+      ${{ if eq( variables['Build.Reason'], 'Schedule' ) }}:
+        demands:
+        - Priority -equals Low
+        
 variables:
   Configuration: Release
   buildNumber: $[ counter('build', 4000) ] # Start higher than the versions from the previous pipeline. Every build (pr or branch) will increment.

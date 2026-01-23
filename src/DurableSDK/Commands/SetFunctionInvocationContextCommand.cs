@@ -18,6 +18,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
     {
         internal const string ContextKey = "OrchestrationContext";
         private const string DurableClientKey = "DurableClient";
+        private const string InvocationIdKey = "InvocationId";
 
         [Parameter(Mandatory = true, ParameterSetName = ContextKey)]
         public OrchestrationContext OrchestrationContext { get; set; }
@@ -27,6 +28,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
         /// </summary>
         [Parameter(Mandatory = true, ParameterSetName = DurableClientKey)]
         public object DurableClient { get; set; }
+
+        /// <summary>
+        /// The invocation id.
+        /// </summary>
+        [Parameter(Mandatory = true, ParameterSetName = InvocationIdKey)]
+        public string InvocationId { get; set; }
 
         [Parameter(Mandatory = true, ParameterSetName = "Clear")]
         public SwitchParameter Clear { get; set; }
@@ -44,11 +51,16 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable.Commands
                     privateData[DurableClientKey] = DurableClient;
                     break;
 
+                case InvocationIdKey:
+                    privateData[InvocationIdKey] = InvocationId;
+                    break;
+
                 default:
                     if (Clear.IsPresent)
                     {
                         privateData.Remove(ContextKey);
                         privateData.Remove(DurableClientKey);
+                        privateData.Remove(InvocationIdKey);
                     }
                     break;
             }
