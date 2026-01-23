@@ -36,5 +36,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         internal OrchestrationActionCollector OrchestrationActionCollector { get; } = new OrchestrationActionCollector();
 
         internal object CustomStatus { get; set; }
+
+        private readonly Lazy<string> _version;
+
+        public string Version 
+        {
+            get 
+            {
+                return _version.Value;
+            }
+        }
+
+        public OrchestrationContext()
+        {
+            _version = new Lazy<string>(() => OrchestrationVersionExtractor.GetVersionFromHistory(History));
+        }
     }
 }
