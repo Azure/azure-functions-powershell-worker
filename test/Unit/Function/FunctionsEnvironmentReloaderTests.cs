@@ -6,6 +6,7 @@
 using Moq;
 using Xunit;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
+using System;
 using System.Collections.Generic;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker.Test
@@ -22,7 +23,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var reloader = new FunctionsEnvironmentReloader(
                 logger: _mockLogger.Object,
                 setEnvironmentVariable: (name, value) => { actualEnvironmentVariables.Add(new KeyValuePair<string, string>(name, value)); },
-                setCurrentDirectory: directory => { });
+                setCurrentDirectory: directory => { },
+                clearTimeZoneCache: () => { });
 
             var requestedEnvironmentVariables = new[] {
                 new KeyValuePair<string, string>( "name1", "valueA" ),
@@ -44,7 +46,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var reloader = new FunctionsEnvironmentReloader(
                 logger: _mockLogger.Object,
                 setEnvironmentVariable: (name, value) => { },
-                setCurrentDirectory: directory => { actualNewDirectory = directory; });
+                setCurrentDirectory: directory => { actualNewDirectory = directory; },
+                clearTimeZoneCache: () => { });
 
             reloader.ReloadEnvironment(new List<KeyValuePair<string, string>>(), RequestedNewDirectory);
 
@@ -57,9 +60,33 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             var reloader = new FunctionsEnvironmentReloader(
                 logger: _mockLogger.Object,
                 setEnvironmentVariable: (name, value) => { },
-                setCurrentDirectory: directory => { Assert.True(false, "Unexpected invocation"); });
+                setCurrentDirectory: directory => { Assert.True(false, "Unexpected invocation"); },
+                clearTimeZoneCache: () => { });
 
             reloader.ReloadEnvironment(new List<KeyValuePair<string, string>>(), functionAppDirectory: null);
+        }
+
+        [Fact]
+        public void ClearsTimeZoneCacheAfterReloadingEnvironment()
+        {
+            // This test verifies that the clearTimeZoneCache action is invoked
+            // during ReloadEnvironment
+            bool clearTimeZoneCacheInvoked = false;
+
+            var reloader = new FunctionsEnvironmentReloader(
+                logger: _mockLogger.Object,
+                setEnvironmentVariable: (name, value) => { },
+                setCurrentDirectory: directory => { },
+                clearTimeZoneCache: () => { clearTimeZoneCacheInvoked = true; });
+
+            var testVariables = new[] {
+                new KeyValuePair<string, string>("TZ", "America/New_York")
+            };
+
+            reloader.ReloadEnvironment(testVariables, functionAppDirectory: null);
+
+            // Verify that the clearTimeZoneCache action was invoked
+            Assert.True(clearTimeZoneCacheInvoked, "TimeZone cache should be cleared after reloading environment");
         }
     }
 }
