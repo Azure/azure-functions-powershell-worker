@@ -24,9 +24,6 @@ resources:
       type: git
       name: 1ESPipelineTemplates/1ESPipelineTemplates
       ref: refs/tags/release
-      ${{ if eq( variables['Build.Reason'], 'Schedule' ) }}:
-        demands:
-        - Priority -equals Low
         
 variables:
   Configuration: Release
@@ -39,6 +36,9 @@ extends:
       name: 1es-pool-azfunc
       image: 1es-windows-2022
       os: windows
+      ${{ if eq( variables['Build.Reason'], 'Schedule' ) }}:
+        demands:
+        - Priority -equals Low
 
     stages:
       - stage: WindowsUnitTests
