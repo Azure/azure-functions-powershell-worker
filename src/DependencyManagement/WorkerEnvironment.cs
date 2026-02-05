@@ -16,7 +16,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
         private const string ContainerName = "CONTAINER_NAME";
         private const string LegionServiceHost = "LEGION_SERVICE_HOST";
 
-        private static readonly DateTime PowerShellSDKDeprecationDate = new DateTime(2026, 11, 10);
+        // NOTE: This is a placeholder date for when the PowerShell SDK will be deprecated. It should be updated with the actual deprecation date once it is determined.
+        private static readonly DateTime PowerShellSDKDeprecationDate = new DateTime(2028, 11, 10);
 
         public static bool IsAppService()
         {
