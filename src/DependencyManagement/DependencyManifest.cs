@@ -9,6 +9,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     using System.Collections;
     using System.Collections.Generic;
     using System.IO;
+    using System.Management.Automation;
     using System.Management.Automation.Language;
     using System.Text;
     using System.Text.RegularExpressions;
@@ -73,12 +74,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 }
 
                 // At this point, we know this is not the 'MajorVersion.*' pattern.
-                // We want to perform a very basic sanity check of the format to detect some
-                // obviously wrong cases: make sure afterMajorVersion starts with a dot,
-                // does not contain * anywhere, and ends with a word character.
-                // Not even trying to match the actual version format rules,
-                // as they are quite complex and controlled by the server side anyway.
-                if (Regex.IsMatch(afterMajorVersion, @"^(\.[^\*]*?\w)?$"))
+                // Use SemanticVersion to verify the version is a valid PowerShell
+                // module version.
+                if (SemanticVersion.TryParse(version, out SemanticVersion _))
                 {
                     return new DependencyManifestEntry(
                         name,

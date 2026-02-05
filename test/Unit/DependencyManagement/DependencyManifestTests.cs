@@ -72,8 +72,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [InlineData("@{ MyModule = '1' }", "MyModule", "1", VersionSpecificationType.ExactVersion)]
         [InlineData("@{ MyModule = '1.0' }", "MyModule", "1.0", VersionSpecificationType.ExactVersion)]
         [InlineData("@{ MyModule = '3.4.5' }", "MyModule", "3.4.5", VersionSpecificationType.ExactVersion)]
-        [InlineData("@{ MyModule = '123.45.67.89' }", "MyModule", "123.45.67.89", VersionSpecificationType.ExactVersion)]
-        [InlineData("@{ MyModule = '123.45.67.89-alpha4' }", "MyModule", "123.45.67.89-alpha4", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '3.4.5-alpha3' }", "MyModule", "3.4.5-alpha3", VersionSpecificationType.ExactVersion)]
         public void GetEntriesParsesRequirementsFileWithSingleEntry(
             string content,
             string moduleName,
@@ -125,6 +124,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [InlineData("@{ MyModule = '*.1' }")]
         [InlineData("@{ MyModule = '1.*.2' }")]
         [InlineData("@{ MyModule = '1.0.*' }")]
+        [InlineData("@{ MyModule = '123.45.67.89' }")]
+        [InlineData("@{ MyModule = '123.45.67.89-alpha4' }")]
         public void GetEntriesThrowsOnInvalidVersionSpecification(string content)
         {
             CreateRequirementsFile(content);
