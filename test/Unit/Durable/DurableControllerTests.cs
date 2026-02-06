@@ -29,6 +29,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private static readonly OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo(_contextParameterName, _orchestrationContext);
         private static readonly ILogger _testLogger = new ConsoleLogger();
 
+        static DurableControllerTests()
+        {
+            // Set up environment variable for tests
+            Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "false");
+        }
+
 
         [Fact]
         public void InitializeBindings_SetsDurableClient_ForDurableClientFunction()
