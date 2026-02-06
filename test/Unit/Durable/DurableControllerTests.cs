@@ -321,8 +321,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                     CreateParameterBinding("SomeParameter", "SomeValue")
                 };
 
-                // The external SDK is not loaded
-                _mockPowerShellServices.Setup(_ => _.isExternalDurableSdkLoaded()).Returns(false);
+                // Set up that HasExternalDurableSDK returns false (called outside of tryEnablingExternalSDK)
                 _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(false);
 
                 // This should NOT throw even though external SDK is enabled and not loaded
@@ -330,9 +329,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 durableController.InitializeBindings(inputData, out var hasExternalSDK);
 
                 Assert.False(hasExternalSDK);
-                // Verify that SDK check methods were never called for non-durable functions
+                // Verify that isExternalDurableSdkLoaded was never called due to short-circuit
                 _mockPowerShellServices.Verify(_ => _.isExternalDurableSdkLoaded(), Times.Never);
-                _mockPowerShellServices.Verify(_ => _.HasExternalDurableSDK(), Times.Once); // This is called after SDK check to determine the return value
+                // HasExternalDurableSDK is called at the end of InitializeBindings (outside of tryEnablingExternalSDK)
+                _mockPowerShellServices.Verify(_ => _.HasExternalDurableSDK(), Times.Once);
             }
             finally
             {
