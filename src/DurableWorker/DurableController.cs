@@ -31,7 +31,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
         private readonly ILogger _logger;
 
         private bool isExternalDFSdkEnabled { get; } =
-            PowerShellWorkerConfiguration.GetBoolean(Utils.ExternalDurableSdkEnvVariable) ?? false;
+            PowerShellWorkerConfiguration.GetBoolean(Utils.ExternalDurableSdkEnvVariable) ?? true;
 
         public DurableController(
             DurableFunctionInfo durableDurableFunctionInfo,
@@ -69,18 +69,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
             {
                 if (isExternalSdkLoaded)
                 {
-                    // Enable external SDK only when customer has opted-in
+                    // Enable external SDK (now true by default)
                     _powerShellServices.EnableExternalDurableSDK();
                 }
                 else
                 {
-                    // Customer attempted to enable external SDK but the module is not in the session. Default to built-in SDK.
-                    _logger.Log(isUserOnlyLog: false, LogLevel.Error, string.Format(PowerShellWorkerStrings.ExternalSDKWasNotLoaded, Utils.ExternalDurableSdkName));
+                    // Customer is configured to use the external SDK but the module is not in the session. Fail with helpful error message.
+                    throw new InvalidOperationException(string.Format(PowerShellWorkerStrings.ExternalSDKWasNotLoaded, Utils.ExternalDurableSdkName, Utils.ExternalDurableSdkEnvVariable));
                 }
             }
             else if (isExternalSdkLoaded)
             {
-                // External SDK is in the session, but customer did not explicitly enable it. Report the potential of runtime errors.
+                // External SDK is in the session, but customer explicitly disabled it. Report the potential of runtime errors.
                 _logger.Log(isUserOnlyLog: false, LogLevel.Error, String.Format(PowerShellWorkerStrings.PotentialDurableSDKClash, Utils.ExternalDurableSdkName, Utils.ExternalDurableSdkEnvVariable));
             }
         }

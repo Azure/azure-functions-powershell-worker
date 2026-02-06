@@ -368,7 +368,7 @@
     <value>Operation '{0}' expected '{1}' result(s) but received '{2}'.</value>
   </data>
   <data name="ExternalSDKWasNotLoaded" xml:space="preserve">
-    <value>The external Durable Functions SDK is enabled but it cannot be used because it was not loaded onto the current PowerShell session. Please add `Import-Module -Name {0} -ErrorAction Stop` to your profile.ps1 so it may be used. Defaulting to built-in SDK.</value>
+    <value>Use of the built-in Durable Functions SDK is disabled by default starting in PowerShell 7.6. Please ensure the {0} module is present and add `Import-Module -Name {0} -ErrorAction Stop` to your profile.ps1 so it may be used, or explicitly opt-in to the built-in SDK using the {1} setting. For more information, see https://aka.ms/durable-powershell-sdk</value>
   </data>
   <data name="MultipleExternalSDKsInSession" xml:space="preserve">
     <value>Get-Module returned '{0}' instances of '{1}' in the PowerShell session, but only 1 or 0 are expected. This may create runtime errors. Please ensure your script only imports a single version of '{0}' in your profile.ps1. The modules currently in session are:\n '{2}'.</value>
