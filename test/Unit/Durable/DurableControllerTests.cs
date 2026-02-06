@@ -268,30 +268,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         [InlineData(null)] // Orchestration function
         internal void ExternalDurableSdkIsNotConfiguredByDefault(string durableClientBindingName)
         {
-            DurableFunctionType durableFunctionType;
-            if (durableClientBindingName != null)
-            {
-                durableFunctionType = DurableFunctionType.None; // Durable client uses Type.None
-            }
-            else
-            {
-                durableFunctionType = DurableFunctionType.OrchestrationFunction;
-            }
-
-            var durableController = CreateDurableController(durableFunctionType, durableClientBindingName);
-            var inputData = GetDurableBindings(durableFunctionType);
-
-            if (durableFunctionType == DurableFunctionType.None)
-            {
-                _mockPowerShellServices.Setup(_ => _.SetDurableClient(It.IsAny<object>()));
-            }
-            else
-            {
-                _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
-                    It.IsAny<ParameterBinding>(),
-                    out It.Ref<IExternalOrchestrationInvoker>.IsAny)).Returns(_orchestrationBindingInfo);
-                _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
-            }
+            var (durableController, inputData) = CreateDurableControllerForTest(durableClientBindingName);
 
             _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(false);
             _mockPowerShellServices.Setup(_ => _.EnableExternalDurableSDK()).Throws(new Exception("should not be called"));
@@ -312,30 +289,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 // opt-in to external DF SDK
                 Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "true");
 
-                DurableFunctionType durableFunctionType;
-                if (durableClientBindingName != null)
-                {
-                    durableFunctionType = DurableFunctionType.None; // Durable client uses Type.None
-                }
-                else
-                {
-                    durableFunctionType = DurableFunctionType.OrchestrationFunction;
-                }
-
-                var durableController = CreateDurableController(durableFunctionType, durableClientBindingName);
-                var inputData = GetDurableBindings(durableFunctionType);
-
-                if (durableFunctionType == DurableFunctionType.None)
-                {
-                    _mockPowerShellServices.Setup(_ => _.SetDurableClient(It.IsAny<object>()));
-                }
-                else
-                {
-                    _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
-                        It.IsAny<ParameterBinding>(),
-                        out It.Ref<IExternalOrchestrationInvoker>.IsAny)).Returns(_orchestrationBindingInfo);
-                    _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
-                }
+                var (durableController, inputData) = CreateDurableControllerForTest(durableClientBindingName);
 
                 _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(true);
                 _mockPowerShellServices.Setup(_ => _.EnableExternalDurableSDK());
@@ -376,8 +330,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 durableController.InitializeBindings(inputData, out var hasExternalSDK);
 
                 Assert.False(hasExternalSDK);
-                // Verify that isExternalDurableSdkLoaded was never called for non-durable functions
+                // Verify that SDK check methods were never called for non-durable functions
                 _mockPowerShellServices.Verify(_ => _.isExternalDurableSdkLoaded(), Times.Never);
+                _mockPowerShellServices.Verify(_ => _.HasExternalDurableSDK(), Times.Once); // This is called after SDK check to determine the return value
             }
             finally
             {
@@ -396,6 +351,40 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                             _mockPowerShellServices.Object,
                             _mockOrchestrationInvoker.Object,
                             _testLogger);
+        }
+
+        /// <summary>
+        /// Helper method to create a DurableController and input data for tests.
+        /// Handles the conversion from durableClientBindingName to DurableFunctionType and sets up mocks.
+        /// </summary>
+        private (DurableController controller, IList<ParameterBinding> inputData) CreateDurableControllerForTest(string durableClientBindingName)
+        {
+            DurableFunctionType durableFunctionType;
+            if (durableClientBindingName != null)
+            {
+                durableFunctionType = DurableFunctionType.None; // Durable client uses Type.None
+            }
+            else
+            {
+                durableFunctionType = DurableFunctionType.OrchestrationFunction;
+            }
+
+            var durableController = CreateDurableController(durableFunctionType, durableClientBindingName);
+            var inputData = GetDurableBindings(durableFunctionType);
+
+            if (durableFunctionType == DurableFunctionType.None)
+            {
+                _mockPowerShellServices.Setup(_ => _.SetDurableClient(It.IsAny<object>()));
+            }
+            else
+            {
+                _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
+                    It.IsAny<ParameterBinding>(),
+                    out It.Ref<IExternalOrchestrationInvoker>.IsAny)).Returns(_orchestrationBindingInfo);
+                _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
+            }
+
+            return (durableController, inputData);
         }
 
         private static ParameterBinding CreateParameterBinding(string parameterName, object value)
