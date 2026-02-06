@@ -64,6 +64,13 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Durable
 
         private void tryEnablingExternalSDK()
         {
+            // Short-circuit if this is not a durable function
+            // This prevents non-durable functions from failing when external SDK is enabled by default
+            if (_durableFunctionInfo.Type == DurableFunctionType.None && !_durableFunctionInfo.IsDurableClient)
+            {
+                return;
+            }
+
             var isExternalSdkLoaded = _powerShellServices.isExternalDurableSdkLoaded();
             if (isExternalDFSdkEnabled)
             {
