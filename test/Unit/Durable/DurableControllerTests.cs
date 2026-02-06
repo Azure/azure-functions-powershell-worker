@@ -264,11 +264,21 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         [Theory]
-        [InlineData(DurableFunctionType.None)]
-        [InlineData(DurableFunctionType.OrchestrationFunction)]
-        internal void ExternalDurableSdkIsNotConfiguredByDefault(DurableFunctionType durableFunctionType)
+        [InlineData("DurableClientBindingName")] // Durable client function
+        [InlineData(null)] // Orchestration function
+        internal void ExternalDurableSdkIsNotConfiguredByDefault(string durableClientBindingName)
         {
-            var durableController = CreateDurableController(durableFunctionType);
+            DurableFunctionType durableFunctionType;
+            if (durableClientBindingName != null)
+            {
+                durableFunctionType = DurableFunctionType.None; // Durable client uses Type.None
+            }
+            else
+            {
+                durableFunctionType = DurableFunctionType.OrchestrationFunction;
+            }
+
+            var durableController = CreateDurableController(durableFunctionType, durableClientBindingName);
             var inputData = GetDurableBindings(durableFunctionType);
 
             if (durableFunctionType == DurableFunctionType.None)
@@ -293,16 +303,26 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         [Theory]
-        [InlineData(DurableFunctionType.None)]
-        [InlineData(DurableFunctionType.OrchestrationFunction)]
-        internal void ExternalDurableSdkCanBeEnabled(DurableFunctionType durableFunctionType)
+        [InlineData("DurableClientBindingName")] // Durable client function
+        [InlineData(null)] // Orchestration function
+        internal void ExternalDurableSdkCanBeEnabled(string durableClientBindingName)
         {
             try
             {
                 // opt-in to external DF SDK
                 Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "true");
 
-                var durableController = CreateDurableController(durableFunctionType);
+                DurableFunctionType durableFunctionType;
+                if (durableClientBindingName != null)
+                {
+                    durableFunctionType = DurableFunctionType.None; // Durable client uses Type.None
+                }
+                else
+                {
+                    durableFunctionType = DurableFunctionType.OrchestrationFunction;
+                }
+
+                var durableController = CreateDurableController(durableFunctionType, durableClientBindingName);
                 var inputData = GetDurableBindings(durableFunctionType);
 
                 if (durableFunctionType == DurableFunctionType.None)
@@ -325,6 +345,39 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 Assert.True(hasExternalSDK);
                 _mockPowerShellServices.Verify(_ => _.EnableExternalDurableSDK(), Times.Once);
 
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "false");
+            }
+        }
+
+        [Fact]
+        internal void NonDurableFunction_DoesNotFailWhenExternalSDKEnabledByDefault()
+        {
+            try
+            {
+                // Enable external DF SDK by default (the new behavior)
+                Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "true");
+
+                // Create a non-durable function (Type = None, no client binding)
+                var durableController = CreateDurableController(DurableFunctionType.None);
+                var inputData = new[]
+                {
+                    CreateParameterBinding("SomeParameter", "SomeValue")
+                };
+
+                // The external SDK is not loaded
+                _mockPowerShellServices.Setup(_ => _.isExternalDurableSdkLoaded()).Returns(false);
+                _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(false);
+
+                // This should NOT throw even though external SDK is enabled and not loaded
+                // because this is not a durable function
+                durableController.InitializeBindings(inputData, out var hasExternalSDK);
+
+                Assert.False(hasExternalSDK);
+                // Verify that isExternalDurableSdkLoaded was never called for non-durable functions
+                _mockPowerShellServices.Verify(_ => _.isExternalDurableSdkLoaded(), Times.Never);
             }
             finally
             {
