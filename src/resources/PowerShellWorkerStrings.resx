@@ -374,7 +374,7 @@
     <value>Get-Module returned '{0}' instances of '{1}' in the PowerShell session, but only 1 or 0 are expected. This may create runtime errors. Please ensure your script only imports a single version of '{0}' in your profile.ps1. The modules currently in session are:\n '{2}'.</value>
   </data>
   <data name="PotentialDurableSDKClash" xml:space="preserve">
-    <value>The external Durable Functions SDK is not enabled but '{0}' has been imported to the PowerShell session. This may create runtime conflicts between the built-in and external Durable Functions CommandLets. If you mean to use the external Durable Functions SDK, please set the enviroment variable '{1}' to "true"</value>
+    <value>Use of the built-in Durable Functions SDK is enabled by the environment variable '{1}', but '{0}' has also been imported to the PowerShell session. This may create runtime conflicts between the built-in and external Durable Functions cmdlets. If you mean to use the built-in Durable Functions SDK, please remove the '{0}' module. For more information, see https://aka.ms/durable-powershell-sdk</value>
   </data>
   <data name="UtilizingExternalDurableSDK" xml:space="preserve">
     <value>Utilizing external Durable Functions SDK: '{0}'.</value>
