@@ -57,7 +57,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
         private readonly static List<ParameterBinding> s_testInputData;
 
         static PowerShellManagerTests()
-        {
+        {    
+            // Set up environment variable for tests
+            Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "false");
+
             s_funcDirectory = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "TestScripts", "PowerShell");
             s_testLogger = new ConsoleLogger();
             s_testInputData = new List<ParameterBinding>

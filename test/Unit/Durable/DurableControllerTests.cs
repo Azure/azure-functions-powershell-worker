@@ -29,6 +29,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         private static readonly OrchestrationBindingInfo _orchestrationBindingInfo = new OrchestrationBindingInfo(_contextParameterName, _orchestrationContext);
         private static readonly ILogger _testLogger = new ConsoleLogger();
 
+        static DurableControllerTests()
+        {
+            // Set up environment variable for tests
+            Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "false");
+        }
+
 
         [Fact]
         public void InitializeBindings_SetsDurableClient_ForDurableClientFunction()
@@ -258,24 +264,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         [Theory]
-        [InlineData(DurableFunctionType.None)]
-        [InlineData(DurableFunctionType.OrchestrationFunction)]
+        [InlineData(DurableFunctionType.None)] // Durable client function
+        [InlineData(DurableFunctionType.OrchestrationFunction)] // Orchestration function
         internal void ExternalDurableSdkIsNotConfiguredByDefault(DurableFunctionType durableFunctionType)
         {
-            var durableController = CreateDurableController(durableFunctionType);
-            var inputData = GetDurableBindings(durableFunctionType);
-
-            if (durableFunctionType == DurableFunctionType.None)
-            {
-                _mockPowerShellServices.Setup(_ => _.SetDurableClient(It.IsAny<object>()));
-            }
-            else
-            {
-                _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
-                    It.IsAny<ParameterBinding>(),
-                    out It.Ref<IExternalOrchestrationInvoker>.IsAny)).Returns(_orchestrationBindingInfo);
-                _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
-            }
+            var (durableController, inputData) = CreateDurableControllerForTest(durableFunctionType);
 
             _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(false);
             _mockPowerShellServices.Setup(_ => _.EnableExternalDurableSDK()).Throws(new Exception("should not be called"));
@@ -287,8 +280,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
         }
 
         [Theory]
-        [InlineData(DurableFunctionType.None)]
-        [InlineData(DurableFunctionType.OrchestrationFunction)]
+        [InlineData(DurableFunctionType.None)] // Durable client function
+        [InlineData(DurableFunctionType.OrchestrationFunction)] // Orchestration function
         internal void ExternalDurableSdkCanBeEnabled(DurableFunctionType durableFunctionType)
         {
             try
@@ -296,20 +289,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 // opt-in to external DF SDK
                 Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "true");
 
-                var durableController = CreateDurableController(durableFunctionType);
-                var inputData = GetDurableBindings(durableFunctionType);
-
-                if (durableFunctionType == DurableFunctionType.None)
-                {
-                    _mockPowerShellServices.Setup(_ => _.SetDurableClient(It.IsAny<object>()));
-                }
-                else
-                {
-                    _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
-                        It.IsAny<ParameterBinding>(),
-                        out It.Ref<IExternalOrchestrationInvoker>.IsAny)).Returns(_orchestrationBindingInfo);
-                    _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
-                }
+                var (durableController, inputData) = CreateDurableControllerForTest(durableFunctionType);
 
                 _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(true);
                 _mockPowerShellServices.Setup(_ => _.EnableExternalDurableSDK());
@@ -319,6 +299,40 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                 Assert.True(hasExternalSDK);
                 _mockPowerShellServices.Verify(_ => _.EnableExternalDurableSDK(), Times.Once);
 
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "false");
+            }
+        }
+
+        [Fact]
+        internal void NonDurableFunction_DoesNotFailWhenExternalSDKEnabledByDefault()
+        {
+            try
+            {
+                // Enable external DF SDK by default (the new behavior)
+                Environment.SetEnvironmentVariable("ExternalDurablePowerShellSDK", "true");
+
+                // Create a non-durable function (Type = None, no client binding)
+                var durableController = CreateDurableController(DurableFunctionType.None);
+                var inputData = new[]
+                {
+                    CreateParameterBinding("SomeParameter", "SomeValue")
+                };
+
+                // Set up that HasExternalDurableSDK returns false (called outside of tryEnablingExternalSDK)
+                _mockPowerShellServices.Setup(_ => _.HasExternalDurableSDK()).Returns(false);
+
+                // This should NOT throw even though external SDK is enabled and not loaded
+                // because this is not a durable function
+                durableController.InitializeBindings(inputData, out var hasExternalSDK);
+
+                Assert.False(hasExternalSDK);
+                // Verify that isExternalDurableSdkLoaded was never called due to short-circuit
+                _mockPowerShellServices.Verify(_ => _.isExternalDurableSdkLoaded(), Times.Never);
+                // HasExternalDurableSDK is called at the end of InitializeBindings (outside of tryEnablingExternalSDK)
+                _mockPowerShellServices.Verify(_ => _.HasExternalDurableSDK(), Times.Once);
             }
             finally
             {
@@ -337,6 +351,33 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.Durable
                             _mockPowerShellServices.Object,
                             _mockOrchestrationInvoker.Object,
                             _testLogger);
+        }
+
+        /// <summary>
+        /// Helper method to create a DurableController and input data for tests.
+        /// Sets up mocks based on the DurableFunctionType.
+        /// </summary>
+        private (DurableController controller, IList<ParameterBinding> inputData) CreateDurableControllerForTest(DurableFunctionType durableFunctionType)
+        {
+            // Durable client functions use Type.None with a binding name
+            string durableClientBindingName = durableFunctionType == DurableFunctionType.None ? "DurableClientBindingName" : null;
+            
+            var durableController = CreateDurableController(durableFunctionType, durableClientBindingName);
+            var inputData = GetDurableBindings(durableFunctionType);
+
+            if (durableFunctionType == DurableFunctionType.None)
+            {
+                _mockPowerShellServices.Setup(_ => _.SetDurableClient(It.IsAny<object>()));
+            }
+            else
+            {
+                _mockPowerShellServices.Setup(_ => _.SetOrchestrationContext(
+                    It.IsAny<ParameterBinding>(),
+                    out It.Ref<IExternalOrchestrationInvoker>.IsAny)).Returns(_orchestrationBindingInfo);
+                _mockOrchestrationInvoker.Setup(_ => _.SetExternalInvoker(It.IsAny<IExternalOrchestrationInvoker>()));
+            }
+
+            return (durableController, inputData);
         }
 
         private static ParameterBinding CreateParameterBinding(string parameterName, object value)
