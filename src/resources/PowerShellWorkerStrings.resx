@@ -391,4 +391,31 @@
   <data name="AutomaticUpgradesAreDisabled" xml:space="preserve">
     <value>Automatic upgrades are disabled in PowerShell 7.6 function apps. This warning should not be emitted until PowerShell 7.6's End of Life date, at which time, more guidance will be available regarding how to upgrade your function app to the latest version. </value>
   </data>
+  <data name="NoV2FunctionsFound" xml:space="preserve">
+    <value>No V2 (worker-indexed) functions found. Falling back to host-based function indexing.</value>
+  </data>
+  <data name="V2FunctionsIndexed" xml:space="preserve">
+    <value>Successfully indexed {0} V2 function(s) in {1}ms.</value>
+  </data>
+  <data name="FailedToIndexFile" xml:space="preserve">
+    <value>Failed to index PowerShell file '{0}': {1}</value>
+  </data>
+  <data name="UnknownBindingAttribute" xml:space="preserve">
+    <value>Unknown binding attribute type: '{0}'. Ensure the attribute is a recognized trigger, input, or output binding.</value>
+  </data>
+  <data name="PipelineOutputLeakWarning" xml:space="preserve">
+    <value>Function '{0}' produced {1} pipeline output objects but the return binding expects a single value. Extra objects may be unintentional pipeline output. Use '$null = expression' or '[void]' to suppress unwanted output.</value>
+  </data>
+  <data name="MultipleTriggerBindings" xml:space="preserve">
+    <value>Function '{0}' in '{1}' has multiple trigger bindings ({2}). A function must have exactly one trigger.</value>
+  </data>
+  <data name="DuplicateBindingName" xml:space="preserve">
+    <value>Function '{0}' in '{1}' has duplicate binding name '{2}'. Each binding name must be unique within a function.</value>
+  </data>
+  <data name="MissingRequiredBindingProperty" xml:space="preserve">
+    <value>Function '{0}' in '{1}': binding '{2}' of type '{3}' is missing required property '{4}'.</value>
+  </data>
+  <data name="NoTriggerBinding" xml:space="preserve">
+    <value>Function '{0}' in '{1}' has no trigger binding. A function must have exactly one trigger.</value>
+  </data>
 </root>

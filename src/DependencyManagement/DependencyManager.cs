@@ -280,6 +280,14 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 throw new ArgumentException("Empty request metadata directory path", nameof(requestMetadataDirectory));
             }
 
+            // V2 (worker-indexed): directory IS the app root.
+            // V1: directory is FunctionAppRoot/FunctionName/, go up one level.
+            if (File.Exists(Path.Join(requestMetadataDirectory, "requirements.psd1"))
+                || File.Exists(Path.Join(requestMetadataDirectory, "host.json")))
+            {
+                return requestMetadataDirectory;
+            }
+
             return Path.GetFullPath(Path.Join(requestMetadataDirectory, ".."));
         }
 

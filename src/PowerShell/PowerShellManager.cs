@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Reflection;
 using Microsoft.Azure.Functions.PowerShellWorker.Durable;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
+using Microsoft.Azure.Functions.PowerShellWorker.Attributes;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 using LogLevel = Microsoft.Azure.WebJobs.Script.Grpc.Messages.RpcLog.Types.Level;
 
@@ -51,7 +52,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
 
         static PowerShellManager()
         {
-            // Set the type accelerators for 'HttpResponseContext' and 'HttpResponseContext'.
+            // Set the type accelerators for 'HttpResponseContext' and 'HttpRequestContext'.
             // We probably will expose more public types from the worker in future for the interop between worker and the 'PowerShellWorker' module.
             // But it's most likely only 'HttpResponseContext' and 'HttpResponseContext' are supposed to be used directly by users, so we only add
             // type accelerators for these two explicitly.
@@ -59,6 +60,64 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
             var addMethod = accelerator.GetMethod("Add", new Type[] { typeof(string), typeof(Type) });
             addMethod.Invoke(null, new object[] { "HttpResponseContext", typeof(HttpResponseContext) });
             addMethod.Invoke(null, new object[] { "HttpRequestContext", typeof(HttpRequestContext) });
+
+            // V2 programming model: auto-register type accelerators for all binding attribute types
+            // so users can write [HttpTrigger()] etc. without 'using namespace'.
+            // Discovers all concrete classes deriving from our base attribute classes via reflection.
+            RegisterBindingAttributeAccelerators(addMethod);
+        }
+
+        /// <summary>
+        /// Discovers all public concrete attribute classes that derive from TriggerBindingBaseAttribute,
+        /// InputBindingBaseAttribute, OutputBindingBaseAttribute, or AzFunctionAttribute and registers
+        /// them as PowerShell type accelerators using their short name (without "Attribute" suffix).
+        /// </summary>
+        private static void RegisterBindingAttributeAccelerators(MethodInfo addMethod)
+        {
+            var baseTypes = new[]
+            {
+                typeof(TriggerBindingBaseAttribute),
+                typeof(InputBindingBaseAttribute),
+                typeof(OutputBindingBaseAttribute),
+                typeof(AzFunctionAttribute),
+            };
+
+            var assembly = typeof(AzFunctionAttribute).Assembly;
+
+            foreach (var type in assembly.GetExportedTypes())
+            {
+                if (type.IsAbstract || type.IsInterface)
+                    continue;
+
+                bool isBindingAttr = false;
+                foreach (var baseType in baseTypes)
+                {
+                    if (baseType.IsAssignableFrom(type))
+                    {
+                        isBindingAttr = true;
+                        break;
+                    }
+                }
+
+                if (!isBindingAttr)
+                    continue;
+
+                // Strip "Attribute" suffix for the short name
+                var shortName = type.Name;
+                if (shortName.EndsWith("Attribute", StringComparison.OrdinalIgnoreCase))
+                {
+                    shortName = shortName.Substring(0, shortName.Length - "Attribute".Length);
+                }
+
+                try
+                {
+                    addMethod.Invoke(null, new object[] { shortName, type });
+                }
+                catch
+                {
+                    // If a name is already registered, skip it
+                }
+            }
         }
 
         /// <summary>
@@ -247,7 +306,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
                         {
                             _pwsh.AddCommand(Utils.TracePipelineObjectCmdlet);
                         }
-                        return ExecuteUserCode(isActivityFunction || FunctionInfoUtilities.hasAssistantSkillTrigger(functionInfo), outputBindings);
+                        return ExecuteUserCode(isActivityFunction || FunctionInfoUtilities.hasAssistantSkillTrigger(functionInfo), outputBindings, functionInfo);
                     }
                 }
                 catch (RuntimeException e)
@@ -315,10 +374,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.PowerShell
         /// <summary>
         /// Execution a function fired by a trigger or an activity function scheduled by an orchestration.
         /// </summary>
-        private Hashtable ExecuteUserCode(bool addPipelineOutput, IDictionary outputBindings)
+        private Hashtable ExecuteUserCode(bool addPipelineOutput, IDictionary outputBindings, AzFunctionInfo functionInfo = null)
         {
             var pipelineItems = _pwsh.InvokeAndClearCommands<object>();
             var result = new Hashtable(outputBindings, StringComparer.OrdinalIgnoreCase);
+
+            // Warn about potential pipeline output leaks: if the function produces multiple
+            // pipeline objects, some may be unintentional (e.g., cmdlets leaking output).
+            if (functionInfo != null && pipelineItems.Count > 1)
+            {
+                Logger.Log(isUserOnlyLog: false, LogLevel.Warning,
+                    string.Format(PowerShellWorkerStrings.PipelineOutputLeakWarning,
+                        functionInfo.FuncName, pipelineItems.Count));
+            }
+
             if (addPipelineOutput)
             {
                 var returnValue = FunctionReturnValueBuilder.CreateReturnValueFromFunctionOutput(pipelineItems);

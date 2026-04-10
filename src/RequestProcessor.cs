@@ -14,6 +14,7 @@ using Microsoft.Azure.Functions.PowerShellWorker.PowerShell;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
 using Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement;
 using Microsoft.Azure.Functions.PowerShellWorker.DurableWorker;
+using Microsoft.Azure.Functions.PowerShellWorker.WorkerIndexing;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
@@ -71,6 +72,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.InvocationCancel, ProcessInvocationCancelRequest);
 
             _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadRequest, ProcessFunctionEnvironmentReloadRequest);
+
+            // V2 programming model: host requests worker to index functions
+            _requestHandlers.Add(StreamingMessage.ContentOneofCase.FunctionsMetadataRequest, ProcessFunctionMetadataRequest);
         }
 
         internal async Task ProcessRequestLoop()
@@ -226,7 +230,11 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     var rpcLogger = new RpcLogger(_msgStream);
                     rpcLogger.SetContext(request.RequestId, null);
 
-                    _dependencyManager = new DependencyManager(request.FunctionLoadRequest.Metadata.Directory, logger: rpcLogger);
+                    // For V2, FunctionAppRootPath is already set correctly by ProcessFunctionMetadataRequest.
+                    // For V1, Metadata.Directory is FunctionAppRoot/FunctionName/ and DependencyManager goes up one level.
+                    // Use FunctionAppRootPath if available (V2), otherwise fall back to Metadata.Directory (V1).
+                    var dependencyManagerPath = FunctionLoader.FunctionAppRootPath ?? request.FunctionLoadRequest.Metadata.Directory;
+                    _dependencyManager = new DependencyManager(dependencyManagerPath, logger: rpcLogger);
                     var managedDependenciesPath = _dependencyManager.Initialize(request, rpcLogger);
 
                     SetupAppRootPathAndModulePath(functionLoadRequest, managedDependenciesPath);
@@ -376,6 +384,56 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             return null;
         }
 
+        /// <summary>
+        /// Handles the FunctionsMetadataRequest from the host (V2 programming model / worker indexing).
+        /// Scans the function app directory for PowerShell functions defined with [AzFunction()] attributes
+        /// and returns their metadata to the host.
+        /// </summary>
+        internal StreamingMessage ProcessFunctionMetadataRequest(StreamingMessage request)
+        {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+
+            StreamingMessage response = NewStreamingMessageTemplate(
+                request.RequestId,
+                StreamingMessage.ContentOneofCase.FunctionMetadataResponse,
+                out StatusResult status);
+
+            try
+            {
+                var functionAppDirectory = request.FunctionsMetadataRequest.FunctionAppDirectory;
+
+                // Set the FunctionAppRootPath early so profile.ps1 discovery works for V2
+                FunctionLoader.SetFunctionAppRootPath(functionAppDirectory);
+
+                var rpcLogger = new RpcLogger(_msgStream);
+                rpcLogger.SetContext(request.RequestId, null);
+
+                var indexedFunctions = FunctionIndexer.IndexFunctions(functionAppDirectory, rpcLogger);
+                var functionList = new List<RpcFunctionMetadata>(indexedFunctions);
+
+                if (functionList.Count == 0)
+                {
+                    // No V2 functions found — tell the host to fall back to its own indexing (V1 function.json)
+                    response.FunctionMetadataResponse.UseDefaultMetadataIndexing = true;
+                    rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace, PowerShellWorkerStrings.NoV2FunctionsFound);
+                }
+                else
+                {
+                    response.FunctionMetadataResponse.FunctionMetadataResults.AddRange(functionList);
+                    rpcLogger.Log(isUserOnlyLog: false, LogLevel.Trace,
+                        string.Format(PowerShellWorkerStrings.V2FunctionsIndexed, functionList.Count, stopwatch.ElapsedMilliseconds));
+                }
+            }
+            catch (Exception e)
+            {
+                status.Status = StatusResult.Types.Status.Failure;
+                status.Exception = e.ToRpcException();
+            }
+
+            return response;
+        }
+
         internal StreamingMessage ProcessFunctionEnvironmentReloadRequest(StreamingMessage request)
         {
             var stopwatch = new Stopwatch();
@@ -437,6 +495,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     break;
                 case StreamingMessage.ContentOneofCase.FunctionEnvironmentReloadResponse:
                     response.FunctionEnvironmentReloadResponse = new FunctionEnvironmentReloadResponse() { Result = status };
+                    break;
+                case StreamingMessage.ContentOneofCase.FunctionMetadataResponse:
+                    response.FunctionMetadataResponse = new FunctionMetadataResponse() { Result = status };
                     break;
                 default:
                     throw new InvalidOperationException("Unreachable code.");

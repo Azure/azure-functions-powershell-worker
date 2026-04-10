@@ -17,7 +17,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             funcHostProcess.StartInfo.RedirectStandardError = true;
             funcHostProcess.StartInfo.RedirectStandardOutput = true;
             funcHostProcess.StartInfo.CreateNoWindow = true;
-            funcHostProcess.StartInfo.WorkingDirectory = Path.Combine(rootDir, String.Format(@"test{0}E2E{0}TestFunctionApp", Path.DirectorySeparatorChar));
+            funcHostProcess.StartInfo.WorkingDirectory = Path.Combine(rootDir, String.Format(@"test{0}E2E{0}TestFunctionAppV2", Path.DirectorySeparatorChar));
             funcHostProcess.StartInfo.FileName = Path.Combine(rootDir, "test", "E2E", "Azure.Functions.Cli", funcName);
             funcHostProcess.StartInfo.ArgumentList.Add("start");
             if (enableAuth)

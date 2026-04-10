@@ -490,6 +490,30 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             return powerShellManager.InvokeFunction(functionInfo, triggerMetadata, null, retryContext, s_testInputData, new FunctionInvocationPerformanceStopwatch(), null);
         }
 
+        [Fact]
+        public void PipelineLeakWarningLoggedForMultiplePipelineOutputs()
+        {
+            string path = Path.Join(s_funcDirectory, "testPipelineLeak.ps1");
+            var (functionInfo, testManager) = PrepareFunction(path, string.Empty);
+
+            try
+            {
+                FunctionMetadata.RegisterFunctionMetadata(testManager.InstanceId, functionInfo.OutputBindings);
+                s_testLogger.FullLog.Clear();
+
+                Hashtable result = InvokeFunction(testManager, functionInfo);
+
+                // Should have a warning about pipeline output leak
+                Assert.Contains(s_testLogger.FullLog,
+                    log => log.Contains("Warning", StringComparison.OrdinalIgnoreCase)
+                        && log.Contains("pipeline output", StringComparison.OrdinalIgnoreCase));
+            }
+            finally
+            {
+                FunctionMetadata.UnregisterFunctionMetadata(testManager.InstanceId);
+            }
+        }
+
         private class ContextValidatingLogger : ILogger
         {
             private bool _isContextSet = false;

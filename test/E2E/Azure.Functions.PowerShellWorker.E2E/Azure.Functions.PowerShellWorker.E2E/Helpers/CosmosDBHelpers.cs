@@ -3,6 +3,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Azure.Identity;
 using Microsoft.Azure.Cosmos;
 
 namespace Azure.Functions.PowerShell.Tests.E2E
@@ -20,10 +21,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
         static CosmosDBHelpers()
         {
-            var builder = new System.Data.Common.DbConnectionStringBuilder();
-            builder.ConnectionString = Constants.CosmosDB.CosmosDBConnectionStringSetting;
-            var serviceUri = builder["AccountEndpoint"].ToString();
-            _cosmosDbClient = new CosmosClient(serviceUri, builder["AccountKey"].ToString());
+            _cosmosDbClient = new CosmosClient(Constants.CosmosDB.CosmosDBAccountEndpoint, new DefaultAzureCredential());
         }
 
         // keep

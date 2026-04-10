@@ -56,7 +56,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Utility
                             description: null));
                 }
 
-                // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows
+                // Setting the execution policy on macOS and Linux throws an exception so only update it on Windows.
+                // This must be set unconditionally (regardless of FunctionAppRootPath) because the ISS is a singleton
+                // created once at worker startup — before V2 worker indexing sets FunctionAppRootPath.
                 if(Platform.IsWindows)
                 {
                     // This sets the execution policy on Windows to Unrestricted which is required to run the user's function scripts on

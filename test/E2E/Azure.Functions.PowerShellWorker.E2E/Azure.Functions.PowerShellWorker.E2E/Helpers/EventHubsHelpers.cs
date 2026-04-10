@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using Azure.Identity;
 using Azure.Messaging.EventHubs;
 using Azure.Messaging.EventHubs.Producer;
 using Newtonsoft.Json;
@@ -30,7 +31,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                 events.Add(evt);
             }
 
-            EventHubProducerClient eventHubClient = new EventHubProducerClient(Constants.EventHubs.EventHubsConnectionStringSetting, eventHubName);
+            EventHubProducerClient eventHubClient = new EventHubProducerClient(Constants.EventHubs.EventHubsNamespace, eventHubName, new DefaultAzureCredential());
             await eventHubClient.SendAsync(events);
         }
 
@@ -47,7 +48,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
                 events.Add(evt);
             }
 
-            EventHubProducerClient eventHubClient = new EventHubProducerClient(Constants.EventHubs.EventHubsConnectionStringSetting, eventHubName);
+            EventHubProducerClient eventHubClient = new EventHubProducerClient(Constants.EventHubs.EventHubsNamespace, eventHubName, new DefaultAzureCredential());
             await eventHubClient.SendAsync(events);
         }
     }
