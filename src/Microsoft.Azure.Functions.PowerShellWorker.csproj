@@ -21,13 +21,13 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
 
     <ItemGroup>
         <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
-        <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.6.0-preview.5" />
+        <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.6.0" />
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
         <PackageReference Include="Google.Protobuf" Version="3.30.2" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
-        <PackageReference Include="System.ServiceModel.NetTcp" Version="8.1.2" />
-        <PackageReference Include="System.ServiceModel.Http" Version="8.1.2" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+        <PackageReference Include="System.ServiceModel.NetTcp" Version="10.0.652802" />
+        <PackageReference Include="System.ServiceModel.Http" Version="10.0.652802" />
     </ItemGroup>
 
     <ItemGroup>
