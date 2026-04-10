@@ -4,7 +4,7 @@
 |---|---|
 |dev|[![Build Status](https://dev.azure.com/azfunc/public/_apis/build/status%2Fazure%2Fazure-functions-powershell-worker%2Fpowershell-worker.public?repoName=Azure%2Fazure-functions-powershell-worker&branchName=dev)](https://dev.azure.com/azfunc/public/_build/latest?definitionId=718&repoName=Azure%2Fazure-functions-powershell-worker&branchName=dev)|
 
-[azure-functions-logo]: https://raw.githubusercontent.com/Azure/azure-functions-cli/master/src/Azure.Functions.Cli/npm/assets/azure-functions-logo-color-raster.png
+[azure-functions-logo]: https://raw.githubusercontent.com/Azure/azure-functions-cli/refs/heads/main/eng/res/functions.png
 
 # Azure Functions PowerShell Language Worker
 
