@@ -180,7 +180,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
 
                 // When function script has #requires, not PowerShell function will be created for the Az function,
                 // and the invocation uses the file path directly.
-                string expectedResult = $"{TestStringData},ThreadJob,testBasicFunctionWithRequires.ps1";
+                string expectedResult = $"{TestStringData},Microsoft.PowerShell.ThreadJob,testBasicFunctionWithRequires.ps1";
                 Assert.Equal(expectedResult, result[TestOutputBindingName]);
             }
             finally

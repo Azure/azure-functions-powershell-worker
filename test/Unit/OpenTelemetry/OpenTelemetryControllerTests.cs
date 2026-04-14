@@ -1,4 +1,5 @@
-﻿using Moq;
+﻿#nullable enable
+using Moq;
 using System;
 using Xunit;
 
