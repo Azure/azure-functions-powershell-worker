@@ -23,10 +23,13 @@ The user must provide (or you must confirm):
 
 ### 1. Check the .NET SDK Requirement
 
-Look up the .NET SDK version required by the target PowerShell SDK at https://dotnet.microsoft.com/en-us/download/dotnet/. Update the `<TargetFramework>` in both `.csproj` files if the .NET version has changed:
+Look up the .NET SDK version required by the target PowerShell SDK. The release notes at `https://github.com/PowerShell/PowerShell/releases/tag/<releaseTag>` list the exact .NET SDK version under **Build and Packaging Improvements** (e.g., "Update .NET SDK to 8.0.419").
 
-- `src/Microsoft.Azure.Functions.PowerShellWorker.csproj`
-- `test/Unit/Microsoft.Azure.Functions.PowerShellWorker.Test.csproj`
+- Update the `<TargetFramework>` in both `.csproj` files if the .NET **major** version has changed:
+  - `src/Microsoft.Azure.Functions.PowerShellWorker.csproj`
+  - `test/Unit/Microsoft.Azure.Functions.PowerShellWorker.Test.csproj`
+
+- Update `MinimalPatch` and `DefaultPatch` in `tools/helper.psm1` (`$DotnetSDKVersionRequirements`) to match the .NET SDK patch version from the release notes. For example, if the release requires .NET SDK `8.0.419`, set both values to `'419'`.
 
 ### 2. Update the PowerShell SDK Package Version
 
