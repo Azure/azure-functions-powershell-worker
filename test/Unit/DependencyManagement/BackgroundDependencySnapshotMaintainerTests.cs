@@ -97,7 +97,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
 
                 // ReSharper disable once AccessToDisposedClosure
                 var installedSnapshotPath = maintainer.InstallAndPurgeSnapshots(() => dummyPowerShell, _mockLogger.Object);
-                Assert.Equal(null, installedSnapshotPath);
+                Assert.Null(installedSnapshotPath);
 
                 // ReSharper disable once AccessToDisposedClosure
                 _mockInstaller.Verify(

@@ -2,6 +2,8 @@
 using System;
 using Xunit;
 
+#nullable enable
+
 using Microsoft.Azure.Functions.PowerShellWorker.OpenTelemetry;
 using System.Linq;
 using Microsoft.Azure.Functions.PowerShellWorker.Utility;
