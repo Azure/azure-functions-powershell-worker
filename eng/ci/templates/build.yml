@@ -5,7 +5,7 @@ jobs:
         - output: nuget
           packagesToPush: "$(Build.ArtifactStagingDirectory)/*.nupkg"
           packageParentPath: "$(Build.ArtifactStagingDirectory)"
-          nuGetFeedType: public
+          nuGetFeedType: internal
           publishVstsFeed: "public/infra"
           sbomPackageName: "Azure Functions PowerShell Worker"
           sbomBuildComponentPath: "$(Build.SourcesDirectory)"
