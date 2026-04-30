@@ -1,5 +1,12 @@
+parameters:
+  - name: dependsOn
+    type: string
+    default: ''
+
 jobs:
-  - job:
+  - job: BuildAndPublish
+    ${{ if ne(parameters.dependsOn, '') }}:
+      dependsOn: ${{ parameters.dependsOn }}
     templateContext:
       outputs:
         - output: nuget
@@ -10,13 +17,6 @@ jobs:
           sbomPackageName: "Azure Functions PowerShell Worker"
           sbomBuildComponentPath: "$(Build.SourcesDirectory)"
           allowPackageConflicts: true
-        # - output: nuget
-        #   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'), eq(variables['UPLOADPACKAGETOPRERELEASEFEED'], true))
-        #   packagesToPush: '$(Build.ArtifactStagingDirectory)/*.nupkg'
-        #   packageParentPath: '$(Build.ArtifactStagingDirectory)'
-        #   nuGetFeedType: 'internal'
-        #   publishVstsFeed: 'e6a70c92-4128-439f-8012-382fe78d6396/f37f760c-aebd-443e-9714-ce725cd427df' # AzureFunctionsPreRelease feed
-        #   allowPackageConflicts: true
     steps:
       - pwsh: ./build.ps1 -NoBuild -Bootstrap
         displayName: "Running ./build.ps1 -NoBuild -Bootstrap"
