@@ -59,3 +59,40 @@ extends:
         dependsOn: [WindowsUnitTests, LinuxUnitTests]
         jobs:
           - template: /eng/ci/templates/build.yml@self
+
+      - stage: Publish
+        dependsOn: [Build]
+        condition: >-
+          and(
+            succeeded(),
+            ne(variables['Build.Reason'], 'Schedule'),
+            or(
+              eq(variables['Build.Reason'], 'Manual'),
+              startsWith(variables['Build.SourceBranch'], 'refs/heads/v3.x/'),
+              startsWith(variables['Build.SourceBranch'], 'refs/heads/v4.x/')
+            )
+          )
+        jobs:
+          - job: ApprovePublish
+            pool: server
+            steps:
+              - task: ManualValidation@1
+                displayName: "Approve NuGet publish"
+                inputs:
+                  notifyUsers: ""
+                  instructions: "Approve to publish the NuGet package to the public/infra feed."
+
+          - job: PushNuGet
+            dependsOn: ApprovePublish
+            templateContext:
+              outputs:
+                - output: nuget
+                  packagesToPush: "$(Pipeline.Workspace)/nuget-packages/*.nupkg"
+                  packageParentPath: "$(Pipeline.Workspace)/nuget-packages"
+                  nuGetFeedType: internal
+                  publishVstsFeed: "public/infra"
+                  allowPackageConflicts: true
+            steps:
+              - download: current
+                artifact: nuget-packages
+                displayName: "Download NuGet package from Build stage"
