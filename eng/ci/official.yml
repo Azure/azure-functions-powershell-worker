@@ -68,14 +68,14 @@ extends:
             )
           )
         jobs:
-          - deployment: ApprovePublish
-            environment: nuget-publish  # Configure manual approval on this environment in ADO
-            strategy:
-              runOnce:
-                deploy:
-                  steps:
-                    - script: echo "Publish approved"
-                      displayName: "Approval gate"
+          - job: ApprovePublish
+            pool: server
+            steps:
+              - task: ManualValidation@1
+                displayName: "Approve NuGet publish"
+                inputs:
+                  notifyUsers: ""
+                  instructions: "Approve to publish the NuGet package to the public/infra feed."
 
           - template: /eng/ci/templates/build.yml@self
             parameters:
