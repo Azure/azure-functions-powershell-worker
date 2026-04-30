@@ -55,8 +55,13 @@ extends:
           image: 1es-ubuntu-22.04
           os: linux
 
-      - stage: Publish
+      - stage: Build
         dependsOn: [WindowsUnitTests, LinuxUnitTests]
+        jobs:
+          - template: /eng/ci/templates/build.yml@self
+
+      - stage: Publish
+        dependsOn: [Build]
         condition: >-
           and(
             succeeded(),
@@ -77,6 +82,17 @@ extends:
                   notifyUsers: ""
                   instructions: "Approve to publish the NuGet package to the public/infra feed."
 
-          - template: /eng/ci/templates/build.yml@self
-            parameters:
-              dependsOn: ApprovePublish
+          - job: PushNuGet
+            dependsOn: ApprovePublish
+            templateContext:
+              outputs:
+                - output: nuget
+                  packagesToPush: "$(Pipeline.Workspace)/nuget-packages/*.nupkg"
+                  packageParentPath: "$(Pipeline.Workspace)/nuget-packages"
+                  nuGetFeedType: internal
+                  publishVstsFeed: "public/infra"
+                  allowPackageConflicts: true
+            steps:
+              - download: current
+                artifact: nuget-packages
+                displayName: "Download NuGet package from Build stage"

@@ -1,22 +1,12 @@
-parameters:
-  - name: dependsOn
-    type: string
-    default: ''
-
 jobs:
-  - job: BuildAndPublish
-    ${{ if ne(parameters.dependsOn, '') }}:
-      dependsOn: ${{ parameters.dependsOn }}
+  - job: Build
     templateContext:
       outputs:
-        - output: nuget
-          packagesToPush: "$(Build.ArtifactStagingDirectory)/*.nupkg"
-          packageParentPath: "$(Build.ArtifactStagingDirectory)"
-          nuGetFeedType: internal
-          publishVstsFeed: "public/infra"
+        - output: pipelineArtifact
+          targetPath: "$(Build.ArtifactStagingDirectory)"
+          artifactName: "nuget-packages"
           sbomPackageName: "Azure Functions PowerShell Worker"
           sbomBuildComponentPath: "$(Build.SourcesDirectory)"
-          allowPackageConflicts: true
     steps:
       - pwsh: ./build.ps1 -NoBuild -Bootstrap
         displayName: "Running ./build.ps1 -NoBuild -Bootstrap"
