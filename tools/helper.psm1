@@ -17,8 +17,8 @@ $DotnetSDKVersionRequirements = @{
     }
 
     '10.0' = @{
-        MinimalPatch = '202'
-        DefaultPatch = '202'
+        MinimalPatch = '301'
+        DefaultPatch = '301'
     }
 }
 
