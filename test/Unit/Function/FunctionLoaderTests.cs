@@ -321,5 +321,74 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test
             Assert.Contains("req", exception.Message);
             Assert.Contains("inputBlob", exception.Message);
         }
+
+        [Fact]
+        public void SetupWellKnownPathsResolvesProfileWhenPresent()
+        {
+            RunInTemporaryFunctionApp(includeProfile: true, profileFileName: "profile.ps1",
+                (functionLoadRequest, appRoot) =>
+                {
+                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath: null);
+
+                    Assert.Equal(Path.Combine(appRoot, "profile.ps1"), FunctionLoader.FunctionAppProfilePath);
+                });
+        }
+
+        [Fact]
+        public void SetupWellKnownPathsReturnsNullWhenProfileMissing()
+        {
+            // Regression test for #1146 / #1147: a missing profile.ps1 must not throw
+            // (a filtered Directory.EnumerateFiles could throw on .NET 10 content shares).
+            RunInTemporaryFunctionApp(includeProfile: false, profileFileName: null,
+                (functionLoadRequest, appRoot) =>
+                {
+                    var exception = Record.Exception(
+                        () => FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath: null));
+
+                    Assert.Null(exception);
+                    Assert.Null(FunctionLoader.FunctionAppProfilePath);
+                });
+        }
+
+        [Fact]
+        public void SetupWellKnownPathsResolvesProfileCaseInsensitively()
+        {
+            RunInTemporaryFunctionApp(includeProfile: true, profileFileName: "Profile.PS1",
+                (functionLoadRequest, appRoot) =>
+                {
+                    FunctionLoader.SetupWellKnownPaths(functionLoadRequest, managedDependenciesPath: null);
+
+                    Assert.NotNull(FunctionLoader.FunctionAppProfilePath);
+                    Assert.Equal(
+                        "Profile.PS1",
+                        Path.GetFileName(FunctionLoader.FunctionAppProfilePath),
+                        ignoreCase: true);
+                });
+        }
+
+        private void RunInTemporaryFunctionApp(bool includeProfile, string profileFileName, Action<FunctionLoadRequest, string> test)
+        {
+            var appRoot = Path.Combine(Path.GetTempPath(), "PSWorkerFuncLoaderTests", Guid.NewGuid().ToString("N"));
+            var functionDir = Path.Combine(appRoot, "MyHttpTrigger");
+            Directory.CreateDirectory(functionDir);
+
+            try
+            {
+                if (includeProfile)
+                {
+                    File.WriteAllText(Path.Combine(appRoot, profileFileName), "# test profile");
+                }
+
+                var scriptFileToUse = Path.Join(functionDir, "BasicFuncScript.ps1");
+                var functionLoadRequest = GetFuncLoadRequest(scriptFileToUse, entryPoint: string.Empty);
+                functionLoadRequest.Metadata.Directory = functionDir;
+
+                test(functionLoadRequest, appRoot);
+            }
+            finally
+            {
+                Directory.Delete(appRoot, recursive: true);
+            }
+        }
     }
 }
