@@ -123,6 +123,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     return profilePath;
                 }
 
+                // On Windows, File.Exists is already case-insensitive, so if it's not found we can return early.
+                if (OperatingSystem.IsWindows())
+                {
+                    return null;
+                }
+
                 // Fallback: preserve case-insensitive matching on case-sensitive file systems
                 // without relying on an OS-level filtered enumeration.
                 foreach (var file in Directory.EnumerateFiles(functionAppRootPath))
