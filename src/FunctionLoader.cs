@@ -116,21 +116,20 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     return null;
                 }
 
-                // Fast path: exact match (case-insensitive on Windows, and the common casing elsewhere).
+                // Fast path: exact-name match. On a case-insensitive file system (the default on
+                // Windows) this also resolves differently-cased names such as "Profile.PS1".
                 var profilePath = Path.Combine(functionAppRootPath, ProfileFileName);
                 if (File.Exists(profilePath))
                 {
                     return profilePath;
                 }
 
-                // On Windows, File.Exists is already case-insensitive, so if it's not found we can return early.
-                if (OperatingSystem.IsWindows())
-                {
-                    return null;
-                }
-
                 // Fallback: preserve case-insensitive matching on case-sensitive file systems
-                // without relying on an OS-level filtered enumeration.
+                // without relying on an OS-level filtered enumeration. This is not Windows-gated:
+                // NTFS supports per-directory case sensitivity, so a case-sensitive directory on
+                // Windows can hold a differently-cased "profile.ps1" that the exact-name File.Exists
+                // check above would miss. Enumerating without a filter is safe from the .NET 10
+                // Directory.EnumerateFiles bug, which only manifests when a search pattern is passed.
                 foreach (var file in Directory.EnumerateFiles(functionAppRootPath))
                 {
                     if (string.Equals(Path.GetFileName(file), ProfileFileName, StringComparison.OrdinalIgnoreCase))
