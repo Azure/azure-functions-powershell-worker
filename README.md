@@ -140,6 +140,7 @@ To package the PowerShell Language Worker as a nupkg, do the following:
 
 That will place a `Microsoft.Azure.Functions.PowerShellWorker.*.nupkg` in:
 
+
 `azure-functions-powershell-worker/package/bin/Debug`
 
 It pulls the contents of the publish folder in:
