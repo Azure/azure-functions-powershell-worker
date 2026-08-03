@@ -19,6 +19,9 @@ pool:
       - ImageOverride -equals $(imageName)
 
 steps:
+- task: NuGetAuthenticate@1
+  displayName: 'Authenticate NuGet feeds'
+
 - task: AzureKeyVault@2
   inputs:
     azureSubscription: 'Simple Batch(0b894477-1614-4c8d-8a9b-a697a24596b8)'
