@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Microsoft.Azure.WebJobs.Script.Grpc.Messages;
 
 namespace Microsoft.Azure.Functions.PowerShellWorker
@@ -16,6 +15,8 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
     /// </summary>
     internal static class FunctionLoader
     {
+        private const string ProfileFileName = "profile.ps1";
+
         private static readonly Dictionary<string, AzFunctionInfo> LoadedFunctions = new Dictionary<string, AzFunctionInfo>();
 
         internal static string FunctionAppRootPath { get; private set; }
@@ -89,9 +90,61 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
             }
 
             // Resolve the FunctionApp profile path
-            var options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive };
-            var profiles = Directory.EnumerateFiles(FunctionAppRootPath, "profile.ps1", options);
-            FunctionAppProfilePath = profiles.FirstOrDefault();
+            FunctionAppProfilePath = ResolveFunctionAppProfilePath(FunctionAppRootPath);
+        }
+
+        /// <summary>
+        /// Resolve the path to the function app 'profile.ps1', if one exists.
+        /// </summary>
+        /// <remarks>
+        /// The profile file name is fixed and known, so we resolve it with a direct existence
+        /// check rather than a filtered directory enumeration. A filtered
+        /// Directory.EnumerateFiles(root, "profile.ps1", ...).FirstOrDefault() can throw on some
+        /// content-share file systems under .NET 10 (10.0.9 / 10.0.10) when there is no matching
+        /// file: the OS-level filter reports a zero-match as STATUS_OBJECT_NAME_NOT_FOUND, which
+        /// surfaces as "Could not find file 'C:\home\site\wwwroot'." and terminates the worker for
+        /// apps that do not include a profile.ps1. See issues #1146 and #1147.
+        /// File.Exists does not go through the filtered FileSystemEnumerator code path and simply
+        /// returns false when the file is absent.
+        /// </remarks>
+        private static string ResolveFunctionAppProfilePath(string functionAppRootPath)
+        {
+            try
+            {
+                if (!Directory.Exists(functionAppRootPath))
+                {
+                    return null;
+                }
+
+                // Fast path: exact-name match. On a case-insensitive file system (the default on
+                // Windows) this also resolves differently-cased names such as "Profile.PS1".
+                var profilePath = Path.Combine(functionAppRootPath, ProfileFileName);
+                if (File.Exists(profilePath))
+                {
+                    return profilePath;
+                }
+
+                // Fallback: preserve case-insensitive matching on case-sensitive file systems
+                // without relying on an OS-level filtered enumeration. This is not Windows-gated:
+                // NTFS supports per-directory case sensitivity, so a case-sensitive directory on
+                // Windows can hold a differently-cased "profile.ps1" that the exact-name File.Exists
+                // check above would miss. Enumerating without a filter is safe from the .NET 10
+                // Directory.EnumerateFiles bug, which only manifests when a search pattern is passed.
+                foreach (var file in Directory.EnumerateFiles(functionAppRootPath))
+                {
+                    if (string.Equals(Path.GetFileName(file), ProfileFileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return file;
+                    }
+                }
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                // Treat an inability to resolve the profile as "no profile" rather than a
+                // terminating failure. The worker functions correctly without a profile.ps1.
+            }
+
+            return null;
         }
     }
 }
