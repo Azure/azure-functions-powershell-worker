@@ -37,6 +37,8 @@ Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
 
 $TargetFramework = 'net10.0'
 $PowerShellVersion = '7.6'
+$CfsRepositoryName = 'upstream-public'
+$CfsFeedUri = 'https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/nuget/v2'
 
 Write-Log "Build worker version: $PowerShellVersion"
 Write-Log "Target framework: $TargetFramework"
@@ -91,18 +93,40 @@ function Deploy-PowerShellWorker {
     Write-Log "Deployed worker to $powerShellWorkerDir"
 }
 
+function Set-CfsRepository {
+    $repositoryParameters = @{
+        Name = $CfsRepositoryName
+        SourceLocation = $CfsFeedUri
+        InstallationPolicy = 'Trusted'
+    }
+
+    if ($env:SYSTEM_ACCESSTOKEN) {
+        $secureToken = ConvertTo-SecureString $env:SYSTEM_ACCESSTOKEN -AsPlainText -Force
+        $repositoryParameters.Credential = [System.Management.Automation.PSCredential]::new(
+            'AzurePipelines',
+            $secureToken)
+    }
+
+    if (Get-PSRepository -Name $CfsRepositoryName -ErrorAction SilentlyContinue) {
+        Set-PSRepository @repositoryParameters
+    } else {
+        Register-PSRepository @repositoryParameters
+    }
+}
+
 # Bootstrap step
 if ($Bootstrap.IsPresent) {
     Write-Log "Validate and install missing prerequisits for building ..."
     Install-Dotnet
+    Set-CfsRepository
 
     if (-not (Get-Module -Name PSDepend -ListAvailable)) {
         Write-Log -Warning "Module 'PSDepend' is missing. Installing 'PSDepend' ..."
-        Install-Module -Name PSDepend -Scope CurrentUser -Force
+        Install-Module -Name PSDepend -Repository $CfsRepositoryName -Scope CurrentUser -Force
     }
     if (-not (Get-Module -Name platyPS -ListAvailable)) {
         Write-Log -Warning "Module 'platyPS' is missing. Installing 'platyPS' ..."
-        Install-Module -Name platyPS -Scope CurrentUser -Force
+        Install-Module -Name platyPS -Repository $CfsRepositoryName -Scope CurrentUser -Force
     }
 }
 
@@ -136,6 +160,7 @@ if (!$NoBuild.IsPresent) {
         Write-Log -Indent "$($entry.Name) $($entry.Value.Version)"
     }
 
+    Set-CfsRepository
     Invoke-PSDepend -Path $requirements -Force
 
     Write-Log "Deleting fullclr folder from PackageManagement module if the folder exists ..."
