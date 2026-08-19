@@ -1,6 +1,9 @@
 jobs:
   - job: UnitTests
     steps:
+      - task: NuGetAuthenticate@1
+        displayName: "Authenticate NuGet feeds"
+
       - pwsh: ./build.ps1 -NoBuild -Bootstrap
         displayName: "Running ./build.ps1 -NoBuild -Bootstrap"
 
