@@ -21,12 +21,11 @@ Licensed under the MIT license. See LICENSE file in the project root for full li
 
     <ItemGroup>
         <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
-        <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.6.4" />
+        <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.6.5" />
         <PackageReference Include="CommandLineParser" Version="2.9.1" />
         <PackageReference Include="Google.Protobuf" Version="3.30.2" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.1" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
-        <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.10" />
     </ItemGroup>
 
     <ItemGroup>
