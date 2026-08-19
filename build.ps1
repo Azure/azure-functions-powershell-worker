@@ -37,6 +37,7 @@ Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
 
 $TargetFramework = 'net10.0'
 $PowerShellVersion = '7.6'
+# PowerShellGet requires the NuGet v2 endpoint; CFS proxies PowerShell Gallery through this feed.
 $CfsRepositoryName = 'upstream-public'
 $CfsFeedUri = 'https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/nuget/v2'
 
