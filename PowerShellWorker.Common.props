@@ -6,5 +6,6 @@
     <PackageLicenseUrl>https://github.com/Azure/azure-functions-powershell-worker/blob/dev/LICENSE</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/Azure/azure-functions-powershell-worker</RepositoryUrl>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1905</WarningsNotAsErrors>
   </PropertyGroup>
 </Project>

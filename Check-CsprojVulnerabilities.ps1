@@ -17,6 +17,7 @@ if (-not $CsprojFilePath)
 }
 
 $logFilePath = "$PSScriptRoot/build.log"
+$auditWarningReported = $false
 
 try
 {
@@ -33,6 +34,12 @@ try
 
         # Check and report if vulnerabilities are found
         $report = Get-Content $logFilePath -Raw
+        if (-not $auditWarningReported -and $report -match '\bNU1905\b')
+        {
+            Write-Warning "NuGet audit source did not provide vulnerability data (NU1905). Vulnerability results may be incomplete."
+            $auditWarningReported = $true
+        }
+
         $result = $report | Select-String "has no vulnerable packages given the current sources"
 
         if ($result)
