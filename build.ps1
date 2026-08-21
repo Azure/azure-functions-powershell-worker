@@ -37,6 +37,9 @@ Import-Module "$PSScriptRoot/tools/helper.psm1" -Force
 
 $TargetFramework = 'net10.0'
 $PowerShellVersion = '7.6'
+# PowerShellGet requires the NuGet v2 endpoint; CFS proxies PowerShell Gallery through this feed.
+$CfsRepositoryName = 'upstream-public'
+$CfsFeedUri = 'https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/nuget/v2'
 
 Write-Log "Build worker version: $PowerShellVersion"
 Write-Log "Target framework: $TargetFramework"
@@ -91,18 +94,62 @@ function Deploy-PowerShellWorker {
     Write-Log "Deployed worker to $powerShellWorkerDir"
 }
 
+function Set-CfsRepository {
+    $repositoryParameters = @{
+        Name = $CfsRepositoryName
+        SourceLocation = $CfsFeedUri
+        InstallationPolicy = 'Trusted'
+    }
+
+    if ($env:SYSTEM_ACCESSTOKEN) {
+        $secureToken = ConvertTo-SecureString $env:SYSTEM_ACCESSTOKEN -AsPlainText -Force
+        $repositoryParameters.Credential = [System.Management.Automation.PSCredential]::new(
+            'AzurePipelines',
+            $secureToken)
+    }
+
+    if (Get-PSRepository -Name $CfsRepositoryName -ErrorAction SilentlyContinue) {
+        Set-PSRepository @repositoryParameters
+    } else {
+        Register-PSRepository @repositoryParameters
+    }
+}
+
+function Install-CfsModule {
+    param(
+        [Parameter(Mandatory)]
+        [string] $Name
+    )
+
+    $maximumAttempts = 4
+    for ($attempt = 1; $attempt -le $maximumAttempts; $attempt++) {
+        try {
+            Install-Module -Name $Name -Repository $CfsRepositoryName -Scope CurrentUser -Force -ErrorAction Stop
+            return
+        } catch {
+            if ($_.FullyQualifiedErrorId -notlike 'NoMatchFoundForCriteria,*' -or $attempt -eq $maximumAttempts) {
+                throw
+            }
+
+            Write-Log -Warning "Module '$Name' is not yet available from CFS. Retrying in 15 seconds..."
+            Start-Sleep -Seconds 15
+        }
+    }
+}
+
 # Bootstrap step
 if ($Bootstrap.IsPresent) {
     Write-Log "Validate and install missing prerequisits for building ..."
     Install-Dotnet
+    Set-CfsRepository
 
     if (-not (Get-Module -Name PSDepend -ListAvailable)) {
         Write-Log -Warning "Module 'PSDepend' is missing. Installing 'PSDepend' ..."
-        Install-Module -Name PSDepend -Scope CurrentUser -Force
+        Install-CfsModule -Name PSDepend
     }
     if (-not (Get-Module -Name platyPS -ListAvailable)) {
         Write-Log -Warning "Module 'platyPS' is missing. Installing 'platyPS' ..."
-        Install-Module -Name platyPS -Scope CurrentUser -Force
+        Install-CfsModule -Name platyPS
     }
 }
 
@@ -136,6 +183,7 @@ if (!$NoBuild.IsPresent) {
         Write-Log -Indent "$($entry.Name) $($entry.Value.Version)"
     }
 
+    Set-CfsRepository
     Invoke-PSDepend -Path $requirements -Force
 
     Write-Log "Deleting fullclr folder from PackageManagement module if the folder exists ..."
