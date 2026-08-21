@@ -6,6 +6,8 @@ jobs:
 
       - pwsh: ./build.ps1 -NoBuild -Bootstrap
         displayName: "Running ./build.ps1 -NoBuild -Bootstrap"
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
       - pwsh: ./Check-CsprojVulnerabilities.ps1
         displayName: "Check for security vulnerabilities"
@@ -15,9 +17,13 @@ jobs:
 
           ./build.ps1 -Clean -Configuration Release
         displayName: "Build worker code"
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
       - pwsh: ./build.ps1 -NoBuild -Test
         displayName: "Running UnitTest"
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
       # - pwsh: ./test/E2E/Start-E2ETest.ps1
       #   env:
