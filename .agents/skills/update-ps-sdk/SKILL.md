@@ -31,6 +31,12 @@ Look up the .NET SDK version required by the target PowerShell SDK. The release 
 
 - Update `MinimalPatch` and `DefaultPatch` in `tools/helper.psm1` (`$DotnetSDKVersionRequirements`) to match the .NET SDK patch version from the release notes. For example, if the release requires .NET SDK `8.0.419`, set both values to `'419'`.
 
+- Keep the CI SDK installers aligned with **every** entry in `$DotnetSDKVersionRequirements`. Update the matching `UseDotNet@2` task version in both templates:
+  - `eng/ci/templates/build.yml`
+  - `eng/ci/templates/test.yml`
+
+  Each required SDK must use the exact `DefaultPatch` version from `tools/helper.psm1`. Do not remove unrelated SDK requirements such as the .NET 3.1 SDK used by `Microsoft.ManifestTool.dll`.
+
 ### 2. Update the PowerShell SDK Package Version
 
 Update the `Microsoft.PowerShell.SDK` `<PackageReference>` version in **both** project files:
@@ -59,6 +65,8 @@ Replace `<releaseTag>` with the actual tag (e.g., `v7.6.0-preview.5`).
 The modules to check are listed in `src/requirements.psd1` (e.g., `Microsoft.PowerShell.Archive`, `ThreadJob`, `PowerShellGet`, `PackageManagement`).
 
 ### 6. Build and Test
+
+Before building, verify that the exact .NET SDK versions derived from every `DefaultPatch` in `tools/helper.psm1` appear in both CI templates. Treat any missing or different `UseDotNet@2` version as drift and fix it before continuing.
 
 Run a clean build with tests:
 

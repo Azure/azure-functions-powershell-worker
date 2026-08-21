@@ -8,6 +8,18 @@ jobs:
           sbomPackageName: "Azure Functions PowerShell Worker"
           sbomBuildComponentPath: "$(Build.SourcesDirectory)"
     steps:
+      - task: UseDotNet@2
+        displayName: "Install .NET SDK 3.1.426"
+        inputs:
+          packageType: sdk
+          version: "3.1.426"
+
+      - task: UseDotNet@2
+        displayName: "Install .NET SDK 8.0.424"
+        inputs:
+          packageType: sdk
+          version: "8.0.424"
+
       - task: NuGetAuthenticate@1
         displayName: "Authenticate NuGet feeds"
 
