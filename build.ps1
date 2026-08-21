@@ -115,6 +115,28 @@ function Set-CfsRepository {
     }
 }
 
+function Install-CfsModule {
+    param(
+        [Parameter(Mandatory)]
+        [string] $Name
+    )
+
+    $maximumAttempts = 4
+    for ($attempt = 1; $attempt -le $maximumAttempts; $attempt++) {
+        try {
+            Install-Module -Name $Name -Repository $CfsRepositoryName -Scope CurrentUser -Force -ErrorAction Stop
+            return
+        } catch {
+            if ($_.FullyQualifiedErrorId -notlike 'NoMatchFoundForCriteria,*' -or $attempt -eq $maximumAttempts) {
+                throw
+            }
+
+            Write-Log -Warning "Module '$Name' is not yet available from CFS. Retrying in 15 seconds..."
+            Start-Sleep -Seconds 15
+        }
+    }
+}
+
 # Bootstrap step
 if ($Bootstrap.IsPresent) {
     Write-Log "Validate and install missing prerequisits for building ..."
@@ -123,11 +145,11 @@ if ($Bootstrap.IsPresent) {
 
     if (-not (Get-Module -Name PSDepend -ListAvailable)) {
         Write-Log -Warning "Module 'PSDepend' is missing. Installing 'PSDepend' ..."
-        Install-Module -Name PSDepend -Repository $CfsRepositoryName -Scope CurrentUser -Force
+        Install-CfsModule -Name PSDepend
     }
     if (-not (Get-Module -Name platyPS -ListAvailable)) {
         Write-Log -Warning "Module 'platyPS' is missing. Installing 'platyPS' ..."
-        Install-Module -Name platyPS -Repository $CfsRepositoryName -Scope CurrentUser -Force
+        Install-CfsModule -Name platyPS
     }
 }
 
