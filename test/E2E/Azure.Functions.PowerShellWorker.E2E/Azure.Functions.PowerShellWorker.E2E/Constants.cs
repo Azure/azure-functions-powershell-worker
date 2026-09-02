@@ -43,8 +43,8 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             }
 
             public static class Cardinality_One_Test {
-                public static string InputName = "test-input-one-ps";
-                public static string OutputName = "test-output-one-ps";
+                public static string InputName = String_Test.OutputName;
+                public static string OutputName = String_Test.OutputName;
             }
         }
     }

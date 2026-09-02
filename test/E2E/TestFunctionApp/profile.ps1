@@ -1,0 +1,1 @@
+Import-Module -Name AzureFunctions.PowerShell.Durable.SDK -ErrorAction Stop
