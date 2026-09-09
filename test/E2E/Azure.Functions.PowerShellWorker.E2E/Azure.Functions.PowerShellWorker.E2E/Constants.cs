@@ -21,7 +21,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
         // CosmosDB tests
         public static class CosmosDB {
-            public static string CosmosDBConnectionStringSetting = Environment.GetEnvironmentVariable("AzureWebJobsCosmosDBConnectionString");
+            public static string CosmosDBAccountEndpoint = Environment.GetEnvironmentVariable("CosmosDBConnection__accountEndpoint");
             public static string DbName = "ItemDb";
             public static string InputCollectionName = "PartitionedItemCollectionIn";
             public static string OutputCollectionName = "PartitionedItemCollectionOut";
@@ -30,7 +30,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
 
         // EventHubs
         public static class EventHubs {
-            public static string EventHubsConnectionStringSetting = Environment.GetEnvironmentVariable("AzureWebJobsEventHubSender");
+            public static string EventHubsNamespace = Environment.GetEnvironmentVariable("EventHubConnection__fullyQualifiedNamespace");
 
             public static class Json_Test {
                 public static string OutputName = "test-output-object-ps";

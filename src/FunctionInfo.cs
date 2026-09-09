@@ -57,7 +57,9 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
 
             // Support 'entryPoint' only if 'scriptFile' is a .psm1 file;
             // Support .psm1 'scriptFile' only if 'entryPoint' is specified.
+            // Exception: V2 programming model (worker-indexed) uses entryPoint with .ps1 files.
             bool isScriptFilePsm1 = ScriptPath.EndsWith(".psm1", StringComparison.OrdinalIgnoreCase);
+            bool isWorkerIndexed = metadata.Properties.ContainsKey("WorkerIndexed");
             bool entryPointNotDefined = string.IsNullOrEmpty(EntryPoint);
             if (entryPointNotDefined)
             {
@@ -66,7 +68,7 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                     throw new ArgumentException(PowerShellWorkerStrings.RequireEntryPointForScriptModule);
                 }
             }
-            else if (!isScriptFilePsm1)
+            else if (!isScriptFilePsm1 && !isWorkerIndexed)
             {
                 throw new ArgumentException(PowerShellWorkerStrings.InvalidEntryPointForScriptFile);
             }
@@ -109,6 +111,10 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
                 else if (bindingInfo.Direction == BindingInfo.Types.Direction.Out)
                 {
                     outputBindings.Add(bindingName, bindingInfo);
+
+                    // V2 programming model: output bindings may also be declared as parameters.
+                    // Remove them from the parameter copy so they aren't flagged as unknown.
+                    parametersCopy.Remove(bindingName);
                 }
                 else
                 {

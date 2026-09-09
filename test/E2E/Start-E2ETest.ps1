@@ -125,7 +125,7 @@ $Env:Path = "$Env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
 $funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
 
 Write-Host "Installing extensions..."
-Push-Location "$PSScriptRoot\TestFunctionApp"
+Push-Location "$PSScriptRoot\TestFunctionAppV2"
 
 if ($IsMacOS -or $IsLinux) {
     chmod +x $funcExePath

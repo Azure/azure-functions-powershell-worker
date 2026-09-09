@@ -75,9 +75,37 @@ namespace Microsoft.Azure.Functions.PowerShellWorker
         /// </summary>
         internal static void SetupWellKnownPaths(FunctionLoadRequest request, string managedDependenciesPath)
         {
-            // Resolve the FunctionApp root path
-            FunctionAppRootPath = Path.GetFullPath(Path.Join(request.Metadata.Directory, ".."));
+            // For V2 (worker-indexed), FunctionAppRootPath is already set by SetFunctionAppRootPath
+            // during ProcessFunctionMetadataRequest. For V1, resolve it from the function directory.
+            if (FunctionAppRootPath == null)
+            {
+                // V1: Metadata.Directory is FunctionAppRoot/FunctionName/, so go up one level
+                FunctionAppRootPath = Path.GetFullPath(Path.Join(request.Metadata.Directory, ".."));
+            }
 
+            SetupModuleAndProfilePaths(managedDependenciesPath);
+        }
+
+        /// <summary>
+        /// Sets the FunctionAppRootPath directly from a directory path.
+        /// Used by the V2 programming model (worker indexing) where the function app directory
+        /// is provided by FunctionsMetadataRequest before any FunctionLoadRequest arrives.
+        /// </summary>
+        internal static void SetFunctionAppRootPath(string functionAppDirectory)
+        {
+            if (FunctionAppRootPath == null)
+            {
+                FunctionAppRootPath = functionAppDirectory;
+
+                // Discover profile.ps1 early for V2 apps
+                var options = new EnumerationOptions { MatchCasing = MatchCasing.CaseInsensitive };
+                var profiles = Directory.EnumerateFiles(FunctionAppRootPath, "profile.ps1", options);
+                FunctionAppProfilePath = profiles.FirstOrDefault();
+            }
+        }
+
+        private static void SetupModuleAndProfilePaths(string managedDependenciesPath)
+        {
             // Resolve module paths
             var appLevelModulesPath = Path.Join(FunctionAppRootPath, "Modules");
             var workerLevelModulesPath = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "Modules");
