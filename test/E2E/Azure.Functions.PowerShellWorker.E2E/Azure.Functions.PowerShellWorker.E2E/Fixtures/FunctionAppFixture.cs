@@ -21,6 +21,12 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             // start host via CLI if testing locally
             if (Constants.FunctionsHostUrl.Contains("localhost"))
             {
+                if (!string.IsNullOrWhiteSpace(Constants.CosmosDB.CosmosDBConnectionStringSetting))
+                {
+                    _logger.LogInformation("Preparing Cosmos DB resources before host startup.");
+                    CosmosDBHelpers.CreateDocumentCollections().GetAwaiter().GetResult();
+                }
+
                 // kill existing func processes
                 _logger.LogInformation("Shutting down any running functions hosts..");
                 FixtureHelpers.KillExistingFuncHosts();
