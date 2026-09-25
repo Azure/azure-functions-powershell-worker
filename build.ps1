@@ -40,6 +40,9 @@ $PowerShellVersion = '7.6'
 # PowerShellGet requires the NuGet v2 endpoint; CFS proxies PowerShell Gallery through this feed.
 $CfsRepositoryName = 'upstream-public'
 $CfsFeedUri = 'https://pkgs.dev.azure.com/azfunc/public/_packaging/upstream-public/nuget/v2'
+# Pin bootstrap modules to versions saved in CFS, including for anonymous builds.
+$PSDependVersion = '0.4.1'
+$PlatyPSVersion = '0.14.2'
 
 Write-Log "Build worker version: $PowerShellVersion"
 Write-Log "Target framework: $TargetFramework"
@@ -118,20 +121,23 @@ function Set-CfsRepository {
 function Install-CfsModule {
     param(
         [Parameter(Mandatory)]
-        [string] $Name
+        [string] $Name,
+
+        [Parameter(Mandatory)]
+        [string] $RequiredVersion
     )
 
     $maximumAttempts = 4
     for ($attempt = 1; $attempt -le $maximumAttempts; $attempt++) {
         try {
-            Install-Module -Name $Name -Repository $CfsRepositoryName -Scope CurrentUser -Force -ErrorAction Stop
+            Install-Module -Name $Name -RequiredVersion $RequiredVersion -Repository $CfsRepositoryName -Scope CurrentUser -Force -ErrorAction Stop
             return
         } catch {
             if ($_.FullyQualifiedErrorId -notlike 'NoMatchFoundForCriteria,*' -or $attempt -eq $maximumAttempts) {
                 throw
             }
 
-            Write-Log -Warning "Module '$Name' is not yet available from CFS. Retrying in 15 seconds..."
+            Write-Log -Warning "Module '$Name' version '$RequiredVersion' is not yet available from CFS. Retrying in 15 seconds..."
             Start-Sleep -Seconds 15
         }
     }
@@ -143,13 +149,13 @@ if ($Bootstrap.IsPresent) {
     Install-Dotnet
     Set-CfsRepository
 
-    if (-not (Get-Module -Name PSDepend -ListAvailable)) {
-        Write-Log -Warning "Module 'PSDepend' is missing. Installing 'PSDepend' ..."
-        Install-CfsModule -Name PSDepend
+    if (-not (Get-Module -FullyQualifiedName @{ ModuleName = 'PSDepend'; RequiredVersion = $PSDependVersion } -ListAvailable)) {
+        Write-Log -Warning "Module 'PSDepend' version '$PSDependVersion' is missing. Installing 'PSDepend' ..."
+        Install-CfsModule -Name PSDepend -RequiredVersion $PSDependVersion
     }
-    if (-not (Get-Module -Name platyPS -ListAvailable)) {
-        Write-Log -Warning "Module 'platyPS' is missing. Installing 'platyPS' ..."
-        Install-CfsModule -Name platyPS
+    if (-not (Get-Module -FullyQualifiedName @{ ModuleName = 'platyPS'; RequiredVersion = $PlatyPSVersion } -ListAvailable)) {
+        Write-Log -Warning "Module 'platyPS' version '$PlatyPSVersion' is missing. Installing 'platyPS' ..."
+        Install-CfsModule -Name platyPS -RequiredVersion $PlatyPSVersion
     }
 }
 
@@ -165,9 +171,10 @@ Find-Dotnet
 
 # Build step
 if (!$NoBuild.IsPresent) {
-    if (-not (Get-Module -Name PSDepend -ListAvailable)) {
-        throw "Cannot find the 'PSDepend' module. Please specify '-Bootstrap' to install build dependencies."
+    if (-not (Get-Module -FullyQualifiedName @{ ModuleName = 'PSDepend'; RequiredVersion = $PSDependVersion } -ListAvailable)) {
+        throw "Cannot find the 'PSDepend' module version '$PSDependVersion'. Please specify '-Bootstrap' to install build dependencies."
     }
+    Import-Module PSDepend -RequiredVersion $PSDependVersion -Force -ErrorAction Stop
 
     # Generate C# files for resources
     Start-ResGen
