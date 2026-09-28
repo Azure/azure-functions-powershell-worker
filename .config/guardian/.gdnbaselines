@@ -1,0 +1,262 @@
+{
+  "properties": {
+    "helpUri": "https://eng.ms/docs/microsoft-security/security/azure-security/cloudai-security-fundamentals-engineering/security-integration/guardian-wiki/microsoft-guardian/general/baselines"
+  },
+  "version": "1.0.0",
+  "baselines": {
+    "default": {
+      "name": "default",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "lastUpdatedDate": "2026-08-11 02:21:09Z"
+    }
+  },
+  "results": {
+    "ad7bfb3dd71c3c0263fdc751e9dbf2ea340be9cc7911dd4361e06a8e63c6e8ed": {
+      "signature": "ad7bfb3dd71c3c0263fdc751e9dbf2ea340be9cc7911dd4361e06a8e63c6e8ed",
+      "alternativeSignatures": [
+        "b5b7e6db0d8c8478e9db7b6ccf14216adc3bc2c743830bebaa753551b26a7125",
+        "2a839e164de48d82bbd2bbd164f81ee04f0e4add63a449c503b174d5637f8ecd",
+        "c547a9e335a7d57fce93f94782bd5b6341fa07da65f741b9412e7961302b15bd"
+      ],
+      "target": "src/DependencyManagement/PowerShellGalleryModuleProvider.cs",
+      "line": 144,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "344cf7c08f59ad49c81094a6afc07651d5b6066656605e9c40115826ae53de60": {
+      "signature": "344cf7c08f59ad49c81094a6afc07651d5b6066656605e9c40115826ae53de60",
+      "alternativeSignatures": [
+        "6fb91bfce139c7722c836bacba1ae559b739b3ce1c902701a3f84789298dec97",
+        "fc51329edc1dfe31f9c29ee578eee9ecb592c5c17442861eea4e12303b9a411f",
+        "fbc4e2f53f13348cb4e3b24703d8d3e3ed6a4012644e5ed3898e99f2645511d5"
+      ],
+      "target": "test/Unit/DependencyManagement/DependencyManagementTests.cs",
+      "line": 232,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "93b951cfda309c5c133daf88fe2f6e10959baf0ff460492e8499102c39106272": {
+      "signature": "93b951cfda309c5c133daf88fe2f6e10959baf0ff460492e8499102c39106272",
+      "alternativeSignatures": [
+        "6bc60204a3b34dd86e8af20f0796d8131aab504acfc5522b3da1883c53c40d95",
+        "a6ed45f9061fbfba32137707d2a83dba1a724439deb06cb02d0fabf010f4dd48",
+        "42b82583528978240c11f2e4b41d3a18521c823a6169e71c1414cd6ad837825a"
+      ],
+      "target": "test/Unit/DependencyManagement/DependencyManagementTests.cs",
+      "line": 233,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "de3d24837ec93aa61cc385a8d7a07fdf4310aa4ab7e09045ce6e41a7adee0a19": {
+      "signature": "de3d24837ec93aa61cc385a8d7a07fdf4310aa4ab7e09045ce6e41a7adee0a19",
+      "alternativeSignatures": [
+        "e56990918bb4b54180b8fcfe3095c2542a5cd0c3d05446a31666eec757f57ed9",
+        "f5022f635dc7f209f7c444d5d51d298ca07474d7a9d8562eaf0fbd6168784fd8",
+        "5272cfda3e408ca4f49b8ca86aa1ee07ae639b52f8fb7a8f1719fc609ffed494"
+      ],
+      "target": "test/Unit/DependencyManagement/DependencyManagementTests.cs",
+      "line": 281,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "4c6c738858b09098b447c59a4edc72c011acdff8e46716bcbd11e89913ecb38d": {
+      "signature": "4c6c738858b09098b447c59a4edc72c011acdff8e46716bcbd11e89913ecb38d",
+      "alternativeSignatures": [
+        "20e0ac4ae066c61b02420b3bd616dacc0357595663621f3678956bc47729bb4e",
+        "192600cf64c3f91cabfbf82cb90da53e148a1b30115628d3dc338a6e841bae80",
+        "02b42f547f33f80f5be91fc2d3c64cfb7c5ef0a3ef036ee929eadb017a30dd72"
+      ],
+      "target": "test/Unit/DependencyManagement/DependencyManagementTests.cs",
+      "line": 336,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "eb9f6207acf8695a0138f1d02e76ea0f95a00b582fd583a7a24ac220b30691a6": {
+      "signature": "eb9f6207acf8695a0138f1d02e76ea0f95a00b582fd583a7a24ac220b30691a6",
+      "alternativeSignatures": [
+        "60b2b3fc15d192b26223d8f630a871ce32e8ae53feee252cf6b73a8cb910be7d",
+        "8aac74c1b22f03cee0c2038cf4f0b00eb0e45a8a6dc3da7a44faaafa01956352",
+        "cddc65462d1b396317b61dac729295a3e77965e2253fe8e2e0081d269b0c6389"
+      ],
+      "target": "test/Unit/DependencyManagement/DependencyManagementTests.cs",
+      "line": 337,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "50fcf7d8886b6021d4661ceaa36fc01f49ed4a7c8cc7b6e9104a655fb2ec4952": {
+      "signature": "50fcf7d8886b6021d4661ceaa36fc01f49ed4a7c8cc7b6e9104a655fb2ec4952",
+      "alternativeSignatures": [
+        "0731636388ccb778efc1adb311001589be44be9bc5bfe609f2b49b4fca61ef06",
+        "be7db7f828d935f918bbad9eb7de0ace16a6f9e867be921a5f5b5f46cb5eca1c",
+        "c55ebf517e3f16f755c2aad7cdea3bcb90f04be307e738c67cd6c213a64775f5"
+      ],
+      "target": "test/Unit/DependencyManagement/DependencyManagementTests.cs",
+      "line": 338,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "cc8f550815461ae93026aee9c7a085bddda8fdaf5c60f020702de3cdc440ed6a": {
+      "signature": "cc8f550815461ae93026aee9c7a085bddda8fdaf5c60f020702de3cdc440ed6a",
+      "alternativeSignatures": [
+        "fc044ef3033be9ae79c7ce178c1dac100f4312407dea7b092039ca3674a3c4b5",
+        "ebf37280f1c6d1dc220be32954a0d5cc46ac840432a30f6c527954f40aef6286",
+        "dc6bfd233bb4584b9105918e6168218b126b44523ce1325c7580d7fe108ea1b1"
+      ],
+      "target": "test/Unit/DependencyManagement/DependencyManagementTests.cs",
+      "line": 488,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "d989808f822e19be258be5dd687d70337c7e2f66270dab75abe88ecf531ff2f3": {
+      "signature": "d989808f822e19be258be5dd687d70337c7e2f66270dab75abe88ecf531ff2f3",
+      "alternativeSignatures": [
+        "f15241b00f72b8f7e3e687818ff7fddc27e9ccbd12c087a72950693789513abc",
+        "32fb27fa83788997d702d789be29ba93b8a7731ba1290c1f071324e62de76122",
+        "3cf38413c394aaedf666bd87754e6e7cab9ca0b358f74c19695cfeea942f09c5"
+      ],
+      "target": "test/Unit/DependencyManagement/DependencySnapshotFolderNameToolsTests.cs",
+      "line": 42,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "80b4c53195b5341540c0c117f132f5a2adbd0943b41d719bd6663e59c07f7400": {
+      "signature": "80b4c53195b5341540c0c117f132f5a2adbd0943b41d719bd6663e59c07f7400",
+      "alternativeSignatures": [
+        "51de78576422d54748b519a85fdf84a4ddad8686ee3b23f789e5547818112636",
+        "b57dd6418a7ef89ce066e0eae731b36beff2e81c5d4de6e640ea103d99db12b9",
+        "88a01c619cb190ebae5d5fca206f7cdfd6015ea8abe6c44efd31b3eadc0c75df"
+      ],
+      "target": "test/Unit/Durable/OrchestrationFailureExceptionTests.cs",
+      "line": 43,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "0849d08b8fcbbe2068e923484f26710705c7feeedb4a3dacbcd9a63ae2a90f97": {
+      "signature": "0849d08b8fcbbe2068e923484f26710705c7feeedb4a3dacbcd9a63ae2a90f97",
+      "alternativeSignatures": [
+        "33312496978a41febe782aae5b88e3c8fdb790c513806ed43508395cfd685e15",
+        "e7cb0a878de6202eef0ca91059040cbf0bf2fb6df419fd50ef16c2c5b3174001",
+        "2e00d51eb5c6afb97160cd5e04b5a1683ae1611e0fe31c9e43bda55eaf74244f"
+      ],
+      "target": "test/Unit/PowerShell/PowerShellManagerTests.cs",
+      "line": 322,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "afaaeaf772ca0e81cc240e60d02544e8684b07187a565b570a286b915e93c71d": {
+      "signature": "afaaeaf772ca0e81cc240e60d02544e8684b07187a565b570a286b915e93c71d",
+      "alternativeSignatures": [
+        "91d7374568ec09b07f320f12268f2ece378026fdcb2778be9c43e106fb426c83",
+        "ce2ebec94b653386347f6b747667fe25d731a18315b8938883cb2a70b24fecb9",
+        "81c274d0f27c79ce19801cf5461f8a05c61169bf5c3fd02740986d8da30bb314"
+      ],
+      "target": "test/Unit/PowerShell/PowerShellManagerTests.cs",
+      "line": 351,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    },
+    "ed6853c8148461f7d1749e0adb05ea452a343b863ca8cb887c9571cfab48a132": {
+      "signature": "ed6853c8148461f7d1749e0adb05ea452a343b863ca8cb887c9571cfab48a132",
+      "alternativeSignatures": [
+        "a6813ef6154180c2bcfa8c1fa3e5f2d42aaa4c37da07687e0721fe1653646819",
+        "06f7449c08608fa2a1dd4644669d8af3a76aabd5b5ee42e9d7f2a1e3291ce671",
+        "4fdf8c613827f1af8112aeb1878861f2f374a5a54d1e766186c5be875adbd4a2"
+      ],
+      "target": "test/Unit/PowerShell/PowerShellManagerTests.cs",
+      "line": 452,
+      "uriBaseId": "file:///D:/a/_work/1/s/",
+      "memberOf": [
+        "default"
+      ],
+      "tool": "roslynanalyzers",
+      "ruleId": "CA1310",
+      "createdDate": "2026-08-11 02:21:09Z",
+      "expirationDate": "2027-01-28 02:22:40Z",
+      "justification": "This error is baselined with an expiration date of 180 days from 2026-08-11 02:22:40Z"
+    }
+  }
+}
