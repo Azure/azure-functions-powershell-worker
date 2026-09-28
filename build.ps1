@@ -98,6 +98,10 @@ function Deploy-PowerShellWorker {
 }
 
 function Set-CfsRepository {
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '',
+        Justification = 'The Azure Pipelines access token is provided as a string and must be converted to a SecureString to construct the PSCredential used for authenticated CFS upstream package retrieval.')]
+    param()
+
     $repositoryParameters = @{
         Name = $CfsRepositoryName
         SourceLocation = $CfsFeedUri
