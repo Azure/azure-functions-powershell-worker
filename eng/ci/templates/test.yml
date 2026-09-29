@@ -1,11 +1,25 @@
 jobs:
   - job: UnitTests
     steps:
+      - task: UseDotNet@2
+        displayName: "Install .NET SDK 3.1.426"
+        inputs:
+          packageType: sdk
+          version: "3.1.426"
+
+      - task: UseDotNet@2
+        displayName: "Install .NET SDK 10.0.401"
+        inputs:
+          packageType: sdk
+          version: "10.0.401"
+
       - task: NuGetAuthenticate@1
         displayName: "Authenticate NuGet feeds"
 
       - pwsh: ./build.ps1 -NoBuild -Bootstrap
         displayName: "Running ./build.ps1 -NoBuild -Bootstrap"
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
       - pwsh: ./Check-CsprojVulnerabilities.ps1
         displayName: "Check for security vulnerabilities"
@@ -15,18 +29,19 @@ jobs:
 
           ./build.ps1 -Clean -Configuration Release
         displayName: "Build worker code"
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
       - pwsh: ./build.ps1 -NoBuild -Test
         displayName: "Running UnitTest"
+        env:
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
-      # - pwsh: ./test/E2E/Start-E2ETest.ps1
-      #   env:
-      #     AzureWebJobsStorage: $(AzureWebJobsStorage)
-      #     AzureWebJobsCosmosDBConnectionString: $(AzureWebJobsCosmosDBConnectionString)
-      #     AzureWebJobsServiceBus: $(AzureWebJobsServiceBus)
-      #     AzureWebJobsEventHubSender: $(AzureWebJobsEventHubSender)
-      #     FUNCTIONS_WORKER_RUNTIME: "powershell"
-      #   displayName: "Running E2ETest"
+      - pwsh: ./test/E2E/Start-E2ETest.ps1 -UseEmulators
+        env:
+          CONFIGURATION: Release
+        displayName: "Run emulator-backed E2E tests"
+        condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'))
 
       - task: PublishTestResults@2
         inputs:

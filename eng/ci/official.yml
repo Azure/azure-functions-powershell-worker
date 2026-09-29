@@ -75,9 +75,11 @@ extends:
         jobs:
           - job: ApprovePublish
             pool: server
+            timeoutInMinutes: 1441
             steps:
               - task: ManualValidation@1
                 displayName: "Approve NuGet publish"
+                timeoutInMinutes: 1440
                 inputs:
                   notifyUsers: ""
                   instructions: "Approve to publish the NuGet package to the public/infra feed."

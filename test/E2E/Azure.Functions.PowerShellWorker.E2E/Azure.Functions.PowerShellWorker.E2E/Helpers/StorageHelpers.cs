@@ -4,6 +4,7 @@
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Azure.Functions.PowerShell.Tests.E2E
@@ -64,7 +65,7 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             await Utilities.RetryAsync(async () =>
             {
                 retrievedMessages = await queue.GetMessagesAsync(3);
-                return retrievedMessages != null;
+                return retrievedMessages?.Count() == 3;
             });
             foreach(CloudQueueMessage msg in retrievedMessages)
             {
