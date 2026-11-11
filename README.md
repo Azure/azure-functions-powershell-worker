@@ -55,6 +55,16 @@ with any additional questions or comments.
 > NOTE: If you're missing a dependency,
 you will be asked to run `./build.ps1 -Bootstrap`
 
+Bootstrap installs the exact PSDepend and platyPS versions pinned in `build.ps1`
+from the `upstream-public` CFS feed. Before updating either pin, verify that the
+package has been saved in the feed and can be downloaded anonymously; an upstream
+version appearing in feed search results does not mean its package is available
+to public CI or local builds. Bundled worker module versions are pinned separately
+in `src/requirements.psd1`.
+
+Bootstrap regression tests can be run with Pester 5:
+`Invoke-Pester ./test/Build/Bootstrap.Tests.ps1`.
+
 ### Run & Debug
 
 The PowerShell worker alone is not enough to establish the functions app, we also need the support from

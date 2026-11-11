@@ -29,7 +29,13 @@ extends:
       ${{ if eq( variables['Build.Reason'], 'Schedule' ) }}:
         demands:
         - Priority -equals Low
-        
+
+    sdl:
+      codeql:
+        compiled:
+          enabled: true
+        runSourceLanguagesInSourceAnalysis: true
+
     stages:
       - stage: WindowsUnitTests
         dependsOn: []
