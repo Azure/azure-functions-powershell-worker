@@ -4,9 +4,21 @@
 #
 param
 (
-    [Switch]
-    $UseCoreToolsBuildFromIntegrationTests
+    [Switch] $UseCoreToolsBuildFromIntegrationTests,
+    [Switch] $UseEmulators,
+    [string] $CoreToolsPath,
+    [string] $TestFilter
 )
+
+$originalPSModulePath = $env:PSModulePath
+$primaryError = $null
+
+try
+{
+if ($UseEmulators.IsPresent)
+{
+    . "$PSScriptRoot/Start-E2EEmulators.ps1"
+}
 
 function NewTaskHubName
 {
@@ -74,45 +86,89 @@ if ($IsWindows) {
     }
 }
 
-$coreToolsDownloadURL = $null
-if ($UseCoreToolsBuildFromIntegrationTests.IsPresent)
+$FUNC_CLI_DIRECTORY = Join-Path $PSScriptRoot 'Azure.Functions.Cli'
+$workersDirectory = Join-Path $PSScriptRoot 'Azure.Functions.Workers'
+
+if ($CoreToolsPath)
 {
-    $coreToolsDownloadURL = "https://functionsintegclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/Azure.Functions.Cli.$os-$arch.zip"
-    $env:CORE_TOOLS_URL = "https://functionsintegclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest"
+    $resolvedCoreToolsPath = Resolve-Path $CoreToolsPath
+    $funcExePath = if (Test-Path $resolvedCoreToolsPath -PathType Container)
+    {
+        Join-Path $resolvedCoreToolsPath $FUNC_EXE_NAME
+    }
+    else
+    {
+        $resolvedCoreToolsPath.Path
+    }
+
+    if (-not (Test-Path $funcExePath -PathType Leaf))
+    {
+        throw "Functions Core Tools was not found at '$funcExePath'."
+    }
+
+    Write-Host "Using Functions Core Tools from '$funcExePath'."
 }
 else
 {
-    $coreToolsDownloadURL = "https://functionsclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/Azure.Functions.Cli.$os-$arch.zip"
-    if (-not $env:CORE_TOOLS_URL)
+    if ($UseCoreToolsBuildFromIntegrationTests.IsPresent)
     {
-        $env:CORE_TOOLS_URL = "https://functionsclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest"
+        $versionUrl = "https://functionsintegclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/version.txt"
+        $coreToolsDownloadURL = "https://functionsintegclibuilds.blob.core.windows.net/builds/$FUNC_RUNTIME_VERSION/latest/Azure.Functions.Cli.$os-$arch.zip"
+        $version = Invoke-RestMethod -Uri $versionUrl
     }
+    else
+    {
+        $releaseApiUrl = 'https://api.github.com/repos/Azure/azure-functions-core-tools/releases/latest'
+        $release = Invoke-RestMethod -Uri $releaseApiUrl -Headers @{ 'User-Agent' = 'azure-functions-powershell-worker' }
+        $assetNamePrefix = "Azure.Functions.Cli.$os-$arch."
+        $asset = $release.assets |
+            Where-Object { $_.name.StartsWith($assetNamePrefix) -and $_.name.EndsWith('.zip') } |
+            Select-Object -First 1
+
+        if (-not $asset)
+        {
+            throw "Could not find a Functions Core Tools asset matching '$assetNamePrefix*.zip' in release $($release.tag_name)."
+        }
+
+        $version = $release.tag_name
+        $coreToolsDownloadURL = $asset.browser_download_url
+    }
+
+    Write-Host 'Deleting Functions Core Tools if exists...'
+    Remove-Item -Force "$FUNC_CLI_DIRECTORY.zip" -ErrorAction Ignore
+    Remove-Item -Recurse -Force $FUNC_CLI_DIRECTORY -ErrorAction Ignore
+
+    Write-Host "Downloading Functions Core Tools (Version: $version)..."
+
+    $output = "$FUNC_CLI_DIRECTORY.zip"
+    Invoke-RestMethod -Uri $coreToolsDownloadURL -OutFile $output
+
+    Write-Host 'Extracting Functions Core Tools...'
+    Expand-Archive $output -DestinationPath $FUNC_CLI_DIRECTORY
+    Remove-Item -Force $output
+
+    $funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
 }
-
-$FUNC_CLI_DIRECTORY = Join-Path $PSScriptRoot 'Azure.Functions.Cli'
-
-Write-Host 'Deleting Functions Core Tools if exists...'
-Remove-Item -Force "$FUNC_CLI_DIRECTORY.zip" -ErrorAction Ignore
-Remove-Item -Recurse -Force $FUNC_CLI_DIRECTORY -ErrorAction Ignore
-
-$version = Invoke-RestMethod -Uri "$env:CORE_TOOLS_URL/version.txt"
-Write-Host "Downloading Functions Core Tools (Version: $version)..."
-
-$output = "$FUNC_CLI_DIRECTORY.zip"
-Invoke-RestMethod -Uri $coreToolsDownloadURL -OutFile $output
-
-Write-Host 'Extracting Functions Core Tools...'
-Expand-Archive $output -DestinationPath $FUNC_CLI_DIRECTORY
 
 if (-not $UseCoreToolsBuildFromIntegrationTests.IsPresent)
 {
-    # For a regular test run, the binaries for the PowerShell worker get replaced after downloading and installing the Core Tools.
-    Write-Host "Copying azure-functions-powershell-worker to Functions Host workers directory..."
-
+    Write-Host "Preparing the locally built PowerShell worker..."
     $configuration = if ($env:CONFIGURATION) { $env:CONFIGURATION } else { 'Debug' }
-    Remove-Item -Recurse -Force -Path "$FUNC_CLI_DIRECTORY/workers/powershell"
-    Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/$TARGET_FRAMEWORK/publish/" "$FUNC_CLI_DIRECTORY/workers/powershell/$POWERSHELL_VERSION"
-    Copy-Item -Recurse -Force "$PSScriptRoot/../../src/bin/$configuration/$TARGET_FRAMEWORK/publish/worker.config.json" "$FUNC_CLI_DIRECTORY/workers/powershell"
+    $workerPublishDirectory = "$PSScriptRoot/../../src/bin/$configuration/$TARGET_FRAMEWORK/publish"
+
+    if (-not (Test-Path "$workerPublishDirectory/worker.config.json"))
+    {
+        throw "The PowerShell worker was not found at '$workerPublishDirectory'. Build it before running E2E tests."
+    }
+
+    Remove-Item -Recurse -Force $workersDirectory -ErrorAction Ignore
+    New-Item -ItemType Directory -Path "$workersDirectory/powershell/$POWERSHELL_VERSION" -Force | Out-Null
+    Copy-Item -Recurse -Force "$workerPublishDirectory/*" "$workersDirectory/powershell/$POWERSHELL_VERSION"
+    Copy-Item -Force "$workerPublishDirectory/worker.config.json" "$workersDirectory/powershell"
+    $env:languageWorkers__workersDirectory = $workersDirectory
+    $env:PSModulePath = (($originalPSModulePath -split [System.IO.Path]::PathSeparator |
+        Where-Object { -not $_.StartsWith($HOME, [System.StringComparison]::OrdinalIgnoreCase) }) -join
+        [System.IO.Path]::PathSeparator)
 }
 
 Write-Host "Starting Functions Host..."
@@ -121,8 +177,7 @@ $Env:TestTaskHubName = $taskHubName
 $Env:FUNCTIONS_WORKER_RUNTIME = "powershell"
 $Env:FUNCTIONS_WORKER_RUNTIME_VERSION = $POWERSHELL_VERSION
 $Env:AZURE_FUNCTIONS_ENVIRONMENT = "development"
-$Env:Path = "$Env:Path$([System.IO.Path]::PathSeparator)$FUNC_CLI_DIRECTORY"
-$funcExePath = Join-Path $FUNC_CLI_DIRECTORY $FUNC_EXE_NAME
+$Env:FUNCTIONS_CORE_TOOLS_EXE = $funcExePath
 
 Write-Host "Installing extensions..."
 Push-Location "$PSScriptRoot\TestFunctionApp"
@@ -146,7 +201,69 @@ Pop-Location
 Write-Host "Running E2E integration tests..." -ForegroundColor Green
 Write-Host "-----------------------------------------------------------------------------`n" -ForegroundColor Green
 
-dotnet test "$PSScriptRoot/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E.csproj" --logger:trx --results-directory "$PSScriptRoot/../../testResults"
+$testArguments = @(
+    'test',
+    "$PSScriptRoot/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E/Azure.Functions.PowerShellWorker.E2E.csproj",
+    '--logger:trx',
+    '--results-directory',
+    "$PSScriptRoot/../../testResults"
+)
+if ($TestFilter)
+{
+    $testArguments += @('--filter', $TestFilter)
+}
+
+& dotnet @testArguments
 if ($LASTEXITCODE -ne 0) { throw "xunit tests failed." }
 
 Write-Host "-----------------------------------------------------------------------------" -ForegroundColor Green
+}
+catch
+{
+    $primaryError = $_
+}
+finally
+{
+    $cleanupErrors = [System.Collections.Generic.List[string]]::new()
+
+    if ($UseEmulators.IsPresent)
+    {
+        try
+        {
+            & "$PSScriptRoot/Stop-E2EEmulators.ps1"
+        }
+        catch
+        {
+            $cleanupErrors.Add($_.Exception.Message)
+        }
+    }
+
+    if ($workersDirectory)
+    {
+        try
+        {
+            Remove-Item -Recurse -Force $workersDirectory -ErrorAction Stop
+        }
+        catch
+        {
+            $cleanupErrors.Add($_.Exception.Message)
+        }
+    }
+
+    $env:PSModulePath = $originalPSModulePath
+}
+
+if ($primaryError)
+{
+    if ($cleanupErrors.Count -gt 0)
+    {
+        Write-Warning "Cleanup also failed:`n- $($cleanupErrors -join "`n- ")"
+    }
+
+    throw $primaryError
+}
+
+if ($cleanupErrors.Count -gt 0)
+{
+    throw "E2E cleanup failed:`n- $($cleanupErrors -join "`n- ")"
+}

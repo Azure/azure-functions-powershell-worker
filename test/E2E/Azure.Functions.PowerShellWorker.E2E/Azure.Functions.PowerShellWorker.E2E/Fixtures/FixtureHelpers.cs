@@ -12,13 +12,16 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             var funcHostProcess = new Process();
             var rootDir = Path.GetFullPath(String.Format(@"..{0}..{0}..{0}..{0}..{0}..{0}..{0}", Path.DirectorySeparatorChar));
             var funcName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "func.exe": "func";
+            var configuredFuncPath = Environment.GetEnvironmentVariable("FUNCTIONS_CORE_TOOLS_EXE");
 
             funcHostProcess.StartInfo.UseShellExecute = false;
             funcHostProcess.StartInfo.RedirectStandardError = true;
             funcHostProcess.StartInfo.RedirectStandardOutput = true;
             funcHostProcess.StartInfo.CreateNoWindow = true;
             funcHostProcess.StartInfo.WorkingDirectory = Path.Combine(rootDir, String.Format(@"test{0}E2E{0}TestFunctionApp", Path.DirectorySeparatorChar));
-            funcHostProcess.StartInfo.FileName = Path.Combine(rootDir, "test", "E2E", "Azure.Functions.Cli", funcName);
+            funcHostProcess.StartInfo.FileName = String.IsNullOrEmpty(configuredFuncPath)
+                ? Path.Combine(rootDir, "test", "E2E", "Azure.Functions.Cli", funcName)
+                : configuredFuncPath;
             funcHostProcess.StartInfo.ArgumentList.Add("start");
             if (enableAuth)
             {

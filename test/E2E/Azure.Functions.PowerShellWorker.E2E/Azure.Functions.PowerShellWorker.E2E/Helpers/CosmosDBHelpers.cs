@@ -23,7 +23,10 @@ namespace Azure.Functions.PowerShell.Tests.E2E
             var builder = new System.Data.Common.DbConnectionStringBuilder();
             builder.ConnectionString = Constants.CosmosDB.CosmosDBConnectionStringSetting;
             var serviceUri = builder["AccountEndpoint"].ToString();
-            _cosmosDbClient = new CosmosClient(serviceUri, builder["AccountKey"].ToString());
+            _cosmosDbClient = new CosmosClient(
+                serviceUri,
+                builder["AccountKey"].ToString(),
+                new CosmosClientOptions { ConnectionMode = ConnectionMode.Gateway });
         }
 
         // keep
