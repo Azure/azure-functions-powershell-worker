@@ -18,6 +18,15 @@ PowerShell support for Functions is based on [PowerShell Core 7](https://github.
 [Functions on Linux](https://blogs.msdn.microsoft.com/appserviceteam/2017/11/15/functions-on-linux-preview/),
 and the [Azure Functions runtime V4](https://docs.microsoft.com/en-us/azure/azure-functions/functions-versions).
 
+## Managed dependency versions
+
+Managed dependencies in `requirements.psd1` accept major-version wildcards
+(for example, `7.*`) or exact-version strings. Exact-version strings receive
+historical basic screening, not full version-format validation. Four-component
+strings such as `22.4.5.1` and `123.45.67.89-alpha4` pass screening and are
+forwarded unchanged to the dependency provider for final validation. Passing
+screening does not guarantee that a module can be installed or executed.
+
 ## What's available?
 
 ### Triggers / Bindings

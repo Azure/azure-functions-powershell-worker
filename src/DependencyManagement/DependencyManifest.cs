@@ -9,7 +9,6 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
     using System.Collections;
     using System.Collections.Generic;
     using System.IO;
-    using System.Management.Automation;
     using System.Management.Automation.Language;
     using System.Text;
     using System.Text.RegularExpressions;
@@ -74,9 +73,12 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.DependencyManagement
                 }
 
                 // At this point, we know this is not the 'MajorVersion.*' pattern.
-                // Use SemanticVersion to verify the version is a valid PowerShell
-                // module version.
-                if (SemanticVersion.TryParse(version, out SemanticVersion _))
+                // Preserve historical basic screening, not a complete version grammar.
+                // A nonempty suffix must start with a dot, contain no '*', and end with
+                // a word character. The dependency provider performs final validation.
+                // Keep the suffix check greedy so a successful match does not require
+                // re-entering the optional group after the end-anchor check.
+                if (Regex.IsMatch(afterMajorVersion, @"^(?:\.[^\*]*\w)?$"))
                 {
                     return new DependencyManifestEntry(
                         name,
