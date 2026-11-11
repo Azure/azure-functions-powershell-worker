@@ -71,8 +71,28 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [InlineData("@{ MyModule = '0' }", "MyModule", "0", VersionSpecificationType.ExactVersion)]
         [InlineData("@{ MyModule = '1' }", "MyModule", "1", VersionSpecificationType.ExactVersion)]
         [InlineData("@{ MyModule = '1.0' }", "MyModule", "1.0", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1.23' }", "MyModule", "1.23", VersionSpecificationType.ExactVersion)]
         [InlineData("@{ MyModule = '3.4.5' }", "MyModule", "3.4.5", VersionSpecificationType.ExactVersion)]
         [InlineData("@{ MyModule = '3.4.5-alpha3' }", "MyModule", "3.4.5-alpha3", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '123.45.67.89' }", "MyModule", "123.45.67.89", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '123.45.67.89-alpha4' }", "MyModule", "123.45.67.89-alpha4", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '22.4.5.1' }", "MyModule", "22.4.5.1", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1.0.0.0' }", "MyModule", "1.0.0.0", VersionSpecificationType.ExactVersion)]
+        // Historical basic screening leaves final version validation to the dependency provider.
+        [InlineData("@{ MyModule = '01.02.003.0004' }", "MyModule", "01.02.003.0004", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1.2.3.4.5' }", "MyModule", "1.2.3.4.5", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1.not-a-version' }", "MyModule", "1.not-a-version", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1._' }", "MyModule", "1._", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1.2\u0301' }", "MyModule", "1.2\u0301", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1. 23' }", "MyModule", "1. 23", VersionSpecificationType.ExactVersion)]
+        // The leading-major match stops at LF, but the original version is retained.
+        [InlineData("@{ MyModule = '1.23\nignored' }", "MyModule", "1.23\nignored", VersionSpecificationType.ExactVersion)]
+        [InlineData("@{ MyModule = '1.2147483648' }", "MyModule", "1.2147483648", VersionSpecificationType.ExactVersion)]
+        [InlineData(
+            "@{ MyModule = '1.0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789' }",
+            "MyModule",
+            "1.0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789",
+            VersionSpecificationType.ExactVersion)]
         public void GetEntriesParsesRequirementsFileWithSingleEntry(
             string content,
             string moduleName,
@@ -118,14 +138,18 @@ namespace Microsoft.Azure.Functions.PowerShellWorker.Test.DependencyManagement
         [InlineData("@{ MyModule = ' ' }")]
         [InlineData("@{ MyModule = 'a' }")]
         [InlineData("@{ MyModule = '1a' }")]
+        [InlineData("@{ MyModule = '1-alpha' }")]
+        [InlineData("@{ MyModule = '1+build' }")]
         [InlineData("@{ MyModule = '.' }")]
         [InlineData("@{ MyModule = '1.' }")]
         [InlineData("@{ MyModule = '*' }")]
         [InlineData("@{ MyModule = '*.1' }")]
         [InlineData("@{ MyModule = '1.*.2' }")]
         [InlineData("@{ MyModule = '1.0.*' }")]
-        [InlineData("@{ MyModule = '123.45.67.89' }")]
-        [InlineData("@{ MyModule = '123.45.67.89-alpha4' }")]
+        [InlineData("@{ MyModule = '1.0.*.*' }")]
+        [InlineData("@{ MyModule = '1.0.0.0-' }")]
+        [InlineData("@{ MyModule = '1.23 ' }")]
+        [InlineData("@{ MyModule = '1.23\r\nignored' }")]
         public void GetEntriesThrowsOnInvalidVersionSpecification(string content)
         {
             CreateRequirementsFile(content);
