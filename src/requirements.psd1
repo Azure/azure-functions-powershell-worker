@@ -1,7 +1,7 @@
 @{
     # Modules bundled with the PowerShell Language Worker
     'Microsoft.PowerShell.Archive' = @{
-        Version = '1.2.6'
+        Version = '1.2.7'
         Target = 'src/Modules'
         Parameters = @{
             Repository = 'upstream-public'
