@@ -91,6 +91,14 @@ pwsh -c "./Check-CsprojVulnerabilities.ps1 -PrintReport"
 
 If vulnerabilities are found, update or pin the affected packages to non-vulnerable versions, then re-run steps 6 and 7.
 
-### 8. Submit PR
+### 8. Update Release Notes
+
+Keep [`release_notes.md`](../../../release_notes.md) scoped to the next worker release, not the release history.
+
+- After each worker release, clear the entries shipped in that release before adding the next SDK update. Check against the previous release of the **same PowerShell worker version**.
+- Add an entry for the current PowerShell SDK and .NET build SDK update, including bundled module updates when applicable.
+- Preserve any other unreleased changes. If the SDK update is the only change since the previous release, it must be the only entry.
+
+### 9. Submit PR
 
 Submit a pull request to the `dev` branch. The `dev` branch always tracks the latest PowerShell version.
